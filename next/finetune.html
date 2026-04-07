@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fine-tuning & Model Customization — What's Next</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f; --card: #141420; --surface2: #1a1a2e; --border: #2a2a45;
+  --purple: #7c3aed; --purple-light: #a855f7; --teal: #0d9488; --green: #10b981;
+  --red: #ef4444; --yellow: #f59e0b; --text: #e2e8f0; --muted: #64748b;
+  --font: 'Inter', sans-serif; --mono: 'JetBrains Mono', monospace;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; overflow-x: hidden; }
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(124,58,237,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 90% 80%, rgba(13,148,136,0.05) 0%, transparent 60%);
+  pointer-events: none; z-index: 0;
+}
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+nav { border-bottom: 1px solid var(--border); padding: 14px 0; background: rgba(10,10,15,0.85); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; }
+.nav-inner { display: flex; align-items: center; justify-content: space-between; }
+.nav-back { color: var(--muted); font-size: 13px; text-decoration: none; transition: color 0.2s; display: flex; align-items: center; gap: 6px; }
+.nav-back:hover { color: var(--text); }
+.nav-tag { font-size: 13px; font-weight: 700; background: linear-gradient(90deg,#a855f7,#34d399); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+.hero { padding: 60px 0 48px; }
+.hero-eyebrow { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.hero-icon { font-size: 40px; }
+.difficulty-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: rgba(245,158,11,0.15); color: var(--yellow); }
+.time-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+.hero h1 { font-size: clamp(28px, 5vw, 48px); font-weight: 900; letter-spacing: -2px; margin-bottom: 14px; line-height: 1.1; }
+.hero h1 span { background: linear-gradient(135deg, #a855f7, #34d399); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.hero p { font-size: 16px; color: var(--muted); max-width: 620px; line-height: 1.7; }
+
+.section { padding: 56px 0; border-top: 1px solid var(--border); }
+.section-header { margin-bottom: 32px; }
+.section-num { font-size: 11px; font-weight: 700; color: var(--purple-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.section-header h2 { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 10px; }
+.section-header p { color: var(--muted); font-size: 15px; line-height: 1.6; max-width: 640px; }
+
+/* CODE BLOCKS — white-space: pre is REQUIRED */
+.code-block {
+  background: #0d1117; border: 1px solid #30363d; border-radius: 12px;
+  padding: 24px; font-family: var(--mono); font-size: 12.5px; line-height: 1.8;
+  overflow-x: auto; white-space: pre;
+}
+.code-wrap { position: relative; margin-top: 16px; }
+.code-label { position: absolute; top: -10px; left: 16px; background: var(--purple); color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.5px; }
+.c-cmt { color: #8b949e; }
+.c-kw { color: #ff7b72; }
+.c-fn { color: #d2a8ff; }
+.c-str { color: #a5d6ff; }
+.c-type { color: #ffa657; }
+.c-num { color: #f2cc60; }
+.c-bi { color: #79c0ff; }
+.c-dec { color: #ffa657; }
+
+/* DECISION TRIANGLE */
+.triangle-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 20px; }
+.tri-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+  padding: 20px; text-align: center; position: relative; overflow: hidden;
+  transition: all 0.2s;
+}
+.tri-card:hover { transform: translateY(-3px); }
+.tri-card.active-prompting { border-color: rgba(16,185,129,0.5); }
+.tri-card.active-rag { border-color: rgba(13,148,136,0.5); }
+.tri-card.active-finetune { border-color: rgba(168,85,247,0.5); }
+.tri-icon { font-size: 32px; margin-bottom: 10px; }
+.tri-title { font-size: 15px; font-weight: 800; margin-bottom: 8px; }
+.tri-when { font-size: 11px; color: var(--muted); line-height: 1.5; margin-bottom: 10px; }
+.tri-cost { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 20px; }
+.cost-low { background: rgba(16,185,129,0.15); color: var(--green); }
+.cost-mid { background: rgba(13,148,136,0.15); color: var(--teal); }
+.cost-high { background: rgba(168,85,247,0.15); color: var(--purple-light); }
+
+/* FLOW DIAGRAM */
+.flow-diagram { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; overflow-x: auto; }
+.flow-row { display: flex; align-items: center; gap: 0; justify-content: center; flex-wrap: wrap; gap: 4px; }
+.flow-box {
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
+  padding: 12px 16px; text-align: center; min-width: 120px;
+}
+.flow-box.highlight { border-color: var(--purple); background: rgba(124,58,237,0.1); }
+.flow-box.result { border-color: var(--green); background: rgba(16,185,129,0.08); }
+.flow-box-title { font-size: 12px; font-weight: 700; margin-bottom: 3px; }
+.flow-box-sub { font-size: 10px; color: var(--muted); }
+.flow-arrow { color: var(--muted); font-size: 18px; padding: 0 6px; }
+.flow-plus { color: var(--yellow); font-size: 20px; font-weight: 800; padding: 0 8px; }
+
+/* LORA VISUAL */
+.lora-visual { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.lora-panel { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 22px; }
+.lora-panel h3 { font-size: 14px; font-weight: 800; margin-bottom: 12px; }
+.param-bar { margin-bottom: 12px; }
+.param-label { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 12px; }
+.param-label span { color: var(--muted); }
+.bar-track { background: var(--surface2); border-radius: 99px; height: 8px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 99px; transition: width 1s ease; }
+.bar-full { background: linear-gradient(90deg, var(--red), var(--yellow)); }
+.bar-lora { background: linear-gradient(90deg, var(--green), var(--teal)); }
+.lora-eq { text-align: center; padding: 16px; background: var(--surface2); border-radius: 10px; margin-top: 12px; font-family: var(--mono); font-size: 13px; color: var(--purple-light); }
+
+/* COMPARISON TABLE */
+.comp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.comp-table th { background: var(--surface2); padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); border-bottom: 1px solid var(--border); }
+.comp-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.comp-table tr:last-child td { border-bottom: none; }
+.comp-table tr:hover td { background: rgba(255,255,255,0.02); }
+.tick { color: var(--green); font-weight: 700; }
+.cross { color: var(--red); font-weight: 700; }
+.partial { color: var(--yellow); font-weight: 700; }
+
+/* USE CASES */
+.use-case-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.use-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+.use-card.good { border-color: rgba(16,185,129,0.3); }
+.use-card.bad { border-color: rgba(239,68,68,0.3); }
+.use-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.use-icon { font-size: 18px; }
+.use-title { font-size: 13px; font-weight: 700; }
+.use-items { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.use-items li { font-size: 12px; color: var(--muted); display: flex; align-items: flex-start; gap: 8px; }
+.use-items li::before { content: '•'; color: var(--green); flex-shrink: 0; }
+.use-card.bad .use-items li::before { color: var(--red); }
+
+/* PREREQS */
+.prereq-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.prereq-chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.prereq-day { background: var(--purple); color: white; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; }
+
+/* EXERCISES */
+.ex-list { display: flex; flex-direction: column; gap: 12px; counter-reset: ex; }
+.ex-item { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; display: flex; gap: 14px; counter-increment: ex; }
+.ex-num { width: 32px; height: 32px; border-radius: 50%; background: rgba(124,58,237,0.15); border: 2px solid var(--purple); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: var(--purple-light); flex-shrink: 0; }
+.ex-body { flex: 1; }
+.ex-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.ex-desc { font-size: 12px; color: var(--muted); line-height: 1.6; }
+.ex-difficulty { display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+.diff-easy { background: rgba(16,185,129,0.15); color: var(--green); }
+.diff-med { background: rgba(245,158,11,0.15); color: var(--yellow); }
+.diff-hard { background: rgba(239,68,68,0.15); color: var(--red); }
+
+/* CALLOUT */
+.callout { background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.25); border-radius: 12px; padding: 16px 20px; display: flex; gap: 12px; align-items: flex-start; margin: 20px 0; }
+.callout-icon { font-size: 18px; flex-shrink: 0; }
+.callout-text { font-size: 13px; color: var(--text); line-height: 1.6; }
+.callout-text strong { color: var(--yellow); }
+.callout.info { background: rgba(124,58,237,0.07); border-color: rgba(124,58,237,0.25); }
+.callout.info .callout-text strong { color: var(--purple-light); }
+
+@media(max-width:700px) {
+  .triangle-container { grid-template-columns: 1fr; }
+  .lora-visual { grid-template-columns: 1fr; }
+  .use-case-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="container">
+    <div class="nav-inner">
+      <a href="../days/day7.html" class="nav-back">← Back to Day 7</a>
+      <span class="nav-tag">What's Next — Fine-tuning</span>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+
+  <section class="hero">
+    <div class="hero-eyebrow">
+      <span class="hero-icon">🎛️</span>
+      <span class="difficulty-badge">Intermediate</span>
+      <span class="time-badge">⏱ 2–3 days</span>
+    </div>
+    <h1>Fine-tuning &<br><span>Model Customization</span></h1>
+    <p>Adapt foundation models on your own data. Learn when fine-tuning beats prompting, how LoRA makes it affordable, and how to build a complete training pipeline with Hugging Face PEFT.</p>
+  </section>
+
+  <!-- SECTION 1: Decision Triangle -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">01 — Strategy</div>
+      <h2>Fine-tuning vs RAG vs Prompting</h2>
+      <p>Before touching a GPU, decide if fine-tuning is even the right tool. The wrong choice wastes weeks. The decision framework: always try the cheapest option first.</p>
+    </div>
+
+    <div class="callout">
+      <span class="callout-icon">⚠️</span>
+      <div class="callout-text"><strong>Golden Rule:</strong> Try prompting first → then RAG → then fine-tuning. Each step is 10–100x more expensive than the last. Most problems are solved at step 1.</div>
+    </div>
+
+    <div class="triangle-container">
+      <div class="tri-card active-prompting">
+        <div class="tri-icon">✏️</div>
+        <div class="tri-title">Prompting</div>
+        <div class="tri-when">Use when: you need different behavior for a single task. Few-shot examples, chain-of-thought, structured output. Solves 80% of problems.</div>
+        <span class="tri-cost cost-low">Cost: Near Zero</span>
+      </div>
+      <div class="tri-card active-rag">
+        <div class="tri-icon">📚</div>
+        <div class="tri-title">RAG</div>
+        <div class="tri-when">Use when: the model lacks knowledge (documents, code repos, recent data). Retrieval injects context at runtime. Knowledge is updateable without retraining.</div>
+        <span class="tri-cost cost-mid">Cost: Low–Medium</span>
+      </div>
+      <div class="tri-card active-finetune">
+        <div class="tri-icon">🎛️</div>
+        <div class="tri-title">Fine-tuning</div>
+        <div class="tri-when">Use when: you need to change HOW the model responds — style, tone, output format, domain-specific terminology. Changes model behavior, not knowledge.</div>
+        <span class="tri-cost cost-high">Cost: High</span>
+      </div>
+    </div>
+
+    <div style="margin-top:24px">
+      <table class="comp-table" style="background:var(--card);border-radius:12px;overflow:hidden">
+        <thead>
+          <tr>
+            <th>Capability</th>
+            <th>Prompting</th>
+            <th>RAG</th>
+            <th>Fine-tuning</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Add new knowledge</td>
+            <td class="cross">✗ Limited</td>
+            <td class="tick">✓ Yes</td>
+            <td class="cross">✗ Risky</td>
+          </tr>
+          <tr>
+            <td>Change output style/format</td>
+            <td class="partial">~ Partially</td>
+            <td class="cross">✗ No</td>
+            <td class="tick">✓ Yes</td>
+          </tr>
+          <tr>
+            <td>Domain terminology</td>
+            <td class="partial">~ Few-shot</td>
+            <td class="partial">~ With context</td>
+            <td class="tick">✓ Baked in</td>
+          </tr>
+          <tr>
+            <td>Update without retraining</td>
+            <td class="tick">✓ Instant</td>
+            <td class="tick">✓ Yes</td>
+            <td class="cross">✗ No</td>
+          </tr>
+          <tr>
+            <td>Reduce hallucinations</td>
+            <td class="partial">~ Somewhat</td>
+            <td class="tick">✓ With sources</td>
+            <td class="cross">✗ Can make worse</td>
+          </tr>
+          <tr>
+            <td>Inference cost reduction</td>
+            <td class="cross">✗ No</td>
+            <td class="cross">✗ No</td>
+            <td class="tick">✓ Shorter prompts</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- SECTION 2: How Fine-tuning Works -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">02 — Mechanics</div>
+      <h2>How Fine-tuning Works</h2>
+      <p>Fine-tuning continues training a pre-trained model on your labeled dataset. The architecture stays identical — only the weights change.</p>
+    </div>
+
+    <div class="flow-diagram">
+      <div style="text-align:center;font-size:12px;color:var(--muted);margin-bottom:20px;font-weight:600;text-transform:uppercase;letter-spacing:1px">Training Flow</div>
+      <div class="flow-row">
+        <div class="flow-box">
+          <div class="flow-box-title">Pre-trained Model</div>
+          <div class="flow-box-sub">Llama-3, Mistral,<br>Claude, GPT-4</div>
+        </div>
+        <div class="flow-plus">+</div>
+        <div class="flow-box highlight">
+          <div class="flow-box-title">Labeled Dataset</div>
+          <div class="flow-box-sub">JSONL: prompt +<br>ideal completion</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box highlight">
+          <div class="flow-box-title">SFT Training</div>
+          <div class="flow-box-sub">Gradient descent<br>on your examples</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box result">
+          <div class="flow-box-title">Fine-tuned Model</div>
+          <div class="flow-box-sub">Same architecture,<br>updated weights</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px">
+      <div style="background:var(--card);border:1px solid rgba(16,185,129,0.3);border-radius:12px;padding:18px">
+        <div style="font-size:12px;font-weight:700;color:var(--green);margin-bottom:8px">WHAT CHANGES</div>
+        <ul style="list-style:none;display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)">
+          <li>✓ Model weights (billions of float32 values)</li>
+          <li>✓ Output style, tone, format preferences</li>
+          <li>✓ Task-specific behavior patterns</li>
+          <li>✓ Domain vocabulary emphasis</li>
+        </ul>
+      </div>
+      <div style="background:var(--card);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:18px">
+        <div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:8px">WHAT STAYS THE SAME</div>
+        <ul style="list-style:none;display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)">
+          <li>✗ Model architecture (layers, heads)</li>
+          <li>✗ Context window size</li>
+          <li>✗ Tokenizer vocabulary</li>
+          <li>✗ Base capabilities and reasoning</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout info" style="margin-top:20px">
+      <span class="callout-icon">💡</span>
+      <div class="callout-text"><strong>Full fine-tuning</strong> updates all 7B+ parameters. For a 7B model that's 28GB of gradients in VRAM — you need an A100. <strong>LoRA</strong> (next section) reduces this to ~2M trainable parameters and fits on a consumer GPU.</div>
+    </div>
+  </section>
+
+  <!-- SECTION 3: LoRA Deep Dive -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">03 — LoRA</div>
+      <h2>LoRA Deep Dive</h2>
+      <p>Low-Rank Adaptation — the technique that made fine-tuning accessible without a data center budget. Instead of updating all weights, LoRA adds tiny trainable matrices alongside frozen originals.</p>
+    </div>
+
+    <div class="lora-visual">
+      <div class="lora-panel">
+        <h3>Parameter Count Comparison</h3>
+        <div class="param-bar">
+          <div class="param-label"><span>Full Fine-tune (7B model)</span><span style="color:var(--red)">7,000,000,000</span></div>
+          <div class="bar-track"><div class="bar-fill bar-full" style="width:100%"></div></div>
+        </div>
+        <div class="param-bar">
+          <div class="param-label"><span>LoRA r=16 adapters</span><span style="color:var(--green)">~2,000,000</span></div>
+          <div class="bar-track"><div class="bar-fill bar-lora" style="width:0.03%"></div></div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:8px">LoRA trains only 0.03% of parameters. The original weights are frozen — no catastrophic forgetting.</div>
+        <div class="lora-eq">W = W₀ + B · A</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:8px;text-align:center">W₀ = frozen original &nbsp;|&nbsp; B,A = tiny trainable matrices</div>
+      </div>
+      <div class="lora-panel">
+        <h3>The Math (Intuition)</h3>
+        <div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:14px">
+          A weight matrix W is (d × d). Instead of updating all d² params, LoRA decomposes the update ΔW into two small matrices:
+        </div>
+        <ul style="list-style:none;display:flex;flex-direction:column;gap:10px">
+          <li style="background:var(--surface2);border-radius:8px;padding:10px 12px;font-size:12px">
+            <strong style="color:var(--purple-light)">Matrix A</strong> <span style="color:var(--muted)">— shape (r × d), r = rank (small, e.g. 16)</span>
+          </li>
+          <li style="background:var(--surface2);border-radius:8px;padding:10px 12px;font-size:12px">
+            <strong style="color:var(--teal)">Matrix B</strong> <span style="color:var(--muted)">— shape (d × r), initialized to zero</span>
+          </li>
+          <li style="background:var(--surface2);border-radius:8px;padding:10px 12px;font-size:12px">
+            <strong style="color:var(--green)">Result</strong> <span style="color:var(--muted)">— B·A has shape (d × d), only 2×d×r params trained</span>
+          </li>
+        </ul>
+        <div style="font-size:11px;color:var(--muted);margin-top:14px">
+          With d=4096, r=16: full update = 16M params. LoRA update = 131K params. <strong style="color:var(--text)">120x fewer.</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="code-wrap" style="margin-top:24px">
+      <span class="code-label">PYTHON — LoRA with Hugging Face PEFT</span>
+      <div class="code-block"><span class="c-kw">from</span> <span class="c-bi">transformers</span> <span class="c-kw">import</span> AutoModelForCausalLM, AutoTokenizer
+<span class="c-kw">from</span> <span class="c-bi">peft</span> <span class="c-kw">import</span> LoraConfig, get_peft_model, TaskType
+
+<span class="c-cmt"># Load base model</span>
+model = <span class="c-fn">AutoModelForCausalLM</span>.from_pretrained(
+    <span class="c-str">"mistralai/Mistral-7B-v0.1"</span>,
+    torch_dtype=torch.float16,
+    device_map=<span class="c-str">"auto"</span>,
+)
+
+<span class="c-cmt"># Configure LoRA</span>
+lora_config = <span class="c-fn">LoraConfig</span>(
+    r=<span class="c-num">16</span>,                          <span class="c-cmt"># rank — higher = more capacity, more params</span>
+    lora_alpha=<span class="c-num">32</span>,               <span class="c-cmt"># scaling factor (usually 2x rank)</span>
+    target_modules=[               <span class="c-cmt"># which layers to apply LoRA to</span>
+        <span class="c-str">"q_proj"</span>, <span class="c-str">"v_proj"</span>,
+        <span class="c-str">"k_proj"</span>, <span class="c-str">"o_proj"</span>,
+    ],
+    lora_dropout=<span class="c-num">0.05</span>,
+    bias=<span class="c-str">"none"</span>,
+    task_type=TaskType.<span class="c-bi">CAUSAL_LM</span>,
+)
+
+<span class="c-cmt"># Wrap model with LoRA adapters</span>
+model = <span class="c-fn">get_peft_model</span>(model, lora_config)
+
+<span class="c-cmt"># Print trainable parameter count</span>
+model.<span class="c-fn">print_trainable_parameters</span>()
+<span class="c-cmt"># Output: trainable params: 2,097,152 || all params: 7,243,436,032 || trainable%: 0.03%</span></div>
+    </div>
+  </section>
+
+  <!-- SECTION 4: Building Training Dataset -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">04 — Data</div>
+      <h2>Building a Training Dataset</h2>
+      <p>Data quality is everything. 50 perfect examples consistently outperform 5,000 mediocre ones. Garbage in, garbage out — this applies 10x harder with fine-tuning.</p>
+    </div>
+
+    <div class="callout">
+      <span class="callout-icon">📊</span>
+      <div class="callout-text"><strong>Quality threshold:</strong> Every example should represent the ideal response to that prompt. If you wouldn't be proud to show it, don't include it. Start with 50–200 examples. You can always add more later.</div>
+    </div>
+
+    <div class="code-wrap">
+      <span class="code-label">JSONL — OpenAI Chat Fine-tune Format</span>
+      <div class="code-block"><span class="c-cmt"># training_data.jsonl — one JSON object per line</span>
+{<span class="c-str">"messages"</span>: [
+  {<span class="c-str">"role"</span>: <span class="c-str">"system"</span>, <span class="c-str">"content"</span>: <span class="c-str">"You are a Python code reviewer for FastAPI services. Always identify security issues first, then performance issues."</span>},
+  {<span class="c-str">"role"</span>: <span class="c-str">"user"</span>,   <span class="c-str">"content"</span>: <span class="c-str">"Review this endpoint: @app.get('/user/{id}') async def get_user(id: str): return db.query(f'SELECT * FROM users WHERE id={id}')"</span>},
+  {<span class="c-str">"role"</span>: <span class="c-str">"assistant"</span>, <span class="c-str">"content"</span>: <span class="c-str">"**CRITICAL - SQL Injection**: Direct string interpolation in SQL query. Fix: use parameterized queries. **HIGH - No auth**: endpoint exposes PII without authentication. Add @require_auth decorator."</span>}
+]}
+{<span class="c-str">"messages"</span>: [
+  {<span class="c-str">"role"</span>: <span class="c-str">"system"</span>, <span class="c-str">"content"</span>: <span class="c-str">"You are a Python code reviewer for FastAPI services..."</span>},
+  {<span class="c-str">"role"</span>: <span class="c-str">"user"</span>,   <span class="c-str">"content"</span>: <span class="c-str">"Review: for item in items: result = await db.get(item.id)"</span>},
+  {<span class="c-str">"role"</span>: <span class="c-str">"assistant"</span>, <span class="c-str">"content"</span>: <span class="c-str">"**HIGH - N+1 Query**: Fetching items one by one in a loop. Fix: use db.get_many([i.id for i in items]) for a single database round-trip."</span>}
+]}</div>
+    </div>
+
+    <div class="code-wrap" style="margin-top:20px">
+      <span class="code-label">PYTHON — Dataset Validation & Upload</span>
+      <div class="code-block"><span class="c-kw">import</span> <span class="c-bi">json</span>, openai
+
+<span class="c-kw">def</span> <span class="c-fn">validate_dataset</span>(path: <span class="c-bi">str</span>) -> <span class="c-type">dict</span>:
+    errors = []
+    examples = []
+
+    <span class="c-kw">with</span> <span class="c-bi">open</span>(path) <span class="c-kw">as</span> f:
+        <span class="c-kw">for</span> i, line <span class="c-kw">in</span> <span class="c-bi">enumerate</span>(f):
+            <span class="c-kw">try</span>:
+                ex = json.<span class="c-fn">loads</span>(line)
+                messages = ex.get(<span class="c-str">"messages"</span>, [])
+
+                <span class="c-cmt"># Must have system + user + assistant</span>
+                roles = [m[<span class="c-str">"role"</span>] <span class="c-kw">for</span> m <span class="c-kw">in</span> messages]
+                <span class="c-kw">if</span> <span class="c-str">"assistant"</span> <span class="c-kw">not in</span> roles:
+                    errors.<span class="c-fn">append</span>(f<span class="c-str">"Line {i}: missing assistant message"</span>)
+
+                <span class="c-cmt"># Check completion isn't too short</span>
+                assistant_msg = <span class="c-bi">next</span>(m <span class="c-kw">for</span> m <span class="c-kw">in</span> messages <span class="c-kw">if</span> m[<span class="c-str">"role"</span>] == <span class="c-str">"assistant"</span>)
+                <span class="c-kw">if</span> <span class="c-bi">len</span>(assistant_msg[<span class="c-str">"content"</span>].split()) < <span class="c-num">10</span>:
+                    errors.<span class="c-fn">append</span>(f<span class="c-str">"Line {i}: completion suspiciously short"</span>)
+
+                examples.<span class="c-fn">append</span>(ex)
+            <span class="c-kw">except</span> <span class="c-type">Exception</span> <span class="c-kw">as</span> e:
+                errors.<span class="c-fn">append</span>(f<span class="c-str">"Line {i}: parse error — {e}"</span>)
+
+    <span class="c-kw">return</span> {<span class="c-str">"valid"</span>: <span class="c-bi">len</span>(errors) == <span class="c-num">0</span>, <span class="c-str">"count"</span>: <span class="c-bi">len</span>(examples), <span class="c-str">"errors"</span>: errors}
+
+<span class="c-cmt"># Upload to OpenAI</span>
+client = openai.<span class="c-fn">OpenAI</span>()
+<span class="c-kw">with</span> <span class="c-bi">open</span>(<span class="c-str">"training_data.jsonl"</span>, <span class="c-str">"rb"</span>) <span class="c-kw">as</span> f:
+    file = client.files.<span class="c-fn">create</span>(file=f, purpose=<span class="c-str">"fine-tune"</span>)
+
+job = client.fine_tuning.jobs.<span class="c-fn">create</span>(
+    training_file=file.id,
+    model=<span class="c-str">"gpt-4o-mini-2024-07-18"</span>,
+    hyperparameters={<span class="c-str">"n_epochs"</span>: <span class="c-num">3</span>},
+)
+<span class="c-fn">print</span>(f<span class="c-str">"Job ID: {job.id}"</span>)  <span class="c-cmt"># Poll with client.fine_tuning.jobs.retrieve(job.id)</span></div>
+    </div>
+  </section>
+
+  <!-- SECTION 5: When It Helps -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">05 — Use Cases</div>
+      <h2>When Fine-tuning Actually Helps</h2>
+      <p>Fine-tuning has specific sweet spots. Misapplying it doesn't just waste money — it can make your model worse than the base version.</p>
+    </div>
+
+    <div class="use-case-grid">
+      <div class="use-card good">
+        <div class="use-header">
+          <span class="use-icon">✅</span>
+          <div class="use-title">Fine-tuning WILL help</div>
+        </div>
+        <ul class="use-items">
+          <li>Consistent output format (always JSON with your schema)</li>
+          <li>Domain-specific terminology (medical, legal, financial jargon)</li>
+          <li>Brand voice / tone matching (formal, casual, company-specific)</li>
+          <li>Following complex multi-step instructions for specific workflows</li>
+          <li>Reducing need for long system prompts (bake it in)</li>
+          <li>Latency reduction via smaller specialized model</li>
+        </ul>
+      </div>
+      <div class="use-card bad">
+        <div class="use-header">
+          <span class="use-icon">❌</span>
+          <div class="use-title">Fine-tuning will NOT help</div>
+        </div>
+        <ul class="use-items">
+          <li>Adding new factual knowledge (use RAG instead)</li>
+          <li>Fixing hallucinations (may introduce more)</li>
+          <li>Recent events the model hasn't seen</li>
+          <li>One-off task adjustments (use prompting)</li>
+          <li>Complex reasoning improvements (use bigger model)</li>
+          <li>Problems solvable with better prompts</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 6: Full Code Example -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">06 — Code</div>
+      <h2>Full Fine-tune Pipeline with Hugging Face</h2>
+      <p>A complete example using PEFT/LoRA on a custom dataset. Uses QLoRA (4-bit quantization + LoRA) for training on a single consumer GPU.</p>
+    </div>
+
+    <div class="code-wrap">
+      <span class="code-label">PYTHON — QLoRA Training Pipeline</span>
+      <div class="code-block"><span class="c-kw">import</span> <span class="c-bi">torch</span>
+<span class="c-kw">from</span> <span class="c-bi">datasets</span> <span class="c-kw">import</span> Dataset
+<span class="c-kw">from</span> <span class="c-bi">transformers</span> <span class="c-kw">import</span> (
+    AutoModelForCausalLM, AutoTokenizer,
+    BitsAndBytesConfig, TrainingArguments,
+)
+<span class="c-kw">from</span> <span class="c-bi">peft</span> <span class="c-kw">import</span> LoraConfig
+<span class="c-kw">from</span> <span class="c-bi">trl</span> <span class="c-kw">import</span> SFTTrainer
+
+<span class="c-cmt"># ── 1. Quantization config (4-bit: loads 7B model in ~5GB VRAM) ──</span>
+bnb_config = <span class="c-fn">BitsAndBytesConfig</span>(
+    load_in_4bit=<span class="c-bi">True</span>,
+    bnb_4bit_quant_type=<span class="c-str">"nf4"</span>,
+    bnb_4bit_compute_dtype=torch.bfloat16,
+    bnb_4bit_use_double_quant=<span class="c-bi">True</span>,
+)
+
+<span class="c-cmt"># ── 2. Load model + tokenizer ──</span>
+model_name = <span class="c-str">"mistralai/Mistral-7B-Instruct-v0.2"</span>
+tokenizer = <span class="c-fn">AutoTokenizer</span>.from_pretrained(model_name)
+tokenizer.pad_token = tokenizer.eos_token
+
+model = <span class="c-fn">AutoModelForCausalLM</span>.from_pretrained(
+    model_name,
+    quantization_config=bnb_config,
+    device_map=<span class="c-str">"auto"</span>,
+)
+model.config.use_cache = <span class="c-bi">False</span>
+
+<span class="c-cmt"># ── 3. LoRA configuration ──</span>
+peft_config = <span class="c-fn">LoraConfig</span>(
+    r=<span class="c-num">16</span>,
+    lora_alpha=<span class="c-num">32</span>,
+    target_modules=[<span class="c-str">"q_proj"</span>, <span class="c-str">"v_proj"</span>, <span class="c-str">"k_proj"</span>, <span class="c-str">"o_proj"</span>],
+    lora_dropout=<span class="c-num">0.05</span>,
+    bias=<span class="c-str">"none"</span>,
+    task_type=<span class="c-str">"CAUSAL_LM"</span>,
+)
+
+<span class="c-cmt"># ── 4. Prepare dataset ──</span>
+<span class="c-kw">def</span> <span class="c-fn">format_example</span>(row):
+    <span class="c-kw">return</span> {<span class="c-str">"text"</span>: (
+        f<span class="c-str">"[INST] {row['instruction']} [/INST] {row['output']}"</span>
+    )}
+
+raw_data = [
+    {<span class="c-str">"instruction"</span>: <span class="c-str">"Review this FastAPI endpoint for issues..."</span>, <span class="c-str">"output"</span>: <span class="c-str">"CRITICAL: SQL injection vulnerability..."</span>},
+    <span class="c-cmt"># ... your training examples</span>
+]
+dataset = <span class="c-fn">Dataset</span>.from_list(raw_data).<span class="c-fn">map</span>(format_example)
+train_ds, eval_ds = dataset.<span class="c-fn">train_test_split</span>(test_size=<span class="c-num">0.1</span>).values()
+
+<span class="c-cmt"># ── 5. Training arguments ──</span>
+training_args = <span class="c-fn">TrainingArguments</span>(
+    output_dir=<span class="c-str">"./ft-code-reviewer"</span>,
+    num_train_epochs=<span class="c-num">3</span>,
+    per_device_train_batch_size=<span class="c-num">4</span>,
+    gradient_accumulation_steps=<span class="c-num">4</span>,     <span class="c-cmt"># effective batch = 16</span>
+    warmup_ratio=<span class="c-num">0.05</span>,
+    learning_rate=<span class="c-num">2e-4</span>,
+    fp16=<span class="c-bi">True</span>,
+    evaluation_strategy=<span class="c-str">"epoch"</span>,
+    save_strategy=<span class="c-str">"epoch"</span>,
+    load_best_model_at_end=<span class="c-bi">True</span>,
+    logging_steps=<span class="c-num">10</span>,
+    report_to=<span class="c-str">"wandb"</span>,               <span class="c-cmt"># track your training run</span>
+)
+
+<span class="c-cmt"># ── 6. Trainer ──</span>
+trainer = <span class="c-fn">SFTTrainer</span>(
+    model=model,
+    train_dataset=train_ds,
+    eval_dataset=eval_ds,
+    peft_config=peft_config,
+    dataset_text_field=<span class="c-str">"text"</span>,
+    max_seq_length=<span class="c-num">2048</span>,
+    tokenizer=tokenizer,
+    args=training_args,
+)
+
+trainer.<span class="c-fn">train</span>()
+trainer.<span class="c-fn">save_model</span>(<span class="c-str">"./ft-code-reviewer-final"</span>)
+
+<span class="c-cmt"># ── 7. Evaluate on held-out examples ──</span>
+<span class="c-kw">def</span> <span class="c-fn">evaluate_model</span>(model, tokenizer, test_examples):
+    results = []
+    <span class="c-kw">for</span> ex <span class="c-kw">in</span> test_examples:
+        inputs = tokenizer(
+            f<span class="c-str">"[INST] {ex['instruction']} [/INST]"</span>,
+            return_tensors=<span class="c-str">"pt"</span>
+        ).to(<span class="c-str">"cuda"</span>)
+
+        <span class="c-kw">with</span> torch.<span class="c-fn">no_grad</span>():
+            outputs = model.<span class="c-fn">generate</span>(
+                **inputs, max_new_tokens=<span class="c-num">512</span>, temperature=<span class="c-num">0.1</span>
+            )
+
+        prediction = tokenizer.<span class="c-fn">decode</span>(outputs[<span class="c-num">0</span>], skip_special_tokens=<span class="c-bi">True</span>)
+        results.<span class="c-fn">append</span>({<span class="c-str">"prediction"</span>: prediction, <span class="c-str">"expected"</span>: ex[<span class="c-str">"output"</span>]})
+
+    <span class="c-kw">return</span> results</div>
+    </div>
+  </section>
+
+  <!-- PREREQS -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">Prerequisites</div>
+      <h2>Which Days Are Relevant</h2>
+      <p>This topic builds on your 7-day curriculum. Make sure these concepts are solid before diving in.</p>
+    </div>
+    <div class="prereq-grid">
+      <div class="prereq-chip"><span class="prereq-day">Day 1</span> LLM fundamentals & how transformers work</div>
+      <div class="prereq-chip"><span class="prereq-day">Day 3</span> RAG — the alternative to fine-tuning</div>
+      <div class="prereq-chip"><span class="prereq-day">Day 7</span> Production engineering patterns</div>
+    </div>
+    <div style="margin-top:16px;font-size:13px;color:var(--muted);line-height:1.6">
+      External: Basic PyTorch tensors, GPU/CUDA setup, Hugging Face Hub account (free). You do NOT need to understand backpropagation deeply — the libraries handle it.
+    </div>
+  </section>
+
+  <!-- EXERCISES -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">Exercises</div>
+      <h2>Practice Exercises</h2>
+    </div>
+    <div class="ex-list">
+      <div class="ex-item">
+        <div class="ex-num">1</div>
+        <div class="ex-body">
+          <div class="ex-title">Fine-tune GPT-4o-mini for JSON output</div>
+          <div class="ex-desc">Create 50 training examples where the output is always a structured JSON object with the same schema. Fine-tune gpt-4o-mini via the OpenAI API. Test that the fine-tuned model reliably produces valid JSON compared to the base model.</div>
+          <span class="ex-difficulty diff-easy">Easy — no GPU needed</span>
+        </div>
+      </div>
+      <div class="ex-item">
+        <div class="ex-num">2</div>
+        <div class="ex-body">
+          <div class="ex-title">LoRA on Mistral-7B with PEFT</div>
+          <div class="ex-desc">Using Google Colab (free T4 GPU), fine-tune Mistral-7B-Instruct with LoRA on a small dataset from Hugging Face Hub. Print trainable parameter count before and after. Save the adapter to the Hub.</div>
+          <span class="ex-difficulty diff-med">Medium — Colab T4 GPU</span>
+        </div>
+      </div>
+      <div class="ex-item">
+        <div class="ex-num">3</div>
+        <div class="ex-body">
+          <div class="ex-title">Build the decision framework for your team</div>
+          <div class="ex-desc">Write a 1-page internal document for your team that outlines when to use prompting vs RAG vs fine-tuning. Use 3 concrete examples from your actual domain. This is a forcing function to internalize the decision criteria.</div>
+          <span class="ex-difficulty diff-easy">Easy — no code</span>
+        </div>
+      </div>
+      <div class="ex-item">
+        <div class="ex-num">4</div>
+        <div class="ex-body">
+          <div class="ex-title">Domain-specific code reviewer</div>
+          <div class="ex-desc">Create a fine-tuned model that reviews Python FastAPI code using your team's specific standards (security patterns, naming conventions, error handling styles). Generate 100 examples from real code reviews. Deploy and compare to base GPT-4o with a system prompt.</div>
+          <span class="ex-difficulty diff-hard">Hard — full pipeline</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer style="border-top:1px solid var(--border);padding:32px 0;margin-top:40px">
+  <div class="container" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+    <div style="font-size:13px;color:var(--muted)">Agentic AI Mastery — Sharjeel Sohail</div>
+    <a href="../days/day7.html" style="color:var(--muted);font-size:13px;text-decoration:none">← Back to Day 7</a>
+  </div>
+</footer>
+
+<script src="../bg-animation.js"></script>
+</body>
+</html>

@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Multimodal Agents — What's Next</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f; --card: #141420; --surface2: #1a1a2e; --border: #2a2a45;
+  --purple: #7c3aed; --purple-light: #a855f7; --teal: #0d9488; --green: #10b981;
+  --red: #ef4444; --yellow: #f59e0b; --text: #e2e8f0; --muted: #64748b;
+  --font: 'Inter', sans-serif; --mono: 'JetBrains Mono', monospace;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; overflow-x: hidden; }
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(13,148,136,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 10% 80%, rgba(124,58,237,0.05) 0%, transparent 60%);
+  pointer-events: none; z-index: 0;
+}
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+nav { border-bottom: 1px solid var(--border); padding: 14px 0; background: rgba(10,10,15,0.85); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; }
+.nav-inner { display: flex; align-items: center; justify-content: space-between; }
+.nav-back { color: var(--muted); font-size: 13px; text-decoration: none; transition: color 0.2s; }
+.nav-back:hover { color: var(--text); }
+.nav-tag { font-size: 13px; font-weight: 700; background: linear-gradient(90deg,#0d9488,#a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+.hero { padding: 60px 0 48px; }
+.hero-eyebrow { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.hero-icon { font-size: 40px; }
+.difficulty-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: rgba(245,158,11,0.15); color: var(--yellow); }
+.time-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+.hero h1 { font-size: clamp(28px, 5vw, 48px); font-weight: 900; letter-spacing: -2px; margin-bottom: 14px; line-height: 1.1; }
+.hero h1 span { background: linear-gradient(135deg, #0d9488, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.hero p { font-size: 16px; color: var(--muted); max-width: 620px; line-height: 1.7; }
+
+.section { padding: 56px 0; border-top: 1px solid var(--border); }
+.section-header { margin-bottom: 32px; }
+.section-num { font-size: 11px; font-weight: 700; color: var(--teal); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.section-header h2 { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 10px; }
+.section-header p { color: var(--muted); font-size: 15px; line-height: 1.6; max-width: 640px; }
+
+/* CODE BLOCKS — white-space: pre is REQUIRED */
+.code-block {
+  background: #0d1117; border: 1px solid #30363d; border-radius: 12px;
+  padding: 24px; font-family: var(--mono); font-size: 12.5px; line-height: 1.8;
+  overflow-x: auto; white-space: pre;
+}
+.code-wrap { position: relative; margin-top: 16px; }
+.code-label { position: absolute; top: -10px; left: 16px; background: var(--teal); color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.5px; }
+.c-cmt { color: #8b949e; }
+.c-kw { color: #ff7b72; }
+.c-fn { color: #d2a8ff; }
+.c-str { color: #a5d6ff; }
+.c-type { color: #ffa657; }
+.c-num { color: #f2cc60; }
+.c-bi { color: #79c0ff; }
+
+/* MODALITY GRID */
+.modality-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.modality-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+  padding: 20px 14px; text-align: center; transition: all 0.2s;
+}
+.modality-card.active { border-color: rgba(13,148,136,0.5); background: rgba(13,148,136,0.04); }
+.modality-card.coming { opacity: 0.5; }
+.mod-icon { font-size: 28px; margin-bottom: 10px; }
+.mod-name { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+.mod-support { font-size: 11px; padding: 2px 8px; border-radius: 10px; }
+.supported { background: rgba(16,185,129,0.15); color: var(--green); }
+.coming-soon { background: rgba(100,116,139,0.15); color: var(--muted); }
+
+/* PIPELINE FLOW */
+.pipeline { display: flex; flex-direction: column; gap: 0; }
+.pipeline-step { display: flex; gap: 16px; padding-bottom: 24px; position: relative; }
+.pipeline-step:last-child { padding-bottom: 0; }
+.pipeline-step::before {
+  content: ''; position: absolute; left: 19px; top: 44px; bottom: 0;
+  width: 2px; background: linear-gradient(180deg, var(--teal), transparent);
+}
+.pipeline-step:last-child::before { display: none; }
+.pip-dot {
+  width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+  background: rgba(13,148,136,0.15); border: 2px solid var(--teal);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+}
+.pip-content { flex: 1; padding-top: 8px; }
+.pip-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.pip-desc { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+/* COST TABLE */
+.cost-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.cost-table th { background: var(--surface2); padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); border-bottom: 1px solid var(--border); }
+.cost-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); }
+.cost-table tr:last-child td { border-bottom: none; }
+.cost-table tr:hover td { background: rgba(255,255,255,0.02); }
+.cost-highlight { color: var(--yellow); font-weight: 600; }
+
+/* CALLOUT */
+.callout { background: rgba(13,148,136,0.07); border: 1px solid rgba(13,148,136,0.25); border-radius: 12px; padding: 16px 20px; display: flex; gap: 12px; align-items: flex-start; margin: 20px 0; }
+.callout-icon { font-size: 18px; flex-shrink: 0; }
+.callout-text { font-size: 13px; color: var(--text); line-height: 1.6; }
+.callout-text strong { color: var(--teal); }
+.callout.warn { background: rgba(245,158,11,0.07); border-color: rgba(245,158,11,0.25); }
+.callout.warn .callout-text strong { color: var(--yellow); }
+
+/* PREREQS */
+.prereq-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.prereq-chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.prereq-day { background: var(--teal); color: white; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; }
+
+/* EXERCISES */
+.ex-list { display: flex; flex-direction: column; gap: 12px; }
+.ex-item { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; display: flex; gap: 14px; }
+.ex-num { width: 32px; height: 32px; border-radius: 50%; background: rgba(13,148,136,0.15); border: 2px solid var(--teal); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: var(--teal); flex-shrink: 0; }
+.ex-body { flex: 1; }
+.ex-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.ex-desc { font-size: 12px; color: var(--muted); line-height: 1.6; }
+.ex-difficulty { display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+.diff-easy { background: rgba(16,185,129,0.15); color: var(--green); }
+.diff-med { background: rgba(245,158,11,0.15); color: var(--yellow); }
+.diff-hard { background: rgba(239,68,68,0.15); color: var(--red); }
+
+@media(max-width:700px) {
+  .modality-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="container">
+    <div class="nav-inner">
+      <a href="../days/day7.html" class="nav-back">← Back to Day 7</a>
+      <span class="nav-tag">What's Next — Multimodal Agents</span>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+
+  <section class="hero">
+    <div class="hero-eyebrow">
+      <span class="hero-icon">👁️</span>
+      <span class="difficulty-badge">Intermediate</span>
+      <span class="time-badge">⏱ 1–2 days</span>
+    </div>
+    <h1>Multimodal<br><span>Agents</span></h1>
+    <p>Build agents that see, read, and process visual information. Combine vision APIs, document processing, and audio transcription pipelines to handle real-world unstructured data.</p>
+  </section>
+
+  <!-- SECTION 1: What Multimodal Means -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">01 — Overview</div>
+      <h2>What Multimodal Means</h2>
+      <p>Modern LLMs can process more than text. Multimodal inputs open up an entirely new class of agent capabilities — processing the visual world alongside language.</p>
+    </div>
+
+    <div class="modality-grid">
+      <div class="modality-card active">
+        <div class="mod-icon">📝</div>
+        <div class="mod-name">Text</div>
+        <span class="mod-support supported">Fully supported</span>
+      </div>
+      <div class="modality-card active">
+        <div class="mod-icon">🖼️</div>
+        <div class="mod-name">Images</div>
+        <span class="mod-support supported">Claude + GPT-4o</span>
+      </div>
+      <div class="modality-card coming">
+        <div class="mod-icon">🎵</div>
+        <div class="mod-name">Audio</div>
+        <span class="mod-support coming-soon">Via Whisper pipeline</span>
+      </div>
+      <div class="modality-card coming">
+        <div class="mod-icon">🎬</div>
+        <div class="mod-name">Video</div>
+        <span class="mod-support coming-soon">Gemini 1.5 Pro</span>
+      </div>
+    </div>
+
+    <div class="callout" style="margin-top:20px">
+      <span class="callout-icon">💡</span>
+      <div class="callout-text"><strong>What changes:</strong> The messages array now contains <em>content blocks</em> instead of just strings. Each block has a type: "text" or "image". The model processes all blocks together in a single context window.</div>
+    </div>
+
+    <div class="code-wrap" style="margin-top:8px">
+      <span class="code-label">PYTHON — Vision API Message Format</span>
+      <div class="code-block"><span class="c-kw">import</span> <span class="c-bi">anthropic</span>, base64
+
+client = <span class="c-fn">anthropic</span>.Anthropic()
+
+<span class="c-cmt"># Method 1: URL-based image (simpler, image must be publicly accessible)</span>
+response = client.messages.<span class="c-fn">create</span>(
+    model=<span class="c-str">"claude-sonnet-4-5"</span>,
+    max_tokens=<span class="c-num">1024</span>,
+    messages=[{
+        <span class="c-str">"role"</span>: <span class="c-str">"user"</span>,
+        <span class="c-str">"content"</span>: [
+            {
+                <span class="c-str">"type"</span>: <span class="c-str">"image"</span>,
+                <span class="c-str">"source"</span>: {
+                    <span class="c-str">"type"</span>: <span class="c-str">"url"</span>,
+                    <span class="c-str">"url"</span>: <span class="c-str">"https://example.com/chart.png"</span>,
+                },
+            },
+            {<span class="c-str">"type"</span>: <span class="c-str">"text"</span>, <span class="c-str">"text"</span>: <span class="c-str">"What does this chart show? Summarize the trend."</span>}
+        ],
+    }],
+)
+
+<span class="c-cmt"># Method 2: Base64-encoded image (for local files, private images)</span>
+<span class="c-kw">with</span> <span class="c-bi">open</span>(<span class="c-str">"screenshot.png"</span>, <span class="c-str">"rb"</span>) <span class="c-kw">as</span> f:
+    image_data = base64.<span class="c-fn">standard_b64encode</span>(f.<span class="c-fn">read</span>()).<span class="c-fn">decode</span>(<span class="c-str">"utf-8"</span>)
+
+response = client.messages.<span class="c-fn">create</span>(
+    model=<span class="c-str">"claude-sonnet-4-5"</span>,
+    max_tokens=<span class="c-num">1024</span>,
+    messages=[{
+        <span class="c-str">"role"</span>: <span class="c-str">"user"</span>,
+        <span class="c-str">"content"</span>: [
+            {
+                <span class="c-str">"type"</span>: <span class="c-str">"image"</span>,
+                <span class="c-str">"source"</span>: {
+                    <span class="c-str">"type"</span>: <span class="c-str">"base64"</span>,
+                    <span class="c-str">"media_type"</span>: <span class="c-str">"image/png"</span>,
+                    <span class="c-str">"data"</span>: image_data,
+                },
+            },
+            {<span class="c-str">"type"</span>: <span class="c-str">"text"</span>, <span class="c-str">"text"</span>: <span class="c-str">"Describe any bugs or UI issues you see."</span>}
+        ],
+    }],
+)
+<span class="c-fn">print</span>(response.content[<span class="c-num">0</span>].text)</div>
+    </div>
+  </section>
+
+  <!-- SECTION 2: Document Processing Agent -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">02 — Document Processing</div>
+      <h2>Document Processing Agent</h2>
+      <p>Extract structured data from PDFs — invoices, forms, reports. The pipeline: PDF → page images → Claude Vision → structured JSON. No OCR library needed.</p>
+    </div>
+
+    <div class="pipeline">
+      <div class="pipeline-step">
+        <div class="pip-dot">📄</div>
+        <div class="pip-content">
+          <div class="pip-title">Input: PDF file</div>
+          <div class="pip-desc">Any PDF — invoice, contract, report. Can be scanned (image-based) or digital.</div>
+        </div>
+      </div>
+      <div class="pipeline-step">
+        <div class="pip-dot">🖼️</div>
+        <div class="pip-content">
+          <div class="pip-title">Convert pages to images</div>
+          <div class="pip-desc">pdf2image library: each page becomes a high-res PNG. Resolution matters — 150 DPI for text, 300 DPI for dense tables.</div>
+        </div>
+      </div>
+      <div class="pipeline-step">
+        <div class="pip-dot">👁️</div>
+        <div class="pip-content">
+          <div class="pip-title">Send each page to Claude Vision</div>
+          <div class="pip-desc">Pass the page image + extraction schema as instructions. Claude reads layout, tables, checkboxes — things OCR misses.</div>
+        </div>
+      </div>
+      <div class="pipeline-step">
+        <div class="pip-dot">🔗</div>
+        <div class="pip-content">
+          <div class="pip-title">Merge & validate across pages</div>
+          <div class="pip-desc">Combine per-page results. Validate required fields are present. Handle multi-page tables that span pages.</div>
+        </div>
+      </div>
+      <div class="pipeline-step">
+        <div class="pip-dot">✅</div>
+        <div class="pip-content">
+          <div class="pip-title">Output: Structured JSON</div>
+          <div class="pip-desc">Type-validated Pydantic model. Post to your API or write to database directly.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="code-wrap" style="margin-top:28px">
+      <span class="code-label">PYTHON — Invoice Extraction Agent</span>
+      <div class="code-block"><span class="c-kw">import</span> <span class="c-bi">asyncio</span>, base64
+<span class="c-kw">from</span> <span class="c-bi">pathlib</span> <span class="c-kw">import</span> Path
+<span class="c-kw">from</span> <span class="c-bi">typing</span> <span class="c-kw">import</span> Optional
+<span class="c-kw">import</span> <span class="c-bi">anthropic</span>
+<span class="c-kw">from</span> <span class="c-bi">pdf2image</span> <span class="c-kw">import</span> convert_from_path
+<span class="c-kw">from</span> <span class="c-bi">pydantic</span> <span class="c-kw">import</span> BaseModel
+<span class="c-kw">import</span> <span class="c-bi">json</span>, io
+
+<span class="c-kw">class</span> <span class="c-type">InvoiceData</span>(<span class="c-bi">BaseModel</span>):
+    invoice_number: <span class="c-bi">str</span>
+    vendor_name: <span class="c-bi">str</span>
+    date: <span class="c-bi">str</span>
+    total_amount: <span class="c-bi">float</span>
+    line_items: <span class="c-bi">list</span>[<span class="c-bi">dict</span>]
+    tax_amount: Optional[<span class="c-bi">float</span>] = <span class="c-bi">None</span>
+
+<span class="c-kw">def</span> <span class="c-fn">pdf_page_to_base64</span>(page_image) -> <span class="c-bi">str</span>:
+    buf = io.<span class="c-fn">BytesIO</span>()
+    page_image.<span class="c-fn">save</span>(buf, format=<span class="c-str">"PNG"</span>)
+    <span class="c-kw">return</span> base64.<span class="c-fn">standard_b64encode</span>(buf.<span class="c-fn">getvalue</span>()).<span class="c-fn">decode</span>()
+
+EXTRACTION_PROMPT = <span class="c-str">"""Extract all invoice data from this image.
+Return ONLY valid JSON matching this schema:
+{
+  "invoice_number": "string",
+  "vendor_name": "string",
+  "date": "YYYY-MM-DD",
+  "total_amount": number,
+  "line_items": [{"description": "str", "quantity": num, "unit_price": num, "total": num}],
+  "tax_amount": number or null
+}
+If a field is not visible, use null. Do not add any text outside the JSON."""</span>
+
+<span class="c-kw">async def</span> <span class="c-fn">extract_invoice_page</span>(
+    client: anthropic.AsyncAnthropic,
+    page_b64: <span class="c-bi">str</span>,
+    page_num: <span class="c-bi">int</span>
+) -> <span class="c-bi">dict</span>:
+    response = <span class="c-kw">await</span> client.messages.<span class="c-fn">create</span>(
+        model=<span class="c-str">"claude-sonnet-4-5"</span>,
+        max_tokens=<span class="c-num">2048</span>,
+        messages=[{
+            <span class="c-str">"role"</span>: <span class="c-str">"user"</span>,
+            <span class="c-str">"content"</span>: [
+                {<span class="c-str">"type"</span>: <span class="c-str">"image"</span>, <span class="c-str">"source"</span>: {
+                    <span class="c-str">"type"</span>: <span class="c-str">"base64"</span>, <span class="c-str">"media_type"</span>: <span class="c-str">"image/png"</span>, <span class="c-str">"data"</span>: page_b64
+                }},
+                {<span class="c-str">"type"</span>: <span class="c-str">"text"</span>, <span class="c-str">"text"</span>: EXTRACTION_PROMPT},
+            ],
+        }],
+    )
+    <span class="c-kw">return</span> json.<span class="c-fn">loads</span>(response.content[<span class="c-num">0</span>].text)
+
+<span class="c-kw">async def</span> <span class="c-fn">extract_invoice</span>(pdf_path: <span class="c-bi">str</span>) -> <span class="c-type">InvoiceData</span>:
+    client = anthropic.<span class="c-fn">AsyncAnthropic</span>()
+    pages = <span class="c-fn">convert_from_path</span>(pdf_path, dpi=<span class="c-num">150</span>)
+
+    <span class="c-cmt"># Process all pages concurrently</span>
+    tasks = [
+        <span class="c-fn">extract_invoice_page</span>(client, <span class="c-fn">pdf_page_to_base64</span>(page), i)
+        <span class="c-kw">for</span> i, page <span class="c-kw">in</span> <span class="c-bi">enumerate</span>(pages)
+    ]
+    page_results = <span class="c-kw">await</span> asyncio.<span class="c-fn">gather</span>(*tasks)
+
+    <span class="c-cmt"># Merge: first page has header, later pages may have more line items</span>
+    merged = page_results[<span class="c-num">0</span>]
+    <span class="c-kw">for</span> result <span class="c-kw">in</span> page_results[<span class="c-num">1</span>:]:
+        <span class="c-kw">if</span> result.get(<span class="c-str">"line_items"</span>):
+            merged[<span class="c-str">"line_items"</span>].<span class="c-fn">extend</span>(result[<span class="c-str">"line_items"</span>])
+
+    <span class="c-kw">return</span> <span class="c-type">InvoiceData</span>(**merged)
+
+<span class="c-cmt"># Usage</span>
+invoice = asyncio.<span class="c-fn">run</span>(<span class="c-fn">extract_invoice</span>(<span class="c-str">"invoice.pdf"</span>))
+<span class="c-fn">print</span>(invoice.<span class="c-fn">model_dump_json</span>(indent=<span class="c-num">2</span>))</div>
+    </div>
+  </section>
+
+  <!-- SECTION 3: Screenshot Analysis Agent -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">03 — Screenshot Analysis</div>
+      <h2>Screenshot Analysis Agent</h2>
+      <p>An agent that takes browser screenshots, analyzes the UI for issues, and produces a structured accessibility/bug report. Useful for automated QA pipelines.</p>
+    </div>
+
+    <div class="code-wrap">
+      <span class="code-label">PYTHON — UI Bug Detection Agent</span>
+      <div class="code-block"><span class="c-kw">import</span> <span class="c-bi">asyncio</span>, base64
+<span class="c-kw">from</span> <span class="c-bi">playwright.async_api</span> <span class="c-kw">import</span> async_playwright
+<span class="c-kw">from</span> <span class="c-bi">anthropic</span> <span class="c-kw">import</span> AsyncAnthropic
+<span class="c-kw">from</span> <span class="c-bi">pydantic</span> <span class="c-kw">import</span> BaseModel
+<span class="c-kw">from</span> <span class="c-bi">typing</span> <span class="c-kw">import</span> Literal
+<span class="c-kw">import</span> <span class="c-bi">json</span>
+
+<span class="c-kw">class</span> <span class="c-type">UIIssue</span>(<span class="c-bi">BaseModel</span>):
+    severity: Literal[<span class="c-str">"critical"</span>, <span class="c-str">"high"</span>, <span class="c-str">"medium"</span>, <span class="c-str">"low"</span>]
+    category: Literal[<span class="c-str">"accessibility"</span>, <span class="c-str">"layout"</span>, <span class="c-str">"content"</span>, <span class="c-str">"performance"</span>]
+    description: <span class="c-bi">str</span>
+    element: <span class="c-bi">str</span>            <span class="c-cmt"># CSS selector or description</span>
+    suggestion: <span class="c-bi">str</span>
+
+UI_ANALYSIS_PROMPT = <span class="c-str">"""Analyze this screenshot for UI/UX issues.
+Check for:
+1. Accessibility: missing alt text, poor contrast, missing labels
+2. Layout: overflow, misalignment, broken responsive design
+3. Content: truncated text, missing images, error states visible
+4. Usability: confusing hierarchy, unclear CTAs
+
+Return JSON array of issues:
+[{"severity": "critical|high|medium|low", "category": "accessibility|layout|content|performance",
+  "description": "what's wrong", "element": "which element", "suggestion": "how to fix"}]
+
+Return empty array [] if no issues found."""</span>
+
+<span class="c-kw">async def</span> <span class="c-fn">analyze_page</span>(url: <span class="c-bi">str</span>) -> <span class="c-bi">list</span>[<span class="c-type">UIIssue</span>]:
+    client = <span class="c-fn">AsyncAnthropic</span>()
+    issues = []
+
+    <span class="c-kw">async with</span> <span class="c-fn">async_playwright</span>() <span class="c-kw">as</span> p:
+        browser = <span class="c-kw">await</span> p.chromium.<span class="c-fn">launch</span>()
+        page = <span class="c-kw">await</span> browser.<span class="c-fn">new_page</span>(viewport={<span class="c-str">"width"</span>: <span class="c-num">1280</span>, <span class="c-str">"height"</span>: <span class="c-num">800</span>})
+        <span class="c-kw">await</span> page.<span class="c-fn">goto</span>(url, wait_until=<span class="c-str">"networkidle"</span>)
+
+        <span class="c-cmt"># Also check mobile viewport</span>
+        <span class="c-kw">for</span> viewport <span class="c-kw">in</span> [
+            {<span class="c-str">"width"</span>: <span class="c-num">1280</span>, <span class="c-str">"height"</span>: <span class="c-num">800</span>},
+            {<span class="c-str">"width"</span>: <span class="c-num">390</span>,  <span class="c-str">"height"</span>: <span class="c-num">844</span>},   <span class="c-cmt"># iPhone 14 Pro</span>
+        ]:
+            <span class="c-kw">await</span> page.<span class="c-fn">set_viewport_size</span>(viewport)
+            screenshot = <span class="c-kw">await</span> page.<span class="c-fn">screenshot</span>(full_page=<span class="c-bi">True</span>)
+            img_b64 = base64.<span class="c-fn">standard_b64encode</span>(screenshot).<span class="c-fn">decode</span>()
+
+            response = <span class="c-kw">await</span> client.messages.<span class="c-fn">create</span>(
+                model=<span class="c-str">"claude-sonnet-4-5"</span>,
+                max_tokens=<span class="c-num">2048</span>,
+                messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: [
+                    {<span class="c-str">"type"</span>: <span class="c-str">"image"</span>, <span class="c-str">"source"</span>: {
+                        <span class="c-str">"type"</span>: <span class="c-str">"base64"</span>, <span class="c-str">"media_type"</span>: <span class="c-str">"image/png"</span>, <span class="c-str">"data"</span>: img_b64,
+                    }},
+                    {<span class="c-str">"type"</span>: <span class="c-str">"text"</span>, <span class="c-str">"text"</span>: f<span class="c-str">"Viewport: {viewport['width']}x{viewport['height']}. {UI_ANALYSIS_PROMPT}"</span>},
+                ]}],
+            )
+
+            page_issues = json.<span class="c-fn">loads</span>(response.content[<span class="c-num">0</span>].text)
+            issues.<span class="c-fn">extend</span>([<span class="c-type">UIIssue</span>(**i) <span class="c-kw">for</span> i <span class="c-kw">in</span> page_issues])
+
+        <span class="c-kw">await</span> browser.<span class="c-fn">close</span>()
+
+    <span class="c-cmt"># Sort by severity</span>
+    severity_order = {<span class="c-str">"critical"</span>: <span class="c-num">0</span>, <span class="c-str">"high"</span>: <span class="c-num">1</span>, <span class="c-str">"medium"</span>: <span class="c-num">2</span>, <span class="c-str">"low"</span>: <span class="c-num">3</span>}
+    issues.<span class="c-fn">sort</span>(key=<span class="c-kw">lambda</span> x: severity_order[x.severity])
+    <span class="c-kw">return</span> issues</div>
+    </div>
+  </section>
+
+  <!-- SECTION 4: Audio Pipeline -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">04 — Audio Pipeline</div>
+      <h2>Audio with Whisper → Claude Pipeline</h2>
+      <p>Claude doesn't natively process audio yet, but you can build a powerful pipeline: transcribe with OpenAI Whisper, then analyze/summarize with Claude. Extremely useful for meeting notes, podcast analysis, and customer call processing.</p>
+    </div>
+
+    <div class="code-wrap">
+      <span class="code-label">PYTHON — Audio Transcription + Analysis Pipeline</span>
+      <div class="code-block"><span class="c-kw">import</span> <span class="c-bi">asyncio</span>
+<span class="c-kw">import</span> <span class="c-bi">openai</span>
+<span class="c-kw">import</span> <span class="c-bi">anthropic</span>
+<span class="c-kw">from</span> <span class="c-bi">pathlib</span> <span class="c-kw">import</span> Path
+<span class="c-kw">from</span> <span class="c-bi">pydantic</span> <span class="c-kw">import</span> BaseModel
+<span class="c-kw">from</span> <span class="c-bi">typing</span> <span class="c-kw">import</span> Optional
+
+<span class="c-kw">class</span> <span class="c-type">MeetingNotes</span>(<span class="c-bi">BaseModel</span>):
+    summary: <span class="c-bi">str</span>
+    action_items: <span class="c-bi">list</span>[<span class="c-bi">str</span>]
+    decisions: <span class="c-bi">list</span>[<span class="c-bi">str</span>]
+    participants_mentioned: <span class="c-bi">list</span>[<span class="c-bi">str</span>]
+    follow_up_date: Optional[<span class="c-bi">str</span>]
+
+<span class="c-kw">async def</span> <span class="c-fn">transcribe_audio</span>(audio_path: <span class="c-bi">str</span>) -> <span class="c-bi">str</span>:
+    <span class="c-str">"""Transcribe using OpenAI Whisper API."""</span>
+    client = openai.<span class="c-fn">AsyncOpenAI</span>()
+    <span class="c-kw">with</span> <span class="c-bi">open</span>(audio_path, <span class="c-str">"rb"</span>) <span class="c-kw">as</span> audio_file:
+        transcript = <span class="c-kw">await</span> client.audio.transcriptions.<span class="c-fn">create</span>(
+            model=<span class="c-str">"whisper-1"</span>,
+            file=audio_file,
+            response_format=<span class="c-str">"verbose_json"</span>,  <span class="c-cmt"># includes timestamps + segments</span>
+            language=<span class="c-str">"en"</span>,
+        )
+    <span class="c-kw">return</span> transcript.text
+
+<span class="c-kw">async def</span> <span class="c-fn">analyze_transcript</span>(transcript: <span class="c-bi">str</span>, context: <span class="c-bi">str</span> = <span class="c-str">""</span>) -> <span class="c-type">MeetingNotes</span>:
+    <span class="c-str">"""Analyze transcript with Claude and extract structured notes."""</span>
+    claude = anthropic.<span class="c-fn">AsyncAnthropic</span>()
+
+    prompt = f<span class="c-str">"""Analyze this meeting transcript and extract structured information.
+{f"Context: {context}" if context else ""}
+
+TRANSCRIPT:
+{transcript}
+
+Return JSON with this exact structure:
+{{
+  "summary": "2-3 sentence executive summary",
+  "action_items": ["who: what by when", ...],
+  "decisions": ["decision made", ...],
+  "participants_mentioned": ["name", ...],
+  "follow_up_date": "YYYY-MM-DD or null"
+}}"""</span>
+
+    response = <span class="c-kw">await</span> claude.messages.<span class="c-fn">create</span>(
+        model=<span class="c-str">"claude-sonnet-4-5"</span>,
+        max_tokens=<span class="c-num">2048</span>,
+        messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: prompt}],
+    )
+
+    <span class="c-kw">import</span> <span class="c-bi">json</span>
+    data = json.<span class="c-fn">loads</span>(response.content[<span class="c-num">0</span>].text)
+    <span class="c-kw">return</span> <span class="c-type">MeetingNotes</span>(**data)
+
+<span class="c-kw">async def</span> <span class="c-fn">process_meeting_recording</span>(audio_path: <span class="c-bi">str</span>) -> <span class="c-type">MeetingNotes</span>:
+    <span class="c-fn">print</span>(<span class="c-str">"Transcribing audio..."</span>)
+    transcript = <span class="c-kw">await</span> <span class="c-fn">transcribe_audio</span>(audio_path)
+
+    <span class="c-fn">print</span>(f<span class="c-str">"Transcript length: {len(transcript.split())} words"</span>)
+    <span class="c-fn">print</span>(<span class="c-str">"Analyzing with Claude..."</span>)
+    notes = <span class="c-kw">await</span> <span class="c-fn">analyze_transcript</span>(transcript)
+
+    <span class="c-kw">return</span> notes
+
+<span class="c-cmt"># Usage</span>
+notes = asyncio.<span class="c-fn">run</span>(<span class="c-fn">process_meeting_recording</span>(<span class="c-str">"meeting.mp3"</span>))
+<span class="c-fn">print</span>(<span class="c-str">"Summary:"</span>, notes.summary)
+<span class="c-fn">print</span>(<span class="c-str">"Action items:"</span>, notes.action_items)</div>
+    </div>
+  </section>
+
+  <!-- SECTION 5: Production Considerations -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">05 — Production</div>
+      <h2>Production Considerations</h2>
+      <p>Vision APIs are powerful but have meaningful cost and latency implications. Optimize before scaling to production.</p>
+    </div>
+
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden">
+      <table class="cost-table">
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>Cost per Image</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Claude Haiku 3.5</td>
+            <td class="cost-highlight">~$0.0006</td>
+            <td>Fast, cheap. Good for simple classification</td>
+          </tr>
+          <tr>
+            <td>Claude Sonnet 4.5</td>
+            <td class="cost-highlight">~$0.0048</td>
+            <td>Best quality/cost. Recommended for extraction</td>
+          </tr>
+          <tr>
+            <td>GPT-4o</td>
+            <td class="cost-highlight">~$0.0051</td>
+            <td>Comparable to Sonnet. Different strengths</td>
+          </tr>
+          <tr>
+            <td>Whisper (audio)</td>
+            <td class="cost-highlight">$0.006/min</td>
+            <td>Per minute of audio, not per request</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout warn" style="margin-top:20px">
+      <span class="callout-icon">💰</span>
+      <div class="callout-text"><strong>Image sizing:</strong> Claude counts image tokens by resolution. A 1568×1568 image costs ~1600 tokens. Resize images before sending — most use cases don't need full resolution. Target 800px on the longer edge for text/document analysis.</div>
+    </div>
+
+    <div class="code-wrap" style="margin-top:8px">
+      <span class="code-label">PYTHON — Image Optimization Before API Call</span>
+      <div class="code-block"><span class="c-kw">from</span> <span class="c-bi">PIL</span> <span class="c-kw">import</span> Image
+<span class="c-kw">import</span> <span class="c-bi">io</span>, base64
+
+<span class="c-kw">def</span> <span class="c-fn">optimize_image</span>(
+    image_path: <span class="c-bi">str</span>,
+    max_dimension: <span class="c-bi">int</span> = <span class="c-num">1024</span>,
+    quality: <span class="c-bi">int</span> = <span class="c-num">85</span>,
+) -> <span class="c-bi">str</span>:
+    <span class="c-str">"""Resize + compress image, return base64. Reduces token cost significantly."""</span>
+    img = Image.<span class="c-fn">open</span>(image_path)
+
+    <span class="c-cmt"># Convert RGBA to RGB if needed</span>
+    <span class="c-kw">if</span> img.mode == <span class="c-str">"RGBA"</span>:
+        img = img.<span class="c-fn">convert</span>(<span class="c-str">"RGB"</span>)
+
+    <span class="c-cmt"># Resize if larger than max_dimension</span>
+    <span class="c-kw">if</span> <span class="c-bi">max</span>(img.size) > max_dimension:
+        ratio = max_dimension / <span class="c-bi">max</span>(img.size)
+        new_size = (<span class="c-bi">int</span>(img.width * ratio), <span class="c-bi">int</span>(img.height * ratio))
+        img = img.<span class="c-fn">resize</span>(new_size, Image.LANCZOS)
+
+    buf = io.<span class="c-fn">BytesIO</span>()
+    img.<span class="c-fn">save</span>(buf, format=<span class="c-str">"JPEG"</span>, quality=quality, optimize=<span class="c-bi">True</span>)
+    <span class="c-kw">return</span> base64.<span class="c-fn">standard_b64encode</span>(buf.<span class="c-fn">getvalue</span>()).<span class="c-fn">decode</span>()
+
+<span class="c-cmt"># Cache image analysis results (images don't change)</span>
+<span class="c-kw">import</span> <span class="c-bi">hashlib</span>
+<span class="c-kw">from</span> <span class="c-bi">functools</span> <span class="c-kw">import</span> lru_cache
+
+<span class="c-kw">def</span> <span class="c-fn">image_hash</span>(image_bytes: <span class="c-bi">bytes</span>) -> <span class="c-bi">str</span>:
+    <span class="c-kw">return</span> hashlib.<span class="c-fn">sha256</span>(image_bytes).<span class="c-fn">hexdigest</span>()
+
+<span class="c-cmt"># In production: use Redis cache with image hash as key</span>
+<span class="c-cmt"># cache[image_hash] = analysis_result</span>
+<span class="c-cmt"># If same invoice uploaded twice, skip the API call</span></div>
+    </div>
+  </section>
+
+  <!-- PREREQS -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">Prerequisites</div>
+      <h2>Which Days Are Relevant</h2>
+    </div>
+    <div class="prereq-grid">
+      <div class="prereq-chip"><span class="prereq-day">Day 1</span> Anthropic SDK messages API</div>
+      <div class="prereq-chip"><span class="prereq-day">Day 2</span> Tool use & structured output patterns</div>
+      <div class="prereq-chip"><span class="prereq-day">Day 5</span> Async pipelines with asyncio</div>
+      <div class="prereq-chip"><span class="prereq-day">Day 7</span> Production cost optimization</div>
+    </div>
+    <div style="margin-top:16px;font-size:13px;color:var(--muted);line-height:1.6">
+      External: Playwright (browser automation), pdf2image + poppler (PDF processing), Pillow (image processing). All installable via pip.
+    </div>
+  </section>
+
+  <!-- EXERCISES -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">Exercises</div>
+      <h2>Practice Exercises</h2>
+    </div>
+    <div class="ex-list">
+      <div class="ex-item">
+        <div class="ex-num">1</div>
+        <div class="ex-body">
+          <div class="ex-title">Chart data extraction</div>
+          <div class="ex-desc">Take a screenshot of any chart from a website. Send it to Claude Vision and ask it to extract the underlying data as a JSON array. Then plot the extracted data with matplotlib and compare to the original.</div>
+          <span class="ex-difficulty diff-easy">Easy — 30 minutes</span>
+        </div>
+      </div>
+      <div class="ex-item">
+        <div class="ex-num">2</div>
+        <div class="ex-body">
+          <div class="ex-title">Receipt processing microservice</div>
+          <div class="ex-desc">Build a FastAPI endpoint that accepts an image upload (receipt photo) and returns structured JSON: merchant, date, items with prices, total, tax. Add input validation and handle edge cases (blurry images, partial receipts).</div>
+          <span class="ex-difficulty diff-med">Medium — 2 hours</span>
+        </div>
+      </div>
+      <div class="ex-item">
+        <div class="ex-num">3</div>
+        <div class="ex-body">
+          <div class="ex-title">Automated meeting notes pipeline</div>
+          <div class="ex-desc">Record a 5-minute voice memo. Run it through Whisper → Claude. Output a Markdown document with summary, action items, and decisions. Set it up so the whole pipeline runs with one command: python meeting_notes.py recording.mp3.</div>
+          <span class="ex-difficulty diff-med">Medium — 3 hours</span>
+        </div>
+      </div>
+      <div class="ex-item">
+        <div class="ex-num">4</div>
+        <div class="ex-body">
+          <div class="ex-title">Visual regression testing agent</div>
+          <div class="ex-desc">Build a CI tool that screenshots a web app before and after a code change, sends both screenshots to Claude, and generates a diff report of visible changes. Integrates with GitHub Actions. Flag changes above a severity threshold as PR failures.</div>
+          <span class="ex-difficulty diff-hard">Hard — full day</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer style="border-top:1px solid var(--border);padding:32px 0;margin-top:40px">
+  <div class="container" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+    <div style="font-size:13px;color:var(--muted)">Agentic AI Mastery — Sharjeel Sohail</div>
+    <a href="../days/day7.html" style="color:var(--muted);font-size:13px;text-decoration:none">← Back to Day 7</a>
+  </div>
+</footer>
+
+<script src="../bg-animation.js"></script>
+</body>
+</html>

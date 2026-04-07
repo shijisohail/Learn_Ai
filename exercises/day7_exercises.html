@@ -1,0 +1,2671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 7 Exercises — Capstone: Code Review Agent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0a0a0f;
+  --card: #141420;
+  --surface2: #1a1a2e;
+  --border: #2a2a45;
+  --purple: #7c3aed;
+  --purple-light: #a855f7;
+  --teal: #0d9488;
+  --green: #10b981;
+  --yellow: #f59e0b;
+  --red: #ef4444;
+  --text: #e2e8f0;
+  --muted: #64748b;
+  --font: 'Inter', sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+  --gold: #f59e0b;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 10%, rgba(245,158,11,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(124,58,237,0.06) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 24px;
+  position: relative;
+  z-index: 1;
+}
+
+/* HEADER */
+header {
+  border-bottom: 1px solid var(--border);
+  padding: 14px 0;
+  position: sticky;
+  top: 0;
+  background: rgba(10,10,15,0.9);
+  backdrop-filter: blur(12px);
+  z-index: 100;
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.nav-btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--text);
+  transition: all 0.2s;
+  font-family: var(--font);
+}
+.nav-btn:hover { background: var(--card); transform: translateY(-1px); border-color: rgba(124,58,237,0.4); }
+.nav-btn.home { border-color: rgba(124,58,237,0.3); color: var(--purple-light); }
+.nav-btn.complete { border-color: rgba(245,158,11,0.4); color: var(--gold); }
+.nav-separator { color: var(--muted); font-size: 12px; }
+
+.header-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: rgba(245,158,11,0.12);
+  border: 1px solid rgba(245,158,11,0.3);
+  color: var(--gold);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* HERO */
+.hero {
+  padding: 56px 0 40px;
+  text-align: center;
+}
+
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: 20px;
+  background: rgba(245,158,11,0.1);
+  border: 1px solid rgba(245,158,11,0.25);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+  animation: fadeDown 0.5s ease forwards;
+}
+
+.hero-eyebrow::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--gold);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.7); }
+}
+
+h1.hero-title {
+  font-size: clamp(28px, 5vw, 52px);
+  font-weight: 900;
+  letter-spacing: -2px;
+  line-height: 1.05;
+  margin-bottom: 16px;
+  animation: fadeDown 0.5s 0.1s ease forwards;
+  opacity: 0;
+}
+
+.gradient-text-gold {
+  background: linear-gradient(135deg, #f59e0b 0%, #f97316 50%, #ef4444 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-subtitle {
+  font-size: 16px;
+  color: var(--muted);
+  margin: 0 auto 32px;
+  line-height: 1.6;
+  animation: fadeDown 0.5s 0.2s ease forwards;
+  opacity: 0;
+}
+
+/* PROGRESS BAR */
+.day-progress {
+  max-width: 560px;
+  margin: 0 auto 48px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 24px;
+  animation: fadeDown 0.5s 0.3s ease forwards;
+  opacity: 0;
+}
+
+.dp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.dp-pct {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--gold);
+}
+
+.dp-track {
+  height: 6px;
+  background: var(--surface2);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+.dp-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--gold), #f97316);
+  transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+  width: 0%;
+}
+
+.dp-exercises {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.ex-dot {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--surface2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.25s;
+}
+.ex-dot.done {
+  background: rgba(245,158,11,0.15);
+  border-color: var(--gold);
+  color: var(--gold);
+}
+.ex-dot:hover { border-color: var(--gold); color: var(--gold); }
+
+/* EXERCISE CARDS */
+.exercises-list {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  margin-bottom: 80px;
+}
+
+.exercise-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  overflow: hidden;
+  transition: border-color 0.25s;
+  animation: fadeUp 0.5s ease forwards;
+  opacity: 0;
+}
+
+.exercise-card.done { border-color: rgba(16,185,129,0.4); }
+.exercise-card:not(.done):hover { border-color: rgba(245,158,11,0.3); }
+.exercise-card.boss { border-color: rgba(239,68,68,0.3); }
+.exercise-card.boss.done { border-color: rgba(16,185,129,0.4); }
+
+.card-accent-bar {
+  height: 3px;
+  background: linear-gradient(90deg, var(--gold), #f97316);
+}
+.card-accent-bar.green { background: linear-gradient(90deg, var(--green), var(--teal)); }
+.card-accent-bar.purple { background: linear-gradient(90deg, var(--purple), var(--purple-light)); }
+.card-accent-bar.teal { background: linear-gradient(90deg, var(--teal), var(--green)); }
+.card-accent-bar.red { background: linear-gradient(90deg, var(--red), #f97316); }
+
+.card-header {
+  padding: 24px 28px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.card-header-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  flex: 1;
+}
+
+.ex-number {
+  width: 48px; height: 48px;
+  border-radius: 14px;
+  background: var(--surface2);
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--gold);
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+.done .ex-number { background: rgba(16,185,129,0.1); border-color: var(--green); color: var(--green); }
+.boss .ex-number { color: var(--red); border-color: rgba(239,68,68,0.4); background: rgba(239,68,68,0.05); }
+
+.ex-meta { flex: 1; }
+.ex-meta h2 {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  margin-bottom: 6px;
+}
+.ex-meta p {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+
+.ex-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.badge.diff-hard { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); color: #f87171; }
+.badge.diff-medium { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.25); color: #fbbf24; }
+.badge.diff-easy { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.25); color: #34d399; }
+.badge.boss-badge { background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.35); color: #fc8181; }
+.badge.topic { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); }
+
+.card-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.complete-btn {
+  padding: 7px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(16,185,129,0.3);
+  background: rgba(16,185,129,0.08);
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: var(--font);
+  white-space: nowrap;
+}
+.complete-btn:hover { background: rgba(16,185,129,0.15); border-color: var(--green); }
+.complete-btn.marked { background: rgba(16,185,129,0.2); border-color: var(--green); }
+
+.chevron {
+  color: var(--muted);
+  font-size: 18px;
+  transition: transform 0.25s;
+}
+.open .chevron { transform: rotate(90deg); }
+
+/* CARD BODY */
+.card-body {
+  display: none;
+  border-top: 1px solid var(--border);
+}
+.card-body.open { display: block; }
+.card-body-inner { padding: 28px; }
+
+/* SECTION LABELS */
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--muted);
+  margin-bottom: 16px;
+  margin-top: 28px;
+}
+.section-label:first-child { margin-top: 0; }
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.section-label .sl-icon { font-size: 14px; }
+
+/* VISUAL EXPLAINER */
+.visual-explainer {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.ve-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gold);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* DIFF VISUALIZER */
+.diff-view {
+  background: #0d0d1a;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.7;
+  margin-bottom: 16px;
+}
+.diff-header-bar {
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 16px;
+  font-size: 11px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.diff-file-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--gold);
+}
+.diff-line {
+  padding: 1px 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  position: relative;
+}
+.diff-line.added { background: rgba(16,185,129,0.08); }
+.diff-line.removed { background: rgba(239,68,68,0.08); }
+.diff-line.hunk { background: rgba(13,148,136,0.08); color: var(--teal); }
+.diff-line.meta { color: var(--muted); }
+.diff-marker {
+  width: 14px;
+  flex-shrink: 0;
+  font-weight: 700;
+  font-size: 13px;
+}
+.diff-line.added .diff-marker { color: var(--green); }
+.diff-line.removed .diff-marker { color: var(--red); }
+.diff-line.hunk .diff-marker { color: var(--teal); }
+.diff-code { flex: 1; white-space: pre; }
+.diff-annotation {
+  font-family: var(--font);
+  font-size: 11px;
+  color: var(--muted);
+  font-style: italic;
+  margin-left: 8px;
+  white-space: nowrap;
+}
+.diff-annotation.warn { color: #fbbf24; }
+.diff-annotation.danger { color: var(--red); }
+
+/* FLOW DIAGRAM */
+.flow-diagram {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex-wrap: wrap;
+  margin: 16px 0;
+}
+.flow-node {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  min-width: 100px;
+  transition: border-color 0.2s;
+}
+.flow-node.active { border-color: var(--gold); color: var(--gold); }
+.flow-node.input { border-color: rgba(124,58,237,0.4); color: var(--purple-light); }
+.flow-node.output { border-color: rgba(16,185,129,0.4); color: var(--green); }
+.flow-node.agent { border-color: rgba(13,148,136,0.4); color: #2dd4bf; }
+.flow-node.critic { border-color: rgba(245,158,11,0.4); color: var(--gold); }
+.flow-node.boss { border-color: rgba(239,68,68,0.35); color: #f87171; }
+.flow-arrow {
+  color: var(--muted);
+  font-size: 18px;
+  padding: 0 6px;
+  flex-shrink: 0;
+}
+.flow-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.flow-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.flow-parallel {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+.flow-merge-arrow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 20px;
+  padding: 0 6px;
+}
+
+/* SCHEMA DIAGRAM */
+.schema-box {
+  background: #0d0d1a;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 20px;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.8;
+  margin-bottom: 16px;
+}
+.schema-class { color: var(--purple-light); font-weight: 600; }
+.schema-field { color: #e2e8f0; }
+.schema-type { color: var(--teal); }
+.schema-comment { color: var(--muted); }
+.schema-string { color: var(--green); }
+.schema-punc { color: var(--muted); }
+
+/* CODE BLOCK */
+.code-block {
+  background: #0d0d1a;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+.code-block-header {
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.code-lang {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+}
+.code-dots {
+  display: flex;
+  gap: 5px;
+}
+.code-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+}
+.code-dot:nth-child(1) { background: #ff5f57; }
+.code-dot:nth-child(2) { background: #febc2e; }
+.code-dot:nth-child(3) { background: #28c840; }
+.code-body {
+  padding: 18px 20px;
+  overflow-x: auto;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.75;
+  white-space: pre;
+}
+
+/* Syntax highlighting */
+.kw { color: #c792ea; }
+.fn { color: #82aaff; }
+.st { color: #c3e88d; }
+.cm { color: #546e7a; font-style: italic; }
+.num { color: #f78c6c; }
+.dec { color: var(--gold); }
+.tp { color: #2dd4bf; }
+.op { color: #89ddff; }
+.py { color: var(--purple-light); }
+
+/* REGEX TABLE */
+.regex-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--mono);
+  font-size: 12px;
+  margin-bottom: 20px;
+}
+.regex-table th {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  padding: 8px 14px;
+  text-align: left;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+  font-family: var(--font);
+}
+.regex-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  vertical-align: top;
+}
+.regex-table tr:hover td { background: rgba(255,255,255,0.02); }
+.regex-pattern { color: var(--gold); white-space: pre; }
+.regex-desc { color: var(--muted); font-family: var(--font); font-size: 12px; }
+.regex-example { color: var(--green); white-space: pre; }
+
+/* TASK BOX */
+.task-box {
+  background: rgba(124,58,237,0.06);
+  border: 1px solid rgba(124,58,237,0.25);
+  border-radius: 14px;
+  padding: 22px 24px;
+  margin-bottom: 20px;
+}
+.task-box-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.task-icon {
+  font-size: 20px;
+}
+.task-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--purple-light);
+  letter-spacing: -0.2px;
+}
+.task-steps {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.task-steps li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #94a3b8;
+}
+.task-check {
+  width: 22px; height: 22px;
+  border-radius: 6px;
+  border: 2px solid var(--border);
+  background: var(--surface2);
+  flex-shrink: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  transition: all 0.15s;
+  margin-top: 1px;
+}
+.task-check.checked {
+  background: var(--purple);
+  border-color: var(--purple);
+  color: white;
+}
+.task-steps li.done-step {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+/* TEST CASES */
+.test-cases {
+  background: rgba(13,148,136,0.05);
+  border: 1px solid rgba(13,148,136,0.2);
+  border-radius: 14px;
+  padding: 22px 24px;
+  margin-bottom: 20px;
+}
+.tc-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.tc-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #2dd4bf;
+}
+.tc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.tc-item {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  font-size: 12px;
+}
+.tc-item-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-weight: 700;
+  color: var(--text);
+  font-size: 12px;
+}
+.tc-status {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--surface2);
+  flex-shrink: 0;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.tc-status.pass { background: rgba(16,185,129,0.2); border-color: var(--green); color: var(--green); }
+.tc-status.fail { background: rgba(239,68,68,0.2); border-color: var(--red); color: var(--red); }
+.tc-input { color: var(--muted); margin-bottom: 4px; }
+.tc-expected { color: var(--green); }
+.tc-mono { font-family: var(--mono); }
+
+/* HINTS */
+.hints-box {
+  background: rgba(245,158,11,0.05);
+  border: 1px solid rgba(245,158,11,0.2);
+  border-radius: 14px;
+  padding: 18px 22px;
+  margin-bottom: 20px;
+}
+.hints-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  margin-bottom: 0;
+}
+.hints-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fbbf24;
+  flex: 1;
+}
+.hints-toggle {
+  font-size: 11px;
+  color: var(--muted);
+  transition: all 0.2s;
+}
+.hints-content {
+  display: none;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(245,158,11,0.15);
+}
+.hints-content.open { display: block; }
+.hint-item {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: #94a3b8;
+  line-height: 1.6;
+}
+.hint-item:last-child { margin-bottom: 0; }
+.hint-num {
+  color: #fbbf24;
+  font-weight: 700;
+  flex-shrink: 0;
+  width: 20px;
+}
+
+/* BUG TRACKER */
+.bug-tracker {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+}
+.bt-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.bt-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.bt-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 12px;
+  transition: border-color 0.2s;
+  cursor: pointer;
+}
+.bt-item.caught { border-color: rgba(16,185,129,0.3); }
+.bt-indicator {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+.bt-item.caught .bt-indicator { background: rgba(16,185,129,0.2); border-color: var(--green); color: var(--green); }
+.bt-bug-name { font-weight: 700; color: var(--text); flex: 1; }
+.bt-agent { font-size: 11px; color: var(--muted); }
+.bt-severity {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+}
+.bt-severity.critical { background: rgba(239,68,68,0.15); color: #f87171; }
+.bt-severity.high { background: rgba(245,158,11,0.12); color: #fbbf24; }
+.bt-severity.medium { background: rgba(13,148,136,0.12); color: #2dd4bf; }
+.bt-severity.low { background: rgba(124,58,237,0.12); color: var(--purple-light); }
+
+/* ARCHITECTURE DIAGRAM */
+.arch-diagram {
+  background: #0d0d1a;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.9;
+  white-space: pre;
+  overflow-x: auto;
+}
+.arch-purple { color: var(--purple-light); }
+.arch-teal { color: #2dd4bf; }
+.arch-green { color: var(--green); }
+.arch-gold { color: var(--gold); }
+.arch-red { color: #f87171; }
+.arch-muted { color: var(--muted); }
+
+/* ANIMATION DEMO */
+.anim-demo {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.anim-demo-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+.anim-stages {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.anim-stage {
+  padding: 8px 14px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  transition: all 0.4s;
+}
+.anim-stage.active { border-color: var(--gold); color: var(--gold); background: rgba(245,158,11,0.08); }
+.anim-stage.done { border-color: var(--green); color: var(--green); background: rgba(16,185,129,0.06); }
+.anim-arrow2 { color: var(--muted); font-size: 14px; }
+.anim-btn {
+  padding: 7px 16px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: all 0.2s;
+  margin-top: 12px;
+}
+.anim-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+/* STEP BY STEP */
+.step-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.step-item {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+.step-num {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: rgba(124,58,237,0.12);
+  border: 2px solid rgba(124,58,237,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--purple-light);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.step-body { flex: 1; }
+.step-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.step-desc { font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+/* INTERACTIVE COMPONENT SELECTOR */
+.component-selector {
+  margin-bottom: 20px;
+}
+.comp-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.comp-tab {
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.comp-tab:hover { border-color: rgba(245,158,11,0.3); color: var(--gold); }
+.comp-tab.active { border-color: var(--gold); color: var(--gold); background: rgba(245,158,11,0.08); }
+.comp-panel { display: none; }
+.comp-panel.active { display: block; }
+
+/* FINDINGS STACK */
+.findings-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.finding-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 12px;
+  transition: all 0.3s;
+}
+.finding-card.duplicate { opacity: 0.4; text-decoration: line-through; }
+.finding-sev {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.finding-sev.critical { background: rgba(239,68,68,0.15); color: #f87171; }
+.finding-sev.high { background: rgba(245,158,11,0.12); color: #fbbf24; }
+.finding-sev.medium { background: rgba(13,148,136,0.12); color: #2dd4bf; }
+.finding-sev.low { background: rgba(124,58,237,0.12); color: var(--purple-light); }
+.finding-label { flex: 1; color: var(--text); font-weight: 600; }
+.finding-source { color: var(--muted); font-size: 11px; }
+
+/* CALL TO ACTION */
+.cta-section {
+  background: linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(239,68,68,0.06) 100%);
+  border: 1px solid rgba(245,158,11,0.25);
+  border-radius: 20px;
+  padding: 40px;
+  text-align: center;
+  margin-bottom: 60px;
+}
+.cta-title {
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  margin-bottom: 12px;
+  background: linear-gradient(135deg, var(--gold), #f97316);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.cta-sub { font-size: 15px; color: var(--muted); margin-bottom: 24px; }
+.cta-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.cta-btn {
+  padding: 12px 28px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  border: none;
+  font-family: var(--font);
+}
+.cta-btn.primary {
+  background: linear-gradient(135deg, var(--gold), #f97316);
+  color: #0a0a0f;
+}
+.cta-btn.primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(245,158,11,0.3); }
+.cta-btn.secondary {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.cta-btn.secondary:hover { border-color: rgba(245,158,11,0.4); transform: translateY(-2px); }
+
+/* TOAST */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--card);
+  border: 1px solid var(--green);
+  border-radius: 12px;
+  padding: 14px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  z-index: 999;
+  transform: translateY(80px);
+  opacity: 0;
+  transition: transform 0.3s, opacity 0.3s;
+  color: var(--green);
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+
+/* FOOTER */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 32px 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+footer a { color: var(--gold); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+
+/* ANIMATIONS */
+@keyframes fadeDown {
+  from { opacity: 0; transform: translateY(-14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 700px) {
+  .card-header { padding: 18px 18px; }
+  .card-body-inner { padding: 18px; }
+  .flow-parallel { flex-wrap: wrap; }
+  .cta-section { padding: 28px 20px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <div class="header-inner">
+      <nav class="nav-links">
+        <a href="day6_exercises.html" class="nav-btn">← Day 6 Exercises</a>
+        <span class="nav-separator">|</span>
+        <a href="../index.html" class="nav-btn home">🤖 Agentic AI</a>
+        <span class="nav-separator">|</span>
+        <span class="nav-btn complete">🏆 Complete!</span>
+      </nav>
+      <div class="header-badge">Day 7 · Capstone</div>
+    </div>
+  </div>
+</header>
+
+<main>
+<div class="container">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-eyebrow">Final Day · Build The Whole Thing</div>
+    <h1 class="hero-title">
+      <span class="gradient-text-gold">Capstone: Code Review Agent</span>
+    </h1>
+    <p class="hero-subtitle">
+      Four exercises that assemble a production multi-agent system piece by piece.<br>
+      You ship a working agent today.
+    </p>
+  </section>
+
+  <!-- PROGRESS -->
+  <div class="day-progress">
+    <div class="dp-header">
+      <span>Day 7 Progress</span>
+      <span class="dp-pct" id="dpPct">0%</span>
+    </div>
+    <div class="dp-track"><div class="dp-fill" id="dpFill"></div></div>
+    <div class="dp-exercises" id="dpDots"></div>
+  </div>
+
+  <!-- EXERCISES LIST -->
+  <div class="exercises-list">
+
+    <!-- ======================================================= -->
+    <!-- EXERCISE 1 -->
+    <!-- ======================================================= -->
+    <div class="exercise-card" id="ex1" style="animation-delay:0.05s">
+      <div class="card-accent-bar purple"></div>
+      <div class="card-header" onclick="toggleCard(1)">
+        <div class="card-header-left">
+          <div class="ex-number" id="ex1-num">1</div>
+          <div class="ex-meta">
+            <h2>Build the PR Diff Parser Tool</h2>
+            <p>Parse raw git diff output into structured ParsedDiff objects with line numbers, added/removed lines, and context.</p>
+            <div class="ex-badges">
+              <span class="badge diff-medium">Medium</span>
+              <span class="badge topic">Regex</span>
+              <span class="badge topic">Parsing</span>
+              <span class="badge topic">Data Structures</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-controls">
+          <button class="complete-btn" id="ex1-btn" onclick="markDone(event,1)">Mark Done</button>
+          <span class="chevron" id="ex1-chev">›</span>
+        </div>
+      </div>
+
+      <div class="card-body" id="ex1-body">
+        <div class="card-body-inner">
+
+          <!-- VISUAL EXPLAINER -->
+          <div class="section-label"><span class="sl-icon">🔍</span> Visual Explainer</div>
+
+          <div class="visual-explainer">
+            <div class="ve-title">Anatomy of a Git Diff</div>
+
+            <div class="diff-view">
+              <div class="diff-header-bar">
+                <div class="diff-file-dot"></div>
+                auth.py — unified diff format
+              </div>
+              <div class="diff-line meta">
+                <span class="diff-marker"></span>
+                <span class="diff-code">diff --git a/auth.py b/auth.py</span>
+                <span class="diff-annotation">← file boundary marker</span>
+              </div>
+              <div class="diff-line meta">
+                <span class="diff-marker"></span>
+                <span class="diff-code">index 1a2b3c..4d5e6f 100644</span>
+                <span class="diff-annotation">← git object hashes + mode</span>
+              </div>
+              <div class="diff-line meta">
+                <span class="diff-marker"></span>
+                <span class="diff-code">--- a/auth.py</span>
+                <span class="diff-annotation">← original file</span>
+              </div>
+              <div class="diff-line meta">
+                <span class="diff-marker"></span>
+                <span class="diff-code">+++ b/auth.py</span>
+                <span class="diff-annotation">← modified file</span>
+              </div>
+              <div class="diff-line hunk">
+                <span class="diff-marker">@@</span>
+                <span class="diff-code">@@ -10,6 +10,8 @@</span>
+                <span class="diff-annotation">← "hunk header": starts at line 10</span>
+              </div>
+              <div class="diff-line">
+                <span class="diff-marker"> </span>
+                <span class="diff-code">def authenticate(user_id):</span>
+                <span class="diff-annotation">← context line (space prefix)</span>
+              </div>
+              <div class="diff-line removed">
+                <span class="diff-marker">-</span>
+                <span class="diff-code">    query = "SELECT * FROM users WHERE id = " + user_id</span>
+                <span class="diff-annotation danger">← removed (SQL injection!)</span>
+              </div>
+              <div class="diff-line added">
+                <span class="diff-marker">+</span>
+                <span class="diff-code">    query = f"SELECT * FROM users WHERE id = {user_id}"</span>
+                <span class="diff-annotation warn">← added (still vulnerable!)</span>
+              </div>
+              <div class="diff-line added">
+                <span class="diff-marker">+</span>
+                <span class="diff-code">    return db.execute(query)</span>
+                <span class="diff-annotation">← added line</span>
+              </div>
+            </div>
+
+            <div style="margin-top:16px; margin-bottom:8px; font-size:12px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">Parsed output →</div>
+            <div class="schema-box">
+<span class="schema-class">ParsedDiff</span><span class="schema-punc"> {</span>
+    <span class="schema-field">file</span><span class="schema-punc">: </span><span class="schema-string">"auth.py"</span><span class="schema-punc">,</span>
+    <span class="schema-field">added_lines</span><span class="schema-punc">: [</span>
+        <span class="schema-string">'    query = f"SELECT * FROM users WHERE id = {user_id}"'</span><span class="schema-punc">,</span>
+        <span class="schema-string">'    return db.execute(query)'</span>
+    <span class="schema-punc">],</span>
+    <span class="schema-field">removed_lines</span><span class="schema-punc">: [</span>
+        <span class="schema-string">'    query = "SELECT * FROM users WHERE id = " + user_id'</span>
+    <span class="schema-punc">],</span>
+    <span class="schema-field">context_lines</span><span class="schema-punc">: [</span><span class="schema-string">'def authenticate(user_id):'</span><span class="schema-punc">],</span>
+    <span class="schema-field">start_line</span><span class="schema-punc">: </span><span class="schema-type">10</span>
+<span class="schema-punc">}</span>
+            </div>
+
+            <div class="anim-demo">
+              <div class="anim-demo-title">Parser animation — click to step through</div>
+              <div class="anim-stages" id="anim1-stages">
+                <div class="anim-stage active" id="a1-s0">Raw diff text</div>
+                <div class="anim-arrow2">→</div>
+                <div class="anim-stage" id="a1-s1">Split by file boundary</div>
+                <div class="anim-arrow2">→</div>
+                <div class="anim-stage" id="a1-s2">Extract hunks</div>
+                <div class="anim-arrow2">→</div>
+                <div class="anim-stage" id="a1-s3">Classify lines</div>
+                <div class="anim-arrow2">→</div>
+                <div class="anim-stage" id="a1-s4">ParsedDiff objects</div>
+              </div>
+              <button class="anim-btn" onclick="stepAnim1()">Next Step →</button>
+            </div>
+          </div>
+
+          <!-- CODE ANATOMY -->
+          <div class="section-label"><span class="sl-icon">🧬</span> Code Anatomy — Regex Patterns</div>
+
+          <table class="regex-table">
+            <thead>
+              <tr>
+                <th>Pattern</th>
+                <th>Matches</th>
+                <th>Example</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="regex-pattern">^diff --git</span></td>
+                <td><span class="regex-desc">New file boundary — reset current file context</span></td>
+                <td><span class="regex-example">diff --git a/auth.py b/auth.py</span></td>
+              </tr>
+              <tr>
+                <td><span class="regex-pattern">^\+\+\+ b/(.+)</span></td>
+                <td><span class="regex-desc">Capture the modified filename (group 1)</span></td>
+                <td><span class="regex-example">+++ b/auth.py → "auth.py"</span></td>
+              </tr>
+              <tr>
+                <td><span class="regex-pattern">^@@ -\d+,\d+ \+(\d+)</span></td>
+                <td><span class="regex-desc">Hunk header — extract start line number from group 1</span></td>
+                <td><span class="regex-example">@@ -10,6 +10,8 @@ → line 10</span></td>
+              </tr>
+              <tr>
+                <td><span class="regex-pattern">^\+(?!\+\+)</span></td>
+                <td><span class="regex-desc">Added line (exclude +++ file header)</span></td>
+                <td><span class="regex-example">+    return db.execute(query)</span></td>
+              </tr>
+              <tr>
+                <td><span class="regex-pattern">^-(?!--)</span></td>
+                <td><span class="regex-desc">Removed line (exclude --- file header)</span></td>
+                <td><span class="regex-example">-    query = "..." + user_id</span></td>
+              </tr>
+              <tr>
+                <td><span class="regex-pattern">^ </span></td>
+                <td><span class="regex-desc">Context line (space prefix, unchanged)</span></td>
+                <td><span class="regex-example"> def authenticate(user_id):</span></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="code-block">
+            <div class="code-block-header">
+              <div class="code-dots"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div></div>
+              <span class="code-lang">Python</span>
+            </div>
+            <div class="code-body"><span class="kw">import</span> re
+<span class="kw">from</span> dataclasses <span class="kw">import</span> dataclass, field
+<span class="kw">from</span> typing <span class="kw">import</span> <span class="tp">Optional</span>
+
+<span class="dec">@dataclass</span>
+<span class="kw">class</span> <span class="tp">ParsedDiff</span>:
+    file<span class="op">:</span> <span class="tp">str</span>
+    added_lines<span class="op">:</span> <span class="tp">list</span>[<span class="tp">str</span>] <span class="op">=</span> field(default_factory<span class="op">=</span><span class="tp">list</span>)
+    removed_lines<span class="op">:</span> <span class="tp">list</span>[<span class="tp">str</span>] <span class="op">=</span> field(default_factory<span class="op">=</span><span class="tp">list</span>)
+    context_lines<span class="op">:</span> <span class="tp">list</span>[<span class="tp">str</span>] <span class="op">=</span> field(default_factory<span class="op">=</span><span class="tp">list</span>)
+    start_line<span class="op">:</span> <span class="tp">int</span> <span class="op">=</span> <span class="num">0</span>
+
+<span class="kw">def</span> <span class="fn">parse_pr_diff</span>(diff_text<span class="op">:</span> <span class="tp">str</span>) <span class="op">-></span> <span class="tp">list</span>[<span class="tp">ParsedDiff</span>]:
+    results<span class="op">:</span> <span class="tp">list</span>[<span class="tp">ParsedDiff</span>] <span class="op">=</span> []
+    current<span class="op">:</span> <span class="tp">Optional</span>[<span class="tp">ParsedDiff</span>] <span class="op">=</span> <span class="kw">None</span>
+
+    <span class="kw">for</span> line <span class="kw">in</span> diff_text.splitlines():
+        <span class="cm"># New file boundary</span>
+        <span class="kw">if</span> line.startswith(<span class="st">"diff --git"</span>):
+            <span class="kw">if</span> current:
+                results.append(current)
+            current <span class="op">=</span> <span class="kw">None</span>
+
+        <span class="cm"># Capture filename from +++ b/path</span>
+        <span class="kw">elif</span> m <span class="op">:=</span> re.match(<span class="st">r'^\+\+\+ b/(.+)'</span>, line):
+            current <span class="op">=</span> <span class="tp">ParsedDiff</span>(file<span class="op">=</span>m.group(<span class="num">1</span>))
+
+        <span class="cm"># Hunk header — extract start line</span>
+        <span class="kw">elif</span> current <span class="kw">and</span> (m <span class="op">:=</span> re.match(<span class="st">r'^@@ -\d+,\d+ \+(\d+)'</span>, line)):
+            current.start_line <span class="op">=</span> <span class="tp">int</span>(m.group(<span class="num">1</span>))
+
+        <span class="cm"># Added line (exclude +++ file header)</span>
+        <span class="kw">elif</span> current <span class="kw">and</span> re.match(<span class="st">r'^\+(?!\+\+)'</span>, line):
+            current.added_lines.append(line[<span class="num">1</span>:])  <span class="cm"># strip the leading +</span>
+
+        <span class="cm"># Removed line (exclude --- file header)</span>
+        <span class="kw">elif</span> current <span class="kw">and</span> re.match(<span class="st">r'^-(?!--)'</span>, line):
+            current.removed_lines.append(line[<span class="num">1</span>:])
+
+        <span class="cm"># Context line</span>
+        <span class="kw">elif</span> current <span class="kw">and</span> line.startswith(<span class="st">" "</span>):
+            current.context_lines.append(line[<span class="num">1</span>:])
+
+    <span class="kw">if</span> current:
+        results.append(current)
+
+    <span class="kw">return</span> results</div>
+          </div>
+
+          <!-- TASK -->
+          <div class="section-label"><span class="sl-icon">⚡</span> Your Task</div>
+
+          <div class="task-box">
+            <div class="task-box-header">
+              <span class="task-icon">🔨</span>
+              <span class="task-title">Build parse_pr_diff() and verify with 3 sample diffs</span>
+            </div>
+            <ul class="task-steps" id="t1-steps">
+              <li>
+                <div class="task-check" onclick="toggleTask(this,'t1-1')" id="t1-1"></div>
+                <span>Implement <code style="font-family:var(--mono);color:var(--teal);font-size:12px">parse_pr_diff(diff_text: str) -> list[ParsedDiff]</code> using the regex patterns above</span>
+              </li>
+              <li>
+                <div class="task-check" onclick="toggleTask(this,'t1-2')" id="t1-2"></div>
+                <span>Handle multiple files in one diff — each <code style="font-family:var(--mono);color:var(--teal);font-size:12px">diff --git</code> boundary should produce a separate ParsedDiff</span>
+              </li>
+              <li>
+                <div class="task-check" onclick="toggleTask(this,'t1-3')" id="t1-3"></div>
+                <span>Test with Sample 1: the SQL injection diff above (line 10, 1 removed, 2 added)</span>
+              </li>
+              <li>
+                <div class="task-check" onclick="toggleTask(this,'t1-4')" id="t1-4"></div>
+                <span>Test with Sample 2: a missing type hints diff — function with no annotations</span>
+              </li>
+              <li>
+                <div class="task-check" onclick="toggleTask(this,'t1-5')" id="t1-5"></div>
+                <span>Test with Sample 3: N+1 query diff — a for loop calling db.execute per iteration</span>
+              </li>
+              <li>
+                <div class="task-check" onclick="toggleTask(this,'t1-6')" id="t1-6"></div>
+                <span>Verify all three ParsedDiff objects have correct <code style="font-family:var(--mono);color:var(--teal);font-size:12px">start_line</code> values from the hunk headers</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- TEST CASES -->
+          <div class="section-label"><span class="sl-icon">✅</span> Test Cases</div>
+
+          <div class="test-cases">
+            <div class="tc-header">
+              <span class="task-icon">🧪</span>
+              <span class="tc-title">Expected Outputs</span>
+            </div>
+            <div class="tc-list">
+              <div class="tc-item">
+                <div class="tc-item-header">
+                  <div class="tc-status" onclick="toggleTc(this)"></div>
+                  <span>Sample 1: SQL injection diff</span>
+                </div>
+                <div class="tc-input">Input: diff with <span class="tc-mono">@@ -10,6 +10,8 @@</span> hunk, 1 removed, 2 added</div>
+                <div class="tc-expected">Expected: file="auth.py", start_line=10, len(added_lines)=2, len(removed_lines)=1</div>
+              </div>
+              <div class="tc-item">
+                <div class="tc-item-header">
+                  <div class="tc-status" onclick="toggleTc(this)"></div>
+                  <span>Sample 2: Missing type hints</span>
+                </div>
+                <div class="tc-input">Input: diff adding a function without type annotations</div>
+                <div class="tc-expected">Expected: file="services.py", all added lines captured, removed_lines=[]</div>
+              </div>
+              <div class="tc-item">
+                <div class="tc-item-header">
+                  <div class="tc-status" onclick="toggleTc(this)"></div>
+                  <span>Sample 3: Multi-file diff</span>
+                </div>
+                <div class="tc-input">Input: diff touching auth.py and models.py in one blob</div>
+                <div class="tc-expected">Expected: parse_pr_diff() returns list with len=2, one ParsedDiff per file</div>
+              </div>
+              <div class="tc-item">
+                <div class="tc-item-header">
+                  <div class="tc-status" onclick="toggleTc(this)"></div>
+                  <span>Edge case: empty diff</span>
+                </div>
+                <div class="tc-input">Input: empty string ""</div>
+                <div class="tc-expected">Expected: returns [], no exception raised</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- HINTS -->
+          <div class="hints-box">
+            <div class="hints-header" onclick="toggleHints(this)">
+              <span class="task-icon">💡</span>
+              <span class="hints-title">Hints (click to reveal)</span>
+              <span class="hints-toggle">▾ Show</span>
+            </div>
+            <div class="hints-content">
+              <div class="hint-item"><span class="hint-num">1.</span> Use the walrus operator <code style="font-family:var(--mono);color:var(--teal);font-size:12px">:=</code> (Python 3.8+) to match and capture in the same line — much cleaner than two-line if/match.</div>
+              <div class="hint-item"><span class="hint-num">2.</span> The tricky part: <code style="font-family:var(--mono);color:var(--teal);font-size:12px">+++ b/filename</code> and <code style="font-family:var(--mono);color:var(--teal);font-size:12px">--- a/filename</code> lines start with + and - but aren't code changes. Use <code style="font-family:var(--mono);color:var(--teal);font-size:12px">^\+\+\+</code> and <code style="font-family:var(--mono);color:var(--teal);font-size:12px">^---</code> as negative lookahead.</div>
+              <div class="hint-item"><span class="hint-num">3.</span> Don't forget to append the final <code style="font-family:var(--mono);color:var(--teal);font-size:12px">current</code> after the loop — the last file has no subsequent <code style="font-family:var(--mono);color:var(--teal);font-size:12px">diff --git</code> to trigger append.</div>
+              <div class="hint-item"><span class="hint-num">4.</span> Strip the leading marker character before storing: <code style="font-family:var(--mono);color:var(--teal);font-size:12px">line[1:]</code> removes the + or - prefix.</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div><!-- /ex1 -->
+
+    <!-- ======================================================= -->
+    <!-- EXERCISE 2 -->
+    <!-- ======================================================= -->
+    <div class="exercise-card" id="ex2" style="animation-delay:0.12s">
+      <div class="card-accent-bar teal"></div>
+      <div class="card-header" onclick="toggleCard(2)">
+        <div class="card-header-left">
+          <div class="ex-number" id="ex2-num">2</div>
+          <div class="ex-meta">
+            <h2>Build Specialist Agents</h2>
+            <p>Implement Security, Performance, and Style agents — each with forced structured output via tool_choice to guarantee typed Pydantic models.</p>
+            <div class="ex-badges">
+              <span class="badge diff-hard">Hard</span>
+              <span class="badge topic">Anthropic SDK</span>
+              <span class="badge topic">Structured Output</span>
+              <span class="badge topic">Pydantic</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-controls">
+          <button class="complete-btn" id="ex2-btn" onclick="markDone(event,2)">Mark Done</button>
+          <span class="chevron" id="ex2-chev">›</span>
+        </div>
+      </div>
+
+      <div class="card-body" id="ex2-body">
+        <div class="card-body-inner">
+
+          <div class="section-label"><span class="sl-icon">🔍</span> Visual Explainer</div>
+
+          <div class="visual-explainer">
+            <div class="ve-title">Security Agent — "Focused Scanner" Pattern</div>
+
+            <div class="flow-row" style="align-items:stretch; gap:16px; flex-wrap:wrap;">
+              <div class="flow-col" style="min-width:160px;">
+                <div class="flow-node input" style="width:160px; min-height:60px; display:flex; align-items:center; justify-content:center;">
+                  ParsedDiff<br><span style="font-size:10px; color:var(--muted);">(code changes)</span>
+                </div>
+              </div>
+              <div class="flow-arrow" style="align-self:center;">→</div>
+              <div class="flow-col" style="flex:1; min-width:260px;">
+                <div class="flow-node agent" style="width:100%; text-align:left; padding:16px;">
+                  <strong style="font-size:13px;">Security Agent</strong><br>
+                  <span style="font-size:11px; color:var(--muted); line-height:1.6; display:block; margin-top:6px;">
+                    System: "You are a security expert. Scan for:<br>
+                    · SQL injection (string concat in queries)<br>
+                    · Hardcoded secrets (passwords, API keys)<br>
+                    · Path traversal (user input in file paths)<br>
+                    · Command injection (input → shell calls)"
+                  </span>
+                </div>
+              </div>
+              <div class="flow-arrow" style="align-self:center;">→</div>
+              <div class="flow-col" style="min-width:200px;">
+                <div class="flow-node output" style="width:200px; text-align:left; padding:14px;">
+                  <strong style="font-size:12px;">list[SecurityFinding]</strong>
+                  <div class="schema-box" style="margin-top:10px; padding:10px 12px; font-size:11px; line-height:1.7;">
+<span class="schema-punc">{</span>
+  severity<span class="schema-punc">:</span> <span class="schema-string">"CRITICAL"</span>
+  title<span class="schema-punc">:</span> <span class="schema-string">"SQL Injection"</span>
+  line<span class="schema-punc">:</span> <span class="schema-type">12</span>
+  code<span class="schema-punc">:</span> <span class="schema-string">"query = ... + id"</span>
+  fix<span class="schema-punc">:</span> <span class="schema-string">"Use params"</span>
+<span class="schema-punc">}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-label"><span class="sl-icon">🧬</span> Code Anatomy — Forced Structured Output</div>
+
+          <div class="code-block">
+            <div class="code-block-header">
+              <div class="code-dots"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div></div>
+              <span class="code-lang">Python — Forced Tool Use Pattern</span>
+            </div>
+            <div class="code-body"><span class="kw">from</span> pydantic <span class="kw">import</span> BaseModel
+<span class="kw">from</span> typing <span class="kw">import</span> <span class="tp">Literal</span>
+<span class="kw">import</span> anthropic
+
+<span class="kw">class</span> <span class="tp">SecurityFinding</span>(BaseModel):
+    severity<span class="op">:</span> <span class="tp">Literal</span>[<span class="st">"CRITICAL"</span>, <span class="st">"HIGH"</span>, <span class="st">"MEDIUM"</span>, <span class="st">"LOW"</span>]
+    title<span class="op">:</span> <span class="tp">str</span>
+    line<span class="op">:</span> <span class="tp">int</span>
+    code<span class="op">:</span> <span class="tp">str</span>   <span class="cm"># the offending code snippet</span>
+    fix<span class="op">:</span> <span class="tp">str</span>    <span class="cm"># concrete fix suggestion</span>
+
+<span class="kw">class</span> <span class="tp">SecurityReport</span>(BaseModel):
+    findings<span class="op">:</span> <span class="tp">list</span>[<span class="tp">SecurityFinding</span>]
+
+<span class="cm"># ─── The Trick: define output schema as a "tool" ───────────────</span>
+<span class="cm"># The model MUST "call" this tool — guaranteeing our JSON schema.</span>
+<span class="cm"># This is more reliable than JSON mode or prompt-based parsing.</span>
+
+REPORT_TOOL <span class="op">=</span> {
+    <span class="st">"name"</span><span class="op">:</span> <span class="st">"report_findings"</span>,
+    <span class="st">"description"</span><span class="op">:</span> <span class="st">"Report security findings found in the code"</span>,
+    <span class="st">"input_schema"</span><span class="op">:</span> <span class="tp">SecurityReport</span>.model_json_schema()
+}
+
+client <span class="op">=</span> anthropic.<span class="tp">Anthropic</span>()
+
+<span class="kw">def</span> <span class="fn">security_agent</span>(diff<span class="op">:</span> <span class="tp">ParsedDiff</span>) <span class="op">-></span> <span class="tp">SecurityReport</span>:
+    code_context <span class="op">=</span> <span class="st">f"""
+File: {diff.file} (starting at line {diff.start_line})
+
+Added lines (review carefully):
+{chr(10).join(f'  + {l}' for l in diff.added_lines)}
+
+Removed lines (for context):
+{chr(10).join(f'  - {l}' for l in diff.removed_lines)}
+
+Context:
+{chr(10).join(f'    {l}' for l in diff.context_lines)}
+"""</span>
+
+    response <span class="op">=</span> client.messages.create(
+        model<span class="op">=</span><span class="st">"claude-opus-4-5"</span>,
+        max_tokens<span class="op">=</span><span class="num">1024</span>,
+        system<span class="op">=</span><span class="st">"""You are a security expert reviewing code changes.
+Look for: SQL injection, hardcoded secrets, path traversal,
+command injection, insecure deserialization.
+Focus ONLY on security — ignore style and performance."""</span>,
+        tools<span class="op">=</span>[REPORT_TOOL],
+        tool_choice<span class="op">=</span>{<span class="st">"type"</span><span class="op">:</span> <span class="st">"tool"</span>, <span class="st">"name"</span><span class="op">:</span> <span class="st">"report_findings"</span>},
+        <span class="cm"># ↑ FORCE this specific tool — no other response possible</span>
+        messages<span class="op">=</span>[{<span class="st">"role"</span><span class="op">:</span> <span class="st">"user"</span>, <span class="st">"content"</span><span class="op">:</span> code_context}]
+    )
+
+    <span class="cm"># content[0] is ALWAYS a tool_use block — safe to index directly</span>
+    tool_input <span class="op">=</span> response.content[<span class="num">0</span>].input
+    <span class="kw">return</span> <span class="tp">SecurityReport</span>.model_validate(tool_input)</div>
+          </div>
+
+          <div style="background:rgba(16,185,129,0.05); border:1px solid rgba(16,185,129,0.2); border-radius:10px; padding:14px 18px; margin-bottom:20px; font-size:12px; line-height:1.7; color:#94a3b8;">
+            <strong style="color:var(--green);">Why tool_choice over JSON mode?</strong><br>
+            JSON mode can produce any JSON. <code style="font-family:var(--mono);color:var(--teal);font-size:11px">tool_choice: {"type": "tool", "name": "X"}</code> forces the model to output exactly the schema defined in the tool's <code style="font-family:var(--mono);color:var(--teal);font-size:11px">input_schema</code>. Combined with Pydantic's <code style="font-family:var(--mono);color:var(--teal);font-size:11px">model_validate()</code>, you get strict runtime type checking. Zero regex parsing. Zero hallucinated fields.
+          </div>
+
+          <div class="section-label"><span class="sl-icon">⚡</span> Your Task</div>
+
+          <div class="task-box">
+            <div class="task-box-header">
+              <span class="task-icon">🔨</span>
+              <span class="task-title">Build all 3 specialist agents with forced structured output</span>
+            </div>
+            <ul class="task-steps" id="t2-steps">
+              <li>
+                <div class="task-check" onclick="toggleTask(this,'t2-1')" id="t2-1"></div>
+                <span>Define <code style="font-family:var(--mono);color:var(--teal);font-size:12px">SecurityFinding</code>, <code style="font-family:var(--mono);color:var(--teal);font-size:12px">PerformanceFinding</code>, <code style="font-family:var(--mono);color:var(--teal);font-size:12px">StyleFinding</code> Pydantic models — each with severity, title, line, code, fix</span>
+              </li>
+              <li>
+                <div class="task-check" onclick="toggleTask(this,'t2-2')" id="t2-2"></div>
+                <span>Implement <code style="font-family:var(--mono);color:var(--teal);font-size:12px">security_agent(diff)</code> — targets SQL injection, secrets, path traversal, command injection</span>
+              </li>
+              <li>
+                <div class="task-check" onclick="toggleTask(this,'t2-3')" id="t2-3"></div>
+                <span>Implement <code style="font-family:var(--mono);color:var(--teal);font-size:12px">performance_agent(diff)</code> — targets N+1 queries, blocking I/O, missing pagination, O(n²) loops</span>
+              </li>
+              <li>
+                <div class="task-check" onclick="toggleTask(this,'t2-4')" id="t2-4"></div>
+                <span>Implement <code style="font-family:var(--mono);color:var(--teal);font-size:12px">style_agent(diff)</code> — targets missing type hints, docstrings, naming conventions, dead code</span>
+              </li>
+              <li>
+                <div class="task-check" onclick="toggleTask(this,'t2-5')" id="t2-5"></div>
+                <span>Use <code style="font-family:var(--mono);color:var(--teal);font-size:12px">tool_choice={"type": "tool", "name": "report_findings"}</code> in all three — never allow fallback to text</span>
+              </li>
+              <li>
+                <div class="task-check" onclick="toggleTask(this,'t2-6')" id="t2-6"></div>
+                <span>Handle the empty case: if no findings, the Pydantic model should return <code style="font-family:var(--mono);color:var(--teal);font-size:12px">findings=[]</code> — not raise an exception</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="section-label"><span class="sl-icon">✅</span> Test Cases</div>
+
+          <div class="test-cases">
+            <div class="tc-header">
+              <span class="task-icon">🧪</span>
+              <span class="tc-title">Agent Verification Tests</span>
+            </div>
+            <div class="tc-list">
+              <div class="tc-item">
+                <div class="tc-item-header">
+                  <div class="tc-status" onclick="toggleTc(this)"></div>
+                  <span>Security: catches SQL injection</span>
+                </div>
+                <div class="tc-input">Input ParsedDiff with line: <span class="tc-mono">query = "SELECT..." + user_id</span></div>
+                <div class="tc-expected">Expected: finding with severity=CRITICAL, title contains "SQL"</div>
+              </div>
+              <div class="tc-item">
+                <div class="tc-item-header">
+                  <div class="tc-status" onclick="toggleTc(this)"></div>
+                  <span>Security: catches hardcoded secret</span>
+                </div>
+                <div class="tc-input">Input ParsedDiff with line: <span class="tc-mono">SECRET_KEY = "hardcoded_secret_12345"</span></div>
+                <div class="tc-expected">Expected: finding with severity=CRITICAL or HIGH, references hardcoded credential</div>
+              </div>
+              <div class="tc-item">
+                <div class="tc-item-header">
+                  <div class="tc-status" onclick="toggleTc(this)"></div>
+                  <span>Performance: catches N+1 query</span>
+                </div>
+                <div class="tc-input">Input ParsedDiff with a for loop calling db.execute each iteration</div>
+                <div class="tc-expected">Expected: finding with severity=HIGH, suggests batch query</div>
+              </div>
+              <div class="tc-item">
+                <div class="tc-item-header">
+                  <div class="tc-status" onclick="toggleTc(this)"></div>
+                  <span>Empty result: clean code</span>
+                </div>
+                <div class="tc-input">Input ParsedDiff with no issues in the relevant domain</div>
+                <div class="tc-expected">Expected: report.findings == [], no exception, valid Pydantic model returned</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hints-box">
+            <div class="hints-header" onclick="toggleHints(this)">
+              <span class="task-icon">💡</span>
+              <span class="hints-title">Hints (click to reveal)</span>
+              <span class="hints-toggle">▾ Show</span>
+            </div>
+            <div class="hints-content">
+              <div class="hint-item"><span class="hint-num">1.</span> Call <code style="font-family:var(--mono);color:var(--teal);font-size:12px">SecurityReport.model_json_schema()</code> and inspect the output — you'll see Pydantic auto-generates the JSON Schema for you, including the Literal severity enum.</div>
+              <div class="hint-item"><span class="hint-num">2.</span> The system prompt is the domain separator. Keep it focused: Performance agent should explicitly say "do NOT report security or style issues." This reduces hallucinated cross-domain findings.</div>
+              <div class="hint-item"><span class="hint-num">3.</span> <code style="font-family:var(--mono);color:var(--teal);font-size:12px">response.content[0]</code> is safe when tool_choice forces a single tool — but wrap in a try/except for production code.</div>
+              <div class="hint-item"><span class="hint-num">4.</span> For the line number in the finding, tell the model in the prompt: "The diff starts at line {diff.start_line}. Compute absolute line numbers from this offset."</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div><!-- /ex2 -->
+
+    <!-- ======================================================= -->
+    <!-- EXERCISE 3 -->
+    <!-- ======================================================= -->
+    <div class="exercise-card" id="ex3" style="animation-delay:0.19s">
+      <div class="card-accent-bar green"></div>
+      <div class="card-header" onclick="toggleCard(3)">
+        <div class="card-header-left">
+          <div class="ex-number" id="ex3-num">3</div>
+          <div class="ex-meta">
+            <h2>The Critic &amp; Formatter Agents</h2>
+            <p>Build the deduplication and synthesis layer — merge 3 specialist reports, deduplicate overlapping findings, re-rank by severity, write the final ReviewReport.</p>
+            <div class="ex-badges">
+              <span class="badge diff-hard">Hard</span>
+              <span class="badge topic">Deduplication</span>
+              <span class="badge topic">Ranking</span>
+              <span class="badge topic">Synthesis</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-controls">
+          <button class="complete-btn" id="ex3-btn" onclick="markDone(event,3)">Mark Done</button>
+          <span class="chevron" id="ex3-chev">›</span>
+        </div>
+      </div>
+
+      <div class="card-body" id="ex3-body">
+        <div class="card-body-inner">
+
+          <div class="section-label"><span class="sl-icon">🔍</span> Visual Explainer</div>
+
+          <div class="visual-explainer">
+            <div class="ve-title">From 3 Reports to 1 Curated Review</div>
+
+            <div style="margin-bottom:14px;">
+              <div style="font-size:11px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">Before Critic — Raw findings (with duplicates):</div>
+              <div class="findings-stack" id="findings-before">
+                <div class="finding-card">
+                  <span class="finding-sev critical">CRITICAL</span>
+                  <span class="finding-label">SQL Injection</span>
+                  <span class="finding-source">Security Agent</span>
+                </div>
+                <div class="finding-card">
+                  <span class="finding-sev high">HIGH</span>
+                  <span class="finding-label">Hardcoded API Key</span>
+                  <span class="finding-source">Security Agent</span>
+                </div>
+                <div class="finding-card">
+                  <span class="finding-sev high">HIGH</span>
+                  <span class="finding-label">N+1 Query Pattern</span>
+                  <span class="finding-source">Performance Agent</span>
+                </div>
+                <div class="finding-card">
+                  <span class="finding-sev medium">MEDIUM</span>
+                  <span class="finding-label">Blocking I/O in Async</span>
+                  <span class="finding-source">Performance Agent</span>
+                </div>
+                <div class="finding-card" id="dup-finding">
+                  <span class="finding-sev low">LOW</span>
+                  <span class="finding-label">SQL Injection Mentioned</span>
+                  <span class="finding-source">Style Agent ← duplicate!</span>
+                </div>
+                <div class="finding-card">
+                  <span class="finding-sev low">LOW</span>
+                  <span class="finding-label">Missing Type Hints</span>
+                  <span class="finding-source">Style Agent</span>
+                </div>
+              </div>
+              <button class="anim-btn" onclick="runCriticAnim()">Run Critic Agent →</button>
+            </div>
+
+            <div id="after-critic" style="display:none; margin-top:16px;">
+              <div style="font-size:11px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">After Critic — Deduplicated &amp; ranked:</div>
+              <div class="findings-stack">
+                <div class="finding-card">
+                  <span class="finding-sev critical">CRITICAL</span>
+                  <span class="finding-label">SQL Injection</span>
+                  <span class="finding-source">Security Agent (authoritative)</span>
+                </div>
+                <div class="finding-card">
+                  <span class="finding-sev high">HIGH</span>
+                  <span class="finding-label">Hardcoded API Key</span>
+                  <span class="finding-source">Security Agent</span>
+                </div>
+                <div class="finding-card">
+                  <span class="finding-sev high">HIGH</span>
+                  <span class="finding-label">N+1 Query + SQL fix cross-ref</span>
+                  <span class="finding-source">Performance Agent</span>
+                </div>
+                <div class="finding-card">
+                  <span class="finding-sev medium">MEDIUM</span>
+                  <span class="finding-label">Blocking I/O in Async</span>
+                  <span class="finding-source">Performance Agent</span>
+                </div>
+                <div class="finding-card">
+                  <span class="finding-sev low">LOW</span>
+                  <span class="finding-label">Missing Type Hints</span>
+                  <span class="finding-source">Style Agent</span>
+                </div>
+              </div>
+            </div>
+
+            <div id="formatter-output" style="display:none; margin-top:16px;">
+              <div style="font-size:11px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">Formatter output — ReviewReport:</div>
+              <div class="schema-box">
+<span class="schema-class">ReviewReport</span><span class="schema-punc"> {</span>
+    <span class="schema-field">summary</span><span class="schema-punc">:</span> <span class="schema-string">"2 critical issues require immediate attention before merge.
+             The SQL injection and hardcoded credential pose..."</span><span class="schema-punc">,</span>
+    <span class="schema-field">risk_level</span><span class="schema-punc">:</span> <span class="schema-string">"HIGH"</span><span class="schema-punc">,</span>
+    <span class="schema-field">quick_wins</span><span class="schema-punc">:</span> [<span class="schema-string">"Add type hints (5 min fix)"</span>]<span class="schema-punc">,</span>
+    <span class="schema-field">praise</span><span class="schema-punc">:</span> [<span class="schema-string">"Good use of async/await throughout"</span>]<span class="schema-punc">,</span>
+    <span class="schema-field">findings</span><span class="schema-punc">:</span> [<span class="schema-type">...</span>5 deduplicated findings<span class="schema-type">...</span>]
+<span class="schema-punc">}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-label"><span class="sl-icon">🧬</span> Deduplication Logic</div>
+
+          <div class="code-block">
+            <div class="code-block-header">
+              <div class="code-dots"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div></div>
+              <span class="code-lang">Python — Critic Agent</span>
+            </div>
+            <div class="code-body"><span class="kw">from</span> pydantic <span class="kw">import</span> BaseModel
+
+SEVERITY_ORDER <span class="op">=</span> {<span class="st">"CRITICAL"</span><span class="op">:</span> <span class="num">0</span>, <span class="st">"HIGH"</span><span class="op">:</span> <span class="num">1</span>, <span class="st">"MEDIUM"</span><span class="op">:</span> <span class="num">2</span>, <span class="st">"LOW"</span><span class="op">:</span> <span class="num">3</span>}
+
+<span class="kw">def</span> <span class="fn">deduplicate_findings</span>(
+    security<span class="op">:</span> <span class="tp">list</span>[<span class="tp">SecurityFinding</span>],
+    performance<span class="op">:</span> <span class="tp">list</span>[<span class="tp">PerformanceFinding</span>],
+    style<span class="op">:</span> <span class="tp">list</span>[<span class="tp">StyleFinding</span>]
+) <span class="op">-></span> <span class="tp">list</span>[<span class="tp">UnifiedFinding</span>]:
+    all_findings <span class="op">=</span> (
+        [(<span class="st">"security"</span>, f) <span class="kw">for</span> f <span class="kw">in</span> security] <span class="op">+</span>
+        [(<span class="st">"performance"</span>, f) <span class="kw">for</span> f <span class="kw">in</span> performance] <span class="op">+</span>
+        [(<span class="st">"style"</span>, f) <span class="kw">for</span> f <span class="kw">in</span> style]
+    )
+
+    seen<span class="op">:</span> <span class="tp">dict</span>[<span class="tp">tuple</span>, <span class="tp">UnifiedFinding</span>] <span class="op">=</span> {}
+
+    <span class="kw">for</span> category, finding <span class="kw">in</span> all_findings:
+        <span class="cm"># Duplicate key: same file + line + category = same issue</span>
+        key <span class="op">=</span> (finding.line, finding.title.lower()[:<span class="num">20</span>])
+
+        <span class="kw">if</span> key <span class="kw">not in</span> seen:
+            seen[key] <span class="op">=</span> <span class="tp">UnifiedFinding</span>(
+                category<span class="op">=</span>category,
+                <span class="op">**</span>finding.model_dump()
+            )
+        <span class="kw">else</span>:
+            <span class="cm"># Keep the higher-severity version</span>
+            existing <span class="op">=</span> seen[key]
+            <span class="kw">if</span> SEVERITY_ORDER[finding.severity] <span class="op"><</span> SEVERITY_ORDER[existing.severity]:
+                seen[key] <span class="op">=</span> <span class="tp">UnifiedFinding</span>(category<span class="op">=</span>category, <span class="op">**</span>finding.model_dump())
+
+    <span class="cm"># Sort: CRITICAL first, then HIGH, MEDIUM, LOW</span>
+    <span class="kw">return</span> <span class="tp">sorted</span>(
+        seen.values(),
+        key<span class="op">=</span><span class="kw">lambda</span> f<span class="op">:</span> SEVERITY_ORDER[f.severity]
+    )
+
+<span class="kw">def</span> <span class="fn">critic_agent</span>(
+    security<span class="op">:</span> <span class="tp">SecurityReport</span>,
+    performance<span class="op">:</span> <span class="tp">PerformanceReport</span>,
+    style<span class="op">:</span> <span class="tp">StyleReport</span>
+) <span class="op">-></span> <span class="tp">list</span>[<span class="tp">UnifiedFinding</span>]:
+    <span class="cm"># Deterministic deduplication — no LLM call needed here</span>
+    <span class="kw">return</span> deduplicate_findings(
+        security.findings, performance.findings, style.findings
+    )
+
+<span class="kw">def</span> <span class="fn">formatter_agent</span>(findings<span class="op">:</span> <span class="tp">list</span>[<span class="tp">UnifiedFinding</span>], diff_context<span class="op">:</span> <span class="tp">str</span>) <span class="op">-></span> <span class="tp">ReviewReport</span>:
+    <span class="cm"># Use LLM for synthesis — executive summary, praise, quick wins</span>
+    summary_prompt <span class="op">=</span> <span class="st">f"""
+Given these {len(findings)} code review findings:
+{[f.model_dump() for f in findings]}
+
+Write:
+1. An executive summary (2-3 sentences)
+2. Quick wins (issues fixable in under 5 min)
+3. Positive observations about the code
+4. Overall risk level: CRITICAL / HIGH / MEDIUM / LOW
+"""</span>
+    response <span class="op">=</span> client.messages.create(
+        model<span class="op">=</span><span class="st">"claude-opus-4-5"</span>,
+        max_tokens<span class="op">=</span><span class="num">1024</span>,
+        tools<span class="op">=</span>[REVIEW_REPORT_TOOL],
+        tool_choice<span class="op">=</span>{<span class="st">"type"</span><span class="op">:</span> <span class="st">"tool"</span>, <span class="st">"name"</span><span class="op">:</span> <span class="st">"create_review_report"</span>},
+        messages<span class="op">=</span>[{<span class="st">"role"</span><span class="op">:</span> <span class="st">"user"</span>, <span class="st">"content"</span><span class="op">:</span> summary_prompt}]
+    )
+    <span class="kw">return</span> <span class="tp">ReviewReport</span>.model_validate(response.content[<span class="num">0</span>].input)</div>
+          </div>
+
+          <div class="section-label"><span class="sl-icon">⚡</span> Your Task</div>
+
+          <div class="task-box">
+            <div class="task-box-header">
+              <span class="task-icon">🔨</span>
+              <span class="task-title">Build Critic + Formatter agents with deduplication</span>
+            </div>
+            <ul class="task-steps" id="t3-steps">
+              <li>
+                <div class="task-check" onclick="toggleTask(this,'t3-1')" id="t3-1"></div>
+                <span>Define <code style="font-family:var(--mono);color:var(--teal);font-size:12px">UnifiedFinding</code> — a merged model with a <code style="font-family:var(--mono);color:var(--teal);font-size:12px">category</code> field plus all common fields</span>
+              </li>
+              <li>
+                <div class="task-check" onclick="toggleTask(this,'t3-2')" id="t3-2"></div>
+                <span>Define <code style="font-family:var(--mono);color:var(--teal);font-size:12px">ReviewReport</code> Pydantic model with: summary, risk_level, quick_wins, praise, findings</span>
+              </li>
+              <li>
+                <div class="task-check" onclick="toggleTask(this,'t3-3')" id="t3-3"></div>
+                <span>Implement deterministic <code style="font-family:var(--mono);color:var(--teal);font-size:12px">deduplicate_findings()</code> — same line + similar title = duplicate, keep higher-severity version</span>
+              </li>
+              <li>
+                <div class="task-check" onclick="toggleTask(this,'t3-4')" id="t3-4"></div>
+                <span>Implement <code style="font-family:var(--mono);color:var(--teal);font-size:12px">critic_agent()</code> — calls deduplication, sorts by severity, returns unified list</span>
+              </li>
+              <li>
+                <div class="task-check" onclick="toggleTask(this,'t3-5')" id="t3-5"></div>
+                <span>Implement <code style="font-family:var(--mono);color:var(--teal);font-size:12px">formatter_agent()</code> — uses LLM to write summary/praise/quick_wins, returns ReviewReport via forced tool use</span>
+              </li>
+              <li>
+                <div class="task-check" onclick="toggleTask(this,'t3-6')" id="t3-6"></div>
+                <span>Test: plant a "SQL injection" finding in both Security AND Style agents — verify only 1 appears in output, keeping the Security version (CRITICAL over LOW)</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="section-label"><span class="sl-icon">✅</span> Test Cases</div>
+
+          <div class="test-cases">
+            <div class="tc-header">
+              <span class="task-icon">🧪</span>
+              <span class="tc-title">Deduplication &amp; Synthesis Tests</span>
+            </div>
+            <div class="tc-list">
+              <div class="tc-item">
+                <div class="tc-item-header">
+                  <div class="tc-status" onclick="toggleTc(this)"></div>
+                  <span>Deduplication: exact duplicate</span>
+                </div>
+                <div class="tc-input">Security finding: <span class="tc-mono">line=12, title="SQL Injection"</span><br>
+                Style finding: <span class="tc-mono">line=12, title="SQL injection mention"</span></div>
+                <div class="tc-expected">Expected: 1 finding in output, severity=CRITICAL (Security version wins)</div>
+              </div>
+              <div class="tc-item">
+                <div class="tc-item-header">
+                  <div class="tc-status" onclick="toggleTc(this)"></div>
+                  <span>Severity ordering</span>
+                </div>
+                <div class="tc-input">5 findings with mixed severities in any order</div>
+                <div class="tc-expected">Expected: output sorted CRITICAL → HIGH → MEDIUM → LOW</div>
+              </div>
+              <div class="tc-item">
+                <div class="tc-item-header">
+                  <div class="tc-status" onclick="toggleTc(this)"></div>
+                  <span>ReviewReport has all fields</span>
+                </div>
+                <div class="tc-input">Call formatter_agent() with 3+ unified findings</div>
+                <div class="tc-expected">Expected: ReviewReport has non-empty summary, risk_level is one of CRITICAL/HIGH/MEDIUM/LOW, findings list is populated</div>
+              </div>
+              <div class="tc-item">
+                <div class="tc-item-header">
+                  <div class="tc-status" onclick="toggleTc(this)"></div>
+                  <span>Edge: all agents return empty</span>
+                </div>
+                <div class="tc-input">All three reports return findings=[]</div>
+                <div class="tc-expected">Expected: ReviewReport.findings=[], risk_level="LOW", summary mentions clean code</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hints-box">
+            <div class="hints-header" onclick="toggleHints(this)">
+              <span class="task-icon">💡</span>
+              <span class="hints-title">Hints (click to reveal)</span>
+              <span class="hints-toggle">▾ Show</span>
+            </div>
+            <div class="hints-content">
+              <div class="hint-item"><span class="hint-num">1.</span> Make deduplication deterministic — no LLM. The Critic Agent's deduplication step should be pure Python logic. The LLM is expensive; save it for synthesis (Formatter).</div>
+              <div class="hint-item"><span class="hint-num">2.</span> Title comparison: use <code style="font-family:var(--mono);color:var(--teal);font-size:12px">title.lower()[:20]</code> as a fuzzy key — "SQL Injection" and "SQL injection mention" both start with "sql injection". This is intentionally approximate.</div>
+              <div class="hint-item"><span class="hint-num">3.</span> The Formatter agent should be told the number of CRITICAL vs HIGH issues in its prompt — this helps it calibrate the risk_level without needing to recount.</div>
+              <div class="hint-item"><span class="hint-num">4.</span> <code style="font-family:var(--mono);color:var(--teal);font-size:12px">model.model_dump()</code> gives you a plain dict — use it to construct the combined prompt string for the Formatter rather than iterating fields manually.</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div><!-- /ex3 -->
+
+    <!-- ======================================================= -->
+    <!-- EXERCISE 4 — BOSS -->
+    <!-- ======================================================= -->
+    <div class="exercise-card boss" id="ex4" style="animation-delay:0.26s">
+      <div class="card-accent-bar red"></div>
+      <div class="card-header" onclick="toggleCard(4)">
+        <div class="card-header-left">
+          <div class="ex-number" id="ex4-num">4</div>
+          <div class="ex-meta">
+            <h2>Assemble the Full Agent</h2>
+            <p>Wire everything into a LangGraph StateGraph with async fan-out, FastAPI endpoint, and the 5-bug planted challenge. This is the capstone of the entire curriculum.</p>
+            <div class="ex-badges">
+              <span class="badge diff-hard">Hard</span>
+              <span class="badge boss-badge">🏆 Boss Exercise</span>
+              <span class="badge topic">LangGraph</span>
+              <span class="badge topic">FastAPI</span>
+              <span class="badge topic">Async</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-controls">
+          <button class="complete-btn" id="ex4-btn" onclick="markDone(event,4)">Mark Done</button>
+          <span class="chevron" id="ex4-chev">›</span>
+        </div>
+      </div>
+
+      <div class="card-body" id="ex4-body">
+        <div class="card-body-inner">
+
+          <div class="section-label"><span class="sl-icon">🔍</span> Full System Architecture</div>
+
+          <div class="visual-explainer">
+            <div class="ve-title">Interactive Architecture — Click a component to inspect it</div>
+
+            <div class="component-selector">
+              <div class="comp-tabs">
+                <div class="comp-tab active" onclick="showComp(this,'comp-overview')">Overview</div>
+                <div class="comp-tab" onclick="showComp(this,'comp-state')">AgentState</div>
+                <div class="comp-tab" onclick="showComp(this,'comp-fanout')">Fan-out</div>
+                <div class="comp-tab" onclick="showComp(this,'comp-fanin')">Fan-in</div>
+                <div class="comp-tab" onclick="showComp(this,'comp-api')">FastAPI</div>
+              </div>
+
+              <div class="comp-panel active" id="comp-overview">
+                <div class="arch-diagram">
+<span class="arch-gold">GitHub PR URL</span> ──→ <span class="arch-purple">fetch_pr_diff()</span> ──→ <span class="arch-teal">PR Diff (ParsedDiff list)</span>
+                                                         │
+                                             ┌───────────┴───────────┐
+                                             ↓           ↓            ↓
+                                       <span class="arch-teal">Security</span>       <span class="arch-teal">Perf</span>          <span class="arch-teal">Style</span>
+                                        <span class="arch-teal">Agent</span>        <span class="arch-teal">Agent</span>         <span class="arch-teal">Agent</span>
+                                       <span class="arch-muted">(async)</span>      <span class="arch-muted">(async)</span>       <span class="arch-muted">(async)</span>
+                                             └───────────┬───────────┘
+                                                         ↓ <span class="arch-muted">all 3 results merged</span>
+                                                   <span class="arch-gold">Critic Agent</span>
+                                                   <span class="arch-muted">deduplicate + re-rank</span>
+                                                         ↓
+                                                <span class="arch-green">Formatter Agent</span>
+                                                <span class="arch-muted">synthesize + summarize</span>
+                                                         ↓
+                                                  <span class="arch-green">ReviewReport</span>
+                                                  <span class="arch-muted">{findings, summary,
+                                                   risk: "HIGH"}</span></div>
+              </div>
+
+              <div class="comp-panel" id="comp-state">
+                <div class="code-block">
+                  <div class="code-block-header">
+                    <div class="code-dots"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div></div>
+                    <span class="code-lang">AgentState TypedDict</span>
+                  </div>
+                  <div class="code-body"><span class="kw">from</span> typing <span class="kw">import</span> <span class="tp">TypedDict</span>, <span class="tp">Annotated</span>
+<span class="kw">import</span> operator
+
+<span class="kw">class</span> <span class="tp">AgentState</span>(<span class="tp">TypedDict</span>):
+    <span class="cm"># Input</span>
+    pr_url<span class="op">:</span> <span class="tp">str</span>
+    diffs<span class="op">:</span> <span class="tp">list</span>[<span class="tp">ParsedDiff</span>]
+
+    <span class="cm"># Parallel outputs — Annotated[list, operator.add] means</span>
+    <span class="cm"># each node APPENDS to the list rather than replacing it.</span>
+    <span class="cm"># This is the LangGraph fan-in pattern.</span>
+    security_findings<span class="op">:</span> <span class="tp">Annotated</span>[<span class="tp">list</span>[<span class="tp">SecurityFinding</span>], operator.add]
+    perf_findings<span class="op">:</span> <span class="tp">Annotated</span>[<span class="tp">list</span>[<span class="tp">PerformanceFinding</span>], operator.add]
+    style_findings<span class="op">:</span> <span class="tp">Annotated</span>[<span class="tp">list</span>[<span class="tp">StyleFinding</span>], operator.add]
+
+    <span class="cm"># Final outputs</span>
+    unified_findings<span class="op">:</span> <span class="tp">list</span>[<span class="tp">UnifiedFinding</span>]
+    report<span class="op">:</span> <span class="tp">Optional</span>[<span class="tp">ReviewReport</span>]</div>
+                </div>
+              </div>
+
+              <div class="comp-panel" id="comp-fanout">
+                <div class="code-block">
+                  <div class="code-block-header">
+                    <div class="code-dots"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div></div>
+                    <span class="code-lang">Fan-out with Send() — parallel specialist dispatch</span>
+                  </div>
+                  <div class="code-body"><span class="kw">from</span> langgraph.graph <span class="kw">import</span> StateGraph, END, <span class="tp">Send</span>
+
+<span class="kw">def</span> <span class="fn">dispatch_specialists</span>(state<span class="op">:</span> <span class="tp">AgentState</span>):
+    <span class="cm"># Send() creates parallel branches — one per specialist per diff</span>
+    <span class="cm"># All three run concurrently, results merged via operator.add</span>
+    <span class="kw">return</span> [
+        <span class="tp">Send</span>(<span class="st">"security_node"</span>, {<span class="st">"diff"</span><span class="op">:</span> state[<span class="st">"diffs"</span>][<span class="num">0</span>]}),
+        <span class="tp">Send</span>(<span class="st">"perf_node"</span>,     {<span class="st">"diff"</span><span class="op">:</span> state[<span class="st">"diffs"</span>][<span class="num">0</span>]}),
+        <span class="tp">Send</span>(<span class="st">"style_node"</span>,    {<span class="st">"diff"</span><span class="op">:</span> state[<span class="st">"diffs"</span>][<span class="num">0</span>]}),
+    ]
+
+<span class="kw">def</span> <span class="fn">security_node</span>(state<span class="op">:</span> <span class="tp">dict</span>) <span class="op">-></span> <span class="tp">dict</span>:
+    report <span class="op">=</span> security_agent(state[<span class="st">"diff"</span>])
+    <span class="kw">return</span> {<span class="st">"security_findings"</span><span class="op">:</span> report.findings}
+    <span class="cm"># ↑ operator.add reducer appends this to existing list</span>
+
+<span class="cm"># Same pattern for perf_node and style_node</span></div>
+                </div>
+              </div>
+
+              <div class="comp-panel" id="comp-fanin">
+                <div class="code-block">
+                  <div class="code-block-header">
+                    <div class="code-dots"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div></div>
+                    <span class="code-lang">Fan-in — merge results, run Critic + Formatter</span>
+                  </div>
+                  <div class="code-body"><span class="kw">def</span> <span class="fn">critic_node</span>(state<span class="op">:</span> <span class="tp">AgentState</span>) <span class="op">-></span> <span class="tp">dict</span>:
+    <span class="cm"># By the time we reach critic_node, all 3 parallel branches</span>
+    <span class="cm"># have completed and their findings are merged in state.</span>
+    unified <span class="op">=</span> critic_agent(
+        security<span class="op">=</span>state[<span class="st">"security_findings"</span>],
+        performance<span class="op">=</span>state[<span class="st">"perf_findings"</span>],
+        style<span class="op">=</span>state[<span class="st">"style_findings"</span>]
+    )
+    <span class="kw">return</span> {<span class="st">"unified_findings"</span><span class="op">:</span> unified}
+
+<span class="kw">def</span> <span class="fn">formatter_node</span>(state<span class="op">:</span> <span class="tp">AgentState</span>) <span class="op">-></span> <span class="tp">dict</span>:
+    report <span class="op">=</span> formatter_agent(
+        findings<span class="op">=</span>state[<span class="st">"unified_findings"</span>],
+        diff_context<span class="op">=</span><span class="st">f"Reviewing {len(state['diffs'])} files"</span>
+    )
+    <span class="kw">return</span> {<span class="st">"report"</span><span class="op">:</span> report}
+
+<span class="cm"># Wire the graph</span>
+graph <span class="op">=</span> <span class="tp">StateGraph</span>(<span class="tp">AgentState</span>)
+graph.add_node(<span class="st">"fetch"</span>, fetch_node)
+graph.add_node(<span class="st">"security_node"</span>, security_node)
+graph.add_node(<span class="st">"perf_node"</span>, perf_node)
+graph.add_node(<span class="st">"style_node"</span>, style_node)
+graph.add_node(<span class="st">"critic"</span>, critic_node)
+graph.add_node(<span class="st">"formatter"</span>, formatter_node)
+
+graph.set_entry_point(<span class="st">"fetch"</span>)
+graph.add_conditional_edges(<span class="st">"fetch"</span>, dispatch_specialists)
+graph.add_edge(<span class="st">"security_node"</span>, <span class="st">"critic"</span>)
+graph.add_edge(<span class="st">"perf_node"</span>,     <span class="st">"critic"</span>)
+graph.add_edge(<span class="st">"style_node"</span>,    <span class="st">"critic"</span>)
+graph.add_edge(<span class="st">"critic"</span>, <span class="st">"formatter"</span>)
+graph.add_edge(<span class="st">"formatter"</span>, END)
+app <span class="op">=</span> graph.compile()</div>
+                </div>
+              </div>
+
+              <div class="comp-panel" id="comp-api">
+                <div class="code-block">
+                  <div class="code-block-header">
+                    <div class="code-dots"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div></div>
+                    <span class="code-lang">FastAPI endpoint</span>
+                  </div>
+                  <div class="code-body"><span class="kw">from</span> fastapi <span class="kw">import</span> FastAPI
+<span class="kw">from</span> pydantic <span class="kw">import</span> BaseModel
+
+api <span class="op">=</span> <span class="fn">FastAPI</span>(title<span class="op">=</span><span class="st">"Code Review Agent"</span>)
+
+<span class="kw">class</span> <span class="tp">ReviewRequest</span>(BaseModel):
+    pr_url<span class="op">:</span> <span class="tp">str</span>
+    diff_text<span class="op">:</span> <span class="tp">str</span>  <span class="cm"># paste the diff directly for testing</span>
+
+<span class="dec">@api.post</span>(<span class="st">"/review"</span>, response_model<span class="op">=</span><span class="tp">ReviewReport</span>)
+<span class="kw">async def</span> <span class="fn">review_pr</span>(request<span class="op">:</span> <span class="tp">ReviewRequest</span>):
+    diffs <span class="op">=</span> parse_pr_diff(request.diff_text)
+    initial_state<span class="op">:</span> <span class="tp">AgentState</span> <span class="op">=</span> {
+        <span class="st">"pr_url"</span><span class="op">:</span> request.pr_url,
+        <span class="st">"diffs"</span><span class="op">:</span> diffs,
+        <span class="st">"security_findings"</span><span class="op">:</span> [],
+        <span class="st">"perf_findings"</span><span class="op">:</span> [],
+        <span class="st">"style_findings"</span><span class="op">:</span> [],
+        <span class="st">"unified_findings"</span><span class="op">:</span> [],
+        <span class="st">"report"</span><span class="op">:</span> <span class="kw">None</span>
+    }
+    result <span class="op">=</span> <span class="kw">await</span> app.ainvoke(initial_state)
+    <span class="kw">return</span> result[<span class="st">"report"</span>]
+
+<span class="cm"># Test with: uvicorn main:api --reload
+# POST http://localhost:8000/review
+# Body: {"pr_url": "...", "diff_text": "..."}</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-label"><span class="sl-icon">🪲</span> The Planted Bugs Challenge</div>
+
+          <div class="code-block">
+            <div class="code-block-header">
+              <div class="code-dots"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div></div>
+              <span class="code-lang">Python — 5 Planted Bugs (your agent must find all of them)</span>
+            </div>
+            <div class="code-body"><span class="kw">import</span> os
+
+<span class="cm"># Bug 1 — Hardcoded secret (Security: CRITICAL)</span>
+SECRET_KEY <span class="op">=</span> <span class="st">"hardcoded_secret_12345"</span>
+
+<span class="kw">def</span> <span class="fn">get_user</span>(user_id):
+    <span class="cm"># Bug 2 — SQL injection via string concatenation (Security: CRITICAL)</span>
+    query <span class="op">=</span> <span class="st">"SELECT * FROM users WHERE id = "</span> <span class="op">+</span> user_id
+    results <span class="op">=</span> []
+    <span class="cm"># Bug 3 — N+1 query pattern (Performance: HIGH)</span>
+    <span class="kw">for</span> user <span class="kw">in</span> db.execute(query):
+        results.append(user)
+    <span class="kw">return</span> results
+
+<span class="kw">def</span> <span class="fn">process_file</span>(filename):
+    <span class="cm"># Bug 4 — Path traversal via user-controlled input (Security: HIGH)</span>
+    path <span class="op">=</span> <span class="st">"/data/"</span> <span class="op">+</span> filename
+    <span class="kw">with</span> <span class="fn">open</span>(path) <span class="kw">as</span> f:
+        <span class="kw">return</span> f.read()
+
+<span class="kw">class</span> <span class="tp">UserService</span>:
+    <span class="cm"># Bug 5 — Missing type hints (Style: LOW)</span>
+    <span class="kw">def</span> <span class="fn">get_users</span>(self):
+        <span class="kw">pass</span></div>
+          </div>
+
+          <div class="bug-tracker">
+            <div class="bt-title">🎯 Bug Catch Tracker — click when your agent finds each one</div>
+            <div class="bt-grid">
+              <div class="bt-item" id="bt-1" onclick="toggleBug(1)">
+                <div class="bt-indicator" id="bti-1"></div>
+                <div class="bt-bug-name">Bug 1: Hardcoded Secret Key</div>
+                <div class="bt-agent">Security Agent</div>
+                <div class="bt-severity critical">CRITICAL</div>
+              </div>
+              <div class="bt-item" id="bt-2" onclick="toggleBug(2)">
+                <div class="bt-indicator" id="bti-2"></div>
+                <div class="bt-bug-name">Bug 2: SQL Injection (string concat)</div>
+                <div class="bt-agent">Security Agent</div>
+                <div class="bt-severity critical">CRITICAL</div>
+              </div>
+              <div class="bt-item" id="bt-3" onclick="toggleBug(3)">
+                <div class="bt-indicator" id="bti-3"></div>
+                <div class="bt-bug-name">Bug 3: N+1 Query Pattern</div>
+                <div class="bt-agent">Performance Agent</div>
+                <div class="bt-severity high">HIGH</div>
+              </div>
+              <div class="bt-item" id="bt-4" onclick="toggleBug(4)">
+                <div class="bt-indicator" id="bti-4"></div>
+                <div class="bt-bug-name">Bug 4: Path Traversal</div>
+                <div class="bt-agent">Security Agent</div>
+                <div class="bt-severity high">HIGH</div>
+              </div>
+              <div class="bt-item" id="bt-5" onclick="toggleBug(5)">
+                <div class="bt-indicator" id="bti-5"></div>
+                <div class="bt-bug-name">Bug 5: Missing Type Hints</div>
+                <div class="bt-agent">Style Agent</div>
+                <div class="bt-severity low">LOW</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-label"><span class="sl-icon">📋</span> Step-by-Step Build Walkthrough</div>
+
+          <div class="step-list">
+            <div class="step-item">
+              <div class="step-num">1</div>
+              <div class="step-body">
+                <div class="step-title">Define AgentState</div>
+                <div class="step-desc">TypedDict with Annotated[list, operator.add] for the three findings lists. This is LangGraph's fan-in mechanism — parallel nodes append, not replace.</div>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">2</div>
+              <div class="step-body">
+                <div class="step-title">Implement tool functions</div>
+                <div class="step-desc">All five agent functions from Exercises 1–3: parse_pr_diff, security_agent, performance_agent, style_agent, critic_agent, formatter_agent.</div>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">3</div>
+              <div class="step-body">
+                <div class="step-title">Implement LangGraph nodes</div>
+                <div class="step-desc">Wrap each agent function as a LangGraph node: fetch_node, security_node, perf_node, style_node, critic_node, formatter_node. Each takes state dict, returns state dict update.</div>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">4</div>
+              <div class="step-body">
+                <div class="step-title">Wire with StateGraph</div>
+                <div class="step-desc">Add all nodes, use add_conditional_edges with dispatch_specialists to create the fan-out via Send(). Connect specialist nodes → critic via add_edge. critic → formatter → END.</div>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">5</div>
+              <div class="step-body">
+                <div class="step-title">Add FastAPI endpoint</div>
+                <div class="step-desc">POST /review accepts ReviewRequest (pr_url + diff_text), builds initial AgentState, calls graph.ainvoke(), returns ReviewReport. Add POST /health for readiness probes.</div>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">6</div>
+              <div class="step-body">
+                <div class="step-title">Run the planted bugs test</div>
+                <div class="step-desc">Create a git diff from the planted code above. POST it to /review. Verify all 5 bugs appear in ReviewReport.findings. Check the tracker above as each appears.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-label"><span class="sl-icon">⚡</span> Your Task</div>
+
+          <div class="task-box">
+            <div class="task-box-header">
+              <span class="task-icon">🏆</span>
+              <span class="task-title">Assemble the complete code review agent end to end</span>
+            </div>
+            <ul class="task-steps" id="t4-steps">
+              <li>
+                <div class="task-check" onclick="toggleTask(this,'t4-1')" id="t4-1"></div>
+                <span>Define <code style="font-family:var(--mono);color:var(--teal);font-size:12px">AgentState</code> TypedDict with <code style="font-family:var(--mono);color:var(--teal);font-size:12px">Annotated[list, operator.add]</code> for parallel findings accumulation</span>
+              </li>
+              <li>
+                <div class="task-check" onclick="toggleTask(this,'t4-2')" id="t4-2"></div>
+                <span>Create <code style="font-family:var(--mono);color:var(--teal);font-size:12px">dispatch_specialists()</code> using <code style="font-family:var(--mono);color:var(--teal);font-size:12px">Send()</code> for async fan-out to all three specialist nodes</span>
+              </li>
+              <li>
+                <div class="task-check" onclick="toggleTask(this,'t4-3')" id="t4-3"></div>
+                <span>Implement <code style="font-family:var(--mono);color:var(--teal);font-size:12px">fetch_node</code> that parses pr_url/diff_text into ParsedDiff list and stores in state</span>
+              </li>
+              <li>
+                <div class="task-check" onclick="toggleTask(this,'t4-4')" id="t4-4"></div>
+                <span>Wire <code style="font-family:var(--mono);color:var(--teal);font-size:12px">StateGraph</code> with all 7 nodes, conditional fan-out edge, three specialist → critic edges, critic → formatter → END</span>
+              </li>
+              <li>
+                <div class="task-check" onclick="toggleTask(this,'t4-5')" id="t4-5"></div>
+                <span>Build FastAPI app with <code style="font-family:var(--mono);color:var(--teal);font-size:12px">POST /review</code> endpoint, use <code style="font-family:var(--mono);color:var(--teal);font-size:12px">await graph.ainvoke()</code> for async execution</span>
+              </li>
+              <li>
+                <div class="task-check" onclick="toggleTask(this,'t4-6')" id="t4-6"></div>
+                <span>Run the planted bugs test — all 5 must appear in the final ReviewReport.findings. Mark the Bug Tracker above as each is caught.</span>
+              </li>
+              <li>
+                <div class="task-check" onclick="toggleTask(this,'t4-7')" id="t4-7"></div>
+                <span>Bonus: add streaming support — use <code style="font-family:var(--mono);color:var(--teal);font-size:12px">graph.astream_events()</code> and return a <code style="font-family:var(--mono);color:var(--teal);font-size:12px">StreamingResponse</code> from FastAPI</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="section-label"><span class="sl-icon">✅</span> Test Cases</div>
+
+          <div class="test-cases">
+            <div class="tc-header">
+              <span class="task-icon">🧪</span>
+              <span class="tc-title">Full System Tests</span>
+            </div>
+            <div class="tc-list">
+              <div class="tc-item">
+                <div class="tc-item-header">
+                  <div class="tc-status" onclick="toggleTc(this)"></div>
+                  <span>All 5 bugs caught</span>
+                </div>
+                <div class="tc-input">POST /review with the planted bugs diff above</div>
+                <div class="tc-expected">Expected: ReviewReport.findings has 5 items (after deduplication). risk_level="CRITICAL"</div>
+              </div>
+              <div class="tc-item">
+                <div class="tc-item-header">
+                  <div class="tc-status" onclick="toggleTc(this)"></div>
+                  <span>Parallel execution verified</span>
+                </div>
+                <div class="tc-input">Time the /review call with 3 diffs</div>
+                <div class="tc-expected">Expected: total time ≈ max(specialist time) + critic + formatter, NOT sum of all specialists</div>
+              </div>
+              <div class="tc-item">
+                <div class="tc-item-header">
+                  <div class="tc-status" onclick="toggleTc(this)"></div>
+                  <span>API response shape</span>
+                </div>
+                <div class="tc-input">POST /review with any diff</div>
+                <div class="tc-expected">Expected: JSON with keys: summary, risk_level, quick_wins, praise, findings — all Pydantic-validated</div>
+              </div>
+              <div class="tc-item">
+                <div class="tc-item-header">
+                  <div class="tc-status" onclick="toggleTc(this)"></div>
+                  <span>Clean code returns gracefully</span>
+                </div>
+                <div class="tc-input">POST /review with a diff that has no issues</div>
+                <div class="tc-expected">Expected: 200 OK, findings=[], risk_level="LOW", summary acknowledges clean code</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hints-box">
+            <div class="hints-header" onclick="toggleHints(this)">
+              <span class="task-icon">💡</span>
+              <span class="hints-title">Hints (click to reveal)</span>
+              <span class="hints-toggle">▾ Show</span>
+            </div>
+            <div class="hints-content">
+              <div class="hint-item"><span class="hint-num">1.</span> LangGraph's <code style="font-family:var(--mono);color:var(--teal);font-size:12px">Send()</code> creates parallel branches but the fan-in requires all branches to resolve before the next node runs. The <code style="font-family:var(--mono);color:var(--teal);font-size:12px">operator.add</code> reducer handles the merge automatically.</div>
+              <div class="hint-item"><span class="hint-num">2.</span> For the planted bugs test: create the diff manually as a string (don't actually modify files). Paste the complete unified diff format into your POST request body as <code style="font-family:var(--mono);color:var(--teal);font-size:12px">diff_text</code>.</div>
+              <div class="hint-item"><span class="hint-num">3.</span> FastAPI's <code style="font-family:var(--mono);color:var(--teal);font-size:12px">response_model=ReviewReport</code> automatically validates and serializes the response. If the ReviewReport doesn't match, you'll get a 422 — use this to catch Pydantic errors early.</div>
+              <div class="hint-item"><span class="hint-num">4.</span> Bug 3 (N+1) is a Performance finding, not Security. Your Critic agent must not deduplicate it against the SQL injection. They're on different lines and different categories.</div>
+              <div class="hint-item"><span class="hint-num">5.</span> For production: add <code style="font-family:var(--mono);color:var(--teal);font-size:12px">asyncio.gather()</code> timeouts to prevent slow LLM calls from blocking indefinitely. Wrap each specialist in <code style="font-family:var(--mono);color:var(--teal);font-size:12px">asyncio.wait_for(..., timeout=30)</code>.</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div><!-- /ex4 -->
+
+  </div><!-- /exercises-list -->
+
+  <!-- CTA -->
+  <div class="cta-section">
+    <div class="cta-title">🏆 Curriculum Complete!</div>
+    <p class="cta-sub">You've built a production multi-agent code review system from scratch.<br>LLM fundamentals → Tool use → RAG → LangGraph → Multi-agent → Production.</p>
+    <div class="cta-actions">
+      <a href="index.html" class="cta-btn primary">View All Exercises</a>
+      <a href="../index.html" class="cta-btn secondary">← Back to Course</a>
+      <a href="../interview.html" class="cta-btn secondary">Interview Prep →</a>
+    </div>
+  </div>
+
+</div>
+</main>
+
+<footer>
+  <div class="container">
+    <p>Built for <strong>Sharjeel Sohail</strong> · Python · FastAPI · Anthropic SDK · LangGraph · Production AI</p>
+    <p style="margin-top:8px; font-size:11px;">
+      <a href="index.html">Exercises Dashboard</a> ·
+      <a href="day6_exercises.html">← Day 6</a> ·
+      <a href="../index.html">Course Home</a>
+    </p>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── Storage ───────────────────────────────────────────────
+const STORAGE_KEY = 'aai_ex_day7';
+
+function getState() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
+  catch { return {}; }
+}
+function saveState(s) { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); }
+
+// ─── Progress UI ────────────────────────────────────────────
+function updateProgress() {
+  const s = getState();
+  const done = [1,2,3,4].filter(i => s['ex_done_' + i]).length;
+  const pct = Math.round((done / 4) * 100);
+  document.getElementById('dpPct').textContent = pct + '%';
+  document.getElementById('dpFill').style.width = pct + '%';
+
+  const dotsEl = document.getElementById('dpDots');
+  dotsEl.innerHTML = '';
+  [1,2,3,4].forEach(i => {
+    const dot = document.createElement('div');
+    dot.className = 'ex-dot' + (s['ex_done_' + i] ? ' done' : '');
+    dot.textContent = i;
+    dot.title = 'Exercise ' + i;
+    dot.onclick = () => toggleCard(i);
+    dotsEl.appendChild(dot);
+  });
+
+  [1,2,3,4].forEach(i => {
+    const isDone = !!s['ex_done_' + i];
+    const card = document.getElementById('ex' + i);
+    const btn = document.getElementById('ex' + i + '-btn');
+    const num = document.getElementById('ex' + i + '-num');
+    if (isDone) {
+      card.classList.add('done');
+      btn.textContent = '✓ Done!';
+      btn.classList.add('marked');
+      num.textContent = '✓';
+    } else {
+      card.classList.remove('done');
+      btn.textContent = 'Mark Done';
+      btn.classList.remove('marked');
+      num.textContent = i;
+    }
+  });
+}
+
+// ─── Toggle card ────────────────────────────────────────────
+function toggleCard(n) {
+  const body = document.getElementById('ex' + n + '-body');
+  const header = body.previousElementSibling;
+  const chev = document.getElementById('ex' + n + '-chev');
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  header.classList.toggle('open', !isOpen);
+  chev.style.transform = isOpen ? '' : 'rotate(90deg)';
+}
+
+// ─── Mark done ──────────────────────────────────────────────
+function markDone(e, n) {
+  e.stopPropagation();
+  const s = getState();
+  const key = 'ex_done_' + n;
+  s[key] = !s[key];
+  saveState(s);
+  updateProgress();
+
+  // Also update exercises index
+  const allEx = JSON.parse(localStorage.getItem('aai_exercises') || '{}');
+  allEx['day7_ex' + n] = s[key];
+  localStorage.setItem('aai_exercises', JSON.stringify(allEx));
+
+  showToast(s[key] ? '✓ Exercise ' + n + ' marked complete!' : 'Exercise ' + n + ' unmarked.');
+}
+
+// ─── Task checkboxes ────────────────────────────────────────
+function toggleTask(el, id) {
+  const s = getState();
+  const key = 'task_' + id;
+  s[key] = !s[key];
+  saveState(s);
+  el.classList.toggle('checked', s[key]);
+  el.textContent = s[key] ? '✓' : '';
+  const li = el.parentElement;
+  li.classList.toggle('done-step', s[key]);
+}
+
+// ─── Test case toggles ──────────────────────────────────────
+function toggleTc(el) {
+  const current = el.classList.contains('pass') ? 'pass' : el.classList.contains('fail') ? 'fail' : '';
+  el.classList.remove('pass', 'fail');
+  if (current === '') { el.classList.add('pass'); el.textContent = '✓'; }
+  else if (current === 'pass') { el.classList.add('fail'); el.textContent = '✗'; }
+  else { el.textContent = ''; }
+}
+
+// ─── Hints toggle ────────────────────────────────────────────
+function toggleHints(header) {
+  const content = header.nextElementSibling;
+  const toggle = header.querySelector('.hints-toggle');
+  const isOpen = content.classList.contains('open');
+  content.classList.toggle('open', !isOpen);
+  toggle.textContent = isOpen ? '▾ Show' : '▴ Hide';
+}
+
+// ─── Toast ───────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ─── Anim 1 — Parser steps ──────────────────────────────────
+let anim1Step = 0;
+const ANIM1_STAGES = ['a1-s0','a1-s1','a1-s2','a1-s3','a1-s4'];
+
+function stepAnim1() {
+  ANIM1_STAGES.forEach((id, i) => {
+    const el = document.getElementById(id);
+    if (i < anim1Step) el.className = 'anim-stage done';
+    else if (i === anim1Step) el.className = 'anim-stage active';
+    else el.className = 'anim-stage';
+  });
+  anim1Step = (anim1Step + 1) % (ANIM1_STAGES.length + 1);
+  if (anim1Step === 0) {
+    ANIM1_STAGES.forEach(id => { document.getElementById(id).className = 'anim-stage'; });
+    document.getElementById('a1-s0').className = 'anim-stage active';
+    anim1Step = 1;
+  }
+}
+
+// ─── Critic animation ────────────────────────────────────────
+let criticStep = 0;
+function runCriticAnim() {
+  criticStep++;
+  if (criticStep === 1) {
+    const dup = document.getElementById('dup-finding');
+    dup.classList.add('duplicate');
+    showToast('Critic: found duplicate "SQL injection" in Style — removing');
+    setTimeout(() => {
+      document.getElementById('after-critic').style.display = 'block';
+    }, 800);
+  } else if (criticStep === 2) {
+    document.getElementById('formatter-output').style.display = 'block';
+    showToast('Formatter: executive summary generated');
+  } else {
+    criticStep = 0;
+    document.getElementById('dup-finding').classList.remove('duplicate');
+    document.getElementById('after-critic').style.display = 'none';
+    document.getElementById('formatter-output').style.display = 'none';
+    showToast('Reset — run again');
+  }
+}
+
+// ─── Component selector ──────────────────────────────────────
+function showComp(tab, panelId) {
+  document.querySelectorAll('.comp-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.comp-panel').forEach(p => p.classList.remove('active'));
+  tab.classList.add('active');
+  document.getElementById(panelId).classList.add('active');
+}
+
+// ─── Bug tracker ─────────────────────────────────────────────
+function toggleBug(n) {
+  const s = getState();
+  const key = 'bug_' + n;
+  s[key] = !s[key];
+  saveState(s);
+  const item = document.getElementById('bt-' + n);
+  const ind = document.getElementById('bti-' + n);
+  item.classList.toggle('caught', s[key]);
+  ind.textContent = s[key] ? '✓' : '';
+
+  const allCaught = [1,2,3,4,5].every(i => getState()['bug_' + i]);
+  if (allCaught) {
+    showToast('🏆 All 5 bugs caught! Your agent is production-ready!');
+  }
+}
+
+// ─── Restore all state on load ───────────────────────────────
+function restoreState() {
+  const s = getState();
+
+  // Task checkboxes
+  document.querySelectorAll('[id^="t"]').forEach(el => {
+    if (el.classList.contains('task-check') && el.id) {
+      if (s['task_' + el.id]) {
+        el.classList.add('checked');
+        el.textContent = '✓';
+        el.parentElement.classList.add('done-step');
+      }
+    }
+  });
+
+  // Bug tracker
+  [1,2,3,4,5].forEach(n => {
+    if (s['bug_' + n]) {
+      document.getElementById('bt-' + n).classList.add('caught');
+      document.getElementById('bti-' + n).textContent = '✓';
+    }
+  });
+}
+
+// ─── Init ────────────────────────────────────────────────────
+updateProgress();
+restoreState();
+</script>
+<script src="../bg-animation.js"></script>
+</body>
+</html>

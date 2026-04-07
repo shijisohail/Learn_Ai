@@ -1,0 +1,1535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 4 Exercises — LangGraph: Stateful Agents | Agentic AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0a0a0f; --card: #141420; --surface2: #1a1a2e; --border: #2a2a45;
+    --purple: #7c3aed; --teal: #0d9488; --green: #10b981; --yellow: #f59e0b; --red: #ef4444;
+    --text: #e2e8f0; --muted: #64748b;
+    --purple-light: #a78bfa; --teal-light: #5eead4; --green-light: #6ee7b7;
+    --blue: #3b82f6; --blue-light: #93c5fd;
+  }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; min-height: 100vh; }
+
+  nav { background: var(--card); border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; position: sticky; top: 0; z-index: 100; }
+  nav a { color: var(--purple-light); text-decoration: none; font-size: 0.875rem; font-weight: 500; transition: color 0.2s; }
+  nav a:hover { color: #fff; }
+  .nav-title { color: var(--text); font-weight: 600; font-size: 0.95rem; }
+
+  .progress-bar-wrap { background: var(--surface2); border-radius: 8px; padding: 12px 24px; margin: 0 24px; display: flex; align-items: center; gap: 16px; }
+  .progress-track { flex: 1; height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--purple), var(--teal)); border-radius: 99px; transition: width 0.5s ease; }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px 80px; }
+  .page-header { text-align: center; margin-bottom: 40px; }
+  .page-header h1 { font-size: 2rem; font-weight: 700; background: linear-gradient(135deg, var(--purple-light), var(--teal-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .page-header p { color: var(--muted); margin-top: 8px; }
+
+  .exercise { background: var(--card); border: 1px solid var(--border); border-radius: 16px; margin-bottom: 40px; overflow: hidden; }
+  .exercise-header { padding: 20px 28px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 16px; cursor: pointer; user-select: none; }
+  .exercise-num { width: 36px; height: 36px; border-radius: 50%; background: var(--purple); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem; flex-shrink: 0; }
+  .exercise-header h2 { font-size: 1.1rem; font-weight: 600; flex: 1; }
+  .ex-badge { font-size: 0.7rem; padding: 3px 10px; border-radius: 99px; font-weight: 600; }
+  .badge-boss { background: rgba(245,158,11,0.15); color: var(--yellow); border: 1px solid rgba(245,158,11,0.3); }
+  .badge-done { background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+  .chevron { color: var(--muted); transition: transform 0.3s; margin-left: auto; }
+  .chevron.open { transform: rotate(180deg); }
+  .exercise-body { display: none; padding: 28px; }
+  .exercise-body.open { display: block; }
+
+  .section-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  pre, code { font-family: 'JetBrains Mono', monospace; }
+  .code-block { background: #0d0d1a; border: 1px solid var(--border); border-radius: 10px; padding: 20px; overflow-x: auto; font-size: 0.82rem; line-height: 1.7; white-space: pre; color: var(--text); position: relative; font-family: 'JetBrains Mono', monospace; }
+  .kw { color: #c792ea; }
+  .fn { color: #82aaff; }
+  .str { color: #c3e88d; }
+  .cm { color: var(--muted); font-style: italic; }
+  .num { color: #f78c6c; }
+  .cls { color: var(--teal-light); }
+  .hl { background: rgba(124,58,237,0.2); display: block; border-left: 3px solid var(--purple); padding-left: 4px; margin-left: -4px; }
+
+  .visual-area { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+  .visual-area h3 { font-size: 0.85rem; color: var(--muted); margin-bottom: 16px; font-weight: 500; }
+
+  .btn { padding: 8px 18px; border-radius: 8px; border: none; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 0.82rem; font-weight: 600; transition: all 0.2s; }
+  .btn-purple { background: var(--purple); color: #fff; }
+  .btn-purple:hover { background: #6d28d9; }
+  .btn-teal { background: var(--teal); color: #fff; }
+  .btn-teal:hover { background: #0f766e; }
+  .btn-green { background: var(--green); color: #fff; }
+  .btn-green:hover { background: #059669; }
+  .btn-red { background: var(--red); color: #fff; }
+  .btn-red:hover { background: #dc2626; }
+  .btn-outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
+  .btn-outline:hover { border-color: var(--purple); color: var(--purple-light); }
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+
+  .task-box { background: rgba(124,58,237,0.08); border: 1px solid rgba(124,58,237,0.25); border-radius: 10px; padding: 20px; margin-top: 18px; }
+  .task-box h4 { color: var(--purple-light); font-size: 0.85rem; font-weight: 700; margin-bottom: 10px; }
+  .task-box ul { padding-left: 18px; }
+  .task-box ul li { font-size: 0.875rem; margin-bottom: 6px; }
+  .test-box { background: rgba(13,148,136,0.08); border: 1px solid rgba(13,148,136,0.25); border-radius: 10px; padding: 16px 20px; margin-top: 12px; }
+  .test-box h4 { color: var(--teal-light); font-size: 0.82rem; font-weight: 700; margin-bottom: 8px; }
+  .hints-wrap { margin-top: 12px; }
+  .hint-toggle { background: none; border: 1px solid var(--border); color: var(--muted); border-radius: 8px; padding: 6px 14px; cursor: pointer; font-size: 0.78rem; font-family: 'Inter', sans-serif; transition: all 0.2s; }
+  .hint-toggle:hover { border-color: var(--yellow); color: var(--yellow); }
+  .hints-list { display: none; margin-top: 10px; padding-left: 16px; }
+  .hints-list.open { display: block; }
+  .hints-list li { font-size: 0.82rem; color: var(--muted); margin-bottom: 6px; }
+  .hints-list li strong { color: var(--yellow); }
+
+  /* GRAPH CANVAS */
+  #graphCanvas { background: #0a0a14; border: 1px solid var(--border); border-radius: 10px; display: block; }
+
+  /* GRAPH BUILD STEPS */
+  .build-steps { display: flex; flex-direction: column; gap: 8px; }
+  .build-step { display: flex; align-items: flex-start; gap: 12px; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); font-size: 0.82rem; opacity: 0.4; transition: all 0.4s; }
+  .build-step.active { opacity: 1; border-color: var(--purple); background: rgba(124,58,237,0.08); }
+  .build-step.done { opacity: 0.8; border-color: var(--green); }
+  .bstep-num { width: 24px; height: 24px; border-radius: 50%; background: var(--border); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; flex-shrink: 0; font-family: 'JetBrains Mono', monospace; }
+  .build-step.active .bstep-num { background: var(--purple); color: #fff; }
+  .build-step.done .bstep-num { background: var(--green); color: #fff; }
+  .bstep-code { font-family: 'JetBrains Mono', monospace; color: var(--teal-light); font-size: 0.78rem; margin-top: 3px; }
+
+  /* COMPARISON PANEL */
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .compare-grid { grid-template-columns: 1fr; } }
+  .compare-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+  .compare-card h4 { font-size: 0.82rem; font-weight: 700; margin-bottom: 10px; }
+  .compare-card.old h4 { color: var(--red); }
+  .compare-card.new h4 { color: var(--green); }
+
+  /* STATE SCHEMA CARD */
+  .schema-card { background: #0d0d1a; border: 1px solid var(--border); border-radius: 10px; padding: 20px; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; line-height: 2; white-space: pre; overflow-x: auto; }
+  .schema-field { display: flex; gap: 8px; align-items: flex-start; padding: 3px 0; transition: background 0.3s; border-radius: 4px; }
+  .schema-field:hover { background: rgba(124,58,237,0.1); }
+  .schema-name { color: var(--purple-light); }
+  .schema-type { color: var(--teal-light); }
+  .schema-note { color: var(--muted); font-style: italic; }
+
+  /* REDUCER DEMO */
+  .reducer-demo { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px; }
+  @media (max-width: 600px) { .reducer-demo { grid-template-columns: 1fr; } }
+  .reducer-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+  .reducer-card h5 { font-size: 0.78rem; font-weight: 700; margin-bottom: 8px; }
+  .reducer-card.merge h5 { color: var(--green); }
+  .reducer-card.replace h5 { color: var(--red); }
+  .reducer-timeline { display: flex; flex-direction: column; gap: 4px; font-size: 0.73rem; }
+  .rt-item { padding: 4px 8px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; }
+  .rt-nodeA { background: rgba(124,58,237,0.15); color: var(--purple-light); }
+  .rt-nodeB { background: rgba(13,148,136,0.15); color: var(--teal-light); }
+  .rt-result { background: rgba(16,185,129,0.15); color: var(--green); font-weight: 600; }
+  .rt-lost { background: rgba(239,68,68,0.15); color: var(--red); text-decoration: line-through; }
+
+  /* ROUTING VISUALIZER */
+  .routing-demo { display: flex; flex-direction: column; gap: 0; }
+  .route-row { display: flex; align-items: center; gap: 0; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .route-row:last-child { border-bottom: none; }
+  .route-input { flex: 1; font-size: 0.78rem; background: var(--surface2); border-radius: 6px; padding: 6px 10px; font-family: 'JetBrains Mono', monospace; }
+  .route-arrow-anim { padding: 0 12px; color: var(--muted); font-size: 0.85rem; }
+  .route-dest { padding: 4px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; min-width: 100px; text-align: center; }
+  .dest-tools { background: rgba(124,58,237,0.15); color: var(--purple-light); border: 1px solid rgba(124,58,237,0.3); }
+  .dest-end { background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+  .dest-error { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+  .dest-clarify { background: rgba(245,158,11,0.15); color: var(--yellow); border: 1px solid rgba(245,158,11,0.3); }
+  .route-row.active .route-input { border: 1px solid var(--purple); }
+
+  /* HITL FLOW */
+  .hitl-flow { display: flex; flex-direction: column; align-items: center; gap: 0; }
+  .hitl-node { border-radius: 10px; padding: 12px 24px; text-align: center; min-width: 200px; transition: all 0.4s; border: 1px solid var(--border); background: var(--card); }
+  .hitl-node.active { border-color: var(--teal); box-shadow: 0 0 20px rgba(13,148,136,0.3); }
+  .hitl-node.paused { border-color: var(--yellow); box-shadow: 0 0 20px rgba(245,158,11,0.3); background: rgba(245,158,11,0.06); }
+  .hitl-node.approved { border-color: var(--green); box-shadow: 0 0 14px rgba(16,185,129,0.2); }
+  .hitl-arrow-line { width: 2px; height: 28px; background: var(--border); display: flex; justify-content: center; position: relative; }
+  .hitl-arrow-line::after { content: '▼'; color: var(--muted); font-size: 0.65rem; position: absolute; bottom: -3px; }
+  .hitl-branch { display: flex; gap: 24px; align-items: flex-start; }
+  .hitl-branch-node { min-width: 120px; border-radius: 8px; padding: 8px 12px; font-size: 0.78rem; text-align: center; border: 1px solid var(--border); background: var(--card); transition: all 0.4s; }
+  .pause-indicator { display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--yellow); padding: 4px 10px; border-radius: 99px; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); }
+
+  /* HITL MOCK PANEL */
+  .hitl-panel { background: #0d0d1a; border: 1px solid var(--yellow); border-radius: 12px; padding: 20px; margin-top: 16px; }
+  .hitl-panel h4 { color: var(--yellow); font-size: 0.82rem; font-weight: 700; margin-bottom: 12px; }
+  .hitl-results { background: var(--surface2); border-radius: 8px; padding: 12px; font-size: 0.8rem; margin-bottom: 12px; }
+  .hitl-result-item { padding: 4px 0; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
+  .hitl-result-item:last-child { border-bottom: none; }
+  .result-num { color: var(--teal-light); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; }
+  .revision-input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; color: var(--text); font-family: 'Inter', sans-serif; font-size: 0.82rem; outline: none; margin-top: 8px; }
+  .revision-input:focus { border-color: var(--purple); }
+  .hitl-action-row { display: flex; gap: 10px; margin-top: 10px; }
+
+  /* STATE FLOW DIAGRAM */
+  .state-flow { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; line-height: 2; white-space: pre; background: #0d0d1a; border: 1px solid var(--border); border-radius: 10px; padding: 20px; overflow-x: auto; }
+
+  /* COMPLETE BTN */
+  .complete-btn { display: flex; align-items: center; gap: 8px; background: none; border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; color: var(--muted); cursor: pointer; font-family: 'Inter', sans-serif; font-size: 0.8rem; transition: all 0.2s; }
+  .complete-btn:hover { border-color: var(--green); color: var(--green); }
+  .complete-btn.done { border-color: var(--green); color: var(--green); background: rgba(16,185,129,0.1); }
+  .check-icon { width: 16px; height: 16px; border: 2px solid currentColor; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; }
+
+  /* GRAPH ANIMATION STEP INDICATOR */
+  .step-indicator { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .step-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); transition: all 0.3s; }
+  .step-dot.active { background: var(--purple); box-shadow: 0 0 8px rgba(124,58,237,0.5); }
+  .step-dot.done { background: var(--green); }
+
+  /* ANNOTATION */
+  .annotation { display: inline-flex; align-items: flex-start; gap: 8px; background: rgba(13,148,136,0.08); border-left: 3px solid var(--teal); border-radius: 0 8px 8px 0; padding: 10px 14px; font-size: 0.82rem; margin: 8px 0; width: 100%; }
+  .info-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-top: 12px; }
+  .info-chip { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 0.78rem; }
+  .info-chip strong { display: block; font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
+
+  /* THREAD ID DEMO */
+  .thread-demo { display: flex; flex-direction: column; gap: 8px; }
+  .thread-row { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); font-size: 0.78rem; transition: all 0.3s; }
+  .thread-row.active { border-color: var(--teal); background: rgba(13,148,136,0.06); }
+  .thread-id { font-family: 'JetBrains Mono', monospace; color: var(--yellow); font-size: 0.72rem; }
+  .thread-state { color: var(--muted); font-size: 0.72rem; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="day3_exercises.html">← Day 3 Exercises</a>
+  <span class="nav-title">Day 4 — LangGraph: Stateful Agents</span>
+  <div style="display:flex;gap:16px;align-items:center;">
+    <a href="../index.html">🤖 Agentic AI</a>
+    <a href="day5_exercises.html">Day 5 Exercises →</a>
+  </div>
+</nav>
+
+<div style="padding: 12px 24px;">
+  <div class="progress-bar-wrap">
+    <span style="font-size:0.78rem;color:var(--muted);white-space:nowrap;">Progress</span>
+    <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <span style="font-size:0.78rem;color:var(--muted);white-space:nowrap;" id="progressText">0 / 4 done</span>
+  </div>
+</div>
+
+<div class="container">
+  <div class="page-header">
+    <h1>Day 4 Exercises — LangGraph: Stateful Agents</h1>
+    <p>Sharjeel Sohail &nbsp;·&nbsp; Senior Backend Engineer &nbsp;·&nbsp; Python / FastAPI</p>
+  </div>
+
+  <!-- ============================================================ EXERCISE 1 -->
+  <div class="exercise" id="ex1">
+    <div class="exercise-header" onclick="toggleEx('ex1')">
+      <div class="exercise-num">1</div>
+      <h2>Build Your First Graph</h2>
+      <span class="ex-badge" id="badge-ex1" style="display:none"></span>
+      <span class="chevron" id="chev-ex1">▼</span>
+    </div>
+    <div class="exercise-body open" id="body-ex1">
+
+      <!-- COMPARISON -->
+      <div class="section-label">Visual Explainer — Why LangGraph?</div>
+      <div class="visual-area">
+        <div class="compare-grid">
+          <div class="compare-card old">
+            <h4>While Loop (before)</h4>
+            <div class="code-block" style="font-size:0.75rem;"><span class="kw">while</span> <span class="cls">True</span>:
+    response = llm(messages)
+    <span class="kw">if</span> response.stop == <span class="str">"end"</span>:
+        <span class="kw">break</span>
+    <span class="cm"># execute tools...</span>
+    messages.append(tool_result)</div>
+            <div style="margin-top:10px;display:flex;flex-direction:column;gap:6px;">
+              <div style="font-size:0.73rem;color:var(--red);display:flex;gap:6px;align-items:center;">✗ No explicit state schema</div>
+              <div style="font-size:0.73rem;color:var(--red);display:flex;gap:6px;align-items:center;">✗ Hard to add checkpointing</div>
+              <div style="font-size:0.73rem;color:var(--red);display:flex;gap:6px;align-items:center;">✗ Can't pause / resume</div>
+              <div style="font-size:0.73rem;color:var(--red);display:flex;gap:6px;align-items:center;">✗ Routing logic buried in code</div>
+              <div style="font-size:0.73rem;color:var(--red);display:flex;gap:6px;align-items:center;">✗ Hard to debug / visualize</div>
+            </div>
+          </div>
+          <div class="compare-card new">
+            <h4>LangGraph (now)</h4>
+            <div style="background:#0d0d1a;border:1px solid var(--border);border-radius:8px;padding:12px;font-size:0.73rem;font-family:'JetBrains Mono',monospace;white-space:pre;overflow-x:auto;">START → [agent] → [tools]
+               ↑         ↓
+               └─────────┘
+               (loop until done)</div>
+            <div style="margin-top:10px;display:flex;flex-direction:column;gap:6px;">
+              <div style="font-size:0.73rem;color:var(--green);display:flex;gap:6px;align-items:center;">✓ Typed state (TypedDict)</div>
+              <div style="font-size:0.73rem;color:var(--green);display:flex;gap:6px;align-items:center;">✓ Built-in checkpointing (SQLite)</div>
+              <div style="font-size:0.73rem;color:var(--green);display:flex;gap:6px;align-items:center;">✓ Interrupt / resume at any node</div>
+              <div style="font-size:0.73rem;color:var(--green);display:flex;gap:6px;align-items:center;">✓ Explicit routing functions</div>
+              <div style="font-size:0.73rem;color:var(--green);display:flex;gap:6px;align-items:center;">✓ Inspectable graph structure</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GRAPH BUILDER -->
+      <div class="section-label" style="margin-top:20px;">Code Anatomy — Building a Graph Step by Step</div>
+      <div class="visual-area">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
+          <div>
+            <div class="step-indicator" id="stepDots1"></div>
+            <canvas id="graphCanvas" width="340" height="260"></canvas>
+            <div class="btn-row">
+              <button class="btn btn-purple" onclick="runGraphBuild()">Build Graph</button>
+              <button class="btn btn-outline" onclick="resetGraphBuild()">Reset</button>
+            </div>
+          </div>
+          <div class="build-steps" id="buildSteps">
+            <div class="build-step" id="bs0">
+              <div class="bstep-num">1</div>
+              <div>
+                <div>Define state schema</div>
+                <div class="bstep-code">graph = StateGraph(AgentState)</div>
+              </div>
+            </div>
+            <div class="build-step" id="bs1">
+              <div class="bstep-num">2</div>
+              <div>
+                <div>Add agent node</div>
+                <div class="bstep-code">graph.add_node("agent", agent_fn)</div>
+              </div>
+            </div>
+            <div class="build-step" id="bs2">
+              <div class="bstep-num">3</div>
+              <div>
+                <div>Add tools node</div>
+                <div class="bstep-code">graph.add_node("tools", tool_fn)</div>
+              </div>
+            </div>
+            <div class="build-step" id="bs3">
+              <div class="bstep-num">4</div>
+              <div>
+                <div>Entry edge</div>
+                <div class="bstep-code">graph.add_edge(START, "agent")</div>
+              </div>
+            </div>
+            <div class="build-step" id="bs4">
+              <div class="bstep-num">5</div>
+              <div>
+                <div>Conditional routing</div>
+                <div class="bstep-code">graph.add_conditional_edges("agent", router)</div>
+              </div>
+            </div>
+            <div class="build-step" id="bs5">
+              <div class="bstep-num">6</div>
+              <div>
+                <div>Loop back edge</div>
+                <div class="bstep-code">graph.add_edge("tools", "agent")</div>
+              </div>
+            </div>
+            <div class="build-step" id="bs6">
+              <div class="bstep-num">7</div>
+              <div>
+                <div>Compile — graph is ready</div>
+                <div class="bstep-code">app = graph.compile()</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STATE TYPEDICT CALLOUT -->
+      <div class="section-label" style="margin-top:20px;">State TypedDict — Every Field Explained</div>
+      <div class="code-block"><span class="kw">from</span> typing <span class="kw">import</span> <span class="cls">Annotated</span>, <span class="cls">TypedDict</span>
+<span class="kw">from</span> langgraph.graph.message <span class="kw">import</span> add_messages
+<span class="kw">from</span> langchain_core.messages <span class="kw">import</span> <span class="cls">BaseMessage</span>
+
+<span class="kw">class</span> <span class="cls">AgentState</span>(<span class="cls">TypedDict</span>):
+    messages: <span class="cls">Annotated</span>[list[<span class="cls">BaseMessage</span>], add_messages]
+    <span class="cm"># ^ APPEND reducer — each node ADDS to list, never replaces</span>
+    <span class="cm">#   HumanMessage → AIMessage → ToolMessage → AIMessage ...</span>
+
+    query: str
+    <span class="cm"># ^ REPLACE reducer (default) — last write wins</span>
+
+    tool_results: list[str]
+    <span class="cm"># ^ REPLACE — set by tools node, read by agent node</span>
+
+    is_complete: bool
+    <span class="cm"># ^ REPLACE — agent sets True when finished</span>
+
+    iteration_count: int
+    <span class="cm"># ^ REPLACE — increment each loop to prevent infinite loops</span></div>
+
+      <!-- TASK -->
+      <div class="task-box">
+        <h4>Your Task — Build a Working LangGraph Agent</h4>
+        <ul>
+          <li>Define AgentState TypedDict with messages (add_messages), query, tool_results, is_complete</li>
+          <li>agent_node(state) — calls Claude, returns state update</li>
+          <li>tools_node(state) — executes tool calls (calculator + web_search mock)</li>
+          <li>router(state) — returns "tools" or END based on last message</li>
+          <li>Compile graph and run: app.invoke({"messages": [HumanMessage("What is 2+2?")]})</li>
+        </ul>
+      </div>
+
+      <div class="section-label" style="margin-top:16px;">Starter Code</div>
+      <div class="code-block"><span class="kw">from</span> typing <span class="kw">import</span> <span class="cls">Annotated</span>, <span class="cls">TypedDict</span>
+<span class="kw">from</span> langgraph.graph <span class="kw">import</span> <span class="cls">StateGraph</span>, START, END
+<span class="kw">from</span> langgraph.graph.message <span class="kw">import</span> add_messages
+<span class="kw">from</span> langchain_core.messages <span class="kw">import</span> <span class="cls">HumanMessage</span>, <span class="cls">AIMessage</span>, <span class="cls">ToolMessage</span>
+<span class="kw">import</span> anthropic
+<span class="kw">import</span> json
+
+<span class="cm"># ── 1. STATE ───────────────────────────────────────────────────────</span>
+<span class="kw">class</span> <span class="cls">AgentState</span>(<span class="cls">TypedDict</span>):
+    messages: <span class="cls">Annotated</span>[list, add_messages]
+    is_complete: bool
+
+<span class="cm"># ── 2. TOOLS (mocks) ───────────────────────────────────────────────</span>
+TOOLS = [
+    {
+        <span class="str">"name"</span>: <span class="str">"calculator"</span>,
+        <span class="str">"description"</span>: <span class="str">"Evaluate a math expression"</span>,
+        <span class="str">"input_schema"</span>: {
+            <span class="str">"type"</span>: <span class="str">"object"</span>,
+            <span class="str">"properties"</span>: {<span class="str">"expression"</span>: {<span class="str">"type"</span>: <span class="str">"string"</span>}},
+            <span class="str">"required"</span>: [<span class="str">"expression"</span>]
+        }
+    },
+    {
+        <span class="str">"name"</span>: <span class="str">"web_search"</span>,
+        <span class="str">"description"</span>: <span class="str">"Search the web for information"</span>,
+        <span class="str">"input_schema"</span>: {
+            <span class="str">"type"</span>: <span class="str">"object"</span>,
+            <span class="str">"properties"</span>: {<span class="str">"query"</span>: {<span class="str">"type"</span>: <span class="str">"string"</span>}},
+            <span class="str">"required"</span>: [<span class="str">"query"</span>]
+        }
+    }
+]
+
+<span class="kw">def</span> <span class="fn">run_tool</span>(name: str, inputs: dict) -> str:
+    <span class="kw">if</span> name == <span class="str">"calculator"</span>:
+        <span class="kw">return</span> str(eval(inputs[<span class="str">"expression"</span>]))  <span class="cm"># mock</span>
+    <span class="kw">elif</span> name == <span class="str">"web_search"</span>:
+        <span class="kw">return</span> f<span class="str">"[Mock search results for: {inputs['query']}]"</span>
+    <span class="kw">return</span> <span class="str">"Unknown tool"</span>
+
+<span class="cm"># ── 3. NODES ───────────────────────────────────────────────────────</span>
+client = anthropic.Anthropic()
+
+<span class="kw">def</span> <span class="fn">agent_node</span>(state: <span class="cls">AgentState</span>) -> dict:
+    <span class="cm"># TODO: call Claude with state["messages"] + tools</span>
+    <span class="cm"># TODO: return {"messages": [AIMessage(...)], "is_complete": bool}</span>
+    ...
+
+<span class="kw">def</span> <span class="fn">tools_node</span>(state: <span class="cls">AgentState</span>) -> dict:
+    <span class="cm"># TODO: get last AIMessage, extract tool_calls</span>
+    <span class="cm"># TODO: run each tool, return ToolMessage results</span>
+    last_msg = state[<span class="str">"messages"</span>][-<span class="num">1</span>]
+    tool_messages = []
+    <span class="kw">for</span> tc <span class="kw">in</span> last_msg.tool_calls:
+        result = run_tool(tc[<span class="str">"name"</span>], tc[<span class="str">"input"</span>])
+        tool_messages.append(<span class="cls">ToolMessage</span>(content=result, tool_call_id=tc[<span class="str">"id"</span>]))
+    <span class="kw">return</span> {<span class="str">"messages"</span>: tool_messages}
+
+<span class="cm"># ── 4. ROUTER ──────────────────────────────────────────────────────</span>
+<span class="kw">def</span> <span class="fn">router</span>(state: <span class="cls">AgentState</span>) -> str:
+    <span class="cm"># TODO: check last message for tool_calls → "tools" or END</span>
+    ...
+
+<span class="cm"># ── 5. BUILD GRAPH ─────────────────────────────────────────────────</span>
+graph = <span class="cls">StateGraph</span>(<span class="cls">AgentState</span>)
+graph.add_node(<span class="str">"agent"</span>, agent_node)
+graph.add_node(<span class="str">"tools"</span>, tools_node)
+graph.add_edge(START, <span class="str">"agent"</span>)
+graph.add_conditional_edges(<span class="str">"agent"</span>, router, {<span class="str">"tools"</span>: <span class="str">"tools"</span>, END: END})
+graph.add_edge(<span class="str">"tools"</span>, <span class="str">"agent"</span>)
+app = graph.compile()</div>
+
+      <div class="test-box">
+        <h4>Test Cases</h4>
+        <div class="code-block" style="background:transparent;border:none;padding:0;"><span class="cm"># Test 1: Direct answer (no tools needed)</span>
+result = app.invoke({<span class="str">"messages"</span>: [<span class="cls">HumanMessage</span>(<span class="str">"What is the capital of France?"</span>)]})
+assert result[<span class="str">"is_complete"</span>] == <span class="cls">True</span>
+assert len(result[<span class="str">"messages"</span>]) >= <span class="num">2</span>  <span class="cm"># Human + AI</span>
+
+<span class="cm"># Test 2: Tool use (calculator)</span>
+result = app.invoke({<span class="str">"messages"</span>: [<span class="cls">HumanMessage</span>(<span class="str">"What is 347 * 892?"</span>)]})
+msgs = result[<span class="str">"messages"</span>]
+<span class="cm"># Should have: Human → AI(tool_call) → Tool → AI(answer)</span>
+assert any(<span class="kw">isinstance</span>(m, <span class="cls">ToolMessage</span>) <span class="kw">for</span> m <span class="kw">in</span> msgs)
+assert <span class="str">"309524"</span> <span class="kw">in</span> msgs[-<span class="num">1</span>].content</div>
+      </div>
+
+      <div class="hints-wrap">
+        <button class="hint-toggle" onclick="toggleHints('h1')">Show Hints</button>
+        <ul class="hints-list" id="h1">
+          <li><strong>agent_node:</strong> response = client.messages.create(model="claude-opus-4-5", tools=TOOLS, messages=[{"role":m.type,"content":m.content} for m in state["messages"]])</li>
+          <li><strong>AIMessage tool_calls:</strong> response.content blocks where block.type == "tool_use"</li>
+          <li><strong>router:</strong> last = state["messages"][-1]; return "tools" if hasattr(last, "tool_calls") and last.tool_calls else END</li>
+          <li><strong>is_complete:</strong> set True when response.stop_reason == "end_turn" and no tool calls</li>
+        </ul>
+      </div>
+
+      <div style="margin-top:20px;">
+        <button class="complete-btn" id="cbtn-ex1" onclick="markDone('ex1')">
+          <div class="check-icon">✓</div> Mark Complete
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ EXERCISE 2 -->
+  <div class="exercise" id="ex2">
+    <div class="exercise-header" onclick="toggleEx('ex2')">
+      <div class="exercise-num" style="background:var(--teal);">2</div>
+      <h2>State Design Lab</h2>
+      <span class="ex-badge" id="badge-ex2" style="display:none"></span>
+      <span class="chevron" id="chev-ex2">▼</span>
+    </div>
+    <div class="exercise-body" id="body-ex2">
+
+      <div class="section-label">Visual Explainer — TypedDict Schema Anatomy</div>
+      <div class="visual-area">
+        <h3>AgentState field-by-field — hover to see details</h3>
+        <div style="background:#0d0d1a;border:1px solid var(--border);border-radius:10px;padding:20px;font-family:'JetBrains Mono',monospace;font-size:0.78rem;line-height:2.2;">
+          <div style="color:var(--purple-light);font-weight:700;margin-bottom:4px;">AgentState (TypedDict)</div>
+          <div class="schema-field">
+            <span>├──</span>
+            <span class="schema-name">messages</span><span style="color:var(--muted)">:</span>
+            <span class="schema-type"> Annotated[list, add_messages]</span>
+            <span class="schema-note">  ← APPENDS — never replaces</span>
+          </div>
+          <div style="padding:2px 0 2px 32px;font-size:0.72rem;color:var(--muted);">   └── [HumanMsg, AIMsg, ToolMsg, AIMsg ...]  grows with every node</div>
+          <div class="schema-field">
+            <span>├──</span>
+            <span class="schema-name">query</span><span style="color:var(--muted)">:</span>
+            <span class="schema-type"> str</span>
+            <span class="schema-note">                              ← REPLACES — last write wins</span>
+          </div>
+          <div class="schema-field">
+            <span>├──</span>
+            <span class="schema-name">search_results</span><span style="color:var(--muted)">:</span>
+            <span class="schema-type"> list[str]</span>
+            <span class="schema-note">                    ← REPLACES — set by researcher node</span>
+          </div>
+          <div class="schema-field">
+            <span>├──</span>
+            <span class="schema-name">draft</span><span style="color:var(--muted)">:</span>
+            <span class="schema-type"> str</span>
+            <span class="schema-note">                              ← REPLACES — set by writer node</span>
+          </div>
+          <div class="schema-field">
+            <span>└──</span>
+            <span class="schema-name">is_complete</span><span style="color:var(--muted)">:</span>
+            <span class="schema-type"> bool</span>
+            <span class="schema-note">                         ← REPLACES — True = graph exits</span>
+          </div>
+        </div>
+
+        <!-- REDUCER DEMO -->
+        <h3 style="margin-top:20px;">add_messages vs plain replace — what happens when two nodes write simultaneously</h3>
+        <div class="reducer-demo">
+          <div class="reducer-card merge">
+            <h5>messages: add_messages  (MERGES)</h5>
+            <div class="reducer-timeline">
+              <div class="rt-item rt-nodeA">Node A writes: [AIMessage("Hello")]</div>
+              <div class="rt-item rt-nodeB">Node B writes: [ToolMessage("result")]</div>
+              <div class="rt-item rt-result">Result: [AIMessage("Hello"), ToolMessage("result")]  ✓</div>
+            </div>
+          </div>
+          <div class="reducer-card replace">
+            <h5>draft: str  (REPLACES — last wins)</h5>
+            <div class="reducer-timeline">
+              <div class="rt-item rt-nodeA">Node A writes: "Draft version 1..."</div>
+              <div class="rt-item rt-lost">Node B writes: "Draft version 2..."  ← wins</div>
+              <div class="rt-item rt-result">Result: "Draft version 2..."  (v1 is gone)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STATE FLOW -->
+        <h3 style="margin-top:20px;">State flows through nodes — merge semantics</h3>
+        <div class="state-flow"><span style="color:var(--muted)">State IN:  </span>{messages: [HumanMsg], query: <span style="color:var(--yellow)">"FastAPI docs"</span>, draft: <span style="color:var(--muted)">""</span>, search_results: []}
+    <span style="color:var(--muted)">│</span>
+    <span style="color:var(--teal-light)">▼ research_node(state)</span>
+    <span style="color:var(--muted)">  returns only:</span> {search_results: [<span style="color:var(--green-light)">"result1"</span>, <span style="color:var(--green-light)">"result2"</span>]}
+    <span style="color:var(--muted)">│  LangGraph merges → unchanged fields preserved</span>
+    <span style="color:var(--muted)">│</span>
+<span style="color:var(--muted)">State OUT: </span>{messages: [HumanMsg], query: <span style="color:var(--yellow)">"FastAPI docs"</span>, draft: <span style="color:var(--muted)">""</span>, search_results: [<span style="color:var(--green-light)">"result1"</span>, <span style="color:var(--green-light)">"result2"</span>]}
+    <span style="color:var(--muted)">│</span>
+    <span style="color:var(--blue-light)">▼ writer_node(state)</span>
+    <span style="color:var(--muted)">  returns only:</span> {draft: <span style="color:var(--green-light)">"Based on results..."</span>, is_complete: <span style="color:var(--green)">True</span>}
+    <span style="color:var(--muted)">│</span>
+<span style="color:var(--muted)">State OUT: </span>{messages: [HumanMsg], query: <span style="color:var(--yellow)">"FastAPI docs"</span>, draft: <span style="color:var(--green-light)">"Based on results..."</span>, ...}</div>
+
+        <div class="btn-row">
+          <button class="btn btn-teal" onclick="animateStateFlow()">Animate State Flow</button>
+          <button class="btn btn-outline" onclick="resetStateFlow()">Reset</button>
+        </div>
+        <div id="stateFlowMsg" style="margin-top:10px;font-size:0.78rem;color:var(--muted);"></div>
+      </div>
+
+      <!-- TASK -->
+      <div class="task-box">
+        <h4>Your Task — Design State for 3 Agent Types</h4>
+        <ul>
+          <li>ResearchAgentState — multi-step web research with citations</li>
+          <li>CodeReviewState — PR review agent with structured feedback</li>
+          <li>CustomerSupportState — ticket routing + resolution tracking</li>
+          <li>For each: name every field, its type, its reducer, and WHY it's needed</li>
+        </ul>
+      </div>
+
+      <div class="section-label" style="margin-top:16px;">Starter Code</div>
+      <div class="code-block"><span class="kw">from</span> typing <span class="kw">import</span> <span class="cls">Annotated</span>, <span class="cls">TypedDict</span>, <span class="cls">Optional</span>
+<span class="kw">from</span> langgraph.graph.message <span class="kw">import</span> add_messages
+
+<span class="cm"># ── Agent 1: Research ──────────────────────────────────────────────</span>
+<span class="kw">class</span> <span class="cls">ResearchAgentState</span>(<span class="cls">TypedDict</span>):
+    messages: <span class="cls">Annotated</span>[list, add_messages]   <span class="cm"># conversation history</span>
+    query: str                                  <span class="cm"># research question</span>
+    search_results: list[str]                   <span class="cm"># TODO: add more fields</span>
+    citations: list[dict]                       <span class="cm"># [{url, title, snippet}]</span>
+    final_report: str                           <span class="cm"># TODO</span>
+    iteration: int                              <span class="cm"># prevent infinite loop</span>
+    <span class="cm"># TODO: add fields for: confidence score, sources checked, is_complete</span>
+
+<span class="cm"># ── Agent 2: Code Review ───────────────────────────────────────────</span>
+<span class="kw">class</span> <span class="cls">CodeReviewState</span>(<span class="cls">TypedDict</span>):
+    messages: <span class="cls">Annotated</span>[list, add_messages]
+    pr_diff: str                                <span class="cm"># the pull request diff</span>
+    <span class="cm"># TODO: issues: list[dict] — [{line, severity, message}]</span>
+    <span class="cm"># TODO: approval_status: Literal["approved", "needs_changes", "pending"]</span>
+    <span class="cm"># TODO: summary: str</span>
+
+<span class="cm"># ── Agent 3: Customer Support ──────────────────────────────────────</span>
+<span class="kw">class</span> <span class="cls">CustomerSupportState</span>(<span class="cls">TypedDict</span>):
+    messages: <span class="cls">Annotated</span>[list, add_messages]
+    ticket_id: str
+    <span class="cm"># TODO: category: Literal["billing", "technical", "general"]</span>
+    <span class="cm"># TODO: priority: Literal["low", "medium", "high", "critical"]</span>
+    <span class="cm"># TODO: assigned_to: Optional[str]</span>
+    <span class="cm"># TODO: resolution: Optional[str]</span>
+    <span class="cm"># TODO: escalated: bool</span></div>
+
+      <div class="test-box">
+        <h4>Test Cases — State Design Validation</h4>
+        <div class="code-block" style="background:transparent;border:none;padding:0;"><span class="cm"># Every state must pass these checks:</span>
+<span class="kw">def</span> <span class="fn">validate_state_design</span>(StateClass):
+    fields = StateClass.__annotations__
+    <span class="cm"># 1. Must have messages with add_messages</span>
+    assert <span class="str">"messages"</span> <span class="kw">in</span> fields
+    <span class="cm"># 2. Must have completion signal</span>
+    assert any(k <span class="kw">in</span> fields <span class="kw">for</span> k <span class="kw">in</span> [<span class="str">"is_complete"</span>, <span class="str">"resolution"</span>, <span class="str">"final_report"</span>])
+    <span class="cm"># 3. Must have iteration counter or max_steps safeguard</span>
+    assert any(k <span class="kw">in</span> fields <span class="kw">for</span> k <span class="kw">in</span> [<span class="str">"iteration"</span>, <span class="str">"step_count"</span>])
+    <span class="kw">return</span> <span class="cls">True</span>
+
+validate_state_design(<span class="cls">ResearchAgentState</span>)
+validate_state_design(<span class="cls">CodeReviewState</span>)
+validate_state_design(<span class="cls">CustomerSupportState</span>)</div>
+      </div>
+
+      <div class="hints-wrap">
+        <button class="hint-toggle" onclick="toggleHints('h2')">Show Hints</button>
+        <ul class="hints-list" id="h2">
+          <li><strong>Reducer choices:</strong> Use add_messages for anything that accumulates (messages, issues found). Use plain for anything that gets set once (query, ticket_id, final answer).</li>
+          <li><strong>Completion fields:</strong> Every state needs a clear "we're done" signal — is_complete: bool, resolution: str, final_report: str</li>
+          <li><strong>Safety:</strong> Always add iteration: int or step_count: int to prevent infinite loops — router checks this</li>
+          <li><strong>Optional fields:</strong> Use Optional[str] = None for fields that may not be set yet (assigned_to, resolution)</li>
+        </ul>
+      </div>
+
+      <div style="margin-top:20px;">
+        <button class="complete-btn" id="cbtn-ex2" onclick="markDone('ex2')">
+          <div class="check-icon">✓</div> Mark Complete
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ EXERCISE 3 -->
+  <div class="exercise" id="ex3">
+    <div class="exercise-header" onclick="toggleEx('ex3')">
+      <div class="exercise-num" style="background:var(--green);">3</div>
+      <h2>Conditional Routing</h2>
+      <span class="ex-badge" id="badge-ex3" style="display:none"></span>
+      <span class="chevron" id="chev-ex3">▼</span>
+    </div>
+    <div class="exercise-body" id="body-ex3">
+
+      <div class="section-label">Visual Explainer — Routing as a Decision Switch</div>
+      <div class="visual-area">
+        <h3>Router function: state IN → destination string OUT</h3>
+        <div class="code-block" style="margin-bottom:16px;"><span class="kw">def</span> <span class="fn">router</span>(state: <span class="cls">AgentState</span>) -> str:
+    last = state[<span class="str">"messages"</span>][-<span class="num">1</span>]
+
+    <span class="kw">if</span> hasattr(last, <span class="str">"tool_calls"</span>) <span class="kw">and</span> last.tool_calls:   <span class="cm"># ← step 1 check</span>
+        <span class="kw">return</span> <span class="str">"tools"</span>            <span class="cm"># → tools node</span>
+
+    <span class="kw">if</span> <span class="str">"ERROR"</span> <span class="kw">in</span> last.content.upper():                    <span class="cm"># ← step 2 check</span>
+        <span class="kw">return</span> <span class="str">"error_handler"</span>   <span class="cm"># → error node</span>
+
+    <span class="kw">if</span> last.content.strip().endswith(<span class="str">"?"</span>):                  <span class="cm"># ← step 3 check</span>
+        <span class="kw">return</span> <span class="str">"clarification"</span>   <span class="cm"># → clarification node</span>
+
+    <span class="kw">return</span> END                                              <span class="cm"># ← default: done</span></div>
+
+        <h3>8 Test Messages — watch the routing decision:</h3>
+        <div class="routing-demo" id="routingDemo"></div>
+        <div class="btn-row">
+          <button class="btn btn-purple" onclick="runRouting()">Run All Routing Decisions</button>
+          <button class="btn btn-outline" onclick="resetRouting()">Reset</button>
+        </div>
+      </div>
+
+      <!-- 3 ROUTING SCENARIOS -->
+      <div class="section-label" style="margin-top:20px;">3 Routing Scenarios — Animated</div>
+      <div class="visual-area">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;" id="scn0">
+            <div style="font-size:0.72rem;font-weight:700;color:var(--purple-light);margin-bottom:8px;">SCENARIO 1: Tool Call</div>
+            <div style="font-size:0.73rem;color:var(--muted);margin-bottom:6px;">AI says: "Let me calculate..."</div>
+            <div style="font-size:0.72rem;font-family:'JetBrains Mono',monospace;background:#0d0d1a;padding:6px;border-radius:4px;color:var(--teal-light);">tool_calls: [{name: "calc"...}]</div>
+            <div style="margin-top:8px;text-align:center;padding:4px;border-radius:4px;background:rgba(124,58,237,0.1);color:var(--purple-light);font-size:0.72rem;font-weight:600;">→ "tools" node</div>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;" id="scn1">
+            <div style="font-size:0.72rem;font-weight:700;color:var(--green);margin-bottom:8px;">SCENARIO 2: Done</div>
+            <div style="font-size:0.73rem;color:var(--muted);margin-bottom:6px;">AI says: "The answer is 42."</div>
+            <div style="font-size:0.72rem;font-family:'JetBrains Mono',monospace;background:#0d0d1a;padding:6px;border-radius:4px;color:var(--green-light);">stop_reason: "end_turn"<br>tool_calls: []</div>
+            <div style="margin-top:8px;text-align:center;padding:4px;border-radius:4px;background:rgba(16,185,129,0.1);color:var(--green);font-size:0.72rem;font-weight:600;">→ END</div>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;" id="scn2">
+            <div style="font-size:0.72rem;font-weight:700;color:var(--yellow);margin-bottom:8px;">SCENARIO 3: Human Review</div>
+            <div style="font-size:0.73rem;color:var(--muted);margin-bottom:6px;">AI says: "Could you clarify?"</div>
+            <div style="font-size:0.72rem;font-family:'JetBrains Mono',monospace;background:#0d0d1a;padding:6px;border-radius:4px;color:var(--yellow);">content ends with "?"<br>custom_flag: "needs_input"</div>
+            <div style="margin-top:8px;text-align:center;padding:4px;border-radius:4px;background:rgba(245,158,11,0.1);color:var(--yellow);font-size:0.72rem;font-weight:600;">→ "human_review" node</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TASK -->
+      <div class="task-box">
+        <h4>Your Task — Build a 4-Way Router</h4>
+        <ul>
+          <li>router(state) → "tools" | "error_handler" | "clarification" | END</li>
+          <li>Tool call detected → "tools"</li>
+          <li>Agent is done (end_turn, no tool calls) → END</li>
+          <li>"ERROR" in message content → "error_handler"</li>
+          <li>Message ends with "?" (needs clarification) → "clarification"</li>
+          <li>Test with 8 different message types</li>
+        </ul>
+      </div>
+
+      <div class="section-label" style="margin-top:16px;">Starter Code</div>
+      <div class="code-block"><span class="kw">from</span> langgraph.graph <span class="kw">import</span> END
+<span class="kw">from</span> langchain_core.messages <span class="kw">import</span> <span class="cls">AIMessage</span>, <span class="cls">ToolMessage</span>
+
+<span class="kw">def</span> <span class="fn">router</span>(state: <span class="cls">AgentState</span>) -> str:
+    <span class="str">"""
+    Route to the correct next node based on the last message in state.
+
+    Returns: "tools" | "error_handler" | "clarification" | END
+    """</span>
+    messages = state[<span class="str">"messages"</span>]
+    <span class="kw">if</span> <span class="kw">not</span> messages:
+        <span class="kw">return</span> END
+
+    last = messages[-<span class="num">1</span>]
+
+    <span class="cm"># Case 1: Tool call requested</span>
+    <span class="kw">if</span> hasattr(last, <span class="str">"tool_calls"</span>) <span class="kw">and</span> last.tool_calls:
+        <span class="kw">return</span> <span class="str">"tools"</span>
+
+    <span class="cm"># Case 2: Error in response</span>
+    <span class="cm"># TODO: check last.content for "ERROR" keyword</span>
+    ...
+
+    <span class="cm"># Case 3: Needs clarification</span>
+    <span class="cm"># TODO: check if content ends with "?"</span>
+    ...
+
+    <span class="cm"># Case 4: Default — we're done</span>
+    <span class="kw">return</span> END
+
+
+<span class="cm"># Wire it up in graph:</span>
+graph.add_conditional_edges(
+    <span class="str">"agent"</span>,
+    router,
+    {
+        <span class="str">"tools"</span>: <span class="str">"tools"</span>,
+        <span class="str">"error_handler"</span>: <span class="str">"error_handler"</span>,
+        <span class="str">"clarification"</span>: <span class="str">"clarification"</span>,
+        END: END,
+    }
+)</div>
+
+      <div class="test-box">
+        <h4>Test Cases — 8 Message Types</h4>
+        <div class="code-block" style="background:transparent;border:none;padding:0;">test_messages = [
+    (<span class="cls">AIMessage</span>(content=<span class="str">"Calculating..."</span>, tool_calls=[{<span class="str">"name"</span>:<span class="str">"calc"</span>,<span class="str">"id"</span>:<span class="str">"1"</span>}]), <span class="str">"tools"</span>),
+    (<span class="cls">AIMessage</span>(content=<span class="str">"The answer is 42."</span>), END),
+    (<span class="cls">AIMessage</span>(content=<span class="str">"ERROR: API limit exceeded"</span>), <span class="str">"error_handler"</span>),
+    (<span class="cls">AIMessage</span>(content=<span class="str">"Could you provide more details?"</span>), <span class="str">"clarification"</span>),
+    (<span class="cls">AIMessage</span>(content=<span class="str">"Task completed successfully."</span>), END),
+    (<span class="cls">AIMessage</span>(content=<span class="str">"ERROR: Rate limit hit"</span>), <span class="str">"error_handler"</span>),
+    (<span class="cls">AIMessage</span>(content=<span class="str">"What format do you prefer?"</span>), <span class="str">"clarification"</span>),
+    (<span class="cls">AIMessage</span>(content=<span class="str">"Done."</span>), END),
+]
+
+<span class="kw">for</span> msg, expected <span class="kw">in</span> test_messages:
+    state = {<span class="str">"messages"</span>: [msg]}
+    assert router(state) == expected, f<span class="str">"Expected {expected}, got {router(state)} for '{msg.content}'"</span>
+<span class="fn">print</span>(<span class="str">"All 8 routing tests passed ✓"</span>)</div>
+      </div>
+
+      <div class="hints-wrap">
+        <button class="hint-toggle" onclick="toggleHints('h3')">Show Hints</button>
+        <ul class="hints-list" id="h3">
+          <li><strong>Error check:</strong> if isinstance(last, AIMessage) and "ERROR" in last.content.upper():</li>
+          <li><strong>Clarification:</strong> if last.content.strip().endswith("?"):</li>
+          <li><strong>Order matters:</strong> check tool_calls first (before error/clarification checks)</li>
+          <li><strong>Safety:</strong> add iteration_count check — if state.get("iteration", 0) > 10: return END</li>
+        </ul>
+      </div>
+
+      <div style="margin-top:20px;">
+        <button class="complete-btn" id="cbtn-ex3" onclick="markDone('ex3')">
+          <div class="check-icon">✓</div> Mark Complete
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ EXERCISE 4 -->
+  <div class="exercise" id="ex4">
+    <div class="exercise-header" onclick="toggleEx('ex4')">
+      <div class="exercise-num" style="background:var(--yellow);color:#000;">4</div>
+      <h2>Research Agent with HITL <span class="ex-badge badge-boss" style="display:inline-flex;">BOSS</span></h2>
+      <span class="ex-badge" id="badge-ex4" style="display:none"></span>
+      <span class="chevron" id="chev-ex4">▼</span>
+    </div>
+    <div class="exercise-body" id="body-ex4">
+
+      <div class="section-label">Visual Explainer — Human-in-the-Loop Flow</div>
+      <div class="visual-area">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start;">
+          <div>
+            <div class="hitl-flow" id="hitlFlow">
+              <div class="hitl-node" id="hn-start">START</div>
+              <div class="hitl-arrow-line"></div>
+              <div class="hitl-node" id="hn-research">Research Agent</div>
+              <div class="hitl-arrow-line"></div>
+              <div class="hitl-node" id="hn-interrupt" style="border-color:var(--yellow);">
+                <div class="pause-indicator">⏸ interrupt("human_review")</div>
+                <div style="font-size:0.72rem;color:var(--muted);margin-top:4px;">graph.interrupt() — saves state to SQLite</div>
+              </div>
+              <div class="hitl-arrow-line"></div>
+              <div class="hitl-branch">
+                <div>
+                  <div class="hitl-branch-node" id="hn-approve" style="color:var(--green);border-color:rgba(16,185,129,0.3);">APPROVE ✓<br><span style="font-size:0.68rem;color:var(--muted);">→ continue</span></div>
+                </div>
+                <div>
+                  <div class="hitl-branch-node" id="hn-reject" style="color:var(--red);border-color:rgba(239,68,68,0.3);">REJECT ✗<br><span style="font-size:0.68rem;color:var(--muted);">→ retry</span></div>
+                </div>
+              </div>
+              <div class="hitl-arrow-line"></div>
+              <div class="hitl-node" id="hn-writer">Writer Agent</div>
+              <div class="hitl-arrow-line"></div>
+              <div class="hitl-node" id="hn-end">END</div>
+            </div>
+            <div class="btn-row">
+              <button class="btn btn-purple" onclick="animateHITL()">Animate Flow</button>
+              <button class="btn btn-outline" onclick="resetHITL()">Reset</button>
+            </div>
+          </div>
+
+          <!-- THREAD ID CONCEPT -->
+          <div>
+            <div style="font-size:0.78rem;color:var(--muted);margin-bottom:10px;">thread_id — same session across interrupt/resume:</div>
+            <div class="thread-demo" id="threadDemo">
+              <div class="thread-row" id="tr0">
+                <div>1. app.invoke(input, config={"thread_id": "abc-123"})</div>
+                <div class="thread-id">abc-123</div>
+              </div>
+              <div class="thread-row" id="tr1">
+                <div>2. Graph runs → hits interrupt → PAUSES</div>
+                <div class="thread-state">state saved to SQLite</div>
+              </div>
+              <div class="thread-row" id="tr2">
+                <div>3. Human reviews... approves</div>
+                <div class="thread-state">async / different process OK</div>
+              </div>
+              <div class="thread-row" id="tr3">
+                <div>4. app.invoke(Command(resume="approved"), config={"thread_id": "abc-123"})</div>
+                <div class="thread-id">same thread!</div>
+              </div>
+              <div class="thread-row" id="tr4">
+                <div>5. Graph resumes from exact checkpoint</div>
+                <div class="thread-state" style="color:var(--green);">continues →</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- INTERACTIVE MOCK DEMO -->
+      <div class="section-label" style="margin-top:20px;">Interactive Demo — No API Key Needed</div>
+      <div class="visual-area">
+        <h3>Mock HITL session — you are the human reviewer</h3>
+
+        <div id="hitlDemoPanel">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+            <input id="researchQuery" class="revision-input" style="width:auto;flex:1;" placeholder="Research question (e.g. 'Latest FastAPI features')" value="Latest FastAPI performance improvements">
+            <button class="btn btn-purple" onclick="startHITLDemo()">Start Research</button>
+          </div>
+
+          <div id="hitlStatus" style="display:none;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+              <div class="pause-indicator">⏸ PAUSED — awaiting your review</div>
+              <div style="font-size:0.72rem;color:var(--muted);">thread_id: <span id="threadIdDisplay" style="font-family:'JetBrains Mono',monospace;color:var(--yellow);">-</span></div>
+            </div>
+
+            <div class="hitl-panel">
+              <h4>Research Results — Review Required</h4>
+              <div class="hitl-results" id="hitlResults"></div>
+
+              <div style="font-size:0.78rem;color:var(--muted);margin-bottom:6px;">Leave a comment (optional — for revision request):</div>
+              <input id="revisionComment" class="revision-input" placeholder="e.g. 'Focus more on async performance benchmarks'">
+
+              <div class="hitl-action-row">
+                <button class="btn btn-green" onclick="approveHITL()">✓ Approve — Continue to Writing</button>
+                <button class="btn btn-red" onclick="rejectHITL()">✗ Request Revision</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="hitlComplete" style="display:none;padding:16px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);border-radius:10px;">
+            <div style="color:var(--green);font-weight:600;margin-bottom:8px;">Research Complete</div>
+            <div id="finalReport" style="font-size:0.8rem;line-height:1.7;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TASK -->
+      <div class="task-box">
+        <h4>Your Task — Build Full HITL Research Agent</h4>
+        <ul>
+          <li>ResearchState TypedDict with messages, query, search_results, human_feedback, draft, is_approved</li>
+          <li>research_node — calls mock web search, stores results in state</li>
+          <li>review_node — interrupt("human_review") — pauses for human input</li>
+          <li>writer_node — writes final report using research + human feedback</li>
+          <li>Use SQLiteSaver checkpointer with thread_id for resume semantics</li>
+          <li>Show thread_id and checkpoint inspection</li>
+        </ul>
+      </div>
+
+      <div class="section-label" style="margin-top:16px;">Starter Code</div>
+      <div class="code-block"><span class="kw">from</span> typing <span class="kw">import</span> <span class="cls">Annotated</span>, <span class="cls">TypedDict</span>, <span class="cls">Optional</span>
+<span class="kw">from</span> langgraph.graph <span class="kw">import</span> <span class="cls">StateGraph</span>, START, END
+<span class="kw">from</span> langgraph.graph.message <span class="kw">import</span> add_messages
+<span class="kw">from</span> langgraph.checkpoint.sqlite <span class="kw">import</span> <span class="cls">SqliteSaver</span>
+<span class="kw">from</span> langgraph.types <span class="kw">import</span> <span class="cls">Command</span>, interrupt
+<span class="kw">import</span> uuid, sqlite3
+<span class="kw">import</span> anthropic
+
+<span class="cm"># ── STATE ──────────────────────────────────────────────────────────</span>
+<span class="kw">class</span> <span class="cls">ResearchState</span>(<span class="cls">TypedDict</span>):
+    messages: <span class="cls">Annotated</span>[list, add_messages]
+    query: str
+    search_results: list[str]
+    human_feedback: <span class="cls">Optional</span>[str]   <span class="cm"># set after interrupt</span>
+    draft: str
+    is_approved: bool
+    iteration: int                    <span class="cm"># retry count after rejections</span>
+
+<span class="cm"># ── NODES ──────────────────────────────────────────────────────────</span>
+client = anthropic.Anthropic()
+
+<span class="kw">def</span> <span class="fn">research_node</span>(state: <span class="cls">ResearchState</span>) -> dict:
+    <span class="cm">"""Call web search (mock), store results."""</span>
+    query = state[<span class="str">"query"</span>]
+    feedback = state.get(<span class="str">"human_feedback"</span>, <span class="str">""</span>)
+
+    <span class="cm"># Mock search — replace with real search tool</span>
+    results = [
+        f<span class="str">"Result 1: {query} — performance improved 40% in latest release"</span>,
+        f<span class="str">"Result 2: {query} — new features include native WebSocket support"</span>,
+        f<span class="str">"Result 3: {query} — documentation updated with async examples"</span>,
+    ]
+    <span class="kw">if</span> feedback:
+        results.append(f<span class="str">"Focused result per feedback: {feedback}"</span>)
+
+    <span class="kw">return</span> {<span class="str">"search_results"</span>: results, <span class="str">"iteration"</span>: state.get(<span class="str">"iteration"</span>, <span class="num">0</span>) + <span class="num">1</span>}
+
+<span class="kw">def</span> <span class="fn">review_node</span>(state: <span class="cls">ResearchState</span>) -> <span class="cls">Command</span>:
+    <span class="cm">"""Pause for human review — returns approved/rejected + optional feedback."""</span>
+    <span class="cm"># interrupt() saves state to SQLite and raises an exception</span>
+    <span class="cm"># app.invoke() returns the state at this point</span>
+    <span class="cm"># resume with: app.invoke(Command(resume={"approved": True, "feedback": "..."}), config=...)</span>
+    human_input = interrupt({
+        <span class="str">"results"</span>: state[<span class="str">"search_results"</span>],
+        <span class="str">"question"</span>: <span class="str">"Approve these research results?"</span>
+    })
+
+    <span class="kw">if</span> human_input[<span class="str">"approved"</span>]:
+        <span class="kw">return</span> <span class="cls">Command</span>(goto=<span class="str">"writer"</span>, update={
+            <span class="str">"is_approved"</span>: <span class="cls">True</span>,
+            <span class="str">"human_feedback"</span>: human_input.get(<span class="str">"feedback"</span>, <span class="str">""</span>)
+        })
+    <span class="kw">else</span>:
+        <span class="cm"># Reject → go back to research with feedback</span>
+        <span class="kw">return</span> <span class="cls">Command</span>(goto=<span class="str">"research"</span>, update={
+            <span class="str">"is_approved"</span>: <span class="cls">False</span>,
+            <span class="str">"human_feedback"</span>: human_input.get(<span class="str">"feedback"</span>, <span class="str">"Improve coverage"</span>)
+        })
+
+<span class="kw">def</span> <span class="fn">writer_node</span>(state: <span class="cls">ResearchState</span>) -> dict:
+    <span class="cm">"""Write final report using approved research."""</span>
+    context = <span class="str">"\n"</span>.join(state[<span class="str">"search_results"</span>])
+    feedback = state.get(<span class="str">"human_feedback"</span>, <span class="str">""</span>)
+
+    prompt = f<span class="str">"""Write a concise research report on: {state['query']}
+
+Research findings:
+{context}
+
+{f'Human feedback: {feedback}' if feedback else ''}
+
+Write a 3-paragraph report."""</span>
+
+    response = client.messages.create(
+        model=<span class="str">"claude-opus-4-5"</span>,
+        max_tokens=<span class="num">512</span>,
+        messages=[{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: prompt}]
+    )
+    <span class="kw">return</span> {<span class="str">"draft"</span>: response.content[<span class="num">0</span>].text}
+
+<span class="cm"># ── GRAPH ──────────────────────────────────────────────────────────</span>
+<span class="kw">def</span> <span class="fn">build_hitl_graph</span>(db_path: str = <span class="str">":memory:"</span>):
+    conn = sqlite3.connect(db_path, check_same_thread=<span class="cls">False</span>)
+    checkpointer = <span class="cls">SqliteSaver</span>(conn)
+
+    graph = <span class="cls">StateGraph</span>(<span class="cls">ResearchState</span>)
+    graph.add_node(<span class="str">"research"</span>, research_node)
+    graph.add_node(<span class="str">"review"</span>, review_node)
+    graph.add_node(<span class="str">"writer"</span>, writer_node)
+
+    graph.add_edge(START, <span class="str">"research"</span>)
+    graph.add_edge(<span class="str">"research"</span>, <span class="str">"review"</span>)
+    <span class="cm"># review_node uses Command() to route dynamically</span>
+    graph.add_edge(<span class="str">"writer"</span>, END)
+
+    <span class="kw">return</span> graph.compile(checkpointer=checkpointer, interrupt_before=[<span class="str">"review"</span>])
+
+<span class="cm"># ── USAGE ──────────────────────────────────────────────────────────</span>
+app = build_hitl_graph(<span class="str">"research_checkpoints.db"</span>)
+thread_id = str(uuid.uuid4())
+config = {<span class="str">"configurable"</span>: {<span class="str">"thread_id"</span>: thread_id}}
+
+<span class="cm"># Phase 1: Run until interrupt</span>
+state = app.invoke({
+    <span class="str">"query"</span>: <span class="str">"FastAPI performance improvements"</span>,
+    <span class="str">"messages"</span>: [],
+    <span class="str">"search_results"</span>: [],
+    <span class="str">"human_feedback"</span>: <span class="cls">None</span>,
+    <span class="str">"draft"</span>: <span class="str">""</span>,
+    <span class="str">"is_approved"</span>: <span class="cls">False</span>,
+    <span class="str">"iteration"</span>: <span class="num">0</span>
+}, config=config)
+<span class="fn">print</span>(<span class="str">"PAUSED — review required. Results:"</span>, state[<span class="str">"search_results"</span>])
+
+<span class="cm"># Phase 2: Human approves — resume same thread</span>
+final = app.invoke(
+    <span class="cls">Command</span>(resume={<span class="str">"approved"</span>: <span class="cls">True</span>, <span class="str">"feedback"</span>: <span class="str">"Great results"</span>}),
+    config=config  <span class="cm"># same thread_id!</span>
+)
+<span class="fn">print</span>(<span class="str">"COMPLETE. Draft:"</span>, final[<span class="str">"draft"</span>])</div>
+
+      <div class="test-box">
+        <h4>Test Cases</h4>
+        <div class="code-block" style="background:transparent;border:none;padding:0;"><span class="cm"># Test 1: Graph pauses at interrupt</span>
+app = build_hitl_graph()
+config = {<span class="str">"configurable"</span>: {<span class="str">"thread_id"</span>: <span class="str">"test-1"</span>}}
+state = app.invoke({<span class="str">"query"</span>: <span class="str">"test"</span>, ...}, config=config)
+assert state[<span class="str">"is_approved"</span>] == <span class="cls">False</span>  <span class="cm"># not approved yet</span>
+assert len(state[<span class="str">"search_results"</span>]) > <span class="num">0</span>   <span class="cm"># research completed</span>
+
+<span class="cm"># Test 2: Resume with approval</span>
+final = app.invoke(<span class="cls">Command</span>(resume={<span class="str">"approved"</span>: <span class="cls">True</span>}), config=config)
+assert final[<span class="str">"is_approved"</span>] == <span class="cls">True</span>
+assert final[<span class="str">"draft"</span>] != <span class="str">""</span>  <span class="cm"># writer ran</span>
+
+<span class="cm"># Test 3: Rejection → retry → re-interrupt</span>
+config2 = {<span class="str">"configurable"</span>: {<span class="str">"thread_id"</span>: <span class="str">"test-2"</span>}}
+app.invoke({<span class="str">"query"</span>: <span class="str">"test"</span>, ...}, config=config2)
+state2 = app.invoke(<span class="cls">Command</span>(resume={<span class="str">"approved"</span>: <span class="cls">False</span>, <span class="str">"feedback"</span>: <span class="str">"More depth"</span>}), config=config2)
+assert state2[<span class="str">"iteration"</span>] == <span class="num">2</span>  <span class="cm"># second research attempt</span>
+assert <span class="str">"More depth"</span> <span class="kw">in</span> state2[<span class="str">"human_feedback"</span>]</div>
+      </div>
+
+      <div class="hints-wrap">
+        <button class="hint-toggle" onclick="toggleHints('h4')">Show Hints</button>
+        <ul class="hints-list" id="h4">
+          <li><strong>interrupt():</strong> from langgraph.types import interrupt — call inside a node, graph pauses and returns state to caller</li>
+          <li><strong>Command(resume=...):</strong> from langgraph.types import Command — pass as first arg to app.invoke() to resume</li>
+          <li><strong>SQLiteSaver:</strong> pip install langgraph-checkpoint-sqlite — use :memory: for tests, file path for production</li>
+          <li><strong>interrupt_before vs interrupt_after:</strong> interrupt_before=["review"] pauses BEFORE review_node runs — state is saved with research results</li>
+          <li><strong>Inspect checkpoint:</strong> app.get_state(config) — see full state at any point, including all past checkpoints</li>
+        </ul>
+      </div>
+
+      <div style="margin-top:20px;">
+        <button class="complete-btn" id="cbtn-ex4" onclick="markDone('ex4')">
+          <div class="check-icon">✓</div> Mark Complete
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+// ─── PROGRESS ─────────────────────────────────────────────────────
+const STORAGE_KEY = 'day4_progress';
+let done = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+
+function updateProgress() {
+  const total = 4;
+  const count = Object.values(done).filter(Boolean).length;
+  document.getElementById('progressFill').style.width = (count / total * 100) + '%';
+  document.getElementById('progressText').textContent = count + ' / ' + total + ' done';
+}
+
+function markDone(id) {
+  done[id] = !done[id];
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(done));
+  const btn = document.getElementById('cbtn-' + id);
+  const badge = document.getElementById('badge-' + id);
+  if (done[id]) {
+    btn.classList.add('done');
+    badge.textContent = 'Done';
+    badge.className = 'ex-badge badge-done';
+    badge.style.display = 'inline-flex';
+  } else {
+    btn.classList.remove('done');
+    badge.style.display = 'none';
+  }
+  updateProgress();
+}
+
+// ─── ACCORDION ────────────────────────────────────────────────────
+function toggleEx(id) {
+  const body = document.getElementById('body-' + id);
+  const chev = document.getElementById('chev-' + id);
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  chev.classList.toggle('open', !isOpen);
+}
+
+function toggleHints(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+
+// ─── GRAPH CANVAS BUILDER ─────────────────────────────────────────
+const GRAPH_NODES = [
+  { id: 'start', label: 'START', x: 170, y: 30, color: '#2a2a45', textColor: '#64748b', radius: 28 },
+  { id: 'agent', label: 'agent', x: 170, y: 100, color: '#7c3aed', textColor: '#fff', radius: 34 },
+  { id: 'tools', label: 'tools', x: 280, y: 185, color: '#0d9488', textColor: '#fff', radius: 34 },
+  { id: 'end', label: 'END', x: 60, y: 185, color: '#2a2a45', textColor: '#64748b', radius: 28 },
+];
+
+const GRAPH_EDGES = [
+  { from: 'start', to: 'agent', color: '#4a4a65', label: '', dash: false },
+  { from: 'agent', to: 'tools', color: '#0d9488', label: 'tool_call', dash: true },
+  { from: 'agent', to: 'end', color: '#10b981', label: 'done', dash: true },
+  { from: 'tools', to: 'agent', color: '#7c3aed', label: 'loop', dash: false },
+];
+
+let graphBuildStep = -1;
+let graphBuildTimer = null;
+let visibleNodes = new Set();
+let visibleEdges = new Set();
+
+function initGraphCanvas() {
+  const dots = document.getElementById('stepDots1');
+  dots.innerHTML = '';
+  for (let i = 0; i < 7; i++) {
+    const d = document.createElement('div');
+    d.className = 'step-dot';
+    d.id = 'sd' + i;
+    dots.appendChild(d);
+  }
+  drawGraph();
+}
+
+function drawGraph() {
+  const canvas = document.getElementById('graphCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Grid
+  ctx.strokeStyle = '#0f0f1a';
+  ctx.lineWidth = 1;
+  for (let x = 0; x < canvas.width; x += 30) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,canvas.height); ctx.stroke(); }
+  for (let y = 0; y < canvas.height; y += 30) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(canvas.width,y); ctx.stroke(); }
+
+  // Draw edges
+  GRAPH_EDGES.forEach((edge, i) => {
+    if (!visibleEdges.has(i)) return;
+    const from = GRAPH_NODES.find(n => n.id === edge.from);
+    const to = GRAPH_NODES.find(n => n.id === edge.to);
+    if (!from || !to) return;
+
+    ctx.beginPath();
+    ctx.strokeStyle = edge.color;
+    ctx.lineWidth = 2;
+    if (edge.dash) ctx.setLineDash([5, 4]);
+    else ctx.setLineDash([]);
+
+    // Curved edge for tools→agent
+    if (edge.from === 'tools' && edge.to === 'agent') {
+      ctx.moveTo(to.x + 30, to.y);
+      ctx.bezierCurveTo(to.x + 80, to.y, from.x + 80, from.y, from.x + 30, from.y);
+    } else {
+      ctx.moveTo(from.x, from.y + from.radius);
+      ctx.lineTo(to.x, to.y - to.radius);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Arrow head
+    const tx = edge.from === 'tools' && edge.to === 'agent' ? to.x + 30 : to.x;
+    const ty = edge.from === 'tools' && edge.to === 'agent' ? to.y : to.y - to.radius;
+    const angle = edge.from === 'tools' && edge.to === 'agent' ? -Math.PI/2 : -Math.PI/2;
+    ctx.fillStyle = edge.color;
+    ctx.beginPath();
+    ctx.moveTo(tx, ty - 7);
+    ctx.lineTo(tx - 5, ty);
+    ctx.lineTo(tx + 5, ty);
+    ctx.closePath();
+    ctx.fill();
+
+    // Label
+    if (edge.label) {
+      const mx = (from.x + to.x) / 2 + (edge.from === 'agent' && edge.to === 'end' ? -30 : edge.from === 'agent' && edge.to === 'tools' ? 20 : 0);
+      const my = (from.y + to.y) / 2;
+      ctx.fillStyle = edge.color;
+      ctx.font = '10px Inter';
+      ctx.fillText(edge.label, mx, my);
+    }
+  });
+
+  // Draw nodes
+  GRAPH_NODES.forEach(node => {
+    if (!visibleNodes.has(node.id)) return;
+
+    const isGlow = graphBuildStep >= 6 && node.id !== 'start' && node.id !== 'end';
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+    if (isGlow) { ctx.shadowColor = node.color; ctx.shadowBlur = 18; }
+    ctx.fillStyle = node.color;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = isGlow ? '#fff' : '#3a3a55';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.fillStyle = node.textColor;
+    ctx.font = 'bold 12px Inter';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(node.label, node.x, node.y);
+    ctx.textAlign = 'left';
+  });
+
+  // "Ready" label
+  if (graphBuildStep >= 6) {
+    ctx.fillStyle = '#10b981';
+    ctx.font = 'bold 12px Inter';
+    ctx.textAlign = 'center';
+    ctx.fillText('✓ Ready', canvas.width / 2, canvas.height - 14);
+    ctx.textAlign = 'left';
+  }
+}
+
+const BUILD_STEPS = [
+  () => { /* nothing visual yet */ },
+  () => { visibleNodes.add('agent'); },
+  () => { visibleNodes.add('tools'); },
+  () => { visibleNodes.add('start'); visibleEdges.add(0); },
+  () => { visibleEdges.add(1); visibleEdges.add(2); },
+  () => { visibleEdges.add(3); },
+  () => { visibleNodes.add('end'); },
+];
+
+function runGraphBuild() {
+  if (graphBuildTimer) return;
+  graphBuildStep = -1;
+  visibleNodes.clear();
+  visibleEdges.clear();
+  document.querySelectorAll('.build-step').forEach(s => s.classList.remove('active','done'));
+  document.querySelectorAll('.step-dot').forEach(d => d.className = 'step-dot');
+  drawGraph();
+
+  graphBuildTimer = setInterval(() => {
+    graphBuildStep++;
+    if (graphBuildStep > 0) {
+      const prev = document.getElementById('bs' + (graphBuildStep-1));
+      if (prev) { prev.classList.remove('active'); prev.classList.add('done'); }
+      const prevDot = document.getElementById('sd' + (graphBuildStep-1));
+      if (prevDot) prevDot.className = 'step-dot done';
+    }
+    if (graphBuildStep < BUILD_STEPS.length) {
+      BUILD_STEPS[graphBuildStep]();
+      drawGraph();
+      const cur = document.getElementById('bs' + graphBuildStep);
+      if (cur) cur.classList.add('active');
+      const curDot = document.getElementById('sd' + graphBuildStep);
+      if (curDot) curDot.className = 'step-dot active';
+    } else {
+      clearInterval(graphBuildTimer);
+      graphBuildTimer = null;
+    }
+  }, 900);
+}
+
+function resetGraphBuild() {
+  if (graphBuildTimer) { clearInterval(graphBuildTimer); graphBuildTimer = null; }
+  graphBuildStep = -1;
+  visibleNodes.clear();
+  visibleEdges.clear();
+  document.querySelectorAll('.build-step').forEach(s => s.classList.remove('active','done'));
+  document.querySelectorAll('.step-dot').forEach(d => d.className = 'step-dot');
+  drawGraph();
+}
+
+// ─── ROUTING DEMO ─────────────────────────────────────────────────
+const TEST_MESSAGES = [
+  { content: 'Calling calculator tool...', hasToolCalls: true, dest: 'tools', destClass: 'dest-tools' },
+  { content: 'The answer is 42.', hasToolCalls: false, dest: 'END', destClass: 'dest-end' },
+  { content: 'ERROR: API rate limit exceeded', hasToolCalls: false, dest: 'error_handler', destClass: 'dest-error' },
+  { content: 'Could you clarify the format?', hasToolCalls: false, dest: 'clarification', destClass: 'dest-clarify' },
+  { content: 'Task completed successfully.', hasToolCalls: false, dest: 'END', destClass: 'dest-end' },
+  { content: 'ERROR: Connection timeout', hasToolCalls: false, dest: 'error_handler', destClass: 'dest-error' },
+  { content: 'Searching web for information...', hasToolCalls: true, dest: 'tools', destClass: 'dest-tools' },
+  { content: 'What output format do you prefer?', hasToolCalls: false, dest: 'clarification', destClass: 'dest-clarify' },
+];
+
+function initRoutingDemo() {
+  const demo = document.getElementById('routingDemo');
+  demo.innerHTML = TEST_MESSAGES.map((m, i) => `
+    <div class="route-row" id="rr${i}">
+      <div class="route-input">${escHtml(m.content)}${m.hasToolCalls ? ' <span style="color:var(--purple-light);font-size:0.7rem;">[tool_calls]</span>' : ''}</div>
+      <div class="route-arrow-anim" id="ra${i}" style="opacity:0.3;">→</div>
+      <div class="route-dest ${m.destClass}" id="rd${i}" style="opacity:0.3;">${m.dest}</div>
+    </div>
+  `).join('');
+}
+
+let routeTimer = null;
+function runRouting() {
+  if (routeTimer) return;
+  // Reset
+  TEST_MESSAGES.forEach((m, i) => {
+    document.getElementById('ra' + i).style.opacity = '0.3';
+    document.getElementById('rd' + i).style.opacity = '0.3';
+    document.getElementById('rr' + i).classList.remove('active');
+  });
+  let i = 0;
+  routeTimer = setInterval(() => {
+    if (i < TEST_MESSAGES.length) {
+      document.getElementById('rr' + i).classList.add('active');
+      document.getElementById('ra' + i).style.opacity = '1';
+      setTimeout(() => {
+        document.getElementById('rd' + i).style.opacity = '1';
+        document.getElementById('rr' + i).classList.remove('active');
+      }, 400);
+      i++;
+    } else {
+      clearInterval(routeTimer); routeTimer = null;
+    }
+  }, 500);
+}
+
+function resetRouting() {
+  if (routeTimer) { clearInterval(routeTimer); routeTimer = null; }
+  initRoutingDemo();
+}
+
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ─── STATE FLOW ANIMATION ─────────────────────────────────────────
+let sfTimer = null;
+function animateStateFlow() {
+  const msg = document.getElementById('stateFlowMsg');
+  const steps = [
+    'State initialized: {messages: [HumanMsg], query: "FastAPI docs", draft: "", search_results: []}',
+    'research_node returns: {search_results: ["result1", "result2"]}  — other fields unchanged',
+    'LangGraph merges — state now has search_results + all original fields',
+    'writer_node returns: {draft: "Based on results...", is_complete: true}',
+    'Final state: all fields present, draft filled, is_complete = True — graph exits',
+  ];
+  let i = 0;
+  msg.style.color = 'var(--teal-light)';
+  sfTimer = setInterval(() => {
+    if (i < steps.length) { msg.textContent = '→ ' + steps[i]; i++; }
+    else { clearInterval(sfTimer); sfTimer = null; msg.style.color = 'var(--green)'; msg.textContent = '✓ State flow complete — all fields preserved through all nodes'; }
+  }, 1200);
+}
+
+function resetStateFlow() {
+  if (sfTimer) { clearInterval(sfTimer); sfTimer = null; }
+  document.getElementById('stateFlowMsg').textContent = '';
+}
+
+// ─── HITL FLOW ANIMATION ──────────────────────────────────────────
+let hitlTimer = null;
+const HITL_NODES = ['hn-start','hn-research','hn-interrupt','hn-approve','hn-writer','hn-end'];
+
+function animateHITL() {
+  if (hitlTimer) return;
+  HITL_NODES.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('active','paused','approved');
+  });
+  const hn_reject = document.getElementById('hn-reject');
+  if (hn_reject) hn_reject.classList.remove('active','paused','approved');
+  let i = 0;
+  hitlTimer = setInterval(() => {
+    if (i > 0 && HITL_NODES[i-1]) {
+      const prev = document.getElementById(HITL_NODES[i-1]);
+      if (prev) prev.classList.remove('active','paused');
+    }
+    if (i < HITL_NODES.length) {
+      const cur = document.getElementById(HITL_NODES[i]);
+      if (cur) {
+        cur.classList.add(HITL_NODES[i] === 'hn-interrupt' ? 'paused' : HITL_NODES[i] === 'hn-approve' ? 'approved' : 'active');
+      }
+      // Also animate thread rows
+      const trMap = { 0: 0, 1: 1, 2: 2, 3: 3, 4: 4 };
+      const tr = document.getElementById('tr' + (trMap[i] !== undefined ? trMap[i] : -1));
+      if (tr) tr.classList.add('active');
+      i++;
+    } else {
+      clearInterval(hitlTimer); hitlTimer = null;
+    }
+  }, 1000);
+}
+
+function resetHITL() {
+  if (hitlTimer) { clearInterval(hitlTimer); hitlTimer = null; }
+  [...HITL_NODES, 'hn-reject'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('active','paused','approved');
+  });
+  document.querySelectorAll('.thread-row').forEach(r => r.classList.remove('active'));
+}
+
+// ─── HITL INTERACTIVE DEMO ────────────────────────────────────────
+let hitlState = null;
+let hitlThreadId = null;
+let retryCount = 0;
+
+const MOCK_RESULTS = {
+  'FastAPI performance improvements': [
+    'FastAPI 0.110+ showed 40% latency reduction via optimized route matching',
+    'New async middleware pipeline reduces overhead by 25% in high-concurrency scenarios',
+    'Pydantic v2 integration cut serialization time by 3-4x in benchmark tests',
+  ],
+  'default': [
+    'Topic overview: recent developments and benchmarks',
+    'Community adoption: 60k+ GitHub stars, major enterprise users',
+    'Ecosystem: rich plugin ecosystem with 200+ integrations',
+  ]
+};
+
+function getResults(query) {
+  const key = Object.keys(MOCK_RESULTS).find(k => query.toLowerCase().includes(k.toLowerCase()));
+  const base = MOCK_RESULTS[key] || MOCK_RESULTS['default'];
+  return base.map((r, i) => `[${i+1}] ${r}`);
+}
+
+function startHITLDemo() {
+  const query = document.getElementById('researchQuery').value.trim() || 'FastAPI performance improvements';
+  hitlThreadId = 'thread-' + Math.random().toString(36).substr(2, 8);
+  retryCount = 0;
+  hitlState = { query, results: getResults(query) };
+
+  document.getElementById('hitlStatus').style.display = 'block';
+  document.getElementById('hitlComplete').style.display = 'none';
+  document.getElementById('threadIdDisplay').textContent = hitlThreadId;
+
+  const resultsEl = document.getElementById('hitlResults');
+  resultsEl.innerHTML = hitlState.results.map(r => `
+    <div class="hitl-result-item">
+      <span class="result-num">${r.slice(0,3)}</span>
+      <span>${r.slice(4)}</span>
+    </div>
+  `).join('');
+}
+
+function approveHITL() {
+  const comment = document.getElementById('revisionComment').value.trim();
+  document.getElementById('hitlStatus').style.display = 'none';
+
+  const report = `Research Report: ${hitlState.query}
+
+Based on the approved research findings, here is a comprehensive summary:
+
+${hitlState.results.join('\n')}
+
+${comment ? `Human feedback incorporated: "${comment}"\n` : ''}
+Conclusion: The evidence strongly supports significant performance improvements in recent releases. FastAPI continues to be an excellent choice for high-performance Python APIs, with measurable gains in latency, throughput, and developer productivity.
+
+[Report generated via mock HITL — thread: ${hitlThreadId}, iterations: ${retryCount + 1}]`;
+
+  document.getElementById('finalReport').textContent = report;
+  document.getElementById('hitlComplete').style.display = 'block';
+}
+
+function rejectHITL() {
+  const comment = document.getElementById('revisionComment').value.trim() || 'Needs more depth';
+  retryCount++;
+  const query = hitlState.query;
+
+  // Generate slightly different results with feedback incorporated
+  const newResults = [
+    ...getResults(query),
+    `[Revised per feedback: "${comment}"] — Additional analysis added with focus on requested area`,
+  ];
+  hitlState.results = newResults;
+
+  document.getElementById('revisionComment').value = '';
+  const resultsEl = document.getElementById('hitlResults');
+  resultsEl.innerHTML = `
+    <div style="color:var(--yellow);font-size:0.75rem;margin-bottom:8px;">Retry #${retryCount} — incorporating feedback: "${comment}"</div>
+    ${newResults.map(r => `
+      <div class="hitl-result-item">
+        <span class="result-num">${r.slice(0,3)}</span>
+        <span>${r.slice(4)}</span>
+      </div>
+    `).join('')}`;
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────
+initGraphCanvas();
+initRoutingDemo();
+
+// Restore progress
+const savedDone = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+if (Object.keys(savedDone).length) {
+  Object.keys(savedDone).forEach(id => {
+    if (savedDone[id]) {
+      const btn = document.getElementById('cbtn-' + id);
+      const badge = document.getElementById('badge-' + id);
+      if (btn) btn.classList.add('done');
+      if (badge) { badge.textContent = 'Done'; badge.className = 'ex-badge badge-done'; badge.style.display = 'inline-flex'; }
+    }
+  });
+  done = savedDone;
+  updateProgress();
+}
+</script>
+<script src="../bg-animation.js"></script>
+</body>
+</html>

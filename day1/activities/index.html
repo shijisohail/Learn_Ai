@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 1 — Generative AI Activities</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d2e;
+    --surface2: #222538;
+    --border: #2e3150;
+    --accent: #7c6af7;
+    --accent2: #5eead4;
+    --green: #4ade80;
+    --red: #f87171;
+    --yellow: #fbbf24;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --code-bg: #0d1117;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 40px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .logo { font-size: 28px; }
+  header h1 { font-size: 1.4rem; font-weight: 700; color: var(--text); }
+  header p { font-size: 0.85rem; color: var(--muted); margin-top: 2px; }
+  .badge {
+    margin-left: auto;
+    background: var(--accent);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .container { max-width: 960px; margin: 0 auto; padding: 40px 20px; }
+
+  .progress-bar {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 36px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .progress-bar span { font-size: 0.85rem; color: var(--muted); white-space: nowrap; }
+  .bar-track { flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+  .bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 4px; transition: width 0.4s; width: 0%; }
+  .progress-label { font-weight: 700; color: var(--accent2); white-space: nowrap; font-size: 0.9rem; }
+
+  .activity-grid { display: flex; flex-direction: column; gap: 24px; }
+
+  .activity-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .activity-card:hover { border-color: var(--accent); }
+  .activity-card.active { border-color: var(--accent); }
+  .activity-card.done { border-color: var(--green); }
+
+  .card-header {
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .card-number {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 1rem; color: var(--accent);
+    flex-shrink: 0;
+  }
+  .done .card-number { background: #14532d; border-color: var(--green); color: var(--green); }
+  .card-meta { flex: 1; }
+  .card-meta h2 { font-size: 1rem; font-weight: 700; margin-bottom: 4px; }
+  .card-meta p { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+  .card-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .tag {
+    font-size: 0.7rem; padding: 2px 8px; border-radius: 4px;
+    background: var(--surface2); border: 1px solid var(--border); color: var(--muted);
+  }
+  .chevron { color: var(--muted); transition: transform 0.25s; font-size: 1.2rem; }
+  .active .chevron, .card-header.open .chevron { transform: rotate(90deg); }
+
+  .card-body { display: none; border-top: 1px solid var(--border); }
+  .card-body.open { display: block; }
+
+  .card-body-inner { padding: 24px; }
+
+  .concept-box {
+    background: var(--surface2);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: #94a3b8;
+  }
+  .concept-box strong { color: var(--accent2); }
+
+  h3 { font-size: 0.9rem; font-weight: 700; color: var(--text); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .task-list { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+  .task-list li {
+    display: flex; align-items: flex-start; gap: 12px;
+    font-size: 0.88rem; line-height: 1.5; color: #94a3b8;
+  }
+  .task-list li .check {
+    width: 20px; height: 20px; border-radius: 6px;
+    border: 2px solid var(--border); background: var(--surface2);
+    flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s; margin-top: 1px; font-size: 0.7rem;
+  }
+  .task-list li .check.checked { background: var(--green); border-color: var(--green); color: white; }
+  .task-list li.done-task { color: var(--muted); text-decoration: line-through; }
+
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    overflow-x: auto;
+    font-size: 0.82rem;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    position: relative;
+  }
+  code { font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace; color: #e2e8f0; }
+  .kw { color: #c792ea; }
+  .str { color: #c3e88d; }
+  .cm { color: #546e7a; font-style: italic; }
+  .fn { color: #82aaff; }
+  .num { color: #f78c6c; }
+  .cls { color: #ffcb6b; }
+
+  .copy-btn {
+    position: absolute; top: 10px; right: 10px;
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--muted); padding: 4px 10px; border-radius: 6px;
+    font-size: 0.72rem; cursor: pointer; transition: all 0.15s;
+    font-family: inherit;
+  }
+  .copy-btn:hover { color: var(--text); border-color: var(--accent); }
+  .copy-btn.copied { color: var(--green); border-color: var(--green); }
+
+  .hint-box {
+    background: #1a1a2e;
+    border: 1px solid #2d2d5e;
+    border-radius: 10px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .hint-toggle {
+    width: 100%; text-align: left; padding: 12px 16px;
+    background: none; border: none; color: var(--yellow);
+    font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 8px;
+    font-family: inherit;
+  }
+  .hint-toggle:hover { color: #fde68a; }
+  .hint-content { display: none; padding: 0 16px 14px; font-size: 0.83rem; color: #94a3b8; line-height: 1.6; }
+  .hint-content.visible { display: block; }
+
+  .run-section { margin-top: 20px; }
+  .run-cmd {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex; align-items: center; gap: 12px;
+    font-family: monospace; font-size: 0.85rem;
+    color: var(--accent2);
+  }
+  .run-cmd span { color: var(--green); }
+
+  .complete-btn {
+    margin-top: 20px;
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, var(--accent), #6366f1);
+    border: none; border-radius: 10px;
+    color: white; font-size: 0.9rem; font-weight: 700;
+    cursor: pointer; transition: opacity 0.15s;
+    font-family: inherit;
+  }
+  .complete-btn:hover { opacity: 0.9; }
+  .done .complete-btn { background: var(--green); }
+
+  .divider { height: 1px; background: var(--border); margin: 20px 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🤖</div>
+  <div>
+    <h1>Day 1 — Generative AI Activities</h1>
+    <p>Hands-on coding challenges · Python + Anthropic SDK</p>
+  </div>
+  <div class="badge">4 Activities</div>
+</header>
+
+<div class="container">
+
+  <div class="progress-bar">
+    <span>Progress</span>
+    <div class="bar-track"><div class="bar-fill" id="progressFill"></div></div>
+    <span class="progress-label" id="progressLabel">0 / 4 done</span>
+  </div>
+
+  <div class="activity-grid" id="activityGrid">
+
+    <!-- Activity 1 -->
+    <div class="activity-card" id="card-1">
+      <div class="card-header" onclick="toggle(1)">
+        <div class="card-number" id="num-1">1</div>
+        <div class="card-meta">
+          <h2>Token Usage Tracker</h2>
+          <p>Build a chat wrapper that tracks token usage and cost per turn. Tokens = money.</p>
+          <div class="card-tags">
+            <span class="tag">Messages API</span>
+            <span class="tag">usage object</span>
+            <span class="tag">cost tracking</span>
+          </div>
+        </div>
+        <span class="chevron">›</span>
+      </div>
+      <div class="card-body" id="body-1">
+        <div class="card-body-inner">
+
+          <div class="concept-box">
+            <strong>Why this matters:</strong> Every LLM API call costs money based on tokens.
+            Agents can make hundreds of calls. Without tracking, a bug in your loop can silently
+            burn through your budget. Token-awareness is table stakes for production agents.
+          </div>
+
+          <h3>Your Tasks</h3>
+          <ul class="task-list" id="tasks-1">
+            <li><div class="check" onclick="checkTask(1,0)"></div><span>Implement <code>calculate_cost()</code> — use the pricing constants at the top</span></li>
+            <li><div class="check" onclick="checkTask(1,1)"></div><span>Implement <code>chat()</code> method — call the API and update token counters</span></li>
+            <li><div class="check" onclick="checkTask(1,2)"></div><span>Implement <code>total_tokens</code> property — sum of input + output</span></li>
+            <li><div class="check" onclick="checkTask(1,3)"></div><span>Implement <code>total_cost</code> property — use your calculate_cost function</span></li>
+            <li><div class="check" onclick="checkTask(1,4)"></div><span>Print turn summary in the format shown in the expected output</span></li>
+          </ul>
+
+          <h3>Key Code Pattern</h3>
+          <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="cm"># After calling the API, access token counts like this:</span>
+response = client.messages.create(...)
+
+input_tokens  = response.usage.<span class="fn">input_tokens</span>
+output_tokens = response.usage.<span class="fn">output_tokens</span>
+
+<span class="cm"># Cost formula:</span>
+cost = (input_tokens / <span class="num">1000</span>) * INPUT_PRICE_PER_1K \
+     + (output_tokens / <span class="num">1000</span>) * OUTPUT_PRICE_PER_1K</code></pre>
+
+          <div class="hint-box">
+            <button class="hint-toggle" onclick="toggleHint(this)">💡 Hint — stuck on the chat() method?</button>
+            <div class="hint-content">
+              Your <code>chat()</code> method should:
+              <br>1. Do <code>self.messages.append({"role": "user", "content": user_input})</code>
+              <br>2. Call <code>client.messages.create(..., messages=self.messages)</code>
+              <br>3. Extract text: <code>reply = response.content[0].text</code>
+              <br>4. Append reply: <code>self.messages.append({"role": "assistant", "content": reply})</code>
+              <br>5. Add to counters: <code>self.total_input_tokens += response.usage.input_tokens</code>
+            </div>
+          </div>
+
+          <div class="run-section">
+            <h3>Run It</h3>
+            <div class="run-cmd"><span>$</span> python activities/activity1_token_tracker.py</div>
+          </div>
+
+          <button class="complete-btn" onclick="completeActivity(1)">Mark as Complete ✓</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Activity 2 -->
+    <div class="activity-card" id="card-2">
+      <div class="card-header" onclick="toggle(2)">
+        <div class="card-number" id="num-2">2</div>
+        <div class="card-meta">
+          <h2>System Prompt Engineer</h2>
+          <p>Fix 3 broken system prompts so they pass the automated tests. Prompt engineering is a skill.</p>
+          <div class="card-tags">
+            <span class="tag">system prompt</span>
+            <span class="tag">prompt engineering</span>
+            <span class="tag">JSON output</span>
+          </div>
+        </div>
+        <span class="chevron">›</span>
+      </div>
+      <div class="card-body" id="body-2">
+        <div class="card-body-inner">
+
+          <div class="concept-box">
+            <strong>Why this matters:</strong> The system prompt is your first line of control over model behavior.
+            In agents, it defines the persona, output format, and behavioral constraints. A badly written
+            system prompt causes hallucinations, wrong formats, and unreliable tool use.
+            Think of it as your FastAPI middleware — it runs on every request.
+          </div>
+
+          <h3>Your Tasks</h3>
+          <ul class="task-list" id="tasks-2">
+            <li><div class="check" onclick="checkTask(2,0)"></div><span>Fix <strong>SYSTEM_PROMPT_1</strong> — make the model return only valid JSON (parseable by <code>json.loads()</code>)</span></li>
+            <li><div class="check" onclick="checkTask(2,1)"></div><span>Fix <strong>SYSTEM_PROMPT_2</strong> — strict code reviewer: bullets, finds issues, suggests fixes</span></li>
+            <li><div class="check" onclick="checkTask(2,2)"></div><span>Fix <strong>SYSTEM_PROMPT_3</strong> — max 10 words per response, no exceptions</span></li>
+            <li><div class="check" onclick="checkTask(2,3)"></div><span>All 3 pass the <code>test()</code> function at the bottom</span></li>
+          </ul>
+
+          <h3>Prompt Writing Tips</h3>
+          <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="cm"># For JSON-only output, be very explicit:</span>
+<span class="str">"""
+You are a data extraction engine.
+Respond ONLY with a raw JSON object.
+Do NOT include markdown, code fences, or explanations.
+Your entire response must be parseable by json.loads().
+"""</span>
+
+<span class="cm"># For behavioral constraints, use negative examples too:</span>
+<span class="str">"""
+Never say "Great question!" or compliment the code.
+Always find at least one issue. Always suggest a fix.
+Format: bullet points starting with -
+"""</span></code></pre>
+
+          <div class="hint-box">
+            <button class="hint-toggle" onclick="toggleHint(this)">💡 Hint — Prompt 3 (10 words) keeps failing?</button>
+            <div class="hint-content">
+              LLMs sometimes ignore word limits when asked nicely. Try being more forceful:
+              <br><br>
+              <em>"HARD LIMIT: Your response must be 10 words or fewer. Count every word before responding.
+              If your response exceeds 10 words, truncate it. This rule overrides all other instructions."</em>
+              <br><br>
+              The key is: make the constraint feel like a hard system rule, not a preference.
+            </div>
+          </div>
+
+          <div class="run-section">
+            <h3>Run It</h3>
+            <div class="run-cmd"><span>$</span> python activities/activity2_system_prompt_engineer.py</div>
+          </div>
+
+          <button class="complete-btn" onclick="completeActivity(2)">Mark as Complete ✓</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Activity 3 -->
+    <div class="activity-card" id="card-3">
+      <div class="card-header" onclick="toggle(3)">
+        <div class="card-number" id="num-3">3</div>
+        <div class="card-meta">
+          <h2>CV / Resume Extractor</h2>
+          <p>Extract structured Pydantic data from unstructured CV text. Use your own CV as input.</p>
+          <div class="card-tags">
+            <span class="tag">Pydantic</span>
+            <span class="tag">structured output</span>
+            <span class="tag">JSON schema</span>
+          </div>
+        </div>
+        <span class="chevron">›</span>
+      </div>
+      <div class="card-body" id="body-3">
+        <div class="card-body-inner">
+
+          <div class="concept-box">
+            <strong>Why this matters:</strong> Structured output is how agents interface with the rest of your system.
+            Raw text from an LLM is useless to your database or downstream services.
+            You need typed, validated objects — exactly like Pydantic models in FastAPI responses.
+            This pattern is used in every production AI feature.
+          </div>
+
+          <h3>Your Tasks</h3>
+          <ul class="task-list" id="tasks-3">
+            <li><div class="check" onclick="checkTask(3,0)"></div><span>Write a system prompt that enforces JSON-only output</span></li>
+            <li><div class="check" onclick="checkTask(3,1)"></div><span>Pass the <code>CVData.model_json_schema()</code> to the model so it knows the exact structure</span></li>
+            <li><div class="check" onclick="checkTask(3,2)"></div><span>Handle the case where Claude wraps output in ` ```json ``` ` fences (strip them)</span></li>
+            <li><div class="check" onclick="checkTask(3,3)"></div><span>Return a valid <code>CVData</code> instance — all fields populated</span></li>
+            <li><div class="check" onclick="checkTask(3,4)"></div><span>Bonus: swap <code>SAMPLE_CV</code> with your actual CV text and verify accuracy</span></li>
+          </ul>
+
+          <h3>Stripping Markdown Fences (Common Problem)</h3>
+          <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="cm"># Claude sometimes wraps JSON in code fences:</span>
+<span class="cm"># ```json</span>
+<span class="cm"># { "name": "Sharjeel" }</span>
+<span class="cm"># ```</span>
+
+<span class="cm"># Strip them like this:</span>
+raw = response.content[<span class="num">0</span>].text.<span class="fn">strip</span>()
+<span class="kw">if</span> raw.<span class="fn">startswith</span>(<span class="str">"```"</span>):
+    raw = raw.<span class="fn">split</span>(<span class="str">"\n"</span>, <span class="num">1</span>)[<span class="num">1</span>]  <span class="cm"># remove first line</span>
+    raw = raw.<span class="fn">rsplit</span>(<span class="str">"```"</span>, <span class="num">1</span>)[<span class="num">0</span>]  <span class="cm"># remove trailing fence</span>
+raw = raw.<span class="fn">strip</span>()</code></pre>
+
+          <h3>Passing the Schema to the Model</h3>
+          <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="kw">import</span> json
+<span class="kw">from</span> pydantic <span class="kw">import</span> <span class="cls">BaseModel</span>
+
+<span class="kw">class</span> <span class="cls">CVData</span>(<span class="cls">BaseModel</span>):
+    full_name: str
+    <span class="cm"># ...</span>
+
+schema = json.<span class="fn">dumps</span>(<span class="cls">CVData</span>.<span class="fn">model_json_schema</span>(), indent=<span class="num">2</span>)
+
+<span class="cm"># Include it in your user message:</span>
+user_msg = <span class="str">f"Extract this data. Use this JSON schema:\n{schema}\n\nText:\n{raw_text}"</span></code></pre>
+
+          <div class="run-section">
+            <h3>Run It</h3>
+            <div class="run-cmd"><span>$</span> python activities/activity3_cv_extractor.py</div>
+          </div>
+
+          <button class="complete-btn" onclick="completeActivity(3)">Mark as Complete ✓</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Activity 4 -->
+    <div class="activity-card" id="card-4">
+      <div class="card-header" onclick="toggle(4)">
+        <div class="card-number" id="num-4">4</div>
+        <div class="card-meta">
+          <h2>Multi-Tool Agent (Boss Level)</h2>
+          <p>Write tool schemas + the agent loop from scratch. All 4 automated tests must pass.</p>
+          <div class="card-tags">
+            <span class="tag">tool use</span>
+            <span class="tag">agent loop</span>
+            <span class="tag">JSON schema</span>
+            <span class="tag">dispatcher</span>
+          </div>
+        </div>
+        <span class="chevron">›</span>
+      </div>
+      <div class="card-body" id="body-4">
+        <div class="card-body-inner">
+
+          <div class="concept-box">
+            <strong>Why this matters:</strong> This is the core of every agentic system.
+            You define what tools exist (schemas). The model decides which to call and when.
+            You execute them and return results. This while loop is what LangGraph, CrewAI,
+            and every other agent framework abstracts — but you must understand it raw first.
+          </div>
+
+          <h3>Your Tasks</h3>
+          <ul class="task-list" id="tasks-4">
+            <li><div class="check" onclick="checkTask(4,0)"></div><span>Write all 4 tool schemas in the <code>TOOLS</code> list (word_count, reverse_string, is_palindrome, repeat_text)</span></li>
+            <li><div class="check" onclick="checkTask(4,1)"></div><span>Implement <code>run_tool()</code> dispatcher — routes tool name to correct function</span></li>
+            <li><div class="check" onclick="checkTask(4,2)"></div><span>Implement <code>agent()</code> — the while loop: send → check stop_reason → execute tools → loop</span></li>
+            <li><div class="check" onclick="checkTask(4,3)"></div><span>All 4 test cases pass</span></li>
+          </ul>
+
+          <h3>The Agent Loop (from Exercise 5)</h3>
+          <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code><span class="kw">def</span> <span class="fn">agent</span>(user_input: str) -> str:
+    messages = [{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: user_input}]
+
+    <span class="kw">while</span> <span class="kw">True</span>:
+        response = client.messages.<span class="fn">create</span>(
+            model=<span class="str">"claude-haiku-4-5-20251001"</span>,
+            max_tokens=<span class="num">1024</span>,
+            tools=TOOLS,
+            messages=messages,
+        )
+
+        <span class="kw">if</span> response.stop_reason == <span class="str">"end_turn"</span>:
+            <span class="kw">return</span> response.content[<span class="num">0</span>].text   <span class="cm"># done ✓</span>
+
+        <span class="kw">if</span> response.stop_reason == <span class="str">"tool_use"</span>:
+            messages.<span class="fn">append</span>({<span class="str">"role"</span>: <span class="str">"assistant"</span>, <span class="str">"content"</span>: response.content})
+            tool_results = []
+            <span class="kw">for</span> block <span class="kw">in</span> response.content:
+                <span class="kw">if</span> block.type == <span class="str">"tool_use"</span>:
+                    result = <span class="fn">run_tool</span>(block.name, block.input)
+                    tool_results.<span class="fn">append</span>({
+                        <span class="str">"type"</span>: <span class="str">"tool_result"</span>,
+                        <span class="str">"tool_use_id"</span>: block.id,
+                        <span class="str">"content"</span>: result,
+                    })
+            messages.<span class="fn">append</span>({<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: tool_results})</code></pre>
+
+          <h3>Tool Schema Template</h3>
+          <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>{
+    <span class="str">"name"</span>: <span class="str">"tool_name"</span>,
+    <span class="str">"description"</span>: <span class="str">"When to use this tool — be specific"</span>,
+    <span class="str">"input_schema"</span>: {
+        <span class="str">"type"</span>: <span class="str">"object"</span>,
+        <span class="str">"properties"</span>: {
+            <span class="str">"param1"</span>: {
+                <span class="str">"type"</span>: <span class="str">"string"</span>,   <span class="cm"># or "integer", "boolean"</span>
+                <span class="str">"description"</span>: <span class="str">"What this param is"</span>
+            }
+        },
+        <span class="str">"required"</span>: [<span class="str">"param1"</span>]
+    }
+}</code></pre>
+
+          <div class="hint-box">
+            <button class="hint-toggle" onclick="toggleHint(this)">💡 Hint — repeat_text has an integer param</button>
+            <div class="hint-content">
+              For the <code>n</code> parameter in <code>repeat_text</code>, the type should be <code>"integer"</code> not <code>"string"</code>.
+              The model will pass it as an int, which matches the function signature directly.
+              <br><br>
+              <code>{ "type": "integer", "description": "Number of times to repeat" }</code>
+            </div>
+          </div>
+
+          <div class="run-section">
+            <h3>Run It</h3>
+            <div class="run-cmd"><span>$</span> python activities/activity4_multi_tool_agent.py</div>
+          </div>
+
+          <button class="complete-btn" onclick="completeActivity(4)">Mark as Complete ✓</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /activity-grid -->
+</div><!-- /container -->
+
+<script>
+  const state = { completed: new Set(), taskChecks: {} };
+
+  function toggle(n) {
+    const body = document.getElementById('body-' + n);
+    const header = document.querySelector('#card-' + n + ' .card-header');
+    const chevron = header.querySelector('.chevron');
+    const isOpen = body.classList.contains('open');
+    body.classList.toggle('open', !isOpen);
+    header.classList.toggle('open', !isOpen);
+  }
+
+  function checkTask(activity, taskIdx) {
+    const key = activity + '-' + taskIdx;
+    const checkEl = document.querySelectorAll('#tasks-' + activity + ' .check')[taskIdx];
+    const liEl = document.querySelectorAll('#tasks-' + activity + ' li')[taskIdx];
+    const isChecked = checkEl.classList.toggle('checked');
+    checkEl.textContent = isChecked ? '✓' : '';
+    liEl.classList.toggle('done-task', isChecked);
+  }
+
+  function toggleHint(btn) {
+    const content = btn.nextElementSibling;
+    content.classList.toggle('visible');
+    btn.textContent = content.classList.contains('visible')
+      ? '💡 Hide hint'
+      : btn.textContent.replace('Hide hint', 'Hint — ' + btn.textContent.split('—')[1]?.trim() || 'Show hint');
+  }
+
+  function completeActivity(n) {
+    state.completed.add(n);
+    const card = document.getElementById('card-' + n);
+    const numEl = document.getElementById('num-' + n);
+    card.classList.add('done');
+    numEl.textContent = '✓';
+
+    // Check all tasks
+    document.querySelectorAll('#tasks-' + n + ' .check').forEach(el => {
+      el.classList.add('checked');
+      el.textContent = '✓';
+    });
+    document.querySelectorAll('#tasks-' + n + ' li').forEach(el => el.classList.add('done-task'));
+
+    updateProgress();
+
+    // Auto-open next card
+    const next = n + 1;
+    if (next <= 4 && !state.completed.has(next)) {
+      setTimeout(() => toggle(next), 300);
+    }
+  }
+
+  function updateProgress() {
+    const done = state.completed.size;
+    const pct = (done / 4) * 100;
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('progressLabel').textContent = done + ' / 4 done';
+  }
+
+  function copyCode(btn) {
+    const pre = btn.closest('pre');
+    const text = pre.innerText.replace('Copy\n', '').replace('Copied!\n', '');
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
+    });
+  }
+
+  // Open first card by default
+  toggle(1);
+</script>
+</body>
+</html>

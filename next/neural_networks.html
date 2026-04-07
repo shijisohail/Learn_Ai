@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neural Networks Deep Dive — What's Next</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f; --card: #141420; --surface2: #1a1a2e; --border: #2a2a45;
+  --purple: #7c3aed; --purple-light: #a855f7; --teal: #0d9488; --green: #10b981;
+  --red: #ef4444; --yellow: #f59e0b; --text: #e2e8f0; --muted: #64748b;
+  --font: 'Inter', sans-serif; --mono: 'JetBrains Mono', monospace;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; overflow-x: hidden; }
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(124,58,237,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 90% 80%, rgba(16,185,129,0.05) 0%, transparent 60%);
+  pointer-events: none; z-index: 0;
+}
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+nav { border-bottom: 1px solid var(--border); padding: 14px 0; background: rgba(10,10,15,0.85); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; }
+.nav-inner { display: flex; align-items: center; justify-content: space-between; }
+.nav-back { color: var(--muted); font-size: 13px; text-decoration: none; transition: color 0.2s; }
+.nav-back:hover { color: var(--text); }
+.nav-tag { font-size: 13px; font-weight: 700; background: linear-gradient(90deg,#a855f7,#10b981); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+.hero { padding: 60px 0 48px; }
+.hero-eyebrow { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.hero-icon { font-size: 40px; }
+.difficulty-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: rgba(124,58,237,0.15); color: var(--purple-light); }
+.time-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+.hero h1 { font-size: clamp(28px, 5vw, 48px); font-weight: 900; letter-spacing: -2px; margin-bottom: 14px; line-height: 1.1; }
+.hero h1 span { background: linear-gradient(135deg, #a855f7, #10b981); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.hero p { font-size: 16px; color: var(--muted); max-width: 620px; line-height: 1.7; }
+
+.section { padding: 56px 0; border-top: 1px solid var(--border); }
+.section-header { margin-bottom: 32px; }
+.section-num { font-size: 11px; font-weight: 700; color: var(--purple-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.section-header h2 { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 10px; }
+.section-header p { color: var(--muted); font-size: 15px; line-height: 1.6; max-width: 640px; }
+
+/* CODE BLOCKS — white-space: pre is REQUIRED */
+.code-block {
+  background: #0d1117; border: 1px solid #30363d; border-radius: 12px;
+  overflow-x: auto; white-space: pre; font-family: var(--mono); font-size: 12.5px; line-height: 1.8;
+}
+.code-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid #30363d; white-space: normal; }
+.code-lang { font-size: 11px; color: var(--muted); font-weight: 500; }
+.copy-btn { background: none; border: 1px solid var(--border); color: var(--muted); padding: 3px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; font-family: var(--font); transition: all 0.15s; }
+.copy-btn:hover { border-color: var(--purple); color: var(--text); }
+.code-content { padding: 20px 24px; }
+.code-wrap { position: relative; margin-top: 16px; }
+.code-label { position: absolute; top: -10px; left: 16px; background: var(--purple); color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.5px; }
+.c-cmt { color: #8b949e; }
+.c-kw { color: #ff7b72; }
+.c-fn { color: #d2a8ff; }
+.c-str { color: #a5d6ff; }
+.c-type { color: #ffa657; }
+.c-num { color: #f2cc60; }
+.c-bi { color: #79c0ff; }
+
+/* CALLOUT */
+.callout { background: rgba(124,58,237,0.07); border: 1px solid rgba(124,58,237,0.25); border-radius: 12px; padding: 16px 20px; display: flex; gap: 12px; align-items: flex-start; margin: 20px 0; }
+.callout-icon { font-size: 18px; flex-shrink: 0; }
+.callout-text { font-size: 13px; color: var(--text); line-height: 1.6; }
+.callout-text strong { color: var(--purple-light); }
+.callout.green { background: rgba(16,185,129,0.07); border-color: rgba(16,185,129,0.25); }
+.callout.green .callout-text strong { color: var(--green); }
+.callout.yellow { background: rgba(245,158,11,0.07); border-color: rgba(245,158,11,0.25); }
+.callout.yellow .callout-text strong { color: var(--yellow); }
+
+/* NETWORK VIZ */
+.nn-diagram { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; overflow: hidden; }
+.nn-svg { width: 100%; max-width: 700px; display: block; margin: 0 auto; }
+
+/* EQUATION BLOCK */
+.eq-block { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin: 20px 0; }
+.eq-main { font-family: var(--mono); font-size: 18px; color: var(--text); text-align: center; margin-bottom: 20px; letter-spacing: 0.5px; }
+.eq-breakdown { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-top: 16px; }
+.eq-part { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px; text-align: center; }
+.eq-symbol { font-family: var(--mono); font-size: 16px; color: var(--purple-light); margin-bottom: 4px; }
+.eq-label { font-size: 11px; color: var(--muted); line-height: 1.4; }
+
+/* ACTIVATION GRID */
+.activation-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.act-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; transition: all 0.2s; }
+.act-card:hover { transform: translateY(-2px); border-color: var(--purple); }
+.act-name { font-size: 14px; font-weight: 800; margin-bottom: 4px; }
+.act-formula { font-family: var(--mono); font-size: 12px; color: var(--purple-light); margin-bottom: 8px; }
+.act-desc { font-size: 12px; color: var(--muted); line-height: 1.6; margin-bottom: 10px; }
+.act-used { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; display: inline-block; }
+.act-sigmoid { background: rgba(245,158,11,0.15); color: var(--yellow); }
+.act-relu { background: rgba(16,185,129,0.15); color: var(--green); }
+.act-gelu { background: rgba(124,58,237,0.15); color: var(--purple-light); }
+.act-softmax { background: rgba(13,148,136,0.15); color: var(--teal); }
+.act-svg { width: 100%; height: 80px; display: block; margin-bottom: 10px; }
+
+/* TRAINING STEPS */
+.training-flow { display: flex; flex-direction: column; gap: 0; }
+.train-step { display: flex; gap: 16px; position: relative; }
+.train-step:not(:last-child)::after { content: ''; position: absolute; left: 19px; top: 44px; bottom: 0; width: 2px; background: var(--border); }
+.train-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; z-index: 1; }
+.train-body { flex: 1; padding: 8px 0 24px; }
+.train-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+.train-desc { font-size: 13px; color: var(--muted); line-height: 1.6; }
+.train-eq { font-family: var(--mono); font-size: 12px; color: var(--green); margin-top: 6px; }
+
+/* TERMS GRID */
+.terms-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 20px; }
+.term-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+.term-name { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.term-def { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+/* TRANSFORMER BLOCK DIAGRAM */
+.block-diagram { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 24px; }
+.block-row { display: flex; align-items: stretch; gap: 12px; margin-bottom: 12px; }
+.block-box { flex: 1; border-radius: 10px; padding: 14px 16px; text-align: center; }
+.block-attn { background: rgba(124,58,237,0.12); border: 1px solid rgba(124,58,237,0.35); }
+.block-ffn { background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.35); }
+.block-norm { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); }
+.block-box-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+.block-box-sub { font-size: 11px; color: var(--muted); line-height: 1.4; }
+.block-arrow { text-align: center; color: var(--muted); font-size: 16px; margin-bottom: 12px; }
+.block-connect { font-size: 11px; color: var(--purple-light); font-weight: 600; margin-top: 6px; }
+
+/* DEPTH LAYERS */
+.depth-layers { display: flex; flex-direction: column; gap: 10px; }
+.depth-layer { display: flex; align-items: center; gap: 16px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; }
+.depth-num { font-size: 11px; font-weight: 800; color: var(--muted); min-width: 60px; }
+.depth-bar { height: 8px; border-radius: 4px; flex-shrink: 0; }
+.depth-info { flex: 1; }
+.depth-title { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+.depth-desc { font-size: 12px; color: var(--muted); }
+
+/* COMPARISON TABLE */
+.arch-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.arch-table th { background: var(--surface2); color: var(--muted); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+.arch-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.5; }
+.arch-table tr:last-child td { border-bottom: none; }
+.arch-table tr:hover td { background: var(--surface2); }
+.arch-name { font-weight: 700; }
+.arch-badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; display: inline-block; margin-top: 3px; }
+.badge-dom { background: rgba(124,58,237,0.15); color: var(--purple-light); }
+.badge-vis { background: rgba(13,148,136,0.15); color: var(--teal); }
+.badge-legacy { background: rgba(100,116,139,0.15); color: var(--muted); }
+.badge-new { background: rgba(16,185,129,0.15); color: var(--green); }
+.badge-sparse { background: rgba(245,158,11,0.15); color: var(--yellow); }
+
+/* PRACTICAL LINKS */
+.practical-list { display: flex; flex-direction: column; gap: 12px; }
+.practical-item { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; display: flex; gap: 14px; align-items: flex-start; transition: border-color 0.2s; }
+.practical-item:hover { border-color: var(--purple); }
+.practical-icon { font-size: 20px; flex-shrink: 0; }
+.practical-body { flex: 1; }
+.practical-title { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
+.practical-desc { font-size: 12px; color: var(--muted); line-height: 1.6; }
+.practical-link { font-size: 11px; font-weight: 700; color: var(--purple-light); text-decoration: none; margin-top: 4px; display: inline-block; }
+.practical-link:hover { color: var(--text); }
+
+/* PREREQS */
+.prereq-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.prereq-chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.prereq-day { background: var(--purple); color: white; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; }
+
+/* EXERCISES */
+.ex-list { display: flex; flex-direction: column; gap: 12px; }
+.ex-item { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; display: flex; gap: 14px; }
+.ex-num { width: 32px; height: 32px; border-radius: 50%; background: rgba(124,58,237,0.15); border: 2px solid var(--purple); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: var(--purple-light); flex-shrink: 0; }
+.ex-body { flex: 1; }
+.ex-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.ex-desc { font-size: 12px; color: var(--muted); line-height: 1.6; }
+.ex-difficulty { display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+.diff-easy { background: rgba(16,185,129,0.15); color: var(--green); }
+.diff-med { background: rgba(245,158,11,0.15); color: var(--yellow); }
+.diff-hard { background: rgba(239,68,68,0.15); color: #ef4444; }
+
+@media(max-width:700px) {
+  .activation-grid { grid-template-columns: 1fr; }
+  .arch-table { font-size: 11px; }
+  .block-row { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="container">
+    <div class="nav-inner">
+      <a href="../days/day7.html" class="nav-back">← Back to Day 7</a>
+      <span class="nav-tag">What's Next — Neural Networks</span>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+
+  <section class="hero">
+    <div class="hero-eyebrow">
+      <span class="hero-icon">🧠</span>
+      <span class="difficulty-badge">Foundation</span>
+      <span class="time-badge">⏱ 1–2 days</span>
+    </div>
+    <h1>Neural Networks<br><span>Deep Dive</span></h1>
+    <p>Backpropagation, activation functions, GELU vs ReLU, MLP math, and how transformers are built from neural network primitives. The mathematical foundations that power every LLM you've been calling for the past 7 days.</p>
+  </section>
+
+  <!-- SECTION 1: What is a Neural Network? -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">01 — Foundations</div>
+      <h2>What is a Neural Network?</h2>
+      <p>A neural network is a <strong>function approximator</strong>: a parameterized mathematical function that learns to map inputs to outputs by adjusting millions (or billions) of numbers called weights. Inspired loosely by biological neurons.</p>
+    </div>
+
+    <div class="nn-diagram">
+      <svg class="nn-svg" viewBox="0 0 680 260" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Layer labels -->
+        <text x="80" y="22" text-anchor="middle" fill="#64748b" font-size="11" font-family="Inter" font-weight="700">INPUT LAYER</text>
+        <text x="260" y="22" text-anchor="middle" fill="#64748b" font-size="11" font-family="Inter" font-weight="700">HIDDEN LAYER 1</text>
+        <text x="440" y="22" text-anchor="middle" fill="#64748b" font-size="11" font-family="Inter" font-weight="700">HIDDEN LAYER 2</text>
+        <text x="600" y="22" text-anchor="middle" fill="#64748b" font-size="11" font-family="Inter" font-weight="700">OUTPUT</text>
+
+        <!-- Connections: input to h1 (faint lines) -->
+        <g stroke="#2a2a45" stroke-width="1" opacity="0.7">
+          <line x1="100" y1="70" x2="240" y2="60"/>
+          <line x1="100" y1="70" x2="240" y2="100"/>
+          <line x1="100" y1="70" x2="240" y2="140"/>
+          <line x1="100" y1="70" x2="240" y2="180"/>
+          <line x1="100" y1="110" x2="240" y2="60"/>
+          <line x1="100" y1="110" x2="240" y2="100"/>
+          <line x1="100" y1="110" x2="240" y2="140"/>
+          <line x1="100" y1="110" x2="240" y2="180"/>
+          <line x1="100" y1="150" x2="240" y2="60"/>
+          <line x1="100" y1="150" x2="240" y2="100"/>
+          <line x1="100" y1="150" x2="240" y2="140"/>
+          <line x1="100" y1="150" x2="240" y2="180"/>
+          <line x1="100" y1="190" x2="240" y2="60"/>
+          <line x1="100" y1="190" x2="240" y2="100"/>
+          <line x1="100" y1="190" x2="240" y2="140"/>
+          <line x1="100" y1="190" x2="240" y2="180"/>
+          <!-- h1 to h2 -->
+          <line x1="280" y1="60" x2="420" y2="80"/>
+          <line x1="280" y1="60" x2="420" y2="120"/>
+          <line x1="280" y1="60" x2="420" y2="160"/>
+          <line x1="280" y1="100" x2="420" y2="80"/>
+          <line x1="280" y1="100" x2="420" y2="120"/>
+          <line x1="280" y1="100" x2="420" y2="160"/>
+          <line x1="280" y1="140" x2="420" y2="80"/>
+          <line x1="280" y1="140" x2="420" y2="120"/>
+          <line x1="280" y1="140" x2="420" y2="160"/>
+          <line x1="280" y1="180" x2="420" y2="80"/>
+          <line x1="280" y1="180" x2="420" y2="120"/>
+          <line x1="280" y1="180" x2="420" y2="160"/>
+          <!-- h2 to output -->
+          <line x1="460" y1="80" x2="580" y2="110"/>
+          <line x1="460" y1="80" x2="580" y2="150"/>
+          <line x1="460" y1="120" x2="580" y2="110"/>
+          <line x1="460" y1="120" x2="580" y2="150"/>
+          <line x1="460" y1="160" x2="580" y2="110"/>
+          <line x1="460" y1="160" x2="580" y2="150"/>
+        </g>
+
+        <!-- Input nodes -->
+        <circle cx="100" cy="70" r="18" fill="#1a1a2e" stroke="#7c3aed" stroke-width="1.5"/>
+        <text x="100" y="74" text-anchor="middle" fill="#a855f7" font-size="10" font-family="JetBrains Mono">x₁</text>
+        <circle cx="100" cy="110" r="18" fill="#1a1a2e" stroke="#7c3aed" stroke-width="1.5"/>
+        <text x="100" y="114" text-anchor="middle" fill="#a855f7" font-size="10" font-family="JetBrains Mono">x₂</text>
+        <circle cx="100" cy="150" r="18" fill="#1a1a2e" stroke="#7c3aed" stroke-width="1.5"/>
+        <text x="100" y="154" text-anchor="middle" fill="#a855f7" font-size="10" font-family="JetBrains Mono">x₃</text>
+        <circle cx="100" cy="190" r="18" fill="#1a1a2e" stroke="#7c3aed" stroke-width="1.5"/>
+        <text x="100" y="194" text-anchor="middle" fill="#a855f7" font-size="10" font-family="JetBrains Mono">x₄</text>
+
+        <!-- Hidden layer 1 nodes -->
+        <circle cx="260" cy="60" r="18" fill="#1a1a2e" stroke="#10b981" stroke-width="1.5"/>
+        <text x="260" y="64" text-anchor="middle" fill="#10b981" font-size="9" font-family="JetBrains Mono">h₁</text>
+        <circle cx="260" cy="100" r="18" fill="#1a1a2e" stroke="#10b981" stroke-width="1.5"/>
+        <text x="260" y="104" text-anchor="middle" fill="#10b981" font-size="9" font-family="JetBrains Mono">h₂</text>
+        <circle cx="260" cy="140" r="18" fill="#1a1a2e" stroke="#10b981" stroke-width="1.5"/>
+        <text x="260" y="144" text-anchor="middle" fill="#10b981" font-size="9" font-family="JetBrains Mono">h₃</text>
+        <circle cx="260" cy="180" r="18" fill="#1a1a2e" stroke="#10b981" stroke-width="1.5"/>
+        <text x="260" y="184" text-anchor="middle" fill="#10b981" font-size="9" font-family="JetBrains Mono">h₄</text>
+
+        <!-- Hidden layer 2 nodes -->
+        <circle cx="440" cy="80" r="18" fill="#1a1a2e" stroke="#10b981" stroke-width="1.5"/>
+        <text x="440" y="84" text-anchor="middle" fill="#10b981" font-size="9" font-family="JetBrains Mono">h₅</text>
+        <circle cx="440" cy="120" r="18" fill="#1a1a2e" stroke="#10b981" stroke-width="1.5"/>
+        <text x="440" y="124" text-anchor="middle" fill="#10b981" font-size="9" font-family="JetBrains Mono">h₆</text>
+        <circle cx="440" cy="160" r="18" fill="#1a1a2e" stroke="#10b981" stroke-width="1.5"/>
+        <text x="440" y="164" text-anchor="middle" fill="#10b981" font-size="9" font-family="JetBrains Mono">h₇</text>
+
+        <!-- Output nodes -->
+        <circle cx="600" cy="110" r="20" fill="#1a1a2e" stroke="#f59e0b" stroke-width="2"/>
+        <text x="600" y="114" text-anchor="middle" fill="#f59e0b" font-size="9" font-family="JetBrains Mono">y₁</text>
+        <circle cx="600" cy="150" r="20" fill="#1a1a2e" stroke="#f59e0b" stroke-width="2"/>
+        <text x="600" y="154" text-anchor="middle" fill="#f59e0b" font-size="9" font-family="JetBrains Mono">y₂</text>
+
+        <!-- Annotations -->
+        <text x="80" y="232" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter">tokens /</text>
+        <text x="80" y="246" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter">embeddings</text>
+        <text x="350" y="232" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter">learned representations</text>
+        <text x="600" y="232" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter">probabilities</text>
+      </svg>
+    </div>
+
+    <div class="callout" style="margin-top:20px">
+      <span class="callout-icon">🔑</span>
+      <div class="callout-text"><strong>The key insight:</strong> Each connection between nodes has a <em>weight</em> (a single floating-point number). Training adjusts all those weights so the network's outputs match what we want. A GPT-4-scale model has ~1.8 <em>trillion</em> such weights.</div>
+    </div>
+
+    <div class="terms-grid">
+      <div class="term-card">
+        <div class="term-name">Node / Neuron</div>
+        <div class="term-def">A single unit that receives inputs, computes a weighted sum, applies an activation, and produces one output value.</div>
+      </div>
+      <div class="term-card">
+        <div class="term-name">Weight (w)</div>
+        <div class="term-def">A learnable scalar on each connection. Analogous to synapse strength. This is what training changes.</div>
+      </div>
+      <div class="term-card">
+        <div class="term-name">Bias (b)</div>
+        <div class="term-def">An extra learnable offset added before the activation. Lets the neuron fire even when all inputs are zero.</div>
+      </div>
+      <div class="term-card">
+        <div class="term-name">Layer</div>
+        <div class="term-def">A group of neurons that all process the same input vector in parallel, producing an output vector.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 2: Math of a Single Neuron -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">02 — The Math</div>
+      <h2>The Math of a Single Neuron</h2>
+      <p>Every neuron in every layer of every LLM executes the same simple formula. Billions of times, in parallel.</p>
+    </div>
+
+    <div class="eq-block">
+      <div class="eq-main">output = activation( Σ(wᵢ × xᵢ) + b )</div>
+      <div class="eq-breakdown">
+        <div class="eq-part">
+          <div class="eq-symbol">xᵢ</div>
+          <div class="eq-label">Input values from the previous layer (or raw input)</div>
+        </div>
+        <div class="eq-part">
+          <div class="eq-symbol">wᵢ</div>
+          <div class="eq-label">Weights — one per input connection. These are what get trained.</div>
+        </div>
+        <div class="eq-part">
+          <div class="eq-symbol">Σ(wᵢxᵢ)</div>
+          <div class="eq-label">Weighted sum — a dot product. In matrix form: <strong>x · W</strong></div>
+        </div>
+        <div class="eq-part">
+          <div class="eq-symbol">b</div>
+          <div class="eq-label">Bias — a learnable constant offset. Shifts the activation threshold.</div>
+        </div>
+        <div class="eq-part">
+          <div class="eq-symbol">activation()</div>
+          <div class="eq-label">Non-linearity. Without this, stacking layers adds zero expressiveness.</div>
+        </div>
+        <div class="eq-part">
+          <div class="eq-symbol">output</div>
+          <div class="eq-label">A single number fed to the next layer (or the final prediction).</div>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="font-size:17px;font-weight:800;margin:32px 0 16px">Activation Functions — The Non-Linear Glue</h3>
+    <p style="color:var(--muted);font-size:14px;margin-bottom:20px;line-height:1.6">Without activation functions, any stack of layers collapses to a single linear transformation. Activations introduce non-linearity, enabling networks to learn complex patterns.</p>
+
+    <div class="activation-grid">
+      <div class="act-card">
+        <svg class="act-svg" viewBox="0 0 200 80">
+          <!-- Sigmoid curve -->
+          <line x1="0" y1="40" x2="200" y2="40" stroke="#2a2a45" stroke-width="1"/>
+          <line x1="100" y1="0" x2="100" y2="80" stroke="#2a2a45" stroke-width="1"/>
+          <path d="M 10,72 Q 40,70 70,60 T 100,40 T 130,20 T 160,10 L 190,8" stroke="#f59e0b" stroke-width="2" fill="none"/>
+          <text x="10" y="78" fill="#64748b" font-size="9" font-family="JetBrains Mono">-5</text>
+          <text x="88" y="78" fill="#64748b" font-size="9" font-family="JetBrains Mono">0</text>
+          <text x="178" y="78" fill="#64748b" font-size="9" font-family="JetBrains Mono">5</text>
+          <text x="4" y="12" fill="#64748b" font-size="9" font-family="JetBrains Mono">1</text>
+          <text x="4" y="44" fill="#64748b" font-size="9" font-family="JetBrains Mono">0.5</text>
+        </svg>
+        <div class="act-name">Sigmoid</div>
+        <div class="act-formula">σ(x) = 1 / (1 + e⁻ˣ)</div>
+        <div class="act-desc">Squashes any input to (0, 1). Classic choice for binary outputs. Prone to vanishing gradients in deep nets — activations saturate near 0 and 1, killing gradient flow during backprop.</div>
+        <span class="act-used act-sigmoid">LSTM gates · Binary classifiers</span>
+      </div>
+
+      <div class="act-card">
+        <svg class="act-svg" viewBox="0 0 200 80">
+          <line x1="0" y1="60" x2="200" y2="60" stroke="#2a2a45" stroke-width="1"/>
+          <line x1="100" y1="0" x2="100" y2="80" stroke="#2a2a45" stroke-width="1"/>
+          <!-- ReLU: flat at 0 for x<0, linear for x>0 -->
+          <path d="M 10,60 L 100,60 L 190,5" stroke="#10b981" stroke-width="2" fill="none"/>
+          <text x="10" y="75" fill="#64748b" font-size="9" font-family="JetBrains Mono">-5</text>
+          <text x="88" y="75" fill="#64748b" font-size="9" font-family="JetBrains Mono">0</text>
+          <text x="178" y="75" fill="#64748b" font-size="9" font-family="JetBrains Mono">5</text>
+        </svg>
+        <div class="act-name">ReLU</div>
+        <div class="act-formula">ReLU(x) = max(0, x)</div>
+        <div class="act-desc">Computationally trivial. Creates sparse activations (many zeros), which improves efficiency. Dominant for hidden layers in CNNs and older transformer FFNs. Dead neuron problem: neurons stuck at 0 never recover.</div>
+        <span class="act-used act-relu">Hidden layers · CNNs · ResNets</span>
+      </div>
+
+      <div class="act-card">
+        <svg class="act-svg" viewBox="0 0 200 80">
+          <line x1="0" y1="55" x2="200" y2="55" stroke="#2a2a45" stroke-width="1"/>
+          <line x1="100" y1="0" x2="100" y2="80" stroke="#2a2a45" stroke-width="1"/>
+          <!-- GELU: slightly negative dip, then smooth rise -->
+          <path d="M 10,55 Q 60,58 85,57 Q 95,56 100,55 Q 115,50 140,30 L 190,5" stroke="#a855f7" stroke-width="2" fill="none"/>
+          <text x="10" y="75" fill="#64748b" font-size="9" font-family="JetBrains Mono">-5</text>
+          <text x="88" y="75" fill="#64748b" font-size="9" font-family="JetBrains Mono">0</text>
+          <text x="178" y="75" fill="#64748b" font-size="9" font-family="JetBrains Mono">5</text>
+        </svg>
+        <div class="act-name">GELU</div>
+        <div class="act-formula">x · Φ(x) &nbsp;≈&nbsp; x · sigmoid(1.702x)</div>
+        <div class="act-desc">Gaussian Error Linear Unit. Smoother than ReLU — has a slight negative dip. Stochastically gates inputs: each input is multiplied by the probability it would be kept by a Gaussian dropout. Used in every modern transformer FFN.</div>
+        <span class="act-used act-gelu">GPT · Claude · Llama · BERT</span>
+      </div>
+
+      <div class="act-card">
+        <svg class="act-svg" viewBox="0 0 200 80">
+          <!-- Softmax: bar chart style -->
+          <rect x="20" y="50" width="25" height="10" fill="#0d9488" rx="2"/>
+          <rect x="55" y="20" width="25" height="40" fill="#0d9488" rx="2"/>
+          <rect x="90" y="35" width="25" height="25" fill="#0d9488" rx="2"/>
+          <rect x="125" y="45" width="25" height="15" fill="#0d9488" rx="2"/>
+          <rect x="160" y="55" width="25" height="5" fill="#0d9488" rx="2"/>
+          <text x="24" y="72" fill="#64748b" font-size="8" font-family="JetBrains Mono">0.08</text>
+          <text x="55" y="72" fill="#64748b" font-size="8" font-family="JetBrains Mono">0.62</text>
+          <text x="92" y="72" fill="#64748b" font-size="8" font-family="JetBrains Mono">0.19</text>
+          <text x="127" y="72" fill="#64748b" font-size="8" font-family="JetBrains Mono">0.08</text>
+          <text x="162" y="72" fill="#64748b" font-size="8" font-family="JetBrains Mono">0.03</text>
+        </svg>
+        <div class="act-name">Softmax</div>
+        <div class="act-formula">softmax(xᵢ) = eˣⁱ / Σeˣʲ</div>
+        <div class="act-desc">Converts a vector of raw scores (logits) into a probability distribution that sums to 1.0. Used in the final output layer of every LLM: each token in the vocabulary gets a probability. The model samples the next token from this distribution.</div>
+        <span class="act-used act-softmax">LLM output layer · Attention scores</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 3: Training -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">03 — Training</div>
+      <h2>How Networks Learn: Gradient Descent</h2>
+      <p>Training a neural network is iterative optimization. You run data through the network, measure how wrong it is, compute which direction to adjust each weight, and nudge them slightly. Repeat for billions of steps.</p>
+    </div>
+
+    <div class="training-flow">
+      <div class="train-step">
+        <div class="train-icon" style="background:rgba(124,58,237,0.15);border:2px solid var(--purple)">1</div>
+        <div class="train-body">
+          <div class="train-title">Forward Pass</div>
+          <div class="train-desc">Input data flows through every layer left-to-right. Each neuron computes its weighted sum + activation. The network produces a prediction (e.g. probability distribution over tokens).</div>
+        </div>
+      </div>
+      <div class="train-step">
+        <div class="train-icon" style="background:rgba(239,68,68,0.15);border:2px solid #ef4444">2</div>
+        <div class="train-body">
+          <div class="train-title">Loss Function</div>
+          <div class="train-desc">Measures how wrong the prediction was. For language modeling: <strong>cross-entropy loss</strong> — measures the negative log-probability of the correct next token. Lower loss = better prediction.</div>
+          <div class="train-eq">loss = -log( p(correct_token) )</div>
+        </div>
+      </div>
+      <div class="train-step">
+        <div class="train-icon" style="background:rgba(245,158,11,0.15);border:2px solid var(--yellow)">3</div>
+        <div class="train-body">
+          <div class="train-title">Backpropagation</div>
+          <div class="train-desc">Using the chain rule of calculus, compute how much each weight contributed to the loss. Gradients flow <em>backward</em> through the network: from output → hidden layers → input. Each weight gets a gradient: ∂loss/∂w.</div>
+          <div class="train-eq">∂loss/∂w₁ = (∂loss/∂output) × (∂output/∂h) × (∂h/∂w₁)  ← chain rule</div>
+        </div>
+      </div>
+      <div class="train-step">
+        <div class="train-icon" style="background:rgba(16,185,129,0.15);border:2px solid var(--green)">4</div>
+        <div class="train-body">
+          <div class="train-title">Weight Update</div>
+          <div class="train-desc">Nudge each weight in the direction that reduces loss. The learning rate controls step size. Adam (used for most LLMs) adds momentum and adaptive learning rates per weight.</div>
+          <div class="train-eq">w = w - lr × ∂loss/∂w</div>
+        </div>
+      </div>
+      <div class="train-step">
+        <div class="train-icon" style="background:rgba(13,148,136,0.15);border:2px solid var(--teal)">↺</div>
+        <div class="train-body">
+          <div class="train-title">Repeat</div>
+          <div class="train-desc">Run another batch of data. Repeat for billions of steps across the entire training corpus. For GPT-4: approximately 13 trillion tokens, taking months on thousands of GPUs.</div>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="font-size:16px;font-weight:800;margin:32px 0 12px">Key Training Terms</h3>
+    <div class="terms-grid">
+      <div class="term-card">
+        <div class="term-name">Learning Rate (lr)</div>
+        <div class="term-def">How big a step to take per gradient update. Too high → diverges. Too low → slow convergence. Typically 1e-4 to 3e-4 for LLMs.</div>
+      </div>
+      <div class="term-card">
+        <div class="term-name">Batch Size</div>
+        <div class="term-def">How many training examples to process before one weight update. Larger batches = more stable gradients, but need more GPU memory.</div>
+      </div>
+      <div class="term-card">
+        <div class="term-name">Epoch</div>
+        <div class="term-def">One full pass over the training dataset. LLMs are often trained for less than 1 epoch on truly massive datasets (no repetition).</div>
+      </div>
+      <div class="term-card">
+        <div class="term-name">AdamW Optimizer</div>
+        <div class="term-def">Adam + weight decay. Default for transformer training. Maintains per-weight momentum estimates and adapts step sizes. Used for Claude, GPT, Llama.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 4: Deep Networks & Transformers -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">04 — Transformers</div>
+      <h2>Deep Networks &amp; Transformers</h2>
+      <p>LLMs are just very deep neural networks. Each transformer block is a specific, carefully designed combination of neural network components.</p>
+    </div>
+
+    <div class="block-diagram">
+      <div style="text-align:center;margin-bottom:20px;font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px">One Transformer Block (repeated N times)</div>
+
+      <div class="block-arrow">↑ residual stream (input embedding + positional encoding)</div>
+
+      <div class="block-row">
+        <div class="block-box block-norm">
+          <div class="block-box-title" style="color:var(--yellow)">LayerNorm</div>
+          <div class="block-box-sub">Normalizes the residual stream. Stabilizes training.</div>
+        </div>
+      </div>
+
+      <div class="block-arrow">↓</div>
+
+      <div class="block-row">
+        <div class="block-box block-attn">
+          <div class="block-box-title" style="color:var(--purple-light)">Multi-Head Attention</div>
+          <div class="block-box-sub">Q, K, V projections — neural network layers (linear). Scaled dot-product attention. Each head attends to different parts of context.</div>
+          <div class="block-connect">→ Neural net layers: W_Q, W_K, W_V, W_O</div>
+        </div>
+      </div>
+
+      <div class="block-arrow">↓ + residual connection</div>
+
+      <div class="block-row">
+        <div class="block-box block-norm">
+          <div class="block-box-title" style="color:var(--yellow)">LayerNorm</div>
+          <div class="block-box-sub">Applied before the FFN.</div>
+        </div>
+      </div>
+
+      <div class="block-arrow">↓</div>
+
+      <div class="block-row">
+        <div class="block-box block-ffn">
+          <div class="block-box-title" style="color:var(--green)">Feed-Forward Network (FFN)</div>
+          <div class="block-box-sub">A 2-layer MLP. Expands to 4× hidden dim, applies GELU, projects back. <strong>This is literally the MLP from section 8.</strong></div>
+          <div class="block-connect">FFN(x) = GELU(x·W₁ + b₁)·W₂ + b₂</div>
+        </div>
+      </div>
+
+      <div class="block-arrow">↓ + residual connection → next block</div>
+    </div>
+
+    <div class="callout green" style="margin-top:20px">
+      <span class="callout-icon">💡</span>
+      <div class="callout-text"><strong>Parameters = weights.</strong> When we say "Claude has 70B parameters" we mean 70 billion learned weights — the W matrices and bias vectors in every attention layer and FFN across all transformer blocks. Training discovers the specific values of these numbers from data.</div>
+    </div>
+
+    <div class="code-wrap" style="margin-top:24px">
+      <span class="code-label">PYTHON — Transformer FFN is Just a 2-Layer MLP</span>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">Python (PyTorch-style pseudocode)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <div class="code-content"><span class="c-kw">class</span> <span class="c-type">TransformerFFN</span>:
+    <span class="c-cmt"># The "feed-forward" sub-layer inside every transformer block</span>
+    <span class="c-cmt"># d_model = 4096 for Llama-7B, 12288 for GPT-3</span>
+    <span class="c-cmt"># d_ff    = 4 × d_model (typical — the "expansion factor")</span>
+
+    <span class="c-kw">def</span> <span class="c-fn">__init__</span>(<span class="c-bi">self</span>, d_model, d_ff):
+        <span class="c-bi">self</span>.W1 = <span class="c-fn">Linear</span>(d_model, d_ff)   <span class="c-cmt"># expand</span>
+        <span class="c-bi">self</span>.W2 = <span class="c-fn">Linear</span>(d_ff, d_model)   <span class="c-cmt"># contract</span>
+
+    <span class="c-kw">def</span> <span class="c-fn">forward</span>(<span class="c-bi">self</span>, x):
+        <span class="c-cmt"># x shape: (batch, seq_len, d_model)</span>
+        h = <span class="c-fn">gelu</span>(<span class="c-bi">self</span>.W1(x))   <span class="c-cmt"># (batch, seq_len, d_ff)  — this IS a neural net layer</span>
+        <span class="c-kw">return</span> <span class="c-bi">self</span>.W2(h)       <span class="c-cmt"># (batch, seq_len, d_model) — project back</span>
+
+<span class="c-cmt"># Llama-7B has 32 transformer blocks.</span>
+<span class="c-cmt"># Each block has one of these FFNs.</span>
+<span class="c-cmt"># FFN params per block ≈ 2 × 4096 × 16384 = 134M weights.</span>
+<span class="c-cmt"># Total FFN params ≈ 32 × 134M = 4.3B — majority of total 7B params.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 5: Why Depth Matters -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">05 — Depth</div>
+      <h2>Why Depth Matters</h2>
+      <p>Deeper networks learn hierarchical representations. Each layer builds abstractions on top of what the previous layer learned. This is why "more layers" ≠ just "bigger" — it means "more compositional."</p>
+    </div>
+
+    <div class="depth-layers">
+      <div class="depth-layer">
+        <div class="depth-num">Early Layers</div>
+        <div class="depth-bar" style="width:60px;background:rgba(124,58,237,0.4)"></div>
+        <div class="depth-info">
+          <div class="depth-title">Simple, Local Patterns</div>
+          <div class="depth-desc">Text: token co-occurrence, syntax neighbors. Vision: edges, colors, textures. These are statistical regularities in the raw data.</div>
+        </div>
+      </div>
+      <div class="depth-layer">
+        <div class="depth-num">Mid Layers</div>
+        <div class="depth-bar" style="width:100px;background:rgba(124,58,237,0.6)"></div>
+        <div class="depth-info">
+          <div class="depth-title">Compositional Patterns</div>
+          <div class="depth-desc">Text: phrases, named entities, syntactic roles. Vision: eyes, wheels, shapes. Combinations of the simple patterns from earlier layers.</div>
+        </div>
+      </div>
+      <div class="depth-layer">
+        <div class="depth-num">Deep Layers</div>
+        <div class="depth-bar" style="width:160px;background:rgba(124,58,237,0.9)"></div>
+        <div class="depth-info">
+          <div class="depth-title">Abstract, Semantic Concepts</div>
+          <div class="depth-desc">Text: sentiment, logical relationships, world knowledge, reasoning chains. Vision: "cat", "car", "person". High-level semantic features used for predictions.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout yellow" style="margin-top:24px">
+      <span class="callout-icon">📐</span>
+      <div class="callout-text"><strong>Universal Approximation Theorem:</strong> A neural network with a single hidden layer of sufficient width can approximate any continuous function to arbitrary precision. But <em>depth</em> is exponentially more efficient at representing certain functions than width. Composition is the secret — depth ~ function composition, width ~ capacity at each step.</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px">
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px">
+        <div style="font-size:13px;font-weight:800;margin-bottom:8px;color:var(--purple-light)">Depth ≈ Composition</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.6">Each layer applies a transformation on top of the previous. Analogy: writing a poem → choosing genre → choosing theme → choosing words. Deep processing through abstraction levels.</div>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px">
+        <div style="font-size:13px;font-weight:800;margin-bottom:8px;color:var(--green)">Width ≈ Capacity</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.6">More neurons per layer = more patterns can be stored at that level of abstraction. A wider net can memorize more, but doesn't automatically generalize better. Modern LLMs are both deep AND wide.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 6: Architecture Variants -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">06 — Architectures</div>
+      <h2>Modern Architecture Variants</h2>
+      <p>The MLP is the core primitive. Different architectures add structure — spatial, temporal, sparse — to handle different domains and constraints.</p>
+    </div>
+
+    <div style="overflow-x:auto">
+      <table class="arch-table">
+        <thead>
+          <tr>
+            <th>Architecture</th>
+            <th>Core Idea</th>
+            <th>Strength</th>
+            <th>Used In</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="arch-name">Transformer</div>
+              <span class="arch-badge badge-dom">Dominant</span>
+            </td>
+            <td>Attention + FFN (MLP). Every token attends to every other token.</td>
+            <td>Long-range dependencies, parallelizable training. Scales extremely well.</td>
+            <td>GPT, Claude, Llama, Gemini, BERT, T5</td>
+            <td style="color:var(--green)">Standard for language</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="arch-name">CNN</div>
+              <span class="arch-badge badge-vis">Vision</span>
+            </td>
+            <td>Convolutional filters: shared weights slide over spatial positions.</td>
+            <td>Translation invariance, very efficient for images. Weight sharing = far fewer parameters.</td>
+            <td>ResNet, VGG, EfficientNet, DALL-E encoder</td>
+            <td style="color:var(--teal)">Standard for vision (+ ViT emerging)</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="arch-name">LSTM / GRU</div>
+              <span class="arch-badge badge-legacy">Legacy</span>
+            </td>
+            <td>Recurrent: processes sequence one token at a time, passes hidden state forward.</td>
+            <td>Memory over sequences without attending to all positions. Low memory at inference.</td>
+            <td>Pre-transformer NLP, speech recognition</td>
+            <td style="color:var(--muted)">Largely replaced by transformers</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="arch-name">Mamba / SSM</div>
+              <span class="arch-badge badge-new">2023–2024</span>
+            </td>
+            <td>State Space Models: linear recurrence with selective gating. O(n) vs O(n²).</td>
+            <td>Linear time complexity in sequence length. Efficient for very long contexts (100K+ tokens).</td>
+            <td>Mamba, Jamba, Zamba</td>
+            <td style="color:var(--green)">Promising — watch this space</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="arch-name">MoE</div>
+              <span class="arch-badge badge-sparse">Sparse</span>
+            </td>
+            <td>N expert sub-networks per layer; router activates only K of N per token (sparse).</td>
+            <td>Massive parameter count with sub-linear compute. Scale capacity without proportional cost.</td>
+            <td>GPT-4 (likely), Mixtral 8×7B, Switch Transformer</td>
+            <td style="color:var(--yellow)">Production at scale</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout" style="margin-top:20px">
+      <span class="callout-icon">🔀</span>
+      <div class="callout-text"><strong>Attention is O(n²):</strong> The cost of computing attention between all token pairs grows as the square of sequence length. This is why 100K+ context windows are expensive, and why Mamba (linear-time) is interesting for ultra-long contexts. Hybrid architectures mixing attention and SSMs are emerging (Jamba).</div>
+    </div>
+  </section>
+
+  <!-- SECTION 7: Practical Connections -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">07 — In Your Stack</div>
+      <h2>Neural Networks in Your LLM Stack</h2>
+      <p>Everything you built in the 7-day curriculum has a neural network underneath. Here's where they show up.</p>
+    </div>
+
+    <div class="practical-list">
+      <div class="practical-item">
+        <div class="practical-icon">🔢</div>
+        <div class="practical-body">
+          <div class="practical-title">Embedding Model (Day 3)</div>
+          <div class="practical-desc">The embedding model you called (<code style="font-family:var(--mono);font-size:11px;color:var(--purple-light)">text-embedding-3-small</code>) is a transformer encoder — a neural network that maps text to a dense vector in ~1536 dimensions. The vector is the activations at the final layer. Two semantically similar sentences produce vectors close in this space because the network was trained to do exactly that (via contrastive loss).</div>
+        </div>
+      </div>
+      <div class="practical-item">
+        <div class="practical-icon">👁️</div>
+        <div class="practical-body">
+          <div class="practical-title">Claude's Attention (Day 1)</div>
+          <div class="practical-desc">When Claude reads your prompt, each transformer layer runs multi-head attention — a set of neural network layers (W_Q, W_K, W_V, W_O) plus an FFN. The "context window" is the sequence length n; the quadratic cost is why 200K-token windows are expensive.</div>
+        </div>
+      </div>
+      <div class="practical-item">
+        <div class="practical-icon">🎛️</div>
+        <div class="practical-body">
+          <div class="practical-title">Fine-tuning</div>
+          <div class="practical-desc">Fine-tuning updates the weights of a pre-trained neural network on your domain data — running backpropagation again, but starting from already-good weights instead of random. Full fine-tuning touches all weights. LoRA adds tiny trainable weight matrices (rank decomposition) to frozen layers: <strong>neural network adapters on top of a frozen neural network</strong>.</div>
+          <a href="../next/finetune.html" class="practical-link">→ Fine-tuning Deep Dive</a>
+        </div>
+      </div>
+      <div class="practical-item">
+        <div class="practical-icon">🔀</div>
+        <div class="practical-body">
+          <div class="practical-title">Model Routing (Day 6)</div>
+          <div class="practical-desc">When you built routing logic to send simple queries to Claude Haiku and complex ones to Sonnet, you were mimicking what MoE transformers do internally. Production routing classifiers are often small neural networks themselves — trained to predict which model will answer a given query best.</div>
+        </div>
+      </div>
+      <div class="practical-item">
+        <div class="practical-icon">🧬</div>
+        <div class="practical-body">
+          <div class="practical-title">Constitutional AI / RLHF</div>
+          <div class="practical-desc">The reward model in RLHF is a neural network fine-tuned to predict human preference scores for outputs. It takes a (prompt, response) pair and outputs a scalar reward. During PPO training, this reward signal is used to adjust the policy (the LLM) via backpropagation. Two neural networks training each other.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 8: Hands-On Python -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">08 — Hands-On</div>
+      <h2>Forward Pass From Scratch in Python</h2>
+      <p>A complete, runnable 2-layer MLP — the same structure as the FFN inside every transformer block. No libraries beyond NumPy required.</p>
+    </div>
+
+    <div class="callout green">
+      <span class="callout-icon">▶</span>
+      <div class="callout-text"><strong>Run this now:</strong> Copy the code below, paste into any Python REPL or Jupyter cell. It has zero dependencies beyond NumPy (standard in any Python environment). It implements the same forward pass that runs inside every LLM on every token.</div>
+    </div>
+
+    <div class="code-wrap" style="margin-top:24px">
+      <span class="code-label">PYTHON — Minimal Neural Net from Scratch</span>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">Python</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <div class="code-content"><span class="c-kw">import</span> <span class="c-bi">numpy</span> <span class="c-kw">as</span> np
+
+<span class="c-cmt"># ── Activation Functions ────────────────────────────────────────────────────</span>
+<span class="c-kw">def</span> <span class="c-fn">relu</span>(x):
+    <span class="c-kw">return</span> np.<span class="c-fn">maximum</span>(<span class="c-num">0</span>, x)
+
+<span class="c-kw">def</span> <span class="c-fn">gelu</span>(x):
+    <span class="c-cmt"># Tanh approximation — same formula used in GPT-2, Claude, Llama</span>
+    <span class="c-kw">return</span> x * <span class="c-num">0.5</span> * (<span class="c-num">1</span> + np.<span class="c-fn">tanh</span>(np.<span class="c-fn">sqrt</span>(<span class="c-num">2</span> / np.pi) * (x + <span class="c-num">0.044715</span> * x**<span class="c-num">3</span>)))
+
+<span class="c-kw">def</span> <span class="c-fn">softmax</span>(x):
+    <span class="c-cmt"># Subtract max for numerical stability (prevents overflow in exp)</span>
+    e = np.<span class="c-fn">exp</span>(x - x.<span class="c-fn">max</span>())
+    <span class="c-kw">return</span> e / e.<span class="c-fn">sum</span>()
+
+<span class="c-cmt"># ── 2-Layer MLP: the FFN inside every transformer block ────────────────────</span>
+<span class="c-kw">class</span> <span class="c-type">MLP</span>:
+    <span class="c-str">"""2-layer neural network — same structure as the FFN in GPT/Claude/Llama"""</span>
+
+    <span class="c-kw">def</span> <span class="c-fn">__init__</span>(<span class="c-bi">self</span>, d_in, d_hidden, d_out):
+        <span class="c-cmt"># Xavier (Glorot) initialization: scale by sqrt(2/fan_in)</span>
+        <span class="c-cmt"># Prevents vanishing/exploding activations at initialization</span>
+        <span class="c-bi">self</span>.W1 = np.random.<span class="c-fn">randn</span>(d_in, d_hidden) * np.<span class="c-fn">sqrt</span>(<span class="c-num">2</span> / d_in)
+        <span class="c-bi">self</span>.b1 = np.<span class="c-fn">zeros</span>(d_hidden)
+        <span class="c-bi">self</span>.W2 = np.random.<span class="c-fn">randn</span>(d_hidden, d_out) * np.<span class="c-fn">sqrt</span>(<span class="c-num">2</span> / d_hidden)
+        <span class="c-bi">self</span>.b2 = np.<span class="c-fn">zeros</span>(d_out)
+
+    <span class="c-kw">def</span> <span class="c-fn">forward</span>(<span class="c-bi">self</span>, x):
+        <span class="c-cmt"># Layer 1: linear transform + GELU activation</span>
+        <span class="c-cmt"># Shape: (d_in,) → (d_hidden,)</span>
+        h = <span class="c-fn">gelu</span>(x @ <span class="c-bi">self</span>.W1 + <span class="c-bi">self</span>.b1)
+
+        <span class="c-cmt"># Layer 2: linear transform + softmax (for classification/language)</span>
+        <span class="c-cmt"># Shape: (d_hidden,) → (d_out,)</span>
+        out = <span class="c-fn">softmax</span>(h @ <span class="c-bi">self</span>.W2 + <span class="c-bi">self</span>.b2)
+        <span class="c-kw">return</span> out
+
+<span class="c-cmt"># ── A tiny language model: vocab=5, hidden=8 ───────────────────────────────</span>
+np.random.<span class="c-fn">seed</span>(<span class="c-num">42</span>)
+model = <span class="c-type">MLP</span>(d_in=<span class="c-num">5</span>, d_hidden=<span class="c-num">8</span>, d_out=<span class="c-num">5</span>)
+vocab = [<span class="c-str">'the'</span>, <span class="c-str">'cat'</span>, <span class="c-str">'sat'</span>, <span class="c-str">'on'</span>, <span class="c-str">'mat'</span>]
+
+<span class="c-cmt"># One-hot encode "cat" (index 1)</span>
+x = np.<span class="c-fn">zeros</span>(<span class="c-num">5</span>); x[<span class="c-num">1</span>] = <span class="c-num">1.0</span>
+
+<span class="c-cmt"># Forward pass: "given 'cat', what's the next token?"</span>
+probs = model.<span class="c-fn">forward</span>(x)
+predicted = vocab[np.<span class="c-fn">argmax</span>(probs)]
+
+<span class="c-fn">print</span>(f<span class="c-str">"After 'cat', model predicts: '{predicted}'"</span>)
+<span class="c-fn">print</span>(f<span class="c-str">"Probabilities: {dict(zip(vocab, probs.round(3)))}"</span>)
+<span class="c-cmt"># → random weights, so output is random. Training would fix this.</span>
+
+<span class="c-cmt"># ── Count parameters (like "7B params" in LLM specs) ───────────────────────</span>
+n_params = (model.W1.size + model.b1.size +
+            model.W2.size + model.b2.size)
+<span class="c-fn">print</span>(f<span class="c-str">"\nModel parameters: {n_params}"</span>)
+<span class="c-fn">print</span>(f<span class="c-str">"  W1: {model.W1.shape}  ({model.W1.size} weights)"</span>)
+<span class="c-fn">print</span>(f<span class="c-str">"  W2: {model.W2.shape}  ({model.W2.size} weights)"</span>)
+<span class="c-cmt"># Scale this up: Llama-7B has 32 layers, d_model=4096, d_ff=16384</span>
+<span class="c-cmt"># FFN params per layer = 4096×16384 + 16384×4096 = 134M per layer</span>
+<span class="c-cmt"># Plus attention, embeddings, etc. → ~7 billion total</span></div>
+      </div>
+    </div>
+
+    <div class="callout" style="margin-top:20px">
+      <span class="callout-icon">🎯</span>
+      <div class="callout-text"><strong>Extend the exercise:</strong> Add a training loop. Compute cross-entropy loss: <code style="font-family:var(--mono);font-size:11px">loss = -np.log(probs[correct_idx])</code>. Then implement backprop manually: compute gradients by hand using chain rule and update W1, W2 with <code style="font-family:var(--mono);font-size:11px">W -= lr * grad_W</code>. Train for 1000 steps on a tiny dataset ("the cat sat on the mat"). Watch the loss drop.</div>
+    </div>
+  </section>
+
+  <!-- PREREQS -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">Prerequisites</div>
+      <h2>Which Days Are Relevant</h2>
+    </div>
+    <div class="prereq-grid">
+      <div class="prereq-chip"><span class="prereq-day">Day 1</span> LLM tokens, context windows, logits</div>
+      <div class="prereq-chip"><span class="prereq-day">Day 3</span> Embeddings &amp; vector representations</div>
+      <div class="prereq-chip"><span class="prereq-day">Day 6</span> Model routing and classifiers</div>
+      <div class="prereq-chip"><span class="prereq-day">Any</span> Python + NumPy for Section 8</div>
+    </div>
+    <div style="margin-top:16px;font-size:13px;color:var(--muted);line-height:1.6">
+      External: <em>3Blue1Brown "Neural Networks"</em> series (visual intuition), Andrej Karpathy's <em>micrograd</em> (backprop from scratch in 100 lines), <em>The Annotated Transformer</em> (Harvard NLP, transformer in pure PyTorch).
+    </div>
+  </section>
+
+  <!-- EXERCISES -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">Exercises</div>
+      <h2>Practice Exercises</h2>
+    </div>
+    <div class="ex-list">
+      <div class="ex-item">
+        <div class="ex-num">1</div>
+        <div class="ex-body">
+          <div class="ex-title">Run the forward pass and swap activation functions</div>
+          <div class="ex-desc">Copy the MLP code. Run it with GELU, then swap for ReLU and sigmoid. Print the hidden layer activations h for each. Notice how GELU produces small negatives where ReLU is exactly zero. Understand why this matters for gradient flow.</div>
+          <span class="ex-difficulty diff-easy">Easy — 30 min</span>
+        </div>
+      </div>
+      <div class="ex-item">
+        <div class="ex-num">2</div>
+        <div class="ex-body">
+          <div class="ex-title">Implement backpropagation and train the tiny LM</div>
+          <div class="ex-desc">Add a training loop to the MLP. Implement cross-entropy loss, compute gradients manually using chain rule (dL/dW2, dL/dW1), update weights. Train on the sequence "the cat sat on the mat" for 2000 steps. Log loss every 100 steps. It should converge near 0.</div>
+          <span class="ex-difficulty diff-med">Medium — 2 hours</span>
+        </div>
+      </div>
+      <div class="ex-item">
+        <div class="ex-num">3</div>
+        <div class="ex-body">
+          <div class="ex-title">Scale up: count parameters like a real LLM</div>
+          <div class="ex-desc">Create an MLP with d_in=768, d_hidden=3072, d_out=768 (BERT-base dimensions). Count total parameters. Then multiply by 12 (number of transformer blocks). Compare to the stated BERT-base parameter count of 110M. Understand where those 110M numbers live.</div>
+          <span class="ex-difficulty diff-easy">Easy — 20 min</span>
+        </div>
+      </div>
+      <div class="ex-item">
+        <div class="ex-num">4</div>
+        <div class="ex-body">
+          <div class="ex-title">Visualize activation function gradients</div>
+          <div class="ex-desc">Plot the derivative (gradient) of sigmoid, ReLU, and GELU using matplotlib. Observe: sigmoid saturates near 0/1 (gradient dies). ReLU is exactly 0 for x &lt; 0 (dead neurons). GELU is always non-zero (always has gradient). This explains why GELU trains better in deep networks.</div>
+          <span class="ex-difficulty diff-med">Medium — 1 hour</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer style="border-top:1px solid var(--border);padding:32px 0;margin-top:40px">
+  <div class="container" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+    <div style="font-size:13px;color:var(--muted)">Agentic AI Mastery — Sharjeel Sohail</div>
+    <a href="../days/day7.html" style="color:var(--muted);font-size:13px;text-decoration:none">← Back to Day 7</a>
+  </div>
+</footer>
+
+<script>
+function copyCode(btn) {
+  const block = btn.closest('.code-block');
+  const content = block.querySelector('.code-content');
+  const text = content ? content.innerText : block.innerText;
+  navigator.clipboard.writeText(text.trim()).then(() => {
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 2000);
+  });
+}
+</script>
+<script src="../bg-animation.js"></script>
+</body>
+</html>

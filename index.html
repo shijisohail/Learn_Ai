@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agentic AI Mastery — Course Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --card: #141420;
+    --surface2: #1a1a2e;
+    --border: #2a2a45;
+    --purple: #7c3aed;
+    --purple-light: #a855f7;
+    --teal: #0d9488;
+    --green: #10b981;
+    --red: #ef4444;
+    --yellow: #f59e0b;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --font: 'Inter', sans-serif;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated background */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 20% 10%, rgba(124,58,237,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 80%, rgba(13,148,136,0.06) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* HEADER */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 16px 0;
+    position: sticky;
+    top: 0;
+    background: rgba(10,10,15,0.85);
+    backdrop-filter: blur(12px);
+    z-index: 100;
+  }
+
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: -0.3px;
+  }
+
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--purple), var(--teal));
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
+
+  .header-meta {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .header-badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: rgba(124,58,237,0.15);
+    border: 1px solid rgba(124,58,237,0.3);
+    color: var(--purple-light);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .header-nav-btn {
+    padding: 6px 14px;
+    border-radius: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s;
+    letter-spacing: 0.2px;
+  }
+  .header-nav-btn:hover { background: var(--card); transform: translateY(-1px); }
+
+  /* HERO */
+  .hero {
+    padding: 80px 0 60px;
+    text-align: center;
+  }
+
+  .hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    border-radius: 20px;
+    background: rgba(124,58,237,0.1);
+    border: 1px solid rgba(124,58,237,0.25);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--purple-light);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    animation: fadeDown 0.6s ease forwards;
+  }
+
+  .hero-eyebrow::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--purple-light);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  h1.hero-title {
+    font-size: clamp(40px, 6vw, 72px);
+    font-weight: 900;
+    letter-spacing: -2px;
+    line-height: 1.05;
+    margin-bottom: 20px;
+    animation: fadeDown 0.6s 0.1s ease forwards;
+    opacity: 0;
+  }
+
+  .gradient-text {
+    background: linear-gradient(135deg, #a855f7 0%, #06b6d4 50%, #10b981 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    background-size: 200% 200%;
+    animation: gradientShift 4s ease infinite;
+  }
+
+  @keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  .hero-subtitle {
+    font-size: 18px;
+    color: var(--muted);
+    max-width: 560px;
+    margin: 0 auto 32px;
+    line-height: 1.6;
+    animation: fadeDown 0.6s 0.2s ease forwards;
+    opacity: 0;
+  }
+
+  .stack-pills {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 48px;
+    animation: fadeDown 0.6s 0.3s ease forwards;
+    opacity: 0;
+  }
+
+  .pill {
+    padding: 6px 14px;
+    border-radius: 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: 0.2px;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+
+  .pill:hover {
+    border-color: var(--purple);
+    transform: translateY(-1px);
+  }
+
+  /* OVERALL PROGRESS */
+  .overall-progress {
+    max-width: 600px;
+    margin: 0 auto 60px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    animation: fadeDown 0.6s 0.4s ease forwards;
+    opacity: 0;
+  }
+
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .progress-label { font-size: 13px; font-weight: 600; color: var(--text); }
+  .progress-pct {
+    font-size: 24px;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--purple-light), var(--teal));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .progress-track {
+    height: 8px;
+    background: var(--surface2);
+    border-radius: 99px;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+
+  .progress-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, var(--purple), var(--teal));
+    transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+    width: 0%;
+  }
+
+  .progress-steps {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .progress-step {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    border: 2px solid var(--border);
+    background: var(--surface2);
+    color: var(--muted);
+    transition: all 0.3s;
+    cursor: pointer;
+  }
+
+  .progress-step.done {
+    background: var(--purple);
+    border-color: var(--purple);
+    color: white;
+  }
+
+  .progress-step.active {
+    border-color: var(--purple-light);
+    color: var(--purple-light);
+    box-shadow: 0 0 12px rgba(124,58,237,0.4);
+  }
+
+  /* STATS BAR */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 48px;
+    animation: fadeUp 0.6s 0.5s ease forwards;
+    opacity: 0;
+  }
+
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+
+  .stat-card:hover {
+    border-color: var(--purple);
+    transform: translateY(-2px);
+  }
+
+  .stat-value {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin-bottom: 4px;
+  }
+
+  .stat-label {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  /* SECTION TITLE */
+  .section-title {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* QUICK ACCESS */
+  .quick-access-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 48px;
+  }
+  @media (max-width: 900px) { .quick-access-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 600px) { .quick-access-grid { grid-template-columns: 1fr; } }
+
+  .qa-card {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 22px 24px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    text-decoration: none;
+    color: var(--text);
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .qa-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .qa-glossary::before   { background: radial-gradient(ellipse 80% 60% at 0% 50%, rgba(13,148,136,0.08), transparent); }
+  .qa-interview::before  { background: radial-gradient(ellipse 80% 60% at 0% 50%, rgba(245,158,11,0.08), transparent); }
+  .qa-exercises::before  { background: radial-gradient(ellipse 80% 60% at 0% 50%, rgba(16,185,129,0.08), transparent); }
+  .qa-ai::before         { background: radial-gradient(ellipse 80% 60% at 0% 50%, rgba(139,92,246,0.12), transparent); }
+  .qa-card:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+  .qa-card:hover::before { opacity: 1; }
+  .qa-glossary:hover   { border-color: var(--teal); }
+  .qa-interview:hover  { border-color: var(--yellow); }
+  .qa-exercises:hover  { border-color: var(--green); }
+  .qa-ai:hover         { border-color: #7c3aed; box-shadow: 0 8px 32px rgba(139,92,246,0.15); }
+
+  .qa-icon {
+    font-size: 32px;
+    width: 56px; height: 56px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--surface2);
+    border-radius: 14px;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+  }
+  .qa-body { flex: 1; }
+  .qa-title { font-size: 17px; font-weight: 800; margin-bottom: 4px; letter-spacing: -0.3px; }
+  .qa-glossary .qa-title   { color: #2dd4bf; }
+  .qa-interview .qa-title  { color: #fbbf24; }
+  .qa-exercises .qa-title  { color: #10b981; }
+  .qa-ai .qa-title         { color: #a78bfa; }
+  .qa-sub { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+  .qa-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .qa-tag {
+    font-size: 11px; padding: 3px 8px; border-radius: 4px;
+    background: var(--surface2); border: 1px solid var(--border); color: var(--muted);
+  }
+  .qa-arrow {
+    font-size: 20px; color: var(--muted);
+    transition: transform 0.2s, color 0.2s;
+    flex-shrink: 0;
+  }
+  .qa-glossary:hover .qa-arrow   { transform: translateX(4px); color: #2dd4bf; }
+  .qa-interview:hover .qa-arrow  { transform: translateX(4px); color: #fbbf24; }
+  .qa-exercises:hover .qa-arrow  { transform: translateX(4px); color: #10b981; }
+  .qa-ai:hover .qa-arrow         { transform: translateX(4px); color: #a78bfa; }
+
+  /* DAY CARDS GRID */
+  .days-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-bottom: 60px;
+  }
+
+  @media (max-width: 768px) {
+    .days-grid { grid-template-columns: 1fr; }
+    .stats-bar { grid-template-columns: repeat(2, 1fr); }
+    h1.hero-title { font-size: 36px; }
+  }
+
+  .day-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    cursor: pointer;
+    transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
+    position: relative;
+    overflow: hidden;
+    text-decoration: none;
+    display: block;
+    animation: fadeUp 0.5s ease forwards;
+    opacity: 0;
+  }
+
+  .day-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--purple), var(--teal));
+    opacity: 0;
+    transition: opacity 0.25s;
+  }
+
+  .day-card:hover {
+    border-color: rgba(124,58,237,0.4);
+    transform: translateY(-4px);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(124,58,237,0.1);
+  }
+
+  .day-card:hover::before { opacity: 1; }
+
+  .day-card.locked {
+    opacity: 0.7;
+    cursor: default;
+  }
+
+  .day-card.locked:hover {
+    transform: none;
+    border-color: var(--border);
+  }
+
+  .day-card.complete {
+    border-color: rgba(16,185,129,0.3);
+  }
+
+  .day-card.complete::before {
+    background: linear-gradient(90deg, var(--green), var(--teal));
+    opacity: 1;
+  }
+
+  .day-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .day-number-circle {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 800;
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .day-number-circle.locked {
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    color: var(--muted);
+  }
+
+  .day-number-circle.active {
+    background: rgba(124,58,237,0.15);
+    border: 2px solid var(--purple);
+    color: var(--purple-light);
+    box-shadow: 0 0 20px rgba(124,58,237,0.3);
+  }
+
+  .day-number-circle.active::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    border: 2px solid var(--purple);
+    opacity: 0.3;
+    animation: ringPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes ringPulse {
+    0%, 100% { transform: scale(1); opacity: 0.3; }
+    50% { transform: scale(1.1); opacity: 0; }
+  }
+
+  .day-number-circle.complete {
+    background: rgba(16,185,129,0.15);
+    border: 2px solid var(--green);
+    color: var(--green);
+  }
+
+  .status-badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .status-badge.locked {
+    background: rgba(100,116,139,0.15);
+    border: 1px solid rgba(100,116,139,0.3);
+    color: var(--muted);
+  }
+
+  .status-badge.active {
+    background: rgba(124,58,237,0.15);
+    border: 1px solid rgba(124,58,237,0.3);
+    color: var(--purple-light);
+  }
+
+  .status-badge.complete {
+    background: rgba(16,185,129,0.15);
+    border: 1px solid rgba(16,185,129,0.3);
+    color: var(--green);
+  }
+
+  .day-card h3 {
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    margin-bottom: 4px;
+  }
+
+  .day-subtitle {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 16px;
+    line-height: 1.4;
+  }
+
+  .day-topics {
+    list-style: none;
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .day-topics li {
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .day-topics li::before {
+    content: '';
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--purple);
+    flex-shrink: 0;
+  }
+
+  .day-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid var(--border);
+    padding-top: 14px;
+    margin-top: 4px;
+  }
+
+  .day-tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .tag {
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+
+  .tag.theory { background: rgba(124,58,237,0.1); color: #a78bfa; }
+  .tag.impl { background: rgba(13,148,136,0.1); color: #34d399; }
+  .tag.prod { background: rgba(245,158,11,0.1); color: #fbbf24; }
+
+  .time-badge {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  /* FOOTER */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 32px 0;
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  /* ANIMATIONS */
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Notification toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 20px;
+    font-size: 13px;
+    z-index: 999;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: transform 0.3s, opacity 0.3s;
+    max-width: 280px;
+  }
+
+  .toast.show {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  .reset-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 12px;
+    font-family: var(--font);
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 16px;
+  }
+
+  .reset-btn:hover {
+    border-color: var(--red);
+    color: var(--red);
+  }
+
+  .glow-purple { color: var(--purple-light); }
+  .glow-teal { color: #34d399; }
+  .glow-yellow { color: var(--yellow); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-icon">🤖</div>
+        Agentic AI Mastery
+      </div>
+      <div class="header-meta">
+        <a href="glossary.html" class="header-nav-btn" style="border-color:rgba(13,148,136,0.4);color:#2dd4bf;">📖 Glossary</a>
+        <a href="interview.html" class="header-nav-btn" style="border-color:rgba(245,158,11,0.4);color:#fbbf24;">🎯 Interview</a>
+        <a href="exercises/index.html" class="header-nav-btn" style="border-color:rgba(16,185,129,0.4);color:#10b981;">⚡ Exercises</a>
+        <a href="ai.html" class="header-nav-btn" style="border-color:rgba(139,92,246,0.6);color:#a78bfa;background:rgba(139,92,246,0.08);">🤖 AI Coach</a>
+        <span class="header-badge">Senior Backend Engineer</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="container">
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-eyebrow">7-Day Intensive Curriculum</div>
+      <h1 class="hero-title">
+        <span class="gradient-text">Agentic AI Mastery</span>
+      </h1>
+      <p class="hero-subtitle">
+        7 days from LLM basics to production-grade autonomous agents.<br>
+        Theory → Implementation → Deployment.
+      </p>
+      <div class="stack-pills">
+        <span class="pill">🐍 Python</span>
+        <span class="pill">⚡ FastAPI</span>
+        <span class="pill">🧠 Anthropic SDK</span>
+        <span class="pill">🕸️ LangGraph</span>
+        <span class="pill">📚 RAG</span>
+        <span class="pill">🤖 Multi-Agent</span>
+        <span class="pill">🔍 pgvector</span>
+        <span class="pill">📊 LangSmith</span>
+      </div>
+
+      <!-- Overall Progress -->
+      <div class="overall-progress">
+        <div class="progress-header">
+          <span class="progress-label">Course Progress</span>
+          <span class="progress-pct" id="progressPct">0%</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-steps" id="progressSteps"></div>
+        <button class="reset-btn" onclick="resetProgress()">↺ Reset Progress</button>
+      </div>
+    </section>
+
+    <!-- STATS BAR -->
+    <div class="stats-bar">
+      <div class="stat-card">
+        <div class="stat-value glow-purple" id="statCompleted">0</div>
+        <div class="stat-label">Days Completed</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value glow-teal" id="statRemaining">7</div>
+        <div class="stat-label">Days Remaining</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" style="color: var(--yellow)">56h</div>
+        <div class="stat-label">Total Hours</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value glow-teal" id="statHoursDone">0h</div>
+        <div class="stat-label">Hours Completed</div>
+      </div>
+    </div>
+
+    <!-- QUICK ACCESS -->
+    <div class="section-title">Quick Access</div>
+    <div class="quick-access-grid">
+
+      <a href="glossary.html" class="qa-card qa-glossary">
+        <div class="qa-icon">📖</div>
+        <div class="qa-body">
+          <div class="qa-title">Glossary</div>
+          <div class="qa-sub">83 terms · Searchable · Bookmarkable</div>
+          <div class="qa-tags">
+            <span class="qa-tag">Embeddings</span>
+            <span class="qa-tag">RAG</span>
+            <span class="qa-tag">ReAct</span>
+            <span class="qa-tag">HNSW</span>
+            <span class="qa-tag">+79 more</span>
+          </div>
+        </div>
+        <div class="qa-arrow">→</div>
+      </a>
+
+      <a href="interview.html" class="qa-card qa-interview">
+        <div class="qa-icon">🎯</div>
+        <div class="qa-body">
+          <div class="qa-title">Interview Prep</div>
+          <div class="qa-sub">55 Q&amp;A · 10 comparisons · 20 flashcards</div>
+          <div class="qa-tags">
+            <span class="qa-tag">Junior → Staff</span>
+            <span class="qa-tag">System Design</span>
+            <span class="qa-tag">Coding</span>
+            <span class="qa-tag">RAG vs Fine-tune</span>
+          </div>
+        </div>
+        <div class="qa-arrow">→</div>
+      </a>
+
+      <a href="exercises/index.html" class="qa-card qa-exercises">
+        <div class="qa-icon">⚡</div>
+        <div class="qa-body">
+          <div class="qa-title">Exercises</div>
+          <div class="qa-sub">28 challenges · Visual code traces · Boss levels</div>
+          <div class="qa-tags">
+            <span class="qa-tag">4 per day</span>
+            <span class="qa-tag">Animated explainers</span>
+            <span class="qa-tag">Test cases</span>
+            <span class="qa-tag">Achievements</span>
+          </div>
+        </div>
+        <div class="qa-arrow">→</div>
+      </a>
+
+      <a href="ai.html" class="qa-card qa-ai" style="border-color:rgba(139,92,246,0.3);">
+        <div class="qa-icon" style="background:rgba(139,92,246,0.12);border-color:rgba(139,92,246,0.3);">🤖</div>
+        <div class="qa-body">
+          <div class="qa-title">AI Coach</div>
+          <div class="qa-sub">Live mock interviews · AI Tutor · Code Reviewer</div>
+          <div class="qa-tags">
+            <span class="qa-tag">Powered by Claude</span>
+            <span class="qa-tag">Streaming</span>
+            <span class="qa-tag">Adaptive</span>
+            <span class="qa-tag">Real scoring</span>
+          </div>
+        </div>
+        <div class="qa-arrow">→</div>
+      </a>
+
+    </div>
+
+    <!-- DAY CARDS -->
+    <div class="section-title">Curriculum</div>
+    <div class="days-grid" id="daysGrid"></div>
+
+  </div>
+</main>
+
+<footer>
+  <div class="container">
+    <p>Built for Sharjeel Sohail · Python · FastAPI · Anthropic SDK · LangGraph · Production AI</p>
+    <p style="margin-top: 8px; font-size: 11px;">Click any day card to begin. Progress is saved automatically.</p>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const DAYS = [
+  {
+    num: 1,
+    title: "LLMs & The API",
+    subtitle: "From transformer math to your first production API call",
+    topics: ["Transformer architecture & attention", "Tokenization & context windows", "Messages API & conversation design", "Stateless memory patterns", "Tool use fundamentals"],
+    time: "8h",
+    tags: ["theory", "impl"],
+    file: "days/day1.html"
+  },
+  {
+    num: 2,
+    title: "Tool Use & ReAct",
+    subtitle: "Function calling, reasoning loops, and agent dispatching",
+    topics: ["Function calling & JSON schemas", "Tool result handling", "ReAct reasoning loop", "Multi-step tool chaining", "Building an agent dispatcher"],
+    time: "8h",
+    tags: ["theory", "impl"],
+    file: "days/day2.html"
+  },
+  {
+    num: 3,
+    title: "Memory & RAG",
+    subtitle: "Embedding spaces, vector search, and retrieval pipelines",
+    topics: ["Embedding spaces & similarity", "Vector databases (pgvector, Pinecone)", "RAG pipeline architecture", "Chunking & indexing strategies", "Hybrid search & reranking"],
+    time: "8h",
+    tags: ["theory", "impl"],
+    file: "days/day3.html"
+  },
+  {
+    num: 4,
+    title: "LangGraph: Stateful Agents",
+    subtitle: "Graph-based orchestration with state machines",
+    topics: ["Graph vs simple loop tradeoffs", "State machines & TypedDict", "Conditional routing & cycles", "Persistence & checkpointing", "Human-in-the-loop patterns"],
+    time: "8h",
+    tags: ["theory", "impl"],
+    file: "days/day4.html"
+  },
+  {
+    num: 5,
+    title: "Multi-Agent Systems",
+    subtitle: "Orchestrator/worker patterns, handoffs, and parallelism",
+    topics: ["When to use multi-agent", "Orchestrator/worker pattern", "Agent handoff protocols", "Parallel fan-out/fan-in", "CrewAI vs LangGraph vs raw"],
+    time: "8h",
+    tags: ["theory", "impl"],
+    file: "days/day5.html"
+  },
+  {
+    num: 6,
+    title: "Production Engineering",
+    subtitle: "Cost, observability, evals, and security at scale",
+    topics: ["Token cost optimization", "Prompt caching strategies", "Observability & distributed tracing", "LLM evaluation frameworks", "Prompt injection defenses"],
+    time: "8h",
+    tags: ["impl", "prod"],
+    file: "days/day6.html"
+  },
+  {
+    num: 7,
+    title: "Capstone Project",
+    subtitle: "Autonomous code review agent — end to end",
+    topics: ["Full multi-agent architecture", "Specialist agent design", "LangGraph orchestration", "Streaming output & FastAPI", "Deployment & production hardening"],
+    time: "8h",
+    tags: ["impl", "prod"],
+    file: "days/day7.html"
+  }
+];
+
+const TAG_LABELS = { theory: "Theory", impl: "Implementation", prod: "Production" };
+
+function getProgress() {
+  try {
+    return JSON.parse(localStorage.getItem('aai_progress') || '{}');
+  } catch { return {}; }
+}
+
+function setDayStatus(day, status) {
+  const p = getProgress();
+  p[day] = status;
+  localStorage.setItem('aai_progress', JSON.stringify(p));
+}
+
+function getDayStatus(day) {
+  const p = getProgress();
+  return p[day] || 'locked';
+}
+
+function resetProgress() {
+  if (confirm('Reset all progress?')) {
+    localStorage.removeItem('aai_progress');
+    render();
+    showToast('Progress reset.');
+  }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+function updateStats(completed) {
+  document.getElementById('statCompleted').textContent = completed;
+  document.getElementById('statRemaining').textContent = 7 - completed;
+  document.getElementById('statHoursDone').textContent = (completed * 8) + 'h';
+  const pct = Math.round((completed / 7) * 100);
+  document.getElementById('progressPct').textContent = pct + '%';
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+
+function render() {
+  const grid = document.getElementById('daysGrid');
+  const stepsEl = document.getElementById('progressSteps');
+  grid.innerHTML = '';
+  stepsEl.innerHTML = '';
+  const progress = getProgress();
+  let completed = 0;
+
+  DAYS.forEach((day, i) => {
+    const rawStatus = progress[day.num] || 'locked';
+    const status = rawStatus;
+    if (status === 'complete') completed++;
+
+    // Progress step dot
+    const stepDot = document.createElement('div');
+    stepDot.className = 'progress-step ' + (status === 'complete' ? 'done' : status === 'active' ? 'active' : '');
+    stepDot.textContent = day.num;
+    stepDot.title = 'Day ' + day.num + ': ' + day.title;
+    stepDot.addEventListener('click', () => {
+      const cur = getDayStatus(day.num);
+      const next = cur === 'locked' ? 'active' : cur === 'active' ? 'complete' : 'locked';
+      setDayStatus(day.num, next);
+      render();
+    });
+    stepsEl.appendChild(stepDot);
+
+    // Day card
+    const card = document.createElement('a');
+    card.className = 'day-card ' + (status === 'locked' ? 'locked' : status === 'complete' ? 'complete' : '');
+    card.style.animationDelay = (i * 0.07) + 's';
+    card.href = status !== 'locked' ? day.file : '#';
+    if (status === 'locked') {
+      card.addEventListener('click', e => {
+        e.preventDefault();
+        setDayStatus(day.num, 'active');
+        render();
+        showToast('Day ' + day.num + ' unlocked!');
+        setTimeout(() => { window.location.href = day.file; }, 400);
+      });
+    }
+
+    const circleClass = status === 'complete' ? 'complete' : status === 'active' ? 'active' : 'locked';
+    const badgeClass = status === 'complete' ? 'complete' : status === 'active' ? 'active' : 'locked';
+    const badgeText = status === 'complete' ? '✓ Complete' : status === 'active' ? '▶ In Progress' : '🔒 Locked';
+
+    card.innerHTML = `
+      <div class="day-card-header">
+        <div class="day-number-circle ${circleClass}">
+          ${status === 'complete' ? '✓' : day.num}
+        </div>
+        <span class="status-badge ${badgeClass}">${badgeText}</span>
+      </div>
+      <h3>${day.title}</h3>
+      <p class="day-subtitle">${day.subtitle}</p>
+      <ul class="day-topics">
+        ${day.topics.map(t => `<li>${t}</li>`).join('')}
+      </ul>
+      <div class="day-card-footer">
+        <div class="day-tags">
+          ${day.tags.map(t => `<span class="tag ${t}">${TAG_LABELS[t]}</span>`).join('')}
+        </div>
+        <span class="time-badge">⏱ ${day.time}</span>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+
+  updateStats(completed);
+}
+
+// If no progress set, mark day 1 as active by default
+if (!localStorage.getItem('aai_progress')) {
+  setDayStatus(1, 'active');
+  setDayStatus(4, 'active');
+  setDayStatus(5, 'active');
+  setDayStatus(6, 'active');
+  setDayStatus(7, 'active');
+}
+
+render();
+</script>
+<script src="bg-animation.js"></script>
+</body>
+</html>

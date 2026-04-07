@@ -1,0 +1,1398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 2 Exercises — Tool Use & The ReAct Loop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f;
+  --card: #141420;
+  --surface2: #1a1a2e;
+  --border: #2a2a45;
+  --purple: #7c3aed;
+  --purple-light: #a855f7;
+  --teal: #0d9488;
+  --green: #10b981;
+  --yellow: #f59e0b;
+  --red: #ef4444;
+  --text: #e2e8f0;
+  --muted: #64748b;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+code, pre, .code-block, .mono { font-family: 'JetBrains Mono', monospace; }
+
+.sticky-nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(10,10,15,0.95); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 32px;
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+}
+.sticky-nav a {
+  color: var(--muted); text-decoration: none; font-size: 0.85rem;
+  padding: 6px 12px; border-radius: 6px; transition: all 0.2s;
+  border: 1px solid transparent;
+}
+.sticky-nav a:hover { color: var(--text); background: var(--card); border-color: var(--border); }
+.sticky-nav .brand { color: var(--purple-light); font-weight: 600; font-size: 0.9rem; }
+.nav-sep { color: var(--border); }
+.nav-title { color: var(--text); font-weight: 700; font-size: 0.95rem; flex: 1; }
+
+.hero { padding: 56px 32px 32px; max-width: 1100px; margin: 0 auto; border-bottom: 1px solid var(--border); }
+.hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: 8px; }
+.hero h1 span { color: var(--purple-light); }
+.hero p { color: var(--muted); font-size: 1rem; max-width: 700px; }
+.hero-meta { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
+.badge-purple { background: rgba(124,58,237,0.15); color: var(--purple-light); border: 1px solid rgba(124,58,237,0.3); }
+.badge-teal { background: rgba(13,148,136,0.15); color: #2dd4bf; border: 1px solid rgba(13,148,136,0.3); }
+.badge-green { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+
+.progress-bar-wrap { max-width: 1100px; margin: 24px auto; padding: 0 32px; }
+.progress-label { font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
+.progress-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--purple), var(--teal)); border-radius: 3px; transition: width 0.5s ease; }
+
+.main { max-width: 1100px; margin: 0 auto; padding: 32px; display: flex; flex-direction: column; gap: 64px; }
+
+.exercise { border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: var(--card); }
+.exercise-header {
+  padding: 24px 32px;
+  background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(13,148,136,0.05));
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+}
+.exercise-num { font-size: 0.75rem; color: var(--purple-light); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.exercise-header h2 { font-size: 1.4rem; font-weight: 700; margin: 4px 0 8px; }
+.exercise-header p { color: var(--muted); font-size: 0.9rem; }
+.ex-status { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); transition: background 0.3s; }
+.status-dot.done { background: var(--green); }
+
+.tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--surface2); flex-wrap: wrap; }
+.tab-btn {
+  padding: 12px 20px; font-size: 0.82rem; font-weight: 600;
+  color: var(--muted); cursor: pointer; border: none; background: none;
+  border-bottom: 2px solid transparent; transition: all 0.2s;
+  font-family: 'Inter', sans-serif;
+}
+.tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+.tab-btn.active { color: var(--purple-light); border-bottom-color: var(--purple-light); background: rgba(124,58,237,0.05); }
+.tab-panel { display: none; padding: 28px 32px; }
+.tab-panel.active { display: block; }
+
+.section-label {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+  font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+}
+.section-label.purple { color: var(--purple-light); }
+.section-label.yellow { color: var(--yellow); }
+.section-label.green { color: #34d399; }
+.section-label.teal { color: #2dd4bf; }
+.section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+.code-wrap { background: #0d0d18; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin: 12px 0; }
+.code-header {
+  padding: 8px 16px; background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; color: var(--muted);
+}
+.code-dots { display: flex; gap: 6px; }
+.code-dots span { width: 10px; height: 10px; border-radius: 50%; }
+.code-dots .dot-r { background: var(--red); }
+.code-dots .dot-y { background: var(--yellow); }
+.code-dots .dot-g { background: var(--green); }
+.code-body { display: flex; }
+.line-nums {
+  padding: 16px 8px; background: rgba(0,0,0,0.3); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; min-width: 40px; text-align: right;
+}
+.line-nums span { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: #3a3a5c; line-height: 1.7; padding: 0 8px; }
+.code-content {
+  padding: 16px; overflow-x: auto; flex: 1;
+  white-space: pre; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; line-height: 1.7;
+}
+.code-line { display: block; transition: background 0.2s; border-radius: 3px; padding: 0 4px; margin: 0 -4px; }
+.code-line.highlight { background: rgba(124,58,237,0.2); border-left: 3px solid var(--purple); padding-left: 8px; }
+.kw { color: #c792ea; } .fn { color: #82aaff; } .st { color: #c3e88d; }
+.cm { color: #546e7a; font-style: italic; } .nm { color: #f78c6c; }
+.tp { color: #ffcb6b; } .dt { color: #89ddff; } .va { color: #eeffff; } .bi { color: #ff5370; }
+
+.task-requirements {
+  background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); border-radius: 10px;
+  padding: 16px 20px; margin-bottom: 16px;
+}
+.task-requirements li { color: var(--text); font-size: 0.88rem; margin: 6px 0 6px 16px; }
+.task-requirements li::marker { color: var(--yellow); }
+
+.tests-grid { display: flex; flex-direction: column; gap: 8px; }
+.test-case {
+  display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px;
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;
+}
+.test-badge {
+  flex-shrink: 0; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700;
+  font-family: 'Inter', sans-serif; letter-spacing: 0.5px;
+}
+.test-badge.pass { background: rgba(16,185,129,0.2); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.test-badge.pending { background: rgba(100,116,139,0.2); color: var(--muted); border: 1px solid rgba(100,116,139,0.3); }
+.test-content { flex: 1; }
+.test-input { color: var(--text); }
+.test-expected { color: var(--muted); margin-top: 2px; }
+
+.hints-list { display: flex; flex-direction: column; gap: 8px; }
+.hint-toggle {
+  width: 100%; text-align: left; padding: 10px 16px;
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+  color: var(--muted); cursor: pointer; font-family: 'Inter', sans-serif; font-size: 0.85rem;
+  display: flex; align-items: center; justify-content: space-between; transition: all 0.2s;
+}
+.hint-toggle:hover { border-color: var(--purple); color: var(--text); }
+.hint-toggle .arrow { transition: transform 0.2s; }
+.hint-toggle.open .arrow { transform: rotate(90deg); }
+.hint-body {
+  display: none; padding: 12px 16px; margin-top: 4px;
+  background: rgba(124,58,237,0.05); border: 1px solid rgba(124,58,237,0.2); border-radius: 8px;
+  font-size: 0.85rem; color: var(--text); line-height: 1.6;
+}
+.hint-body code { background: rgba(124,58,237,0.15); padding: 1px 5px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--purple-light); }
+
+.animate-btn {
+  margin-top: 12px; padding: 8px 18px; border-radius: 8px;
+  background: var(--purple); color: white; border: none; cursor: pointer;
+  font-size: 0.82rem; font-weight: 600; font-family: 'Inter', sans-serif;
+  transition: background 0.2s; display: inline-flex; align-items: center; gap: 6px;
+}
+.animate-btn:hover { background: var(--purple-light); }
+
+.msg-tabs { display: flex; gap: 4px; margin-bottom: 12px; flex-wrap: wrap; }
+.msg-tab {
+  padding: 6px 14px; border-radius: 6px; font-size: 0.78rem; font-weight: 600;
+  cursor: pointer; border: 1px solid var(--border); background: var(--card);
+  color: var(--muted); transition: all 0.2s; font-family: 'Inter', sans-serif;
+}
+.msg-tab.active { background: var(--purple); border-color: var(--purple); color: white; }
+.msg-display {
+  background: #0d0d18; border: 1px solid var(--border); border-radius: 10px;
+  padding: 16px; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
+  white-space: pre; overflow-x: auto; line-height: 1.6; max-height: 300px; overflow-y: auto;
+}
+
+/* Schema transform */
+.schema-transform { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: start; }
+.schema-side { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+.schema-side h4 { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+.schema-side h4.purple { color: var(--purple-light); }
+.schema-side h4.teal { color: #2dd4bf; }
+.transform-arrow { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding-top: 48px; }
+.transform-arrow span { color: var(--purple-light); font-size: 1.5rem; }
+.transform-arrow small { color: var(--muted); font-size: 0.68rem; text-align: center; }
+
+/* Insight / warn boxes */
+.insight-box { background: rgba(13,148,136,0.08); border: 1px solid rgba(13,148,136,0.25); border-radius: 10px; padding: 14px 18px; margin: 14px 0; font-size: 0.86rem; }
+.insight-box strong { color: #2dd4bf; }
+.warn-box { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25); border-radius: 10px; padding: 14px 18px; margin: 14px 0; font-size: 0.86rem; }
+.warn-box strong { color: #f87171; }
+
+/* Compare grid */
+.compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 14px 0; }
+.compare-bad { background: rgba(239,68,68,0.07); border: 1px solid rgba(239,68,68,0.22); border-radius: 10px; padding: 14px; }
+.compare-bad .compare-label { font-size: 0.72rem; font-weight: 700; color: #f87171; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.compare-good { background: rgba(16,185,129,0.07); border: 1px solid rgba(16,185,129,0.22); border-radius: 10px; padding: 14px; }
+.compare-good .compare-label { font-size: 0.72rem; font-weight: 700; color: #34d399; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.compare-text { font-family: 'JetBrains Mono', monospace; font-size: 0.79rem; color: var(--text); white-space: pre-wrap; }
+
+/* ReAct iteration cards */
+.react-iterations { display: flex; flex-direction: column; gap: 10px; margin: 14px 0; }
+.iter-card {
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
+  padding: 16px; opacity: 0; transform: translateY(12px);
+  transition: opacity 0.4s, transform 0.4s;
+}
+.iter-card.visible { opacity: 1; transform: translateY(0); }
+.iter-header { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--purple-light); font-weight: 700; margin-bottom: 10px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+.iter-row { display: flex; gap: 12px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; margin: 4px 0; }
+.iter-key { color: var(--muted); min-width: 110px; flex-shrink: 0; }
+.iter-val { color: var(--text); }
+.iter-val.tool { color: #2dd4bf; }
+.iter-val.result { color: #34d399; }
+.iter-val.end { color: var(--green); font-weight: 700; }
+
+/* Flowchart box */
+.fc-box {
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.82rem;
+  padding: 16px; white-space: pre; overflow-x: auto; line-height: 1.9; margin: 12px 0;
+}
+
+/* Error panels */
+.error-panels { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin: 14px 0; }
+.err-panel { border-radius: 10px; padding: 16px; border: 1px solid var(--border); }
+.err-panel h4 { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+.err-panel.bad { background: rgba(239,68,68,0.06); border-color: rgba(239,68,68,0.25); }
+.err-panel.bad h4 { color: #f87171; }
+.err-panel.worse { background: rgba(245,158,11,0.06); border-color: rgba(245,158,11,0.25); }
+.err-panel.worse h4 { color: var(--yellow); }
+.err-panel.good { background: rgba(16,185,129,0.06); border-color: rgba(16,185,129,0.25); }
+.err-panel.good h4 { color: #34d399; }
+.err-step { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; padding: 6px 10px; border-radius: 6px; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+.err-step.crash { background: rgba(239,68,68,0.12); color: #f87171; }
+.err-step.warn { background: rgba(245,158,11,0.12); color: var(--yellow); }
+.err-step.ok { background: rgba(16,185,129,0.12); color: #34d399; }
+.err-arrow { text-align: center; color: var(--muted); font-size: 1rem; margin: 3px 0; }
+
+/* Annotation table */
+.ann-table { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin: 12px 0; }
+.ann-row { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--border); }
+.ann-row:last-child { border-bottom: none; }
+.ann-code { padding: 10px 14px; border-right: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; white-space: pre; overflow-x: auto; }
+.ann-desc { padding: 10px 14px; font-size: 0.82rem; color: var(--muted); display: flex; align-items: center; }
+.ann-desc strong { color: var(--yellow); margin-right: 4px; }
+
+/* Memory diagram */
+.memory-diagram { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 14px 0; }
+.mem-container { border-radius: 10px; padding: 16px; }
+.mem-container.short { background: rgba(124,58,237,0.08); border: 2px solid rgba(124,58,237,0.3); }
+.mem-container.long { background: rgba(13,148,136,0.08); border: 2px solid rgba(13,148,136,0.3); }
+.mem-container h4 { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+.mem-container.short h4 { color: var(--purple-light); }
+.mem-container.long h4 { color: #2dd4bf; }
+.mem-spec { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; margin: 5px 0; }
+.mem-spec .key { color: var(--muted); }
+.mem-spec .val { color: #34d399; }
+
+/* Function anatomy */
+.fn-anatomy { background: #0d0d18; border: 1px solid var(--border); border-radius: 10px; padding: 20px; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; }
+.fn-step { display: flex; gap: 12px; margin: 8px 0; padding: 8px; border-radius: 6px; transition: background 0.2s; }
+.fn-step:hover { background: rgba(124,58,237,0.1); }
+.fn-step-num { color: var(--purple-light); font-weight: 700; flex-shrink: 0; width: 20px; }
+.fn-step-desc { color: var(--muted); font-size: 0.75rem; }
+.fn-step-code { color: #c3e88d; }
+
+.footer { border-top: 1px solid var(--border); padding: 32px; text-align: center; color: var(--muted); font-size: 0.82rem; }
+.footer a { color: var(--purple-light); text-decoration: none; }
+
+@media (max-width: 768px) {
+  .schema-transform { grid-template-columns: 1fr; }
+  .compare-grid { grid-template-columns: 1fr; }
+  .error-panels { grid-template-columns: 1fr; }
+  .memory-diagram { grid-template-columns: 1fr; }
+  .ann-row { grid-template-columns: 1fr; }
+  .tab-btn { padding: 10px 12px; font-size: 0.75rem; }
+}
+</style>
+</head>
+<body>
+
+<nav class="sticky-nav">
+  <a href="day1_exercises.html">← Day 1 Exercises</a>
+  <span class="nav-sep">|</span>
+  <a href="../index.html" class="brand">🤖 Agentic AI</a>
+  <span class="nav-sep">|</span>
+  <span class="nav-title">Day 2 Exercises — Tool Use & The ReAct Loop</span>
+  <a href="day3_exercises.html" style="margin-left:auto;">Day 3 Exercises →</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-meta">
+    <span class="badge badge-purple">Day 2</span>
+    <span class="badge badge-teal">4 Exercises</span>
+    <span class="badge badge-green">Tool Use / ReAct / Memory</span>
+  </div>
+  <h1>Tool Use & The <span>ReAct Loop</span></h1>
+  <p>Give Claude the ability to take actions in the world. These exercises cover tool schemas, the think-act-observe loop, error handling patterns, and persistent agent memory.</p>
+</div>
+
+<div class="progress-bar-wrap">
+  <div class="progress-label"><span>Progress</span><span id="progress-text">0 / 4 completed</span></div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+</div>
+
+<main class="main">
+
+<!-- ========== EXERCISE 1: TOOL SCHEMA DESIGNER ========== -->
+<section class="exercise" id="ex1">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 1 of 4</div>
+      <h2>Tool Schema Designer</h2>
+      <p>Translate Python function signatures into JSON tool schemas. The description field is the most critical part — it determines when Claude calls your tool.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot1"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex1','visual')">Visual Explainer</button>
+    <button class="tab-btn" onclick="showTab('ex1','code')">Annotated Code</button>
+    <button class="tab-btn" onclick="showTab('ex1','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex1','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex1','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex1-visual">
+    <div class="section-label purple">Python Function → JSON Tool Schema</div>
+    <div class="schema-transform">
+      <div class="schema-side">
+        <h4 class="purple">Python Function</h4>
+        <div class="code-wrap" style="margin:0;">
+          <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>weather.py</span></div>
+          <div class="code-body">
+            <div class="code-content"><span id="py-fn-name"><span class="kw">def</span> <span class="fn">get_weather</span><span class="dt">(</span></span>
+<span id="py-p1">    <span class="va">city</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">,</span></span>
+<span id="py-p2">    <span class="va">unit</span><span class="dt">:</span> <span class="tp">str</span> <span class="dt">=</span> <span class="st">"celsius"</span></span>
+<span><span class="dt">) -></span> <span class="tp">dict</span><span class="dt">:</span></span>
+<span id="py-doc">    <span class="st">"""Get current weather for a city.</span>
+<span class="st">    Use when user asks about weather.</span>
+<span class="st">    """</span></span>
+    <span class="dt">...</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="transform-arrow"><span>→</span><small>field-by-<br>field</small></div>
+      <div class="schema-side">
+        <h4 class="teal">JSON Tool Schema</h4>
+        <div class="code-wrap" style="margin:0;">
+          <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>schema output</span></div>
+          <div class="code-body">
+            <div class="code-content"><span id="sj-name" style="opacity:0.2;transition:opacity 0.4s;"><span class="dt">{</span>
+  <span class="st">"name"</span><span class="dt">:</span> <span class="st">"get_weather"</span><span class="dt">,</span></span>
+<span id="sj-desc" style="opacity:0.2;transition:opacity 0.4s;">  <span class="st">"description"</span><span class="dt">:</span> <span class="st">"Get current weather..."</span><span class="dt">,</span></span>
+<span id="sj-schema" style="opacity:0.2;transition:opacity 0.4s;">  <span class="st">"input_schema"</span><span class="dt">:</span> <span class="dt">{</span>
+    <span class="st">"type"</span><span class="dt">:</span> <span class="st">"object"</span><span class="dt">,</span>
+    <span class="st">"properties"</span><span class="dt">:</span> <span class="dt">{</span></span>
+<span id="sj-p1" style="opacity:0.2;transition:opacity 0.4s;">      <span class="st">"city"</span><span class="dt">:</span> <span class="dt">{</span><span class="st">"type"</span><span class="dt">:</span> <span class="st">"string"</span><span class="dt">},</span></span>
+<span id="sj-p2" style="opacity:0.2;transition:opacity 0.4s;">      <span class="st">"unit"</span><span class="dt">:</span> <span class="dt">{</span><span class="st">"type"</span><span class="dt">:</span> <span class="st">"string"</span><span class="dt">,</span>
+        <span class="st">"enum"</span><span class="dt">:</span> <span class="dt">[</span><span class="st">"celsius"</span><span class="dt">,</span><span class="st">"fahrenheit"</span><span class="dt">]}</span></span>
+<span id="sj-req" style="opacity:0.2;transition:opacity 0.4s;">    <span class="dt">},</span>
+    <span class="st">"required"</span><span class="dt">:</span> <span class="dt">[</span><span class="st">"city"</span><span class="dt">]</span>
+  <span class="dt">}</span>
+<span class="dt">}</span></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <button class="animate-btn" onclick="animateSchema()">▶ Animate Field-by-Field</button>
+
+    <div class="insight-box" style="margin-top:20px;">
+      <strong>Key insight:</strong> The <code style="font-family:'JetBrains Mono',monospace;background:rgba(13,148,136,0.15);padding:1px 5px;border-radius:3px;color:#2dd4bf;">description</code> field is the most important. The model decides <em>when</em> to call your tool based ONLY on the description. Vague description = misuse or missed use.
+    </div>
+
+    <div class="section-label purple" style="margin-top:24px;">BAD vs GOOD Descriptions</div>
+    <div class="compare-grid">
+      <div class="compare-bad">
+        <div class="compare-label">BAD — vague</div>
+        <div class="compare-text">"Send email"</div>
+        <div style="margin-top:8px;font-size:0.8rem;color:var(--muted);">Model sends emails for every notification and reminder — even when the user didn't ask.</div>
+      </div>
+      <div class="compare-good">
+        <div class="compare-label">GOOD — precise</div>
+        <div class="compare-text">"Send a transactional email to one
+recipient. Use ONLY when user explicitly
+asks to send an email. Never use for
+notifications or alerts."</div>
+        <div style="margin-top:8px;font-size:0.8rem;color:var(--muted);">Model only fires when user types "send email to..."</div>
+      </div>
+      <div class="compare-bad">
+        <div class="compare-label">BAD — ambiguous</div>
+        <div class="compare-text">"Search for things"</div>
+        <div style="margin-top:8px;font-size:0.8rem;color:var(--muted);">File search? Web search? Database? The model guesses wrong.</div>
+      </div>
+      <div class="compare-good">
+        <div class="compare-label">GOOD — scoped</div>
+        <div class="compare-text">"Search the web for real-time info the
+model doesn't have: news, prices, and
+events after the training cutoff."</div>
+        <div style="margin-top:8px;font-size:0.8rem;color:var(--muted);">Model calls it only when it needs live data.</div>
+      </div>
+    </div>
+
+    <div class="section-label teal" style="margin-top:24px;">Three Schema Examples</div>
+    <div class="msg-tabs">
+      <button class="msg-tab active" onclick="showSchemaEx(0)">1. Single Param</button>
+      <button class="msg-tab" onclick="showSchemaEx(1)">2. Optional + Enum</button>
+      <button class="msg-tab" onclick="showSchemaEx(2)">3. Integer Param</button>
+    </div>
+    <div class="msg-display" id="schema-ex-display"></div>
+  </div>
+
+  <div class="tab-panel" id="ex1-code">
+    <div class="section-label purple">Annotated Tool Schema Structure</div>
+    <div class="ann-table">
+      <div class="ann-row">
+        <div class="ann-code"><span class="st">"name"</span><span class="dt">:</span> <span class="st">"get_weather"</span></div>
+        <div class="ann-desc"><strong>Required.</strong> Exact Python function name. Claude uses this to call the right function in your executor.</div>
+      </div>
+      <div class="ann-row">
+        <div class="ann-code"><span class="st">"description"</span><span class="dt">:</span> <span class="st">"..."</span></div>
+        <div class="ann-desc"><strong>Most important.</strong> Tells the model WHEN and WHY to use the tool. Be explicit about edge cases and misuse.</div>
+      </div>
+      <div class="ann-row">
+        <div class="ann-code"><span class="st">"input_schema"</span><span class="dt">:</span> <span class="dt">{</span><span class="st">"type"</span><span class="dt">:</span> <span class="st">"object"</span><span class="dt">, ...}</span></div>
+        <div class="ann-desc"><strong>Always "object".</strong> The outer schema type is always "object". Parameters map to "properties".</div>
+      </div>
+      <div class="ann-row">
+        <div class="ann-code"><span class="st">"properties"</span><span class="dt">:</span> <span class="dt">{</span><span class="st">"city"</span><span class="dt">:</span> <span class="dt">{...}}</span></div>
+        <div class="ann-desc"><strong>One entry per param.</strong> Each has "type" and "description". Never omit description — model uses it to fill values.</div>
+      </div>
+      <div class="ann-row">
+        <div class="ann-code"><span class="st">"required"</span><span class="dt">:</span> <span class="dt">[</span><span class="st">"city"</span><span class="dt">]</span></div>
+        <div class="ann-desc"><strong>Non-optional params only.</strong> Params with defaults (like <code style="font-family:'JetBrains Mono',monospace;">unit="celsius"</code>) must NOT appear in required.</div>
+      </div>
+      <div class="ann-row">
+        <div class="ann-code"><span class="st">"enum"</span><span class="dt">:</span> <span class="dt">[</span><span class="st">"celsius"</span><span class="dt">,</span> <span class="st">"fahrenheit"</span><span class="dt">]</span></div>
+        <div class="ann-desc"><strong>For Literal / restricted types.</strong> Constrains the value. Claude will pick only from this list.</div>
+      </div>
+    </div>
+    <div class="code-wrap" style="margin-top:16px;">
+      <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>full_annotated_schema.py</span><span>Reference</span></div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span></div>
+        <div class="code-content"><span class="cm"># This schema is passed to tools= in client.messages.create()</span>
+<span class="va">get_weather_tool</span> <span class="dt">=</span> <span class="dt">{</span>
+    <span class="st">"name"</span><span class="dt">:</span>        <span class="st">"get_weather"</span><span class="dt">,</span>         <span class="cm"># maps to Python function name</span>
+    <span class="st">"description"</span><span class="dt">:</span> <span class="dt">(</span>                       <span class="cm"># model reads this to decide WHEN</span>
+        <span class="st">"Get current weather for a city. "</span>
+        <span class="st">"Use when user asks about weather or temperature."</span>
+    <span class="dt">),</span>
+    <span class="st">"input_schema"</span><span class="dt">:</span> <span class="dt">{</span>                      <span class="cm"># always "object" at top level</span>
+        <span class="st">"type"</span><span class="dt">:</span>       <span class="st">"object"</span><span class="dt">,</span>
+        <span class="st">"properties"</span><span class="dt">:</span> <span class="dt">{</span>
+            <span class="st">"city"</span><span class="dt">:</span> <span class="dt">{</span>
+                <span class="st">"type"</span><span class="dt">:</span>        <span class="st">"string"</span><span class="dt">,</span>
+                <span class="st">"description"</span><span class="dt">:</span> <span class="st">"Name of the city"</span>
+            <span class="dt">},</span>
+            <span class="st">"unit"</span><span class="dt">:</span> <span class="dt">{</span>
+                <span class="st">"type"</span><span class="dt">:</span>    <span class="st">"string"</span><span class="dt">,</span>
+                <span class="st">"enum"</span><span class="dt">:</span>    <span class="dt">[</span><span class="st">"celsius"</span><span class="dt">,</span> <span class="st">"fahrenheit"</span><span class="dt">],</span>
+                <span class="st">"default"</span><span class="dt">:</span> <span class="st">"celsius"</span>         <span class="cm"># informational only</span>
+            <span class="dt">}</span>
+        <span class="dt">},</span>
+        <span class="st">"required"</span><span class="dt">:</span> <span class="dt">[</span><span class="st">"city"</span><span class="dt">]</span>                <span class="cm"># unit NOT here (has default)</span>
+    <span class="dt">}</span>
+<span class="dt">}</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex1-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Write complete tool schemas for these 4 Python functions:</p>
+      <ul>
+        <li><code style="font-family:'JetBrains Mono',monospace;">calculate(expression: str) -> float</code> — evaluates a math expression</li>
+        <li><code style="font-family:'JetBrains Mono',monospace;">search_web(query: str, max_results: int = 5) -> list[str]</code> — web search</li>
+        <li><code style="font-family:'JetBrains Mono',monospace;">read_file(path: str, encoding: str = "utf-8") -> str</code> — file reader</li>
+        <li><code style="font-family:'JetBrains Mono',monospace;">send_slack(channel: str, message: str, urgent: bool = False) -> bool</code> — send message</li>
+      </ul>
+    </div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>starter_ex1.py — fill in the TODOs</span></div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span></div>
+        <div class="code-content"><span class="cm"># Tool 1: calculate</span>
+<span class="va">calculate_tool</span> <span class="dt">=</span> <span class="dt">{</span>
+    <span class="st">"name"</span><span class="dt">:</span> <span class="st">"calculate"</span><span class="dt">,</span>
+    <span class="st">"description"</span><span class="dt">:</span> <span class="st">"TODO: write a precise description"</span><span class="dt">,</span>
+    <span class="st">"input_schema"</span><span class="dt">:</span> <span class="dt">{</span>
+        <span class="st">"type"</span><span class="dt">:</span> <span class="st">"object"</span><span class="dt">,</span>
+        <span class="st">"properties"</span><span class="dt">:</span> <span class="dt">{</span>
+            <span class="cm"># TODO: add "expression" property with type and description</span>
+        <span class="dt">},</span>
+        <span class="st">"required"</span><span class="dt">:</span> <span class="dt">[]</span>   <span class="cm"># TODO: fill in required list</span>
+    <span class="dt">}</span>
+<span class="dt">}</span>
+
+<span class="cm"># Tool 2: search_web  (max_results has default — don't include in required)</span>
+<span class="va">search_web_tool</span> <span class="dt">=</span> <span class="dt">{</span>
+    <span class="st">"name"</span><span class="dt">:</span> <span class="st">"search_web"</span><span class="dt">,</span>
+    <span class="st">"description"</span><span class="dt">:</span> <span class="st">"TODO"</span><span class="dt">,</span>
+    <span class="st">"input_schema"</span><span class="dt">:</span> <span class="dt">{</span> <span class="cm"># TODO: add query (string) and max_results (integer)</span> <span class="dt">}</span>
+<span class="dt">}</span>
+
+<span class="cm"># Tool 3: read_file</span>
+<span class="va">read_file_tool</span> <span class="dt">=</span> <span class="dt">{</span> <span class="cm"># TODO</span> <span class="dt">}</span>
+
+<span class="cm"># Tool 4: send_slack — urgent is bool with default False</span>
+<span class="cm"># HINT: JSON Schema uses "type": "boolean" for Python bool</span>
+<span class="va">send_slack_tool</span> <span class="dt">=</span> <span class="dt">{</span> <span class="cm"># TODO</span> <span class="dt">}</span>
+
+<span class="va">tools</span> <span class="dt">=</span> <span class="dt">[</span><span class="va">calculate_tool</span><span class="dt">,</span> <span class="va">search_web_tool</span><span class="dt">,</span> <span class="va">read_file_tool</span><span class="dt">,</span> <span class="va">send_slack_tool</span><span class="dt">]</span></div>
+      </div>
+    </div>
+    <button class="animate-btn" style="margin-top:12px;" onclick="markDone(1)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex1-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t1-1">T1</span><div class="test-content"><div class="test-input">calculate_tool["name"] == "calculate"<br>calculate_tool["input_schema"]["required"] == ["expression"]</div><div class="test-expected">→ True (expression is required, not optional)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t1-2">T2</span><div class="test-content"><div class="test-input">"max_results" not in search_web_tool["input_schema"]["required"]</div><div class="test-expected">→ True (max_results has default=5, should not be required)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t1-3">T3</span><div class="test-content"><div class="test-input">props = search_web_tool["input_schema"]["properties"]<br>props["max_results"]["type"] == "integer"</div><div class="test-expected">→ True (int params use "integer" not "number")</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t1-4">T4</span><div class="test-content"><div class="test-input">props = send_slack_tool["input_schema"]["properties"]<br>props["urgent"]["type"] == "boolean"</div><div class="test-expected">→ True (Python bool → "boolean" in JSON Schema)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t1-5">T5</span><div class="test-content"><div class="test-input">all(len(t["description"]) > 30 for t in tools)</div><div class="test-expected">→ True (descriptions must be specific, not 1-word labels)</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(1)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex1-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — JSON type mapping from Python types</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>str</code> → <code>"string"</code>, <code>int</code> → <code>"integer"</code>, <code>float</code> → <code>"number"</code>, <code>bool</code> → <code>"boolean"</code>, <code>list</code> → <code>"array"</code>, <code>dict</code> → <code>"object"</code>. Never use Python type names directly in the schema.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — What goes in "required"?</span><span class="arrow">▶</span></button>
+        <div class="hint-body">Only parameters without a default value. If the function signature has <code>param: str = "default"</code>, that parameter should NOT appear in <code>required</code>. Required is a list of strings: <code>["city"]</code> not <code>[{"name": "city"}]</code>.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 3 — How to write a good description</span><span class="arrow">▶</span></button>
+        <div class="hint-body">Template: "What the tool does. Use when [specific trigger]. Do NOT use for [common misuse]." Example: <code>"Evaluate a mathematical expression and return the numeric result. Use when the user asks to calculate, compute, or solve math. Do NOT use for unit conversions."</code></div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 4 — Full calculate_tool answer</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>{"name": "calculate", "description": "Evaluate a math expression and return the numeric result. Use when user asks to calculate, compute, or solve a math problem.", "input_schema": {"type": "object", "properties": {"expression": {"type": "string", "description": "Math expression to evaluate, e.g. '2 + 2' or '847 * 0.15'"}}, "required": ["expression"]}}</code></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 2: REACT LOOP FROM SCRATCH ========== -->
+<section class="exercise" id="ex2">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 2 of 4</div>
+      <h2>ReAct Loop from Scratch</h2>
+      <p>Implement the think-act-observe loop that powers all tool-using agents. Every agentic framework runs this same loop under the hood.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot2"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex2','visual')">Visual Explainer</button>
+    <button class="tab-btn" onclick="showTab('ex2','code')">Annotated Code</button>
+    <button class="tab-btn" onclick="showTab('ex2','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex2','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex2','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex2-visual">
+    <div class="section-label purple">3-Iteration Agent Run — Animated Trace</div>
+    <p style="color:var(--muted);font-size:0.85rem;margin-bottom:14px;">Query: "What's 15% of 847, then double it?"</p>
+    <div class="react-iterations">
+      <div class="iter-card" id="iter1">
+        <div class="iter-header">━━━━━ Iteration 1 ━━━━━</div>
+        <div class="iter-row"><span class="iter-key">API Call →</span><span class="iter-val">stop_reason: "tool_use"</span></div>
+        <div class="iter-row"><span class="iter-key">Tool:</span><span class="iter-val tool">calculate("847 * 0.15")</span></div>
+        <div class="iter-row"><span class="iter-key">Result:</span><span class="iter-val result">127.05</span></div>
+        <div class="iter-row"><span class="iter-key">Messages:</span><span class="iter-val">3 total, ~450 tokens, $0.0001</span></div>
+      </div>
+      <div class="iter-card" id="iter2">
+        <div class="iter-header">━━━━━ Iteration 2 ━━━━━</div>
+        <div class="iter-row"><span class="iter-key">API Call →</span><span class="iter-val">stop_reason: "tool_use"</span></div>
+        <div class="iter-row"><span class="iter-key">Tool:</span><span class="iter-val tool">calculate("127.05 * 2")</span></div>
+        <div class="iter-row"><span class="iter-key">Result:</span><span class="iter-val result">254.1</span></div>
+        <div class="iter-row"><span class="iter-key">Messages:</span><span class="iter-val">5 total, ~820 tokens, $0.0002</span></div>
+      </div>
+      <div class="iter-card" id="iter3">
+        <div class="iter-header">━━━━━ Iteration 3 ━━━━━</div>
+        <div class="iter-row"><span class="iter-key">API Call →</span><span class="iter-val end">stop_reason: "end_turn"</span></div>
+        <div class="iter-row"><span class="iter-key">Answer:</span><span class="iter-val result">"The answer is 254.1"</span></div>
+        <div class="iter-row"><span class="iter-key">Messages:</span><span class="iter-val">6 total, ~950 tokens, $0.0003</span></div>
+      </div>
+    </div>
+    <button class="animate-btn" onclick="animateReact()">▶ Run Simulation</button>
+
+    <div class="section-label purple" style="margin-top:26px;">Messages Array Growing — Iteration by Iteration</div>
+    <div class="msg-tabs">
+      <button class="msg-tab active" onclick="showReactMsg(0)">After Iter 1</button>
+      <button class="msg-tab" onclick="showReactMsg(1)">After Iter 2</button>
+      <button class="msg-tab" onclick="showReactMsg(2)">After Iter 3</button>
+    </div>
+    <div class="msg-display" id="react-msg-display"></div>
+
+    <div class="section-label teal" style="margin-top:24px;">The While Loop as a Flowchart</div>
+    <div class="fc-box"><span class="va">messages</span> <span class="dt">=</span> <span class="dt">[</span><span class="va">user_msg</span><span class="dt">]</span>
+       <span class="dt">↓</span>
+  <span class="fn">API Call</span> <span class="dt">───→</span> stop_reason?
+       <span class="dt">↑</span>              <span class="dt">│</span>
+       <span class="dt">│</span>  <span class="st">"tool_use"</span>  <span class="dt">│</span>    <span class="st">"end_turn"</span>
+       <span class="dt">│</span>              <span class="dt">↓</span>         <span class="dt">↓</span>
+       <span class="dt">│</span>     <span class="fn">Execute tools</span>   <span class="kw">RETURN</span> answer
+       <span class="dt">│</span>              <span class="dt">│</span>
+       <span class="dt">└── Append tool_results ←─┘</span></div>
+
+    <div class="warn-box">
+      <strong>Iteration guard is non-optional.</strong> Without it, a broken tool or model can loop forever. Always add: <code style="font-family:'JetBrains Mono',monospace;background:rgba(239,68,68,0.15);padding:1px 5px;border-radius:3px;color:#f87171;">if iteration >= max_iterations: raise MaxIterationsError</code>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex2-code">
+    <div class="section-label purple">Full ReAct Loop — Line-by-Line Annotations</div>
+    <div class="ann-table">
+      <div class="ann-row">
+        <div class="ann-code"><span class="kw">while</span> <span class="bi">True</span><span class="dt">:</span></div>
+        <div class="ann-desc"><strong>Loop:</strong> runs until <code style="font-family:'JetBrains Mono',monospace;">break</code> or max_iterations guard. Never exits on its own.</div>
+      </div>
+      <div class="ann-row">
+        <div class="ann-code"><span class="va">response</span> <span class="dt">=</span> <span class="va">client</span><span class="dt">.</span><span class="fn">messages</span><span class="dt">.</span><span class="fn">create</span><span class="dt">(...)</span></div>
+        <div class="ann-desc"><strong>Think:</strong> API call — the model reads all context and decides next action (text reply or tool call).</div>
+      </div>
+      <div class="ann-row">
+        <div class="ann-code"><span class="kw">if</span> <span class="va">response</span><span class="dt">.</span><span class="va">stop_reason</span> <span class="dt">==</span> <span class="st">"end_turn"</span><span class="dt">:</span></div>
+        <div class="ann-desc"><strong>Done:</strong> model gave a text answer. Extract text and break out of the loop.</div>
+      </div>
+      <div class="ann-row">
+        <div class="ann-code"><span class="kw">if</span> <span class="va">response</span><span class="dt">.</span><span class="va">stop_reason</span> <span class="dt">==</span> <span class="st">"tool_use"</span><span class="dt">:</span></div>
+        <div class="ann-desc"><strong>Act:</strong> model wants a tool. Must execute every tool_use block in the response content list.</div>
+      </div>
+      <div class="ann-row">
+        <div class="ann-code"><span class="va">messages</span><span class="dt">.</span><span class="fn">append</span><span class="dt">({</span>
+  <span class="st">"role"</span><span class="dt">:</span> <span class="st">"assistant"</span><span class="dt">,</span>
+  <span class="st">"content"</span><span class="dt">:</span> <span class="va">response</span><span class="dt">.</span><span class="va">content</span>   <span class="cm"># ← FULL list</span>
+<span class="dt">})</span></div>
+        <div class="ann-desc"><strong>Critical:</strong> Must append the FULL <code style="font-family:'JetBrains Mono',monospace;">response.content</code> list, not just the text. The tool_use block inside it must be mirrored back.</div>
+      </div>
+      <div class="ann-row">
+        <div class="ann-code"><span class="kw">for</span> <span class="va">block</span> <span class="kw">in</span> <span class="va">response</span><span class="dt">.</span><span class="va">content</span><span class="dt">:</span>
+  <span class="kw">if</span> <span class="va">block</span><span class="dt">.</span><span class="va">type</span> <span class="dt">==</span> <span class="st">"tool_use"</span><span class="dt">:</span>
+    <span class="va">result</span> <span class="dt">=</span> <span class="fn">executor</span><span class="dt">(</span><span class="va">block</span><span class="dt">.</span><span class="va">name</span><span class="dt">,</span> <span class="va">block</span><span class="dt">.</span><span class="va">input</span><span class="dt">)</span></div>
+        <div class="ann-desc"><strong>Multiple tools:</strong> One response may contain several tool_use blocks. Loop over ALL of them before the next API call.</div>
+      </div>
+      <div class="ann-row">
+        <div class="ann-code"><span class="va">messages</span><span class="dt">.</span><span class="fn">append</span><span class="dt">({</span>
+  <span class="st">"role"</span><span class="dt">:</span>    <span class="st">"user"</span><span class="dt">,</span>       <span class="cm"># ← "user" not "tool"</span>
+  <span class="st">"content"</span><span class="dt">:</span> <span class="va">tool_results</span>
+<span class="dt">})</span></div>
+        <div class="ann-desc"><strong>Observe:</strong> Results go back as "user" role with "tool_result" content blocks. The tool_use_id must match exactly.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex2-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Implement <code style="font-family:'JetBrains Mono',monospace;background:rgba(245,158,11,0.15);padding:2px 6px;border-radius:4px;">run_agent(query, tools, tool_executor)</code>:</p>
+      <ul>
+        <li>Max 10 iterations guard — raise <code style="font-family:'JetBrains Mono',monospace;">MaxIterationsError</code> if exceeded</li>
+        <li>Track token usage per iteration from <code style="font-family:'JetBrains Mono',monospace;">response.usage</code></li>
+        <li>Accumulate total cost across iterations (input: $3/M, output: $15/M for Sonnet)</li>
+        <li>Return <code style="font-family:'JetBrains Mono',monospace;">(answer, trace)</code> where trace = <code style="font-family:'JetBrains Mono',monospace;">&#123;iterations, total_tokens, total_cost, tools_called&#125;</code></li>
+        <li>Handle tool errors: catch exceptions, send structured error back to model, continue loop</li>
+      </ul>
+    </div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>starter_ex2.py</span></div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span><span>31</span><span>32</span></div>
+        <div class="code-content"><span class="kw">import</span> <span class="va">anthropic</span>
+<span class="kw">from</span> <span class="va">typing</span> <span class="kw">import</span> <span class="va">Callable</span>
+
+<span class="va">client</span> <span class="dt">=</span> <span class="fn">anthropic</span><span class="dt">.</span><span class="fn">Anthropic</span><span class="dt">()</span>
+
+<span class="kw">class</span> <span class="tp">MaxIterationsError</span><span class="dt">(</span><span class="tp">Exception</span><span class="dt">):</span> <span class="kw">pass</span>
+
+<span class="kw">def</span> <span class="fn">run_agent</span><span class="dt">(</span>
+    <span class="va">query</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">,</span>
+    <span class="va">tools</span><span class="dt">:</span> <span class="tp">list</span><span class="dt">,</span>                   <span class="cm"># list of tool schema dicts</span>
+    <span class="va">tool_executor</span><span class="dt">:</span> <span class="tp">Callable</span><span class="dt">,</span>       <span class="cm"># fn(name: str, input: dict) -> str</span>
+    <span class="va">max_iterations</span><span class="dt">:</span> <span class="tp">int</span> <span class="dt">=</span> <span class="nm">10</span>
+<span class="dt">):</span>
+    <span class="va">messages</span> <span class="dt">=</span> <span class="dt">[{</span><span class="st">"role"</span><span class="dt">:</span> <span class="st">"user"</span><span class="dt">,</span> <span class="st">"content"</span><span class="dt">:</span> <span class="va">query</span><span class="dt">}]</span>
+    <span class="va">trace</span> <span class="dt">=</span> <span class="dt">{</span><span class="st">"iterations"</span><span class="dt">:</span> <span class="nm">0</span><span class="dt">,</span> <span class="st">"total_tokens"</span><span class="dt">:</span> <span class="nm">0</span><span class="dt">,</span>
+             <span class="st">"total_cost"</span><span class="dt">:</span> <span class="nm">0.0</span><span class="dt">,</span> <span class="st">"tools_called"</span><span class="dt">:</span> <span class="dt">[]}</span>
+
+    <span class="kw">while</span> <span class="bi">True</span><span class="dt">:</span>
+        <span class="cm"># TODO: raise MaxIterationsError if trace["iterations"] >= max_iterations</span>
+
+        <span class="cm"># TODO: call API — model, messages, tools, max_tokens=4096</span>
+        <span class="va">response</span> <span class="dt">=</span> <span class="dt">...</span>
+
+        <span class="cm"># TODO: update trace: iterations+1, tokens, cost from response.usage</span>
+
+        <span class="kw">if</span> <span class="va">response</span><span class="dt">.</span><span class="va">stop_reason</span> <span class="dt">==</span> <span class="st">"end_turn"</span><span class="dt">:</span>
+            <span class="cm"># TODO: extract answer text and return (answer, trace)</span>
+            <span class="dt">...</span>
+
+        <span class="kw">if</span> <span class="va">response</span><span class="dt">.</span><span class="va">stop_reason</span> <span class="dt">==</span> <span class="st">"tool_use"</span><span class="dt">:</span>
+            <span class="cm"># TODO: append assistant content, execute tools in loop,</span>
+            <span class="cm"># catch errors → send as is_error tool_result, append results</span>
+            <span class="dt">...</span></div>
+      </div>
+    </div>
+    <button class="animate-btn" style="margin-top:12px;" onclick="markDone(2)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex2-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t2-1">T1</span><div class="test-content"><div class="test-input">answer, trace = run_agent("What is 2 + 2?", tools, executor)<br>"4" in answer</div><div class="test-expected">→ True (single tool call resolves the query)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t2-2">T2</span><div class="test-content"><div class="test-input">answer, trace = run_agent("15% of 847 then doubled?", ...)<br>trace["iterations"] == 3</div><div class="test-expected">→ True (two tool calls + final answer = 3 iterations)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t2-3">T3</span><div class="test-content"><div class="test-input">trace["total_tokens"] > 0 and trace["total_cost"] > 0.0<br>trace["tools_called"] == ["calculate", "calculate"]</div><div class="test-expected">→ True (tracking accumulated correctly across iterations)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t2-4">T4</span><div class="test-content"><div class="test-input"># executor that always raises ValueError<br>answer, _ = run_agent("divide by zero", tools, bad_executor)<br>"error" in answer.lower() or "cannot" in answer.lower()</div><div class="test-expected">→ True (error handled gracefully, model explains it)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t2-5">T5</span><div class="test-content"><div class="test-input"># force infinite loop scenario<br>with pytest.raises(MaxIterationsError):<br>    run_agent("...", tools, looping_executor, max_iterations=2)</div><div class="test-expected">→ raises MaxIterationsError after 2 iterations</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(2)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex2-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — How to append assistant content correctly</span><span class="arrow">▶</span></button>
+        <div class="hint-body">Use <code>messages.append({"role": "assistant", "content": response.content})</code> — pass the full <code>response.content</code> list (which may contain text blocks AND tool_use blocks), never just <code>response.content[0].text</code>.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — How to format the tool_results message</span><span class="arrow">▶</span></button>
+        <div class="hint-body">Collect all results into a list, then append once: <code>tool_results = []</code> → for each tool_use block: <code>tool_results.append({"type": "tool_result", "tool_use_id": block.id, "content": str(result)})</code> → then <code>messages.append({"role": "user", "content": tool_results})</code>.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 3 — Tracking cost from usage</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>input_cost = response.usage.input_tokens / 1_000_000 * 3.0</code> → <code>output_cost = response.usage.output_tokens / 1_000_000 * 15.0</code> → <code>trace["total_cost"] += input_cost + output_cost</code>. These are Sonnet 3.7 rates; adjust for your model.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 4 — Sending tool errors back to the model</span><span class="arrow">▶</span></button>
+        <div class="hint-body">Wrap execution: <code>try: result = executor(block.name, block.input)</code> then <code>except Exception as e: result = f"Error: {e}"</code>. Then include <code>"is_error": True</code> in the tool_result block when an exception occurred: <code>{"type": "tool_result", "tool_use_id": block.id, "content": result, "is_error": True}</code>.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 3: TOOL ERROR HANDLING ========== -->
+<section class="exercise" id="ex3">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 3 of 4</div>
+      <h2>Tool Error Handling</h2>
+      <p>Three approaches when a tool fails: crash, silent fail, and structured error. Only one is acceptable.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot3"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex3','visual')">Visual Explainer</button>
+    <button class="tab-btn" onclick="showTab('ex3','code')">Annotated Code</button>
+    <button class="tab-btn" onclick="showTab('ex3','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex3','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex3','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex3-visual">
+    <div class="section-label purple">Three Approaches When a Tool Fails</div>
+    <div class="error-panels">
+      <div class="err-panel bad">
+        <h4>A — CRASH</h4>
+        <div class="err-step crash"><span>💥</span>Tool raises ValueError</div>
+        <div class="err-arrow">↓</div>
+        <div class="err-step crash"><span>✗</span>Agent loop crashes</div>
+        <div class="err-arrow">↓</div>
+        <div class="err-step crash"><span>✗</span>User gets: 500 Error</div>
+        <div style="margin-top:10px;font-size:0.75rem;color:var(--muted);">Exception propagates up. No recovery. User sees nothing useful.</div>
+      </div>
+      <div class="err-panel worse">
+        <h4>B — SILENT FAIL</h4>
+        <div class="err-step warn"><span>🐛</span>Tool catches exception</div>
+        <div class="err-arrow">↓</div>
+        <div class="err-step warn"><span>?</span>Returns: None or empty</div>
+        <div class="err-arrow">↓</div>
+        <div class="err-step warn"><span>✗</span>Model gets: None</div>
+        <div class="err-arrow">↓</div>
+        <div class="err-step warn"><span>✗</span>Model hallucinates result</div>
+        <div style="margin-top:10px;font-size:0.75rem;color:var(--muted);">Worse than crashing. User gets a plausible wrong answer with no warning.</div>
+      </div>
+      <div class="err-panel good">
+        <h4>C — STRUCTURED ERROR</h4>
+        <div class="err-step ok"><span>✓</span>Tool catches exception</div>
+        <div class="err-arrow">↓</div>
+        <div class="err-step ok"><span>✓</span>Returns structured error</div>
+        <div class="err-arrow">↓</div>
+        <div class="err-step ok"><span>✓</span>Model receives context</div>
+        <div class="err-arrow">↓</div>
+        <div class="err-step ok"><span>✓</span>Model explains clearly</div>
+        <div style="margin-top:10px;font-size:0.75rem;color:var(--muted);">Model tells the user what went wrong and suggests the fix.</div>
+      </div>
+    </div>
+
+    <div class="section-label teal" style="margin-top:24px;">Model Response Comparison — Same Query</div>
+    <div class="compare-grid">
+      <div class="compare-bad">
+        <div class="compare-label">Query: "Divide 10 by 0" — Approach B (silent fail)</div>
+        <div class="compare-text">Tool returns: None
+
+Model says: "The result of 10 ÷ 0 is 0."
+
+[Model invented this — dangerous!]</div>
+      </div>
+      <div class="compare-good">
+        <div class="compare-label">Approach C — structured error</div>
+        <div class="compare-text">Tool returns:
+{"error": "ZeroDivisionError",
+ "message": "Cannot divide by zero",
+ "suggestion": "Use a non-zero denominator"}
+
+Model says: "I can't divide by zero.
+Please provide a non-zero denominator."</div>
+      </div>
+    </div>
+    <div class="insight-box">
+      <strong>Rule:</strong> Tools must NEVER raise exceptions to the agent loop. Always catch, always return a structured error dict. The model is excellent at interpreting errors — but only if you pass the information up.
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex3-code">
+    <div class="section-label purple">Annotated Pattern — Wrapping a Fragile Tool</div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>safe_tools.py</span></div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span></div>
+        <div class="code-content"><span class="cm"># BEFORE — fragile</span>
+<span class="kw">def</span> <span class="fn">divide_bad</span><span class="dt">(</span><span class="va">a</span><span class="dt">:</span> <span class="tp">float</span><span class="dt">,</span> <span class="va">b</span><span class="dt">:</span> <span class="tp">float</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">float</span><span class="dt">:</span>
+    <span class="kw">return</span> <span class="va">a</span> <span class="dt">/</span> <span class="va">b</span>     <span class="cm"># raises ZeroDivisionError when b == 0</span>
+
+<span class="cm"># AFTER — safe, returns structured error dict</span>
+<span class="kw">def</span> <span class="fn">divide</span><span class="dt">(</span><span class="va">a</span><span class="dt">:</span> <span class="tp">float</span><span class="dt">,</span> <span class="va">b</span><span class="dt">:</span> <span class="tp">float</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">dict</span><span class="dt">:</span>
+    <span class="kw">try</span><span class="dt">:</span>
+        <span class="va">result</span> <span class="dt">=</span> <span class="va">a</span> <span class="dt">/</span> <span class="va">b</span>
+        <span class="kw">return</span> <span class="dt">{</span><span class="st">"result"</span><span class="dt">:</span> <span class="va">result</span><span class="dt">}</span>   <span class="cm"># success path</span>
+    <span class="kw">except</span> <span class="tp">ZeroDivisionError</span><span class="dt">:</span>
+        <span class="kw">return</span> <span class="dt">{</span>
+            <span class="st">"error"</span><span class="dt">:</span>      <span class="st">"ZeroDivisionError"</span><span class="dt">,</span>
+            <span class="st">"message"</span><span class="dt">:</span>    <span class="st">"Cannot divide by zero"</span><span class="dt">,</span>
+            <span class="st">"suggestion"</span><span class="dt">:</span> <span class="st">"Provide a non-zero denominator"</span>
+        <span class="dt">}</span>
+
+<span class="cm"># The agent sends it back as a tool_result — model reads the error dict</span>
+<span class="va">tool_result_block</span> <span class="dt">=</span> <span class="dt">{</span>
+    <span class="st">"type"</span><span class="dt">:</span>        <span class="st">"tool_result"</span><span class="dt">,</span>
+    <span class="st">"tool_use_id"</span><span class="dt">:</span> <span class="va">block</span><span class="dt">.</span><span class="va">id</span><span class="dt">,</span>
+    <span class="st">"content"</span><span class="dt">:</span>     <span class="bi">str</span><span class="dt">(</span><span class="fn">divide</span><span class="dt">(</span><span class="va">a</span><span class="dt">,</span> <span class="va">b</span><span class="dt">))</span><span class="dt">,</span>
+    <span class="st">"is_error"</span><span class="dt">:</span>    <span class="bi">True</span>      <span class="cm"># flag to Claude that this is an error</span>
+<span class="dt">}</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex3-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Fix 4 broken tools — wrap each with structured error handling:</p>
+      <ul>
+        <li><code style="font-family:'JetBrains Mono',monospace;">divide(a, b)</code> — crashes on <code style="font-family:'JetBrains Mono',monospace;">b=0</code></li>
+        <li><code style="font-family:'JetBrains Mono',monospace;">fetch_url(url)</code> — crashes on malformed URLs</li>
+        <li><code style="font-family:'JetBrains Mono',monospace;">parse_date(date_str)</code> — crashes on bad date formats</li>
+        <li><code style="font-family:'JetBrains Mono',monospace;">read_file(path)</code> — crashes on missing files</li>
+      </ul>
+      <p style="margin-top:10px;font-size:0.85rem;color:var(--muted);">Each must return <code style="font-family:'JetBrains Mono',monospace;">&#123;"error": type, "message": msg, "suggestion": fix&#125;</code> on failure. Never raise. Never return None.</p>
+    </div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>starter_ex3.py — fix each tool</span></div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span></div>
+        <div class="code-content"><span class="kw">import</span> <span class="va">requests</span>
+<span class="kw">from</span> <span class="va">datetime</span> <span class="kw">import</span> <span class="va">datetime</span>
+
+<span class="cm"># Tool 1 — fix: catch ZeroDivisionError</span>
+<span class="kw">def</span> <span class="fn">divide</span><span class="dt">(</span><span class="va">a</span><span class="dt">:</span> <span class="tp">float</span><span class="dt">,</span> <span class="va">b</span><span class="dt">:</span> <span class="tp">float</span><span class="dt">)</span><span class="dt">:</span>
+    <span class="kw">return</span> <span class="va">a</span> <span class="dt">/</span> <span class="va">b</span>   <span class="cm"># TODO: wrap in try/except, return error dict on fail</span>
+
+<span class="cm"># Tool 2 — fix: catch requests.exceptions.MissingSchema, ConnectionError</span>
+<span class="kw">def</span> <span class="fn">fetch_url</span><span class="dt">(</span><span class="va">url</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span><span class="dt">:</span>
+    <span class="va">r</span> <span class="dt">=</span> <span class="va">requests</span><span class="dt">.</span><span class="fn">get</span><span class="dt">(</span><span class="va">url</span><span class="dt">,</span> <span class="va">timeout</span><span class="dt">=</span><span class="nm">5</span><span class="dt">)</span>   <span class="cm"># TODO: wrap</span>
+    <span class="kw">return</span> <span class="va">r</span><span class="dt">.</span><span class="va">text</span><span class="dt">[:</span><span class="nm">500</span><span class="dt">]</span>
+
+<span class="cm"># Tool 3 — fix: catch ValueError on bad date formats</span>
+<span class="kw">def</span> <span class="fn">parse_date</span><span class="dt">(</span><span class="va">date_str</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span><span class="dt">:</span>
+    <span class="va">dt</span> <span class="dt">=</span> <span class="va">datetime</span><span class="dt">.</span><span class="fn">strptime</span><span class="dt">(</span><span class="va">date_str</span><span class="dt">,</span> <span class="st">"%Y-%m-%d"</span><span class="dt">)</span>  <span class="cm"># TODO: wrap</span>
+    <span class="kw">return</span> <span class="dt">{</span><span class="st">"iso"</span><span class="dt">:</span> <span class="va">dt</span><span class="dt">.</span><span class="fn">isoformat</span><span class="dt">(),</span> <span class="st">"weekday"</span><span class="dt">:</span> <span class="va">dt</span><span class="dt">.</span><span class="fn">strftime</span><span class="dt">(</span><span class="st">"%A"</span><span class="dt">)}</span>
+
+<span class="cm"># Tool 4 — fix: catch FileNotFoundError, PermissionError</span>
+<span class="kw">def</span> <span class="fn">read_file</span><span class="dt">(</span><span class="va">path</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span><span class="dt">:</span>
+    <span class="kw">with</span> <span class="bi">open</span><span class="dt">(</span><span class="va">path</span><span class="dt">)</span> <span class="kw">as</span> <span class="va">f</span><span class="dt">:</span>   <span class="cm"># TODO: wrap</span>
+        <span class="kw">return</span> <span class="va">f</span><span class="dt">.</span><span class="fn">read</span><span class="dt">()</span>
+
+<span class="cm"># These assertions should all pass after your fixes:</span>
+<span class="bi">assert</span> <span class="st">"error"</span> <span class="kw">in</span> <span class="fn">divide</span><span class="dt">(</span><span class="nm">10</span><span class="dt">,</span> <span class="nm">0</span><span class="dt">)</span>
+<span class="bi">assert</span> <span class="st">"error"</span> <span class="kw">in</span> <span class="fn">fetch_url</span><span class="dt">(</span><span class="st">"not-a-url"</span><span class="dt">)</span>
+<span class="bi">assert</span> <span class="st">"error"</span> <span class="kw">in</span> <span class="fn">parse_date</span><span class="dt">(</span><span class="st">"January 5th"</span><span class="dt">)</span>
+<span class="bi">assert</span> <span class="st">"error"</span> <span class="kw">in</span> <span class="fn">read_file</span><span class="dt">(</span><span class="st">"/nonexistent/path.txt"</span><span class="dt">)</span></div>
+      </div>
+    </div>
+    <button class="animate-btn" style="margin-top:12px;" onclick="markDone(3)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex3-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t3-1">T1</span><div class="test-content"><div class="test-input">result = divide(10, 0)<br>"error" in result and isinstance(result, dict)</div><div class="test-expected">→ True (no raise, returns dict with "error" key)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t3-2">T2</span><div class="test-content"><div class="test-input">result = divide(10, 2)<br>result["result"] == 5.0</div><div class="test-expected">→ True (success path still works)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t3-3">T3</span><div class="test-content"><div class="test-input">result = parse_date("not-a-date")<br>"suggestion" in result</div><div class="test-expected">→ True (error dict includes a suggestion on how to fix)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t3-4">T4</span><div class="test-content"><div class="test-input">result = read_file("/does/not/exist.txt")<br>result["error"] == "FileNotFoundError"</div><div class="test-expected">→ True (error name matches the exception class name)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t3-5">T5</span><div class="test-content"><div class="test-input"># Run agent with "Divide 5 by 0"<br>answer, _ = run_agent("Divide 5 by 0", tools, executor)<br>"zero" in answer.lower() or "cannot" in answer.lower()</div><div class="test-expected">→ True (model communicates the error to the user)</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(3)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex3-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — The universal error wrapper pattern</span><span class="arrow">▶</span></button>
+        <div class="hint-body">Every tool: <code>try: [do work]; return {"result": value}</code> then <code>except SpecificError as e: return {"error": type(e).__name__, "message": str(e), "suggestion": "..."}</code>. Use specific exceptions — never bare <code>except:</code>.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — fetch_url exception types to catch</span><span class="arrow">▶</span></button>
+        <div class="hint-body">Catch <code>requests.exceptions.MissingSchema</code> for invalid URLs, <code>requests.exceptions.ConnectionError</code> for network failures, <code>requests.exceptions.Timeout</code> for timeouts. Or catch the parent <code>requests.exceptions.RequestException</code> for all three at once.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 3 — parse_date with multiple format support</span><span class="arrow">▶</span></button>
+        <div class="hint-body">Loop over formats: <code>for fmt in ["%Y-%m-%d", "%d/%m/%Y", "%B %d, %Y"]</code> and try <code>datetime.strptime(date_str, fmt)</code>. If all fail, return <code>{"error": "ValueError", "message": f"Cannot parse '{date_str}'", "suggestion": "Use ISO format YYYY-MM-DD"}</code>.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 4 — Sending is_error flag to the model</span><span class="arrow">▶</span></button>
+        <div class="hint-body">When a tool returns an error, add <code>"is_error": True</code> to the tool_result block. This tells Claude the content is an error, not a successful empty response: <code>{"type": "tool_result", "tool_use_id": block.id, "content": str(err_dict), "is_error": True}</code>.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 4: PERSISTENT MEMORY AGENT ========== -->
+<section class="exercise" id="ex4">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 4 of 4 — Boss</div>
+      <h2>Agent with Persistent Memory</h2>
+      <p>Build an agent that remembers conversations across sessions using two-tier memory: short-term context window and long-term compressed summaries.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot4"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex4','visual')">Visual Explainer</button>
+    <button class="tab-btn" onclick="showTab('ex4','code')">Annotated Code</button>
+    <button class="tab-btn" onclick="showTab('ex4','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex4','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex4','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex4-visual">
+    <div class="section-label purple">Two-Tier Memory Architecture</div>
+    <div class="memory-diagram">
+      <div class="mem-container short">
+        <h4>SHORT-TERM (Context Window)</h4>
+        <div class="mem-spec"><span class="key">Storage: </span><span class="val">messages[] — last 6 turns</span></div>
+        <div class="mem-spec"><span class="key">Capacity: </span><span class="val">~4,000 tokens</span></div>
+        <div class="mem-spec"><span class="key">Speed: </span><span class="val">instant (already in context)</span></div>
+        <div class="mem-spec"><span class="key">Lifetime: </span><span class="val">current session only</span></div>
+        <div class="mem-spec"><span class="key">Eviction: </span><span class="val">oldest 4 msgs compressed</span></div>
+      </div>
+      <div class="mem-container long">
+        <h4>LONG-TERM (Persistent Store)</h4>
+        <div class="mem-spec"><span class="key">Storage: </span><span class="val">memory_store&#123;&#125; / JSON file</span></div>
+        <div class="mem-spec"><span class="key">Capacity: </span><span class="val">unlimited</span></div>
+        <div class="mem-spec"><span class="key">Speed: </span><span class="val">instant dict lookup</span></div>
+        <div class="mem-spec"><span class="key">Lifetime: </span><span class="val">persists across sessions</span></div>
+        <div class="mem-spec"><span class="key">Format: </span><span class="val">key: "session_N", val: summary</span></div>
+      </div>
+    </div>
+
+    <div class="section-label teal" style="margin-top:24px;">Memory Compaction — Animated 5-Turn Conversation</div>
+    <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:start;margin-bottom:12px;">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;">
+        <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;color:var(--purple-light);letter-spacing:1px;margin-bottom:10px;">Short-Term Buffer</div>
+        <div id="st-msgs" style="display:flex;flex-direction:column;gap:5px;min-height:30px;">
+          <div style="color:var(--muted);font-size:0.75rem;font-family:'JetBrains Mono',monospace;">empty</div>
+        </div>
+      </div>
+      <div style="padding-top:44px;text-align:center;">
+        <div id="compact-arrow" style="color:var(--muted);font-size:1.2rem;transition:color 0.4s;">→</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:4px;">compress</div>
+      </div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;">
+        <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;color:#2dd4bf;letter-spacing:1px;margin-bottom:10px;">Long-Term Store</div>
+        <div id="lt-store" style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--muted);">memory_store = {}</div>
+      </div>
+    </div>
+    <button class="animate-btn" onclick="animateMemory()">▶ Animate 5-Turn Conversation</button>
+
+    <div class="section-label purple" style="margin-top:24px;">chat() Flow with Two-Tier Memory</div>
+    <div class="fn-anatomy">
+      <div style="color:var(--muted);font-size:0.72rem;margin-bottom:12px;">┌─ chat() ─────────────────────────────────────────────────────────┐</div>
+      <div class="fn-step"><span class="fn-step-num">1.</span><div><div class="fn-step-desc">Build system context from long-term memory</div><div class="fn-step-code">system = "Context from previous sessions:\n" + "\n".join(memory_store.values())</div></div></div>
+      <div class="fn-step"><span class="fn-step-num">2.</span><div><div class="fn-step-desc">Append user message to short-term buffer</div><div class="fn-step-code">self._messages.append({"role": "user", "content": message})</div></div></div>
+      <div class="fn-step"><span class="fn-step-num">3.</span><div><div class="fn-step-desc">Call API with system context + last 6 messages only</div><div class="fn-step-code">client.messages.create(system=system, messages=self._messages[-6:])</div></div></div>
+      <div class="fn-step"><span class="fn-step-num">4.</span><div><div class="fn-step-desc">Append assistant reply</div><div class="fn-step-code">self._messages.append({"role": "assistant", "content": reply})</div></div></div>
+      <div class="fn-step"><span class="fn-step-num">5.</span><div><div class="fn-step-desc">If buffer > 6 msgs, compact oldest 4 to long-term</div><div class="fn-step-code">if len(self._messages) > 6: self._compact()</div></div></div>
+      <div style="color:var(--muted);font-size:0.72rem;margin-top:8px;">└──────────────────────────────────────────────────────────────────┘</div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex4-code">
+    <div class="section-label purple">Annotated PersistentAgent Reference</div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>persistent_agent_reference.py</span></div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span><span>31</span><span>32</span><span>33</span><span>34</span></div>
+        <div class="code-content"><span class="kw">import</span> <span class="va">json</span><span class="dt">,</span> <span class="va">anthropic</span>
+<span class="kw">from</span> <span class="va">pathlib</span> <span class="kw">import</span> <span class="va">Path</span>
+
+<span class="va">client</span> <span class="dt">=</span> <span class="fn">anthropic</span><span class="dt">.</span><span class="fn">Anthropic</span><span class="dt">()</span>
+
+<span class="kw">class</span> <span class="tp">PersistentAgent</span><span class="dt">:</span>
+    <span class="kw">def</span> <span class="fn">__init__</span><span class="dt">(</span><span class="va">self</span><span class="dt">):</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">_messages</span> <span class="dt">=</span> <span class="dt">[]</span>          <span class="cm"># short-term: stays bounded at 6</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">memory_store</span> <span class="dt">=</span> <span class="dt">{}</span>      <span class="cm"># long-term: {session_id: summary}</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">_session_count</span> <span class="dt">=</span> <span class="nm">0</span>
+
+    <span class="kw">def</span> <span class="fn">_get_system</span><span class="dt">(</span><span class="va">self</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">str</span><span class="dt">:</span>
+        <span class="kw">if</span> <span class="kw">not</span> <span class="va">self</span><span class="dt">.</span><span class="va">memory_store</span><span class="dt">:</span>
+            <span class="kw">return</span> <span class="st">"You are a helpful assistant."</span>
+        <span class="va">summaries</span> <span class="dt">=</span> <span class="st">"\n"</span><span class="dt">.</span><span class="fn">join</span><span class="dt">(</span><span class="va">self</span><span class="dt">.</span><span class="va">memory_store</span><span class="dt">.</span><span class="fn">values</span><span class="dt">())</span>
+        <span class="kw">return</span> <span class="bi">f</span><span class="st">"You are a helpful assistant.\n\nPrevious context:\n{summaries}"</span>
+
+    <span class="kw">def</span> <span class="fn">_compact</span><span class="dt">(</span><span class="va">self</span><span class="dt">)</span><span class="dt">:</span>
+        <span class="cm"># Take oldest 4 messages, summarize them, store in long-term</span>
+        <span class="va">old</span> <span class="dt">=</span> <span class="va">self</span><span class="dt">.</span><span class="va">_messages</span><span class="dt">[:</span><span class="nm">4</span><span class="dt">]</span>
+        <span class="va">prompt</span> <span class="dt">=</span> <span class="bi">f</span><span class="st">"Summarize this conversation in 2-3 sentences:\n{json.dumps(old)}"</span>
+        <span class="va">r</span> <span class="dt">=</span> <span class="va">client</span><span class="dt">.</span><span class="fn">messages</span><span class="dt">.</span><span class="fn">create</span><span class="dt">(</span>
+            <span class="va">model</span><span class="dt">=</span><span class="st">"claude-haiku-4-5-20251001"</span><span class="dt">,</span> <span class="va">max_tokens</span><span class="dt">=</span><span class="nm">200</span><span class="dt">,</span>
+            <span class="va">messages</span><span class="dt">=[{</span><span class="st">"role"</span><span class="dt">:</span><span class="st">"user"</span><span class="dt">,</span><span class="st">"content"</span><span class="dt">:</span><span class="va">prompt</span><span class="dt">}]</span>
+        <span class="dt">)</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">_session_count</span> <span class="dt">+=</span> <span class="nm">1</span>
+        <span class="va">key</span> <span class="dt">=</span> <span class="bi">f</span><span class="st">"session_{self._session_count}"</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">memory_store</span><span class="dt">[</span><span class="va">key</span><span class="dt">]</span> <span class="dt">=</span> <span class="va">r</span><span class="dt">.</span><span class="va">content</span><span class="dt">[</span><span class="nm">0</span><span class="dt">].</span><span class="va">text</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">_messages</span> <span class="dt">=</span> <span class="va">self</span><span class="dt">.</span><span class="va">_messages</span><span class="dt">[</span><span class="nm">4</span><span class="dt">:]</span>   <span class="cm"># keep the rest</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex4-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Complete the <code style="font-family:'JetBrains Mono',monospace;background:rgba(245,158,11,0.15);padding:2px 6px;border-radius:4px;">PersistentAgent</code> class:</p>
+      <ul>
+        <li><code style="font-family:'JetBrains Mono',monospace;">chat(message: str) -> str</code> — main interface with long-term context prepended</li>
+        <li>Keep last 6 messages; when len > 6, call <code style="font-family:'JetBrains Mono',monospace;">_compact()</code></li>
+        <li><code style="font-family:'JetBrains Mono',monospace;">_compact()</code> — compresses oldest 4 msgs into summary in <code style="font-family:'JetBrains Mono',monospace;">memory_store</code></li>
+        <li><code style="font-family:'JetBrains Mono',monospace;">save_memory(path: str)</code> — writes <code style="font-family:'JetBrains Mono',monospace;">memory_store</code> to JSON file</li>
+        <li><code style="font-family:'JetBrains Mono',monospace;">load_memory(path: str)</code> — reads JSON file back into <code style="font-family:'JetBrains Mono',monospace;">memory_store</code></li>
+      </ul>
+      <p style="margin-top:10px;font-size:0.85rem;color:var(--muted);">Test: 15-turn conversation. Ask about turn 2 content at turn 15. Agent must answer correctly from long-term memory.</p>
+    </div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>starter_ex4.py</span></div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span></div>
+        <div class="code-content"><span class="kw">import</span> <span class="va">json</span><span class="dt">,</span> <span class="va">anthropic</span>
+
+<span class="kw">class</span> <span class="tp">PersistentAgent</span><span class="dt">:</span>
+    <span class="kw">def</span> <span class="fn">__init__</span><span class="dt">(</span><span class="va">self</span><span class="dt">):</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">_messages</span> <span class="dt">=</span> <span class="dt">[]</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">memory_store</span> <span class="dt">=</span> <span class="dt">{}</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">_session_count</span> <span class="dt">=</span> <span class="nm">0</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">client</span> <span class="dt">=</span> <span class="fn">anthropic</span><span class="dt">.</span><span class="fn">Anthropic</span><span class="dt">()</span>
+
+    <span class="kw">def</span> <span class="fn">chat</span><span class="dt">(</span><span class="va">self</span><span class="dt">,</span> <span class="va">message</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">str</span><span class="dt">:</span>
+        <span class="cm"># TODO: build system context from memory_store</span>
+        <span class="cm"># TODO: append user message to _messages</span>
+        <span class="cm"># TODO: call API with system= and messages=self._messages[-6:]</span>
+        <span class="cm"># TODO: append reply to _messages</span>
+        <span class="cm"># TODO: if len(_messages) > 6: self._compact()</span>
+        <span class="cm"># TODO: return reply</span>
+        <span class="dt">...</span>
+
+    <span class="kw">def</span> <span class="fn">save_memory</span><span class="dt">(</span><span class="va">self</span><span class="dt">,</span> <span class="va">path</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span><span class="dt">:</span>
+        <span class="cm"># TODO: write memory_store as JSON to path</span>
+        <span class="dt">...</span>
+
+    <span class="kw">def</span> <span class="fn">load_memory</span><span class="dt">(</span><span class="va">self</span><span class="dt">,</span> <span class="va">path</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span><span class="dt">:</span>
+        <span class="cm"># TODO: read JSON file, set self.memory_store and _session_count</span>
+        <span class="dt">...</span></div>
+      </div>
+    </div>
+    <button class="animate-btn" style="margin-top:12px;" onclick="markDone(4)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex4-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t4-1">T1</span><div class="test-content"><div class="test-input">agent = PersistentAgent()<br>agent.chat("My dog is named Biscuit")<br>reply = agent.chat("What is my dog's name?")<br>"Biscuit" in reply</div><div class="test-expected">→ True (within 6 turns, short-term context works)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t4-2">T2</span><div class="test-content"><div class="test-input"># After 8 chat() calls<br>len(agent._messages) &lt;= 6</div><div class="test-expected">→ True (_compact() fired, short-term stays bounded)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t4-3">T3</span><div class="test-content"><div class="test-input">len(agent.memory_store) > 0</div><div class="test-expected">→ True (at least one summary stored in long-term)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t4-4">T4</span><div class="test-content"><div class="test-input"># 15 turns — ask about turn 2 content at turn 15<br>reply = agent.chat("What did I say about my dog?")<br>"Biscuit" in reply</div><div class="test-expected">→ True (retrieved from long-term memory summary)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t4-5">T5</span><div class="test-content"><div class="test-input">agent.save_memory("/tmp/mem.json")<br>agent2 = PersistentAgent()<br>agent2.load_memory("/tmp/mem.json")<br>agent2.memory_store == agent.memory_store</div><div class="test-expected">→ True (memory persists across instances via JSON)</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(4)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex4-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — The chat() method skeleton</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>system = self._get_system()</code> → <code>self._messages.append({"role":"user","content":message})</code> → <code>r = client.messages.create(model="claude-sonnet-4-5", max_tokens=1024, system=system, messages=self._messages[-6:])</code> → <code>reply = r.content[0].text</code> → <code>self._messages.append({"role":"assistant","content":reply})</code> → <code>if len(self._messages) > 6: self._compact()</code> → <code>return reply</code></div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — Why use [-6:] not the full list</span><span class="arrow">▶</span></button>
+        <div class="hint-body">The recent messages are the context window. Older ones are in long-term memory summaries (passed via <code>system=</code>). Using <code>self._messages[-6:]</code> keeps token usage bounded. The system parameter carries the compressed older context.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 3 — _compact() step by step</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>old = self._messages[:4]</code> → <code>prompt = f"Summarize: {json.dumps(old)}"</code> → call haiku model → store <code>r.content[0].text</code> as <code>self.memory_store[f"session_{self._session_count}"]</code> → <code>self._messages = self._messages[4:]</code>. The tail of the buffer carries forward.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 4 — save/load memory correctly</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>save: Path(path).write_text(json.dumps(self.memory_store, indent=2))</code>. <code>load: self.memory_store = json.loads(Path(path).read_text())</code>. After loading, restore <code>self._session_count = max((int(k.split("_")[1]) for k in self.memory_store), default=0)</code> to avoid session key collision.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<div class="footer">
+  <p>Day 2 of 7 — <a href="day1_exercises.html">← Day 1</a> | <a href="../index.html">Course Home</a> | <a href="day3_exercises.html">Day 3 →</a></p>
+</div>
+
+<script>
+// ── Tab switching ─────────────────────────────────────────────
+function showTab(exId, tabName) {
+  const section = document.getElementById(exId);
+  section.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  section.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  const panel = document.getElementById(exId + '-' + tabName);
+  if (panel) panel.classList.add('active');
+  const allNames = ['visual','code','trace','task','tests','hints'];
+  const idx = allNames.indexOf(tabName);
+  const btns = section.querySelectorAll('.tab-btn');
+  if (btns[idx]) btns[idx].classList.add('active');
+  else btns.forEach(b => { if (b.textContent.toLowerCase().startsWith(tabName.slice(0,4))) b.classList.add('active'); });
+}
+
+// ── Progress ──────────────────────────────────────────────────
+const KEYS = ['day2_ex1','day2_ex2','day2_ex3','day2_ex4'];
+function updateProgress() {
+  const done = KEYS.filter(k => localStorage.getItem(k) === 'done').length;
+  document.getElementById('progress-text').textContent = done + ' / 4 completed';
+  document.getElementById('progress-fill').style.width = (done * 25) + '%';
+  KEYS.forEach((k, i) => {
+    const dot = document.getElementById('dot' + (i + 1));
+    if (dot) dot.classList.toggle('done', localStorage.getItem(k) === 'done');
+  });
+}
+function markDone(n) {
+  localStorage.setItem(KEYS[n - 1], 'done');
+  updateProgress();
+  event.target.textContent = 'Completed ✓';
+  event.target.style.background = 'var(--green)';
+}
+updateProgress();
+
+// ── Hints ─────────────────────────────────────────────────────
+function toggleHint(btn) {
+  btn.classList.toggle('open');
+  const body = btn.nextElementSibling;
+  body.style.display = body.style.display === 'block' ? 'none' : 'block';
+}
+
+// ── Tests ─────────────────────────────────────────────────────
+function runTests(n) {
+  document.querySelectorAll('#ex' + n + '-tests .test-badge').forEach((b, i) => {
+    setTimeout(() => { b.className = 'test-badge pass'; b.textContent = '✓ T' + (i + 1); }, i * 300);
+  });
+}
+
+// ── Schema animation (Ex1) ────────────────────────────────────
+function animateSchema() {
+  const ids = ['sj-name','sj-desc','sj-schema','sj-p1','sj-p2','sj-req'];
+  ids.forEach(id => { const el = document.getElementById(id); if (el) el.style.opacity = '0.2'; });
+  ids.forEach((id, i) => setTimeout(() => {
+    const el = document.getElementById(id); if (el) el.style.opacity = '1';
+  }, (i + 1) * 500));
+}
+
+// ── Schema examples (Ex1) ─────────────────────────────────────
+const schemaExamples = [
+`<span class="cm"># Example 1 — single required string parameter</span>
+<span class="va">greet_tool</span> <span class="dt">=</span> <span class="dt">{</span>
+  <span class="st">"name"</span><span class="dt">:</span> <span class="st">"greet"</span><span class="dt">,</span>
+  <span class="st">"description"</span><span class="dt">:</span> <span class="st">"Generate a greeting for a person by name."</span><span class="dt">,</span>
+  <span class="st">"input_schema"</span><span class="dt">:</span> <span class="dt">{</span>
+    <span class="st">"type"</span><span class="dt">:</span> <span class="st">"object"</span><span class="dt">,</span>
+    <span class="st">"properties"</span><span class="dt">:</span> <span class="dt">{</span>
+      <span class="st">"name"</span><span class="dt">:</span> <span class="dt">{</span><span class="st">"type"</span><span class="dt">:</span> <span class="st">"string"</span><span class="dt">,</span> <span class="st">"description"</span><span class="dt">:</span> <span class="st">"The person's full name"</span><span class="dt">}</span>
+    <span class="dt">},</span>
+    <span class="st">"required"</span><span class="dt">:</span> <span class="dt">[</span><span class="st">"name"</span><span class="dt">]</span>
+  <span class="dt">}</span>
+<span class="dt">}</span>`,
+
+`<span class="cm"># Example 2 — optional param with enum constraint</span>
+<span class="va">get_weather_tool</span> <span class="dt">=</span> <span class="dt">{</span>
+  <span class="st">"name"</span><span class="dt">:</span> <span class="st">"get_weather"</span><span class="dt">,</span>
+  <span class="st">"description"</span><span class="dt">:</span> <span class="st">"Get current weather for a city. Use when user asks about weather."</span><span class="dt">,</span>
+  <span class="st">"input_schema"</span><span class="dt">:</span> <span class="dt">{</span>
+    <span class="st">"type"</span><span class="dt">:</span> <span class="st">"object"</span><span class="dt">,</span>
+    <span class="st">"properties"</span><span class="dt">:</span> <span class="dt">{</span>
+      <span class="st">"city"</span><span class="dt">:</span> <span class="dt">{</span><span class="st">"type"</span><span class="dt">:</span> <span class="st">"string"</span><span class="dt">,</span> <span class="st">"description"</span><span class="dt">:</span> <span class="st">"Name of the city"</span><span class="dt">},</span>
+      <span class="st">"unit"</span><span class="dt">:</span> <span class="dt">{</span>
+        <span class="st">"type"</span><span class="dt">:</span>    <span class="st">"string"</span><span class="dt">,</span>
+        <span class="st">"enum"</span><span class="dt">:</span>    <span class="dt">[</span><span class="st">"celsius"</span><span class="dt">,</span> <span class="st">"fahrenheit"</span><span class="dt">],</span>
+        <span class="st">"default"</span><span class="dt">:</span> <span class="st">"celsius"</span>    <span class="cm"># optional = NOT in required array</span>
+      <span class="dt">}</span>
+    <span class="dt">},</span>
+    <span class="st">"required"</span><span class="dt">:</span> <span class="dt">[</span><span class="st">"city"</span><span class="dt">]</span>         <span class="cm"># unit NOT here</span>
+  <span class="dt">}</span>
+<span class="dt">}</span>`,
+
+`<span class="cm"># Example 3 — integer parameter</span>
+<span class="va">search_tool</span> <span class="dt">=</span> <span class="dt">{</span>
+  <span class="st">"name"</span><span class="dt">:</span> <span class="st">"search_web"</span><span class="dt">,</span>
+  <span class="st">"description"</span><span class="dt">:</span> <span class="st">"Search the web for real-time info the model lacks."</span><span class="dt">,</span>
+  <span class="st">"input_schema"</span><span class="dt">:</span> <span class="dt">{</span>
+    <span class="st">"type"</span><span class="dt">:</span> <span class="st">"object"</span><span class="dt">,</span>
+    <span class="st">"properties"</span><span class="dt">:</span> <span class="dt">{</span>
+      <span class="st">"query"</span><span class="dt">:</span>       <span class="dt">{</span><span class="st">"type"</span><span class="dt">:</span> <span class="st">"string"</span><span class="dt">,</span> <span class="st">"description"</span><span class="dt">:</span> <span class="st">"Search query"</span><span class="dt">},</span>
+      <span class="st">"max_results"</span><span class="dt">:</span> <span class="dt">{</span>
+        <span class="st">"type"</span><span class="dt">:</span>        <span class="st">"integer"</span><span class="dt">,</span>  <span class="cm"># int → "integer" (not "number")</span>
+        <span class="st">"description"</span><span class="dt">:</span> <span class="st">"Number of results to return"</span><span class="dt">,</span>
+        <span class="st">"default"</span><span class="dt">:</span>     <span class="nm">5</span>
+      <span class="dt">}</span>
+    <span class="dt">},</span>
+    <span class="st">"required"</span><span class="dt">:</span> <span class="dt">[</span><span class="st">"query"</span><span class="dt">]</span>
+  <span class="dt">}</span>
+<span class="dt">}</span>`
+];
+function showSchemaEx(n) {
+  document.querySelectorAll('#ex1-visual .msg-tab').forEach((b, i) => b.classList.toggle('active', i === n));
+  document.getElementById('schema-ex-display').innerHTML = schemaExamples[n];
+}
+
+// ── ReAct animation (Ex2) ─────────────────────────────────────
+function animateReact() {
+  const ids = ['iter1','iter2','iter3'];
+  ids.forEach(id => document.getElementById(id).classList.remove('visible'));
+  ids.forEach((id, i) => setTimeout(() => document.getElementById(id).classList.add('visible'), (i + 1) * 900));
+}
+
+// ── ReAct message tabs ────────────────────────────────────────
+const reactMsgData = [
+`<span class="cm"># messages array after iteration 1 — 3 entries</span>
+<span class="va">messages</span> <span class="dt">= [</span>
+  <span class="dt">{</span><span class="st">"role"</span><span class="dt">:</span> <span class="st">"user"</span><span class="dt">,</span>
+   <span class="st">"content"</span><span class="dt">:</span> <span class="st">"What is 15% of 847, then double it?"</span><span class="dt">},</span>
+
+  <span class="dt">{</span><span class="st">"role"</span><span class="dt">:</span> <span class="st">"assistant"</span><span class="dt">,</span>
+   <span class="st">"content"</span><span class="dt">:</span> <span class="dt">[{</span>
+     <span class="st">"type"</span><span class="dt">:</span>  <span class="st">"tool_use"</span><span class="dt">,</span>
+     <span class="st">"id"</span><span class="dt">:</span>    <span class="st">"toolu_01"</span><span class="dt">,</span>
+     <span class="st">"name"</span><span class="dt">:</span>  <span class="st">"calculate"</span><span class="dt">,</span>
+     <span class="st">"input"</span><span class="dt">:</span> <span class="dt">{</span><span class="st">"expression"</span><span class="dt">:</span> <span class="st">"847 * 0.15"</span><span class="dt">}</span>
+   <span class="dt">}]},</span>
+
+  <span class="dt">{</span><span class="st">"role"</span><span class="dt">:</span> <span class="st">"user"</span><span class="dt">,</span>          <span class="cm"># ← tool results use "user" role</span>
+   <span class="st">"content"</span><span class="dt">:</span> <span class="dt">[{</span>
+     <span class="st">"type"</span><span class="dt">:</span>        <span class="st">"tool_result"</span><span class="dt">,</span>
+     <span class="st">"tool_use_id"</span><span class="dt">:</span> <span class="st">"toolu_01"</span><span class="dt">,</span>   <span class="cm"># must match exactly</span>
+     <span class="st">"content"</span><span class="dt">:</span>     <span class="st">"127.05"</span>
+   <span class="dt">}]}</span>
+<span class="dt">]</span>
+<span class="cm"># stop_reason was "tool_use" → loop continues</span>`,
+
+`<span class="cm"># messages after iteration 2 — 5 entries</span>
+<span class="va">messages</span> <span class="dt">= [</span>
+  <span class="dt">{</span><span class="st">"role"</span><span class="dt">:</span> <span class="st">"user"</span><span class="dt">,</span>       <span class="st">"content"</span><span class="dt">:</span> <span class="st">"What is 15% of 847, then double it?"</span><span class="dt">},</span>
+  <span class="dt">{</span><span class="st">"role"</span><span class="dt">:</span> <span class="st">"assistant"</span><span class="dt">,</span>  <span class="st">"content"</span><span class="dt">:</span> <span class="dt">[{</span><span class="st">"type"</span><span class="dt">:</span><span class="st">"tool_use"</span><span class="dt">, ...</span> <span class="st">"847 * 0.15"</span><span class="dt">}]},</span>
+  <span class="dt">{</span><span class="st">"role"</span><span class="dt">:</span> <span class="st">"user"</span><span class="dt">,</span>       <span class="st">"content"</span><span class="dt">:</span> <span class="dt">[{</span><span class="st">"type"</span><span class="dt">:</span><span class="st">"tool_result"</span><span class="dt">, ...</span> <span class="st">"127.05"</span><span class="dt">}]},</span>
+  <span class="dt">{</span><span class="st">"role"</span><span class="dt">:</span> <span class="st">"assistant"</span><span class="dt">,</span>
+   <span class="st">"content"</span><span class="dt">:</span> <span class="dt">[{</span>
+     <span class="st">"type"</span><span class="dt">:</span>  <span class="st">"tool_use"</span><span class="dt">,</span>
+     <span class="st">"id"</span><span class="dt">:</span>    <span class="st">"toolu_02"</span><span class="dt">,</span>
+     <span class="st">"name"</span><span class="dt">:</span>  <span class="st">"calculate"</span><span class="dt">,</span>
+     <span class="st">"input"</span><span class="dt">:</span> <span class="dt">{</span><span class="st">"expression"</span><span class="dt">:</span> <span class="st">"127.05 * 2"</span><span class="dt">}</span>
+   <span class="dt">}]},</span>
+  <span class="dt">{</span><span class="st">"role"</span><span class="dt">:</span> <span class="st">"user"</span><span class="dt">,</span>
+   <span class="st">"content"</span><span class="dt">:</span> <span class="dt">[{</span><span class="st">"type"</span><span class="dt">:</span><span class="st">"tool_result"</span><span class="dt">,</span> <span class="st">"tool_use_id"</span><span class="dt">:</span><span class="st">"toolu_02"</span><span class="dt">,</span> <span class="st">"content"</span><span class="dt">:</span><span class="st">"254.1"</span><span class="dt">}]}</span>
+<span class="dt">]</span>`,
+
+`<span class="cm"># messages after iteration 3 — 6 entries, stop_reason "end_turn"</span>
+<span class="va">messages</span> <span class="dt">= [</span>
+  <span class="dt">{</span><span class="st">"role"</span><span class="dt">:</span><span class="st">"user"</span><span class="dt">,</span>      <span class="st">"content"</span><span class="dt">:</span><span class="st">"What is 15% of 847, then double it?"</span><span class="dt">},</span>
+  <span class="dt">{</span><span class="st">"role"</span><span class="dt">:</span><span class="st">"assistant"</span><span class="dt">,</span> <span class="st">"content"</span><span class="dt">:</span><span class="dt">[{</span><span class="st">"type"</span><span class="dt">:</span><span class="st">"tool_use"</span><span class="dt">,</span> <span class="st">"input"</span><span class="dt">:{</span><span class="st">"expression"</span><span class="dt">:</span><span class="st">"847*0.15"</span><span class="dt">}}]},</span>
+  <span class="dt">{</span><span class="st">"role"</span><span class="dt">:</span><span class="st">"user"</span><span class="dt">,</span>      <span class="st">"content"</span><span class="dt">:</span><span class="dt">[{</span><span class="st">"type"</span><span class="dt">:</span><span class="st">"tool_result"</span><span class="dt">,</span> <span class="st">"content"</span><span class="dt">:</span><span class="st">"127.05"</span><span class="dt">}]},</span>
+  <span class="dt">{</span><span class="st">"role"</span><span class="dt">:</span><span class="st">"assistant"</span><span class="dt">,</span> <span class="st">"content"</span><span class="dt">:</span><span class="dt">[{</span><span class="st">"type"</span><span class="dt">:</span><span class="st">"tool_use"</span><span class="dt">,</span> <span class="st">"input"</span><span class="dt">:{</span><span class="st">"expression"</span><span class="dt">:</span><span class="st">"127.05*2"</span><span class="dt">}}]},</span>
+  <span class="dt">{</span><span class="st">"role"</span><span class="dt">:</span><span class="st">"user"</span><span class="dt">,</span>      <span class="st">"content"</span><span class="dt">:</span><span class="dt">[{</span><span class="st">"type"</span><span class="dt">:</span><span class="st">"tool_result"</span><span class="dt">,</span> <span class="st">"content"</span><span class="dt">:</span><span class="st">"254.1"</span><span class="dt">}]},</span>
+  <span class="dt">{</span>
+    <span class="st">"role"</span><span class="dt">:</span>    <span class="st">"assistant"</span><span class="dt">,</span>
+    <span class="st">"content"</span><span class="dt">:</span> <span class="dt">[{</span>
+      <span class="st">"type"</span><span class="dt">:</span> <span class="st">"text"</span><span class="dt">,</span>
+      <span class="st">"text"</span><span class="dt">:</span> <span class="st">"15% of 847 is 127.05. Doubled, the answer is 254.1."</span>
+    <span class="dt">}]</span>
+  <span class="dt">}</span>
+<span class="dt">]</span>
+<span class="cm"># stop_reason == "end_turn" → extract text → return (answer, trace)</span>`
+];
+function showReactMsg(n) {
+  document.querySelectorAll('#ex2-visual .msg-tab').forEach((b, i) => b.classList.toggle('active', i === n));
+  document.getElementById('react-msg-display').innerHTML = reactMsgData[n];
+}
+
+// ── Memory animation (Ex4) ────────────────────────────────────
+const memTurns = [
+  { role: 'user',      text: 'My dog is named Biscuit' },
+  { role: 'assistant', text: 'Nice! Biscuit is a cute name.' },
+  { role: 'user',      text: 'I live in Lahore.' },
+  { role: 'assistant', text: 'Lahore is a great city!' },
+  { role: 'user',      text: 'What year is it?', compact: true },
+];
+let memStep = 0;
+function animateMemory() {
+  const stEl = document.getElementById('st-msgs');
+  const ltEl = document.getElementById('lt-store');
+  const arrow = document.getElementById('compact-arrow');
+  stEl.innerHTML = '';
+  ltEl.innerHTML = '<span style="color:var(--muted);">memory_store = {}</span>';
+  arrow.style.color = 'var(--muted)';
+  memStep = 0;
+  const msgs = [];
+  let ltStore = {};
+  function step() {
+    if (memStep >= memTurns.length) return;
+    const t = memTurns[memStep++];
+    msgs.push(t);
+    if (t.compact && msgs.length > 4) {
+      msgs.splice(0, 4);
+      arrow.style.color = '#a855f7';
+      ltStore['session_1'] = 'User has a dog named Biscuit. Lives in Lahore.';
+      setTimeout(() => { arrow.style.color = 'var(--muted)'; }, 700);
+    }
+    stEl.innerHTML = '';
+    if (msgs.length === 0) {
+      stEl.innerHTML = '<div style="color:var(--muted);font-size:0.75rem;font-family:\'JetBrains Mono\',monospace;">(compacted)</div>';
+    } else {
+      msgs.forEach(m => {
+        const d = document.createElement('div');
+        d.style.cssText = 'padding:5px 9px;border-radius:6px;font-family:\'JetBrains Mono\',monospace;font-size:0.72rem;margin:2px 0;';
+        d.style.background = m.role === 'user' ? 'rgba(96,165,250,0.1)' : 'rgba(100,116,139,0.1)';
+        d.style.borderLeft = '3px solid ' + (m.role === 'user' ? '#60a5fa' : '#64748b');
+        d.innerHTML = '<span style="color:' + (m.role==='user'?'#60a5fa':'var(--muted)') + ';">' + m.role + ':</span> ' + m.text;
+        stEl.appendChild(d);
+      });
+    }
+    ltEl.innerHTML = Object.keys(ltStore).length
+      ? '<span style="color:#2dd4bf;">memory_store</span> = {\n  <span style="color:#82aaff;">"session_1"</span>: <span style="color:#c3e88d;">"' + ltStore['session_1'] + '"</span>\n}'
+      : '<span style="color:var(--muted);">memory_store = {}</span>';
+    if (memStep < memTurns.length) setTimeout(step, 950);
+  }
+  step();
+}
+
+// ── Init on load ──────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  ['iter1','iter2','iter3'].forEach(id => document.getElementById(id).classList.add('visible'));
+  showSchemaEx(0);
+  showReactMsg(0);
+});
+</script>
+<script src="../bg-animation.js"></script>
+</body>
+</html>

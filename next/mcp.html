@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Model Context Protocol (MCP) — What's Next</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f; --card: #141420; --surface2: #1a1a2e; --border: #2a2a45;
+  --purple: #7c3aed; --purple-light: #a855f7; --teal: #0d9488; --green: #10b981;
+  --red: #ef4444; --yellow: #f59e0b; --text: #e2e8f0; --muted: #64748b;
+  --font: 'Inter', sans-serif; --mono: 'JetBrains Mono', monospace;
+  --accent: #0ea5e9; --accent2: #22d3ee;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; overflow-x: hidden; }
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(14,165,233,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 90% 80%, rgba(124,58,237,0.05) 0%, transparent 60%);
+  pointer-events: none; z-index: 0;
+}
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+nav { border-bottom: 1px solid var(--border); padding: 14px 0; background: rgba(10,10,15,0.85); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; }
+.nav-inner { display: flex; align-items: center; justify-content: space-between; }
+.nav-back { color: var(--muted); font-size: 13px; text-decoration: none; transition: color 0.2s; }
+.nav-back:hover { color: var(--text); }
+.nav-tag { font-size: 13px; font-weight: 700; background: linear-gradient(90deg,#0ea5e9,#a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+.hero { padding: 60px 0 48px; }
+.hero-eyebrow { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.hero-icon { font-size: 40px; }
+.difficulty-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: rgba(14,165,233,0.15); color: var(--accent); }
+.time-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+.new-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: rgba(16,185,129,0.15); color: var(--green); }
+.hero h1 { font-size: clamp(28px, 5vw, 48px); font-weight: 900; letter-spacing: -2px; margin-bottom: 14px; line-height: 1.1; }
+.hero h1 span { background: linear-gradient(135deg, #0ea5e9, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.hero p { font-size: 16px; color: var(--muted); max-width: 620px; line-height: 1.7; }
+
+.section { padding: 56px 0; border-top: 1px solid var(--border); }
+.section-header { margin-bottom: 32px; }
+.section-num { font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.section-header h2 { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 10px; }
+.section-header p { color: var(--muted); font-size: 15px; line-height: 1.6; max-width: 640px; }
+
+/* CODE BLOCKS — white-space: pre is REQUIRED */
+.code-block {
+  background: #0d1117; border: 1px solid #30363d; border-radius: 12px;
+  padding: 24px; font-family: var(--mono); font-size: 12.5px; line-height: 1.8;
+  overflow-x: auto; white-space: pre;
+}
+.code-wrap { position: relative; margin-top: 16px; }
+.code-label { position: absolute; top: -10px; left: 16px; background: var(--accent); color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.5px; }
+.code-label.purple { background: var(--purple); }
+.code-label.green { background: var(--teal); }
+.c-cmt { color: #8b949e; }
+.c-kw  { color: #ff7b72; }
+.c-fn  { color: #d2a8ff; }
+.c-str { color: #a5d6ff; }
+.c-type { color: #ffa657; }
+.c-num  { color: #f2cc60; }
+.c-bi  { color: #79c0ff; }
+.c-dec { color: #d2a8ff; }
+.c-key { color: #7ee787; }
+
+/* CALLOUT */
+.callout { background: rgba(14,165,233,0.07); border: 1px solid rgba(14,165,233,0.25); border-radius: 12px; padding: 16px 20px; display: flex; gap: 12px; align-items: flex-start; margin: 20px 0; }
+.callout-icon { font-size: 18px; flex-shrink: 0; }
+.callout-text { font-size: 13px; color: var(--text); line-height: 1.6; }
+.callout-text strong { color: var(--accent); }
+.callout.info { background: rgba(124,58,237,0.07); border-color: rgba(124,58,237,0.25); }
+.callout.info .callout-text strong { color: var(--purple-light); }
+.callout.green { background: rgba(16,185,129,0.07); border-color: rgba(16,185,129,0.25); }
+.callout.green .callout-text strong { color: var(--green); }
+.callout.warn { background: rgba(245,158,11,0.07); border-color: rgba(245,158,11,0.25); }
+.callout.warn .callout-text strong { color: var(--yellow); }
+
+/* BEFORE/AFTER COMPARISON */
+.compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.compare-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+.compare-card.before { border-color: rgba(239,68,68,0.3); }
+.compare-card.after  { border-color: rgba(16,185,129,0.3); }
+.compare-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.compare-title.before { color: var(--red); }
+.compare-title.after  { color: var(--green); }
+.compare-items { display: flex; flex-direction: column; gap: 8px; }
+.compare-item { font-size: 12px; color: var(--muted); display: flex; align-items: flex-start; gap: 8px; line-height: 1.5; }
+.compare-item::before { content: ''; width: 6px; height: 6px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+.compare-card.before .compare-item::before { background: var(--red); }
+.compare-card.after  .compare-item::before { background: var(--green); }
+.nm-label { font-size: 11px; font-weight: 800; color: var(--muted); background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; }
+
+/* ARCH DIAGRAM wrapper */
+.arch-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; overflow-x: auto; }
+.arch-title { font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 20px; }
+
+/* TWO-COLUMN RESOURCES VS TOOLS */
+.rv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.rv-card { background: var(--card); border-radius: 14px; padding: 22px; }
+.rv-card.tools { border: 1px solid rgba(14,165,233,0.3); }
+.rv-card.resources { border: 1px solid rgba(124,58,237,0.3); }
+.rv-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.rv-icon { font-size: 22px; }
+.rv-name { font-size: 16px; font-weight: 800; }
+.rv-card.tools .rv-name { color: var(--accent); }
+.rv-card.resources .rv-name { color: var(--purple-light); }
+.rv-tagline { font-size: 11px; font-weight: 600; color: var(--muted); margin-bottom: 14px; }
+.rv-items { display: flex; flex-direction: column; gap: 7px; }
+.rv-item { font-size: 12px; color: var(--muted); display: flex; align-items: flex-start; gap: 7px; line-height: 1.5; }
+.rv-item-dot { width: 5px; height: 5px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
+.rv-card.tools .rv-item-dot { background: var(--accent); }
+.rv-card.resources .rv-item-dot { background: var(--purple-light); }
+
+/* COMPARISON TABLE */
+.comp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.comp-table th { text-align: left; padding: 10px 14px; background: var(--surface2); color: var(--muted); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); }
+.comp-table th:first-child { border-radius: 10px 0 0 0; }
+.comp-table th:last-child { border-radius: 0 10px 0 0; }
+.comp-table td { padding: 11px 14px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: top; line-height: 1.5; }
+.comp-table tr:last-child td { border-bottom: none; }
+.comp-table tr:hover td { background: rgba(255,255,255,0.02); }
+.comp-table td:first-child { color: var(--muted); font-weight: 600; font-size: 12px; }
+.badge-mcp { display: inline-block; background: rgba(14,165,233,0.15); color: var(--accent); font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
+.badge-raw { display: inline-block; background: rgba(100,116,139,0.2); color: var(--muted); font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
+
+/* SERVER CARDS */
+.server-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+.server-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; transition: all 0.2s; }
+.server-card:hover { border-color: rgba(14,165,233,0.4); transform: translateY(-2px); }
+.server-name { font-size: 14px; font-weight: 700; margin-bottom: 5px; display: flex; align-items: center; gap: 8px; }
+.server-icon { font-size: 18px; }
+.server-desc { font-size: 11px; color: var(--muted); line-height: 1.5; }
+.server-tag { display: inline-block; margin-top: 8px; padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 600; background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+
+/* TABS for transport section */
+.tabs { display: flex; gap: 4px; margin-bottom: 16px; background: var(--surface2); border-radius: 10px; padding: 4px; width: fit-content; }
+.tab-btn { padding: 6px 16px; border-radius: 7px; font-size: 12px; font-weight: 600; border: none; cursor: pointer; transition: all 0.15s; background: transparent; color: var(--muted); }
+.tab-btn.active { background: var(--card); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,0.4); }
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+
+/* FLOW STEPS */
+.flow { display: flex; flex-direction: column; gap: 0; }
+.flow-step { display: flex; gap: 16px; }
+.flow-left { display: flex; flex-direction: column; align-items: center; }
+.flow-dot { width: 32px; height: 32px; border-radius: 50%; background: rgba(14,165,233,0.15); border: 2px solid var(--accent); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: var(--accent); flex-shrink: 0; }
+.flow-line { width: 2px; flex: 1; background: var(--border); margin: 4px auto; min-height: 20px; }
+.flow-step:last-child .flow-line { display: none; }
+.flow-body { padding-bottom: 20px; flex: 1; }
+.flow-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.flow-desc { font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+@media(max-width:700px) {
+  .compare-grid { grid-template-columns: 1fr; }
+  .rv-grid { grid-template-columns: 1fr; }
+  .server-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="container">
+    <div class="nav-inner">
+      <a href="../days/day7.html" class="nav-back">&#8592; Back to Day 7</a>
+      <span class="nav-tag">What's Next &#8212; MCP</span>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-eyebrow">
+      <span class="hero-icon">&#128279;</span>
+      <span class="difficulty-badge">Intermediate</span>
+      <span class="time-badge">&#9201; 1&#8211;2 days</span>
+      <span class="new-badge">2024 Standard</span>
+    </div>
+    <h1>Model Context<br><span>Protocol</span></h1>
+    <p>Anthropic's open standard for connecting LLMs to external tools and data. Think of MCP like HTTP for AI tools &#8212; write the server once, and every agent framework, IDE, and desktop app can use it without custom wiring.</p>
+  </section>
+
+  <!-- SECTION 1: WHY MCP EXISTS -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">01 &#8212; Motivation</div>
+      <h2>The N&#215;M Integration Problem</h2>
+      <p>Before MCP, every agent needed its own custom integration for every external tool. A Slack tool built for LangChain didn't work in Claude Desktop. A GitHub tool built for AutoGPT needed to be rewritten for every other framework.</p>
+    </div>
+
+    <div class="compare-grid">
+      <div class="compare-card before">
+        <div class="compare-title before">&#10005; Before MCP &#8212; N&#215;M integrations</div>
+        <div class="compare-items">
+          <div class="compare-item">Each agent framework re-implements every tool from scratch. 4 agents &#215; 10 tools = 40 bespoke integrations to maintain.</div>
+          <div class="compare-item">Tool for Slack in LangGraph is useless in Claude Desktop. Zero portability across the ecosystem.</div>
+          <div class="compare-item">No standard schema for tool discovery. Each framework invents its own tool definition format.</div>
+          <div class="compare-item">Auth, error handling, streaming &#8212; every integration solves these separately, inconsistently.</div>
+          <div class="compare-item">Community can't collaborate. A great GitHub tool built by one team can't be shared meaningfully.</div>
+        </div>
+      </div>
+      <div class="compare-card after">
+        <div class="compare-title after">&#10003; With MCP &#8212; N+M integrations</div>
+        <div class="compare-items">
+          <div class="compare-item">Write the MCP server once. It works with <em>any</em> MCP client: Claude Desktop, Claude Code, LangGraph, Cursor, your custom agent. 4 clients + 10 servers = 14 things total.</div>
+          <div class="compare-item">Universal tool discovery via the MCP protocol. Clients ask servers what tools they expose; no hardcoding required.</div>
+          <div class="compare-item">Standard JSON Schema for inputs/outputs. Same definition format everywhere, validated consistently.</div>
+          <div class="compare-item">Transport layer is standardized (stdio / HTTP+SSE). Clients don't care how the server runs.</div>
+          <div class="compare-item">Community ecosystem: 100s of open-source MCP servers for databases, APIs, file systems, browsers.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout" style="margin-top:24px">
+      <span class="callout-icon">&#128161;</span>
+      <div class="callout-text"><strong>The HTTP analogy:</strong> Before HTTP, every app had custom network code to talk to every server. HTTP standardized the protocol so any browser could talk to any web server. MCP does the same for AI tools &#8212; standard protocol, plug-and-play ecosystem.</div>
+    </div>
+  </section>
+
+  <!-- SECTION 2: ARCHITECTURE DIAGRAM -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">02 &#8212; Architecture</div>
+      <h2>How MCP Fits Together</h2>
+      <p>Three roles: the Host runs the LLM, the Client speaks the protocol, the Server exposes capabilities. Transport is either stdio (local process) or HTTP+SSE (remote).</p>
+    </div>
+
+    <div class="arch-wrap">
+      <div class="arch-title">MCP Architecture &#8212; stdio (local) and HTTP (remote) transports</div>
+      <svg viewBox="0 0 860 340" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:860px;display:block;margin:0 auto">
+        <defs>
+          <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#4b5563"/>
+          </marker>
+          <marker id="arrow-blue" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#0ea5e9"/>
+          </marker>
+          <marker id="arrow-purple" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#a855f7"/>
+          </marker>
+        </defs>
+
+        <!-- HOST box -->
+        <rect x="20" y="60" width="200" height="220" rx="14" fill="#141420" stroke="#2a2a45" stroke-width="1.5"/>
+        <text x="120" y="86" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" font-weight="700" fill="#64748b" letter-spacing="1">MCP HOST</text>
+        <!-- LLM bubble inside host -->
+        <rect x="40" y="96" width="160" height="60" rx="10" fill="#1a1a2e" stroke="#2a2a45" stroke-width="1"/>
+        <text x="120" y="122" text-anchor="middle" font-family="Inter,sans-serif" font-size="13" font-weight="700" fill="#e2e8f0">Your LLM</text>
+        <text x="120" y="140" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#64748b">(Claude, GPT-4, etc.)</text>
+        <!-- agent bubble inside host -->
+        <rect x="40" y="168" width="160" height="50" rx="10" fill="#1a1a2e" stroke="#2a2a45" stroke-width="1"/>
+        <text x="120" y="192" text-anchor="middle" font-family="Inter,sans-serif" font-size="13" font-weight="700" fill="#e2e8f0">Agent Loop</text>
+        <text x="120" y="208" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#64748b">Claude Desktop / your app</text>
+        <!-- client bubble inside host -->
+        <rect x="40" y="230" width="160" height="38" rx="8" fill="rgba(14,165,233,0.1)" stroke="rgba(14,165,233,0.35)" stroke-width="1.5"/>
+        <text x="120" y="254" text-anchor="middle" font-family="Inter,sans-serif" font-size="12" font-weight="700" fill="#0ea5e9">MCP Client</text>
+
+        <!-- Arrow host -> server (stdio) -->
+        <line x1="220" y1="175" x2="320" y2="175" stroke="#0ea5e9" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrow-blue)"/>
+        <text x="270" y="167" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#0ea5e9">stdio</text>
+
+        <!-- LOCAL SERVER box -->
+        <rect x="320" y="60" width="200" height="220" rx="14" fill="#141420" stroke="rgba(14,165,233,0.35)" stroke-width="1.5"/>
+        <text x="420" y="86" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" font-weight="700" fill="#0ea5e9" letter-spacing="1">MCP SERVER (local)</text>
+        <!-- tools inside -->
+        <rect x="338" y="96" width="164" height="34" rx="8" fill="#1a1a2e" stroke="#2a2a45" stroke-width="1"/>
+        <text x="420" y="118" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" font-weight="600" fill="#e2e8f0">list_tools() / call_tool()</text>
+        <!-- resources inside -->
+        <rect x="338" y="138" width="164" height="34" rx="8" fill="#1a1a2e" stroke="#2a2a45" stroke-width="1"/>
+        <text x="420" y="160" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" font-weight="600" fill="#e2e8f0">list_resources() / read()</text>
+        <!-- prompts inside -->
+        <rect x="338" y="180" width="164" height="34" rx="8" fill="#1a1a2e" stroke="#2a2a45" stroke-width="1"/>
+        <text x="420" y="202" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" font-weight="600" fill="#e2e8f0">list_prompts() / get()</text>
+        <!-- transport label -->
+        <rect x="338" y="224" width="164" height="44" rx="8" fill="rgba(14,165,233,0.08)" stroke="rgba(14,165,233,0.2)" stroke-width="1"/>
+        <text x="420" y="245" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" font-weight="700" fill="#64748b">Transport</text>
+        <text x="420" y="260" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#0ea5e9">stdio (local process)</text>
+
+        <!-- Arrow local server -> external system -->
+        <line x1="520" y1="175" x2="600" y2="175" stroke="#4b5563" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+        <!-- EXTERNAL box (local) -->
+        <rect x="600" y="120" width="150" height="110" rx="12" fill="#141420" stroke="#2a2a45" stroke-width="1.5"/>
+        <text x="675" y="145" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" font-weight="700" fill="#64748b">External System</text>
+        <text x="675" y="165" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="#e2e8f0">&#128202; Database</text>
+        <text x="675" y="183" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="#e2e8f0">&#128196; File System</text>
+        <text x="675" y="201" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="#e2e8f0">&#127760; External API</text>
+        <text x="675" y="219" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="#e2e8f0">&#128279; Git / GitHub</text>
+
+        <!-- HTTP remote transport path -->
+        <!-- Arrow host -> remote server (HTTP) -->
+        <path d="M 120 280 Q 120 320 420 320 Q 650 320 675 280" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="5 3" fill="none" marker-end="url(#arrow-purple)"/>
+        <text x="430" y="316" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#a855f7">HTTP + SSE transport (remote MCP server)</text>
+
+        <!-- Legend -->
+        <line x1="30" y1="308" x2="60" y2="308" stroke="#0ea5e9" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <text x="66" y="312" font-family="Inter,sans-serif" font-size="10" fill="#64748b">stdio (local)</text>
+        <line x1="150" y1="308" x2="180" y2="308" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="5 3"/>
+        <text x="186" y="312" font-family="Inter,sans-serif" font-size="10" fill="#64748b">HTTP+SSE (remote)</text>
+      </svg>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:20px">
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px">
+        <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:6px">MCP Host</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.6">The application running the LLM. Claude Desktop, Claude Code, your custom FastAPI agent, or any IDE plugin. It owns the conversation and invokes the MCP Client when tool use is needed.</div>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px">
+        <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:6px">MCP Client</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.6">Lives inside the Host. Speaks the MCP protocol: connects to servers, calls <code style="font-family:var(--mono);font-size:11px;color:var(--text)">initialize</code>, discovers available tools via <code style="font-family:var(--mono);font-size:11px;color:var(--text)">tools/list</code>, and dispatches <code style="font-family:var(--mono);font-size:11px;color:var(--text)">tools/call</code> requests.</div>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px">
+        <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:6px">MCP Server</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.6">Your code. Exposes tools, resources, and prompts over stdio (local subprocess) or HTTP+SSE (remote). Handles the actual work: querying your DB, calling your API, reading files.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 3: BUILDING YOUR FIRST MCP SERVER -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">03 &#8212; Build</div>
+      <h2>Your First MCP Server in Python</h2>
+      <p>The <code style="font-family:var(--mono);font-size:13px;color:var(--text);background:var(--surface2);padding:2px 6px;border-radius:4px">mcp</code> Python SDK gives you decorators that map directly to the protocol's three capabilities: list tools, call a tool, and (optionally) list/read resources. Install with <code style="font-family:var(--mono);font-size:13px;color:var(--text);background:var(--surface2);padding:2px 6px;border-radius:4px">pip install mcp</code>.</p>
+    </div>
+
+    <div class="flow" style="margin-bottom:28px">
+      <div class="flow-step">
+        <div class="flow-left"><div class="flow-dot">1</div><div class="flow-line"></div></div>
+        <div class="flow-body">
+          <div class="flow-title">Create a <code style="font-family:var(--mono);font-size:12px">Server</code> instance with a name</div>
+          <div class="flow-desc">The name is what clients see when they connect. It appears in Claude Desktop's tool list and in logs.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-left"><div class="flow-dot">2</div><div class="flow-line"></div></div>
+        <div class="flow-body">
+          <div class="flow-title">Decorate <code style="font-family:var(--mono);font-size:12px">list_tools()</code> to advertise capabilities</div>
+          <div class="flow-desc">Return a list of <code style="font-family:var(--mono);font-size:12px">types.Tool</code> objects with name, description, and a JSON Schema for inputs. The client uses this to decide which tool to call.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-left"><div class="flow-dot">3</div><div class="flow-line"></div></div>
+        <div class="flow-body">
+          <div class="flow-title">Decorate <code style="font-family:var(--mono);font-size:12px">call_tool()</code> to handle execution</div>
+          <div class="flow-desc">Receives the tool name and validated arguments. Returns a list of <code style="font-family:var(--mono);font-size:12px">TextContent</code>, <code style="font-family:var(--mono);font-size:12px">ImageContent</code>, or <code style="font-family:var(--mono);font-size:12px">EmbeddedResource</code>.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-left"><div class="flow-dot">4</div><div class="flow-line"></div></div>
+        <div class="flow-body">
+          <div class="flow-title">Run the server over stdio</div>
+          <div class="flow-desc">The <code style="font-family:var(--mono);font-size:12px">stdio_server()</code> context manager wires up stdin/stdout as the transport. The client (Claude Desktop) spawns your script as a subprocess and communicates over the pipes.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="code-wrap">
+      <span class="code-label">PYTHON &#8212; server.py (full working example)</span>
+      <div class="code-block"><span class="c-kw">from</span> <span class="c-bi">mcp.server</span> <span class="c-kw">import</span> <span class="c-type">Server</span>
+<span class="c-kw">from</span> <span class="c-bi">mcp.server.stdio</span> <span class="c-kw">import</span> <span class="c-fn">stdio_server</span>
+<span class="c-kw">from</span> <span class="c-bi">mcp</span> <span class="c-kw">import</span> types
+
+app = <span class="c-type">Server</span>(<span class="c-str">"my-tools"</span>)   <span class="c-cmt"># name visible to clients</span>
+
+
+<span class="c-dec">@app.list_tools()</span>
+<span class="c-kw">async def</span> <span class="c-fn">list_tools</span>() -> <span class="c-bi">list</span>[<span class="c-type">types.Tool</span>]:
+    <span class="c-cmt"># Clients call this on connect to discover what you expose.</span>
+    <span class="c-cmt"># inputSchema is standard JSON Schema — validated before call_tool fires.</span>
+    <span class="c-kw">return</span> [
+        <span class="c-type">types.Tool</span>(
+            name=<span class="c-str">"query_database"</span>,
+            description=<span class="c-str">"Run a read-only SQL query against the analytics database"</span>,
+            inputSchema={
+                <span class="c-str">"type"</span>: <span class="c-str">"object"</span>,
+                <span class="c-str">"properties"</span>: {
+                    <span class="c-str">"query"</span>: {
+                        <span class="c-str">"type"</span>: <span class="c-str">"string"</span>,
+                        <span class="c-str">"description"</span>: <span class="c-str">"SQL SELECT query to execute"</span>,
+                    }
+                },
+                <span class="c-str">"required"</span>: [<span class="c-str">"query"</span>],
+            },
+        ),
+        <span class="c-type">types.Tool</span>(
+            name=<span class="c-str">"create_ticket"</span>,
+            description=<span class="c-str">"Create a Jira ticket in the engineering backlog"</span>,
+            inputSchema={
+                <span class="c-str">"type"</span>: <span class="c-str">"object"</span>,
+                <span class="c-str">"properties"</span>: {
+                    <span class="c-str">"title"</span>:       {<span class="c-str">"type"</span>: <span class="c-str">"string"</span>},
+                    <span class="c-str">"description"</span>: {<span class="c-str">"type"</span>: <span class="c-str">"string"</span>},
+                    <span class="c-str">"priority"</span>:    {<span class="c-str">"type"</span>: <span class="c-str">"string"</span>, <span class="c-str">"enum"</span>: [<span class="c-str">"low"</span>, <span class="c-str">"medium"</span>, <span class="c-str">"high"</span>]},
+                },
+                <span class="c-str">"required"</span>: [<span class="c-str">"title"</span>],
+            },
+        ),
+    ]
+
+
+<span class="c-dec">@app.call_tool()</span>
+<span class="c-kw">async def</span> <span class="c-fn">call_tool</span>(name: <span class="c-bi">str</span>, arguments: <span class="c-bi">dict</span>) -> <span class="c-bi">list</span>[<span class="c-type">types.TextContent</span>]:
+    <span class="c-kw">if</span> name == <span class="c-str">"query_database"</span>:
+        <span class="c-cmt"># Real impl: get a DB connection, run query, return rows</span>
+        result = <span class="c-fn">run_sql</span>(arguments[<span class="c-str">"query"</span>])
+        <span class="c-kw">return</span> [<span class="c-type">types.TextContent</span>(type=<span class="c-str">"text"</span>, text=<span class="c-bi">str</span>(result))]
+
+    <span class="c-kw">elif</span> name == <span class="c-str">"create_ticket"</span>:
+        ticket_id = <span class="c-fn">jira_create</span>(
+            title=arguments[<span class="c-str">"title"</span>],
+            description=arguments.<span class="c-fn">get</span>(<span class="c-str">"description"</span>, <span class="c-str">""</span>),
+            priority=arguments.<span class="c-fn">get</span>(<span class="c-str">"priority"</span>, <span class="c-str">"medium"</span>),
+        )
+        <span class="c-kw">return</span> [<span class="c-type">types.TextContent</span>(type=<span class="c-str">"text"</span>, text=f<span class="c-str">"Created ticket {ticket_id}"</span>)]
+
+    <span class="c-kw">raise</span> <span class="c-type">ValueError</span>(f<span class="c-str">"Unknown tool: {name}"</span>)
+
+
+<span class="c-kw">async def</span> <span class="c-fn">main</span>():
+    <span class="c-kw">async with</span> <span class="c-fn">stdio_server</span>() <span class="c-kw">as</span> (read, write):
+        <span class="c-kw">await</span> app.<span class="c-fn">run</span>(read, write, app.<span class="c-fn">create_initialization_options</span>())
+
+
+<span class="c-kw">if</span> __name__ == <span class="c-str">"__main__"</span>:
+    <span class="c-kw">import</span> <span class="c-bi">asyncio</span>
+    asyncio.<span class="c-fn">run</span>(<span class="c-fn">main</span>())</div>
+    </div>
+
+    <div class="callout green" style="margin-top:20px">
+      <span class="callout-icon">&#9989;</span>
+      <div class="callout-text"><strong>FastMCP shortcut:</strong> The <code style="font-family:var(--mono);font-size:11px">mcp</code> package also includes <code style="font-family:var(--mono);font-size:11px">FastMCP</code> &#8212; a higher-level API that infers tool schemas from Python type hints and docstrings. Use it for rapid prototyping, drop down to <code style="font-family:var(--mono);font-size:11px">Server</code> when you need explicit schema control.</div>
+    </div>
+  </section>
+
+  <!-- SECTION 4: CONNECTING TO CLAUDE DESKTOP -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">04 &#8212; Connect</div>
+      <h2>Wiring Up Claude Desktop</h2>
+      <p>Claude Desktop reads a JSON config at startup and spawns your server as a subprocess over stdio. No network, no ports &#8212; just processes communicating over pipes. The config file lives at <code style="font-family:var(--mono);font-size:13px;color:var(--text);background:var(--surface2);padding:2px 6px;border-radius:4px">~/Library/Application Support/Claude/claude_desktop_config.json</code> on macOS.</p>
+    </div>
+
+    <div class="code-wrap">
+      <span class="code-label green">JSON &#8212; claude_desktop_config.json</span>
+      <div class="code-block">{
+  <span class="c-key">"mcpServers"</span>: {
+
+    <span class="c-cmt">// Local Python server — spawned as a subprocess over stdio</span>
+    <span class="c-key">"my-tools"</span>: {
+      <span class="c-key">"command"</span>: <span class="c-str">"python"</span>,
+      <span class="c-key">"args"</span>: [<span class="c-str">"/path/to/your/server.py"</span>]
+    },
+
+    <span class="c-cmt">// Using uv for isolated dependencies (recommended)</span>
+    <span class="c-key">"my-tools-uv"</span>: {
+      <span class="c-key">"command"</span>: <span class="c-str">"uv"</span>,
+      <span class="c-key">"args"</span>: [<span class="c-str">"run"</span>, <span class="c-str">"--with"</span>, <span class="c-str">"mcp"</span>, <span class="c-str">"python"</span>, <span class="c-str">"/path/to/server.py"</span>]
+    },
+
+    <span class="c-cmt">// With environment variables (for API keys, DB URLs)</span>
+    <span class="c-key">"my-tools-with-env"</span>: {
+      <span class="c-key">"command"</span>: <span class="c-str">"python"</span>,
+      <span class="c-key">"args"</span>: [<span class="c-str">"/path/to/server.py"</span>],
+      <span class="c-key">"env"</span>: {
+        <span class="c-key">"DATABASE_URL"</span>: <span class="c-str">"postgresql://localhost/mydb"</span>,
+        <span class="c-key">"JIRA_API_KEY"</span>: <span class="c-str">"your-key-here"</span>
+      }
+    },
+
+    <span class="c-cmt">// Remote HTTP server (deployed MCP server)</span>
+    <span class="c-key">"remote-tools"</span>: {
+      <span class="c-key">"url"</span>: <span class="c-str">"https://my-mcp-server.example.com/sse"</span>,
+      <span class="c-key">"transport"</span>: <span class="c-str">"sse"</span>
+    }
+
+  }
+}</div>
+    </div>
+
+    <div class="callout warn" style="margin-top:20px">
+      <span class="callout-icon">&#9888;&#65039;</span>
+      <div class="callout-text"><strong>Security note:</strong> MCP servers run with the permissions of the Claude Desktop process. Never pass secrets directly in <code style="font-family:var(--mono);font-size:11px">args</code> &#8212; use the <code style="font-family:var(--mono);font-size:11px">env</code> block or a <code style="font-family:var(--mono);font-size:11px">.env</code> file loaded by your server at startup. For production remote servers, always add authentication to your HTTP transport.</div>
+    </div>
+  </section>
+
+  <!-- SECTION 5: RESOURCES VS TOOLS -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">05 &#8212; Primitives</div>
+      <h2>Resources vs. Tools</h2>
+      <p>MCP exposes three first-class primitives. Tools are actions. Resources are data the model can read. Prompts are reusable templates. Understanding the difference determines how you model your server's interface.</p>
+    </div>
+
+    <div class="rv-grid">
+      <div class="rv-card tools">
+        <div class="rv-header">
+          <span class="rv-icon">&#9881;&#65039;</span>
+          <div class="rv-name">Tools</div>
+        </div>
+        <div class="rv-tagline">Actions the model can invoke &#8212; side effects expected</div>
+        <div class="rv-items">
+          <div class="rv-item"><div class="rv-item-dot"></div>Query a database and return rows</div>
+          <div class="rv-item"><div class="rv-item-dot"></div>Send a Slack message or email</div>
+          <div class="rv-item"><div class="rv-item-dot"></div>Create a GitHub issue or PR</div>
+          <div class="rv-item"><div class="rv-item-dot"></div>Execute a shell command or script</div>
+          <div class="rv-item"><div class="rv-item-dot"></div>Call an external REST API</div>
+          <div class="rv-item"><div class="rv-item-dot"></div>Write or modify a file</div>
+        </div>
+        <div style="margin-top:14px;padding:10px 12px;background:rgba(14,165,233,0.07);border-radius:8px;font-size:11px;color:var(--muted);line-height:1.5">
+          <strong style="color:var(--accent)">Protocol flow:</strong> client sends <code style="font-family:var(--mono)">tools/call</code> with name + arguments &#8594; server executes &#8594; returns <code style="font-family:var(--mono)">TextContent | ImageContent | EmbeddedResource</code>
+        </div>
+      </div>
+      <div class="rv-card resources">
+        <div class="rv-header">
+          <span class="rv-icon">&#128196;</span>
+          <div class="rv-name">Resources</div>
+        </div>
+        <div class="rv-tagline">Data the model can read &#8212; like a browsable file system</div>
+        <div class="rv-items">
+          <div class="rv-item"><div class="rv-item-dot"></div>File contents at a given path</div>
+          <div class="rv-item"><div class="rv-item-dot"></div>Database schema / table definitions</div>
+          <div class="rv-item"><div class="rv-item-dot"></div>Documentation pages or wiki articles</div>
+          <div class="rv-item"><div class="rv-item-dot"></div>Config files and environment state</div>
+          <div class="rv-item"><div class="rv-item-dot"></div>Git log or diff output</div>
+          <div class="rv-item"><div class="rv-item-dot"></div>API response snapshots / fixtures</div>
+        </div>
+        <div style="margin-top:14px;padding:10px 12px;background:rgba(124,58,237,0.07);border-radius:8px;font-size:11px;color:var(--muted);line-height:1.5">
+          <strong style="color:var(--purple-light)">Protocol flow:</strong> client sends <code style="font-family:var(--mono)">resources/list</code> to browse, then <code style="font-family:var(--mono)">resources/read</code> with a URI &#8594; server returns <code style="font-family:var(--mono)">text | blob</code> content
+        </div>
+      </div>
+    </div>
+
+    <div class="code-wrap" style="margin-top:24px">
+      <span class="code-label purple">PYTHON &#8212; Adding resources to your server</span>
+      <div class="code-block"><span class="c-kw">from</span> <span class="c-bi">mcp</span> <span class="c-kw">import</span> types
+
+<span class="c-dec">@app.list_resources()</span>
+<span class="c-kw">async def</span> <span class="c-fn">list_resources</span>() -> <span class="c-bi">list</span>[<span class="c-type">types.Resource</span>]:
+    <span class="c-kw">return</span> [
+        <span class="c-type">types.Resource</span>(
+            uri=<span class="c-str">"db://schema/tables"</span>,
+            name=<span class="c-str">"Database Schema"</span>,
+            description=<span class="c-str">"Full schema of all tables in the analytics DB"</span>,
+            mimeType=<span class="c-str">"text/plain"</span>,
+        ),
+        <span class="c-type">types.Resource</span>(
+            uri=<span class="c-str">"file:///docs/api-reference.md"</span>,
+            name=<span class="c-str">"API Reference"</span>,
+            description=<span class="c-str">"Internal REST API documentation"</span>,
+            mimeType=<span class="c-str">"text/markdown"</span>,
+        ),
+    ]
+
+
+<span class="c-dec">@app.read_resource()</span>
+<span class="c-kw">async def</span> <span class="c-fn">read_resource</span>(uri: <span class="c-bi">str</span>) -> <span class="c-bi">str</span>:
+    <span class="c-kw">if</span> uri == <span class="c-str">"db://schema/tables"</span>:
+        <span class="c-kw">return</span> <span class="c-fn">get_db_schema</span>()          <span class="c-cmt"># returns a string</span>
+    <span class="c-kw">elif</span> uri.<span class="c-fn">startswith</span>(<span class="c-str">"file://"</span>):
+        path = uri.<span class="c-fn">removeprefix</span>(<span class="c-str">"file://"</span>)
+        <span class="c-kw">with</span> <span class="c-bi">open</span>(path) <span class="c-kw">as</span> f:
+            <span class="c-kw">return</span> f.<span class="c-fn">read</span>()
+    <span class="c-kw">raise</span> <span class="c-type">ValueError</span>(f<span class="c-str">"Unknown resource URI: {uri}"</span>)</div>
+    </div>
+  </section>
+
+  <!-- SECTION 6: HTTP TRANSPORT -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">06 &#8212; Transport</div>
+      <h2>HTTP Transport for Remote Servers</h2>
+      <p>stdio is perfect for local tools (spawned as subprocesses). When you want to deploy a shared MCP server your team accesses remotely, use HTTP+SSE transport. The server exposes an SSE endpoint; clients stream responses over it.</p>
+    </div>
+
+    <div class="tabs" id="transport-tabs">
+      <button class="tab-btn active" onclick="switchTab('stdio')">stdio (local)</button>
+      <button class="tab-btn" onclick="switchTab('http')">HTTP + SSE (remote)</button>
+      <button class="tab-btn" onclick="switchTab('fastmcp')">FastMCP (shortcut)</button>
+    </div>
+
+    <div id="tab-stdio" class="tab-pane active">
+      <div class="code-wrap" style="margin-top:0">
+        <span class="code-label">PYTHON &#8212; stdio server (subprocess, local)</span>
+        <div class="code-block"><span class="c-kw">from</span> <span class="c-bi">mcp.server.stdio</span> <span class="c-kw">import</span> <span class="c-fn">stdio_server</span>
+
+<span class="c-cmt"># Claude Desktop spawns this script as a subprocess.</span>
+<span class="c-cmt"># Communication happens over stdin/stdout — no network required.</span>
+<span class="c-cmt"># One server instance per client connection.</span>
+
+<span class="c-kw">async def</span> <span class="c-fn">main</span>():
+    <span class="c-kw">async with</span> <span class="c-fn">stdio_server</span>() <span class="c-kw">as</span> (read_stream, write_stream):
+        <span class="c-kw">await</span> app.<span class="c-fn">run</span>(
+            read_stream,
+            write_stream,
+            app.<span class="c-fn">create_initialization_options</span>(),
+        )
+
+asyncio.<span class="c-fn">run</span>(<span class="c-fn">main</span>())</div>
+      </div>
+      <div class="callout green" style="margin-top:12px">
+        <span class="callout-icon">&#128504;</span>
+        <div class="callout-text"><strong>Best for:</strong> local developer tools, file system access, personal automation. No auth needed, zero deployment overhead. Start here.</div>
+      </div>
+    </div>
+
+    <div id="tab-http" class="tab-pane">
+      <div class="code-wrap" style="margin-top:0">
+        <span class="code-label">PYTHON &#8212; HTTP + SSE server (remote, deployable)</span>
+        <div class="code-block"><span class="c-kw">from</span> <span class="c-bi">mcp.server.sse</span> <span class="c-kw">import</span> <span class="c-type">SseServerTransport</span>
+<span class="c-kw">from</span> <span class="c-bi">starlette.applications</span> <span class="c-kw">import</span> <span class="c-type">Starlette</span>
+<span class="c-kw">from</span> <span class="c-bi">starlette.routing</span> <span class="c-kw">import</span> <span class="c-type">Route</span>
+<span class="c-kw">import</span> <span class="c-bi">uvicorn</span>
+
+<span class="c-cmt"># Build transport — clients POST to /messages, stream from /sse</span>
+transport = <span class="c-type">SseServerTransport</span>(<span class="c-str">"/messages/"</span>)
+
+<span class="c-kw">async def</span> <span class="c-fn">handle_sse</span>(request):
+    <span class="c-kw">async with</span> transport.<span class="c-fn">connect_sse</span>(
+        request.scope, request.receive, request._send
+    ) <span class="c-kw">as</span> (read_stream, write_stream):
+        <span class="c-kw">await</span> app.<span class="c-fn">run</span>(read_stream, write_stream, app.<span class="c-fn">create_initialization_options</span>())
+
+starlette_app = <span class="c-type">Starlette</span>(
+    routes=[
+        <span class="c-type">Route</span>(<span class="c-str">"/sse"</span>, endpoint=handle_sse),
+        <span class="c-type">Route</span>(<span class="c-str">"/messages/"</span>, endpoint=transport.<span class="c-fn">handle_post_message</span>, methods=[<span class="c-str">"POST"</span>]),
+    ]
+)
+
+<span class="c-kw">if</span> __name__ == <span class="c-str">"__main__"</span>:
+    uvicorn.<span class="c-fn">run</span>(starlette_app, host=<span class="c-str">"0.0.0.0"</span>, port=<span class="c-num">8000</span>)</div>
+      </div>
+      <div class="callout info" style="margin-top:12px">
+        <span class="callout-icon">&#128736;&#65039;</span>
+        <div class="callout-text"><strong>Best for:</strong> shared team servers, production deployments, multi-tenant scenarios. Add middleware for authentication (Bearer token, OAuth) before the SSE handler.</div>
+      </div>
+    </div>
+
+    <div id="tab-fastmcp" class="tab-pane">
+      <div class="code-wrap" style="margin-top:0">
+        <span class="code-label">PYTHON &#8212; FastMCP (schema from type hints)</span>
+        <div class="code-block"><span class="c-kw">from</span> <span class="c-bi">mcp.server.fastmcp</span> <span class="c-kw">import</span> <span class="c-type">FastMCP</span>
+
+mcp = <span class="c-type">FastMCP</span>(<span class="c-str">"my-tools"</span>)
+
+
+<span class="c-dec">@mcp.tool()</span>
+<span class="c-kw">async def</span> <span class="c-fn">query_database</span>(query: <span class="c-bi">str</span>) -> <span class="c-bi">str</span>:
+    <span class="c-str">"""Run a read-only SQL query against the analytics database.
+
+    Args:
+        query: SQL SELECT query to execute
+    """</span>
+    result = <span class="c-fn">run_sql</span>(query)
+    <span class="c-kw">return</span> <span class="c-bi">str</span>(result)
+
+
+<span class="c-dec">@mcp.resource(<span class="c-str">"db://schema"</span>)</span>
+<span class="c-kw">async def</span> <span class="c-fn">db_schema</span>() -> <span class="c-bi">str</span>:
+    <span class="c-str">"""The full database schema."""</span>
+    <span class="c-kw">return</span> <span class="c-fn">get_db_schema</span>()
+
+
+<span class="c-cmt"># FastMCP infers JSON Schema from type hints + docstrings.</span>
+<span class="c-cmt"># Run with stdio: mcp.run()  |  Run with HTTP: mcp.run(transport="sse")</span>
+<span class="c-kw">if</span> __name__ == <span class="c-str">"__main__"</span>:
+    mcp.<span class="c-fn">run</span>()</div>
+      </div>
+      <div class="callout green" style="margin-top:12px">
+        <span class="callout-icon">&#9889;</span>
+        <div class="callout-text"><strong>Best for:</strong> rapid prototyping. FastMCP generates the full JSON Schema from Python type annotations and docstrings. You get full stdio or SSE support with one line.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 7: REAL-WORLD MCP SERVERS -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">07 &#8212; Ecosystem</div>
+      <h2>Community MCP Servers</h2>
+      <p>The official <a href="https://github.com/modelcontextprotocol/servers" style="color:var(--accent);text-decoration:none">modelcontextprotocol/servers</a> repo on GitHub contains reference implementations you can run today. Add them to your <code style="font-family:var(--mono);font-size:13px;color:var(--text);background:var(--surface2);padding:2px 6px;border-radius:4px">claude_desktop_config.json</code> and instantly extend Claude with new capabilities.</p>
+    </div>
+
+    <div class="server-grid">
+      <div class="server-card">
+        <div class="server-name"><span class="server-icon">&#128193;</span>filesystem</div>
+        <div class="server-desc">Read, write, list, search files on your local disk. Configurable allowed directories.</div>
+        <span class="server-tag">Official</span>
+      </div>
+      <div class="server-card">
+        <div class="server-name"><span class="server-icon">&#128268;</span>git</div>
+        <div class="server-desc">Read git history, diffs, branches, commits. Works on any local repo.</div>
+        <span class="server-tag">Official</span>
+      </div>
+      <div class="server-card">
+        <div class="server-name"><span class="server-icon">&#128024;</span>postgres</div>
+        <div class="server-desc">Connect to PostgreSQL. Query tables, inspect schema, run read-only SQL.</div>
+        <span class="server-tag">Official</span>
+      </div>
+      <div class="server-card">
+        <div class="server-name"><span class="server-icon">&#128172;</span>slack</div>
+        <div class="server-desc">Read channels, post messages, search conversations via the Slack API.</div>
+        <span class="server-tag">Official</span>
+      </div>
+      <div class="server-card">
+        <div class="server-name"><span class="server-icon">&#128008;</span>github</div>
+        <div class="server-desc">Manage issues, PRs, repos, files. Full GitHub API coverage over MCP.</div>
+        <span class="server-tag">Official</span>
+      </div>
+      <div class="server-card">
+        <div class="server-name"><span class="server-icon">&#128269;</span>brave-search</div>
+        <div class="server-desc">Web and local search via the Brave Search API. Real-time web results.</div>
+        <span class="server-tag">Official</span>
+      </div>
+      <div class="server-card">
+        <div class="server-name"><span class="server-icon">&#127758;</span>puppeteer</div>
+        <div class="server-desc">Control a headless browser: navigate, screenshot, click, scrape pages.</div>
+        <span class="server-tag">Official</span>
+      </div>
+      <div class="server-card">
+        <div class="server-name"><span class="server-icon">&#128269;</span>sqlite</div>
+        <div class="server-desc">Query local SQLite databases. Great for prototyping without a full Postgres setup.</div>
+        <span class="server-tag">Official</span>
+      </div>
+      <div class="server-card">
+        <div class="server-name"><span class="server-icon">&#9881;&#65039;</span>fetch</div>
+        <div class="server-desc">Fetch any URL and return the content as text or markdown. HTTP GET tool.</div>
+        <span class="server-tag">Official</span>
+      </div>
+      <div class="server-card">
+        <div class="server-name"><span class="server-icon">&#128202;</span>memory</div>
+        <div class="server-desc">Persistent key-value memory store that survives conversation restarts.</div>
+        <span class="server-tag">Official</span>
+      </div>
+    </div>
+
+    <div class="callout" style="margin-top:20px">
+      <span class="callout-icon">&#128279;</span>
+      <div class="callout-text"><strong>Community ecosystem:</strong> Beyond the official servers, there are hundreds of community MCP servers for AWS, Kubernetes, Notion, Linear, Sentry, Datadog, and more. Browse at <strong>mcp.so</strong> or search GitHub for <code style="font-family:var(--mono);font-size:11px">mcp-server</code>.</div>
+    </div>
+  </section>
+
+  <!-- SECTION 8: MCP VS RAW TOOL_USE -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">08 &#8212; Decision Guide</div>
+      <h2>MCP vs. Raw tool_use</h2>
+      <p>As a backend engineer you already know tool_use &#8212; it's just JSON schemas passed in the API call. MCP is not a replacement: it's a distribution and discovery layer on top. Use the right one for the job.</p>
+    </div>
+
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:24px">
+      <table class="comp-table">
+        <thead>
+          <tr>
+            <th>Dimension</th>
+            <th>Raw tool_use (API)</th>
+            <th>MCP</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Portability</td>
+            <td><span class="badge-raw">Agent-specific</span> — defined in your API call, works only in that codebase</td>
+            <td><span class="badge-mcp">Universal</span> — any MCP client (Claude Desktop, Claude Code, Cursor, LangGraph) can use the same server</td>
+          </tr>
+          <tr>
+            <td>Tool discovery</td>
+            <td>Hardcoded — you pass the tool schemas on every API request</td>
+            <td>Dynamic — clients call <code style="font-family:var(--mono);font-size:11px">tools/list</code> at runtime and discover what's available automatically</td>
+          </tr>
+          <tr>
+            <td>Transport</td>
+            <td>In-process — tools are functions in your app's memory</td>
+            <td>Out-of-process — stdio subprocess or remote HTTP, tools run independently</td>
+          </tr>
+          <tr>
+            <td>Lifecycle</td>
+            <td>Tool logic lives in your agent codebase and deploys with it</td>
+            <td>Tool server is an independent process/service with its own deploy lifecycle</td>
+          </tr>
+          <tr>
+            <td>Ecosystem</td>
+            <td>Your tools only — nothing community-contributed plugs in</td>
+            <td>100s of open-source servers ready to add with one config line</td>
+          </tr>
+          <tr>
+            <td>Streaming</td>
+            <td>No built-in streaming from tools</td>
+            <td>Native progress notifications and streaming content via SSE</td>
+          </tr>
+          <tr>
+            <td>Complexity</td>
+            <td>Simple — a dict in your API call</td>
+            <td>More setup — server process, transport config, protocol handshake</td>
+          </tr>
+          <tr>
+            <td>When to use</td>
+            <td>Simple, internal tools unique to your agent. Prototyping. One codebase consuming the tools.</td>
+            <td>Tools you want to share, reuse across frameworks, or that others should be able to plug in.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout info">
+      <span class="callout-icon">&#128161;</span>
+      <div class="callout-text"><strong>Practical advice:</strong> Start with raw tool_use when building the first version of an agent. Once the tool is stable and you want to reuse it in Claude Desktop <em>and</em> your LangGraph pipeline <em>and</em> your FastAPI agent &#8212; wrap it in an MCP server. The marginal cost is small, the portability gain is massive.</div>
+    </div>
+
+    <!-- MCP QUICK PROTOCOL FLOW -->
+    <div style="margin-top:28px">
+      <div class="section-header" style="margin-bottom:20px">
+        <h2 style="font-size:20px">MCP Protocol Flow (what happens under the hood)</h2>
+      </div>
+      <div class="flow">
+        <div class="flow-step">
+          <div class="flow-left"><div class="flow-dot">1</div><div class="flow-line"></div></div>
+          <div class="flow-body">
+            <div class="flow-title">Initialize</div>
+            <div class="flow-desc">Client sends <code style="font-family:var(--mono);font-size:12px">initialize</code> with its protocol version. Server responds with its capabilities (tools, resources, prompts) and protocol version. Handshake establishes the session.</div>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-left"><div class="flow-dot">2</div><div class="flow-line"></div></div>
+          <div class="flow-body">
+            <div class="flow-title">Tool Discovery</div>
+            <div class="flow-desc">Client calls <code style="font-family:var(--mono);font-size:12px">tools/list</code>. Server returns the full tool registry with names, descriptions, and JSON Schema inputs. The LLM uses these schemas to decide which tool to call and how to structure arguments.</div>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-left"><div class="flow-dot">3</div><div class="flow-line"></div></div>
+          <div class="flow-body">
+            <div class="flow-title">LLM decides to use a tool</div>
+            <div class="flow-desc">The LLM returns a <code style="font-family:var(--mono);font-size:12px">tool_use</code> block (Anthropic API format) or equivalent. The Host/Client intercepts this and routes it to the appropriate MCP server.</div>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-left"><div class="flow-dot">4</div><div class="flow-line"></div></div>
+          <div class="flow-body">
+            <div class="flow-title">Tool Invocation</div>
+            <div class="flow-desc">Client sends <code style="font-family:var(--mono);font-size:12px">tools/call</code> with the tool name and validated arguments. Server executes the tool and returns content. Errors are surfaced as structured error responses, not exceptions.</div>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-left"><div class="flow-dot">5</div><div class="flow-line"></div></div>
+          <div class="flow-body">
+            <div class="flow-title">Result injected back into context</div>
+            <div class="flow-desc">Tool result is added to the conversation as a <code style="font-family:var(--mono);font-size:12px">tool_result</code> message. The LLM continues generating with the new information. The loop repeats until the LLM returns a final answer without a tool call.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- NEXT STEPS -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">Next Steps</div>
+      <h2>Where to Go from Here</h2>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px">
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px">
+        <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:8px">&#128196; Official Spec</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.6">Read the full MCP specification at <strong style="color:var(--text)">modelcontextprotocol.io</strong>. Covers all protocol messages, error codes, and capability negotiation in detail.</div>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px">
+        <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:8px">&#128008; Reference Servers</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.6">Clone <strong style="color:var(--text)">github.com/modelcontextprotocol/servers</strong> and run the filesystem or postgres server locally. Best way to understand the pattern.</div>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px">
+        <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:8px">&#9881;&#65039; Build Your Own</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.6">Wrap an internal FastAPI endpoint you already own. Add <code style="font-family:var(--mono);font-size:11px">mcp</code> as a dependency, expose 2-3 tools over stdio, wire to Claude Desktop. One afternoon of work.</div>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px">
+        <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:8px">&#127960;&#65039; MCP in LangGraph</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.6">LangGraph supports MCP clients natively via <code style="font-family:var(--mono);font-size:11px">langchain-mcp-adapters</code>. Load any MCP server's tools directly into your LangGraph agent with 5 lines.</div>
+      </div>
+    </div>
+  </section>
+
+</div><!-- /container -->
+
+<script>
+function switchTab(name) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+</script>
+
+<script src="../bg-animation.js"></script>
+</body>
+</html>

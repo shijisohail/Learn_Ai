@@ -1,0 +1,2298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 3: Memory & RAG | Learn Generative AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #141420;
+    --surface2: #1c1c2e;
+    --border: #2a2a3e;
+    --purple: #7c3aed;
+    --purple-light: #a855f7;
+    --purple-dim: rgba(124,58,237,0.15);
+    --teal: #0d9488;
+    --teal-light: #2dd4bf;
+    --teal-dim: rgba(13,148,136,0.15);
+    --text: #e2e8f0;
+    --text-muted: #94a3b8;
+    --text-dim: #64748b;
+    --green: #10b981;
+    --amber: #f59e0b;
+    --red: #ef4444;
+    --blue: #3b82f6;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  #progress-bar { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--purple), var(--teal)); z-index: 1000; transition: width 0.3s; }
+
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    border-bottom: 1px solid var(--border);
+    background: rgba(10,10,15,0.9);
+    backdrop-filter: blur(12px);
+    padding: 0;
+  }
+  .nav-inner {
+    max-width: 1100px; margin: 0 auto; padding: 0 24px;
+    height: 52px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .nav-btn {
+    padding: 7px 18px; border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface2); color: var(--muted);
+    font-size: 13px; font-weight: 600;
+    text-decoration: none; transition: all 0.2s;
+    font-family: inherit;
+  }
+  .nav-btn:hover { border-color: var(--purple); color: var(--text); }
+  .nav-btn.next {
+    border-color: rgba(124,58,237,0.5);
+    color: var(--purple-light);
+  }
+  .nav-btn.next:hover {
+    background: var(--purple); color: white; border-color: var(--purple);
+  }
+  .nav-btn.complete {
+    border-color: rgba(245,158,11,0.5);
+    color: var(--yellow);
+  }
+  .nav-btn.complete:hover {
+    background: var(--yellow); color: #0a0a0f; border-color: var(--yellow);
+  }
+  .nav-brand {
+    font-size: 14px; font-weight: 700; color: var(--muted);
+    text-decoration: none; letter-spacing: -0.2px;
+    transition: color 0.2s;
+  }
+  .nav-brand:hover { color: var(--text); }
+
+  .hero { padding: 5rem 2rem 3rem; text-align: center; max-width: 900px; margin: 0 auto; }
+  .day-badge { display: inline-flex; align-items: center; gap: 0.5rem; background: var(--purple-dim); border: 1px solid var(--purple); color: var(--purple-light); padding: 0.3rem 1rem; border-radius: 100px; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 1.5rem; }
+  .hero h1 { font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 700; background: linear-gradient(135deg, #e2e8f0 0%, var(--purple-light) 50%, var(--teal-light) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1.2; margin-bottom: 1rem; }
+  .hero p { color: var(--text-muted); font-size: 1.1rem; max-width: 600px; margin: 0 auto 2rem; }
+  .objectives { display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: center; }
+  .obj-tag { background: var(--surface); border: 1px solid var(--border); padding: 0.35rem 0.75rem; border-radius: 100px; font-size: 0.8rem; color: var(--text-muted); }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 2rem; }
+
+  section { padding: 4rem 0; }
+  section + section { border-top: 1px solid var(--border); }
+
+  .section-header { display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 2.5rem; }
+  .section-num { background: linear-gradient(135deg, var(--purple), var(--teal)); color: white; width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; margin-top: 4px; }
+  .section-header h2 { font-size: 1.6rem; font-weight: 700; color: var(--text); margin-bottom: 0.25rem; }
+  .section-header p { color: var(--text-muted); font-size: 0.95rem; }
+
+  .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.6s, transform 0.6s; }
+  .fade-in.visible { opacity: 1; transform: translateY(0); }
+
+  .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.4rem; border-radius: var(--radius-sm); border: none; font-family: 'Inter', sans-serif; font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+  .btn-primary { background: var(--purple); color: white; }
+  .btn-primary:hover { background: var(--purple-light); transform: translateY(-1px); }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--purple); color: var(--purple-light); }
+  .btn-teal { background: var(--teal); color: white; }
+  .btn-teal:hover { background: var(--teal-light); color: var(--bg); }
+
+  .info-box { background: var(--teal-dim); border: 1px solid var(--teal); border-radius: var(--radius-sm); padding: 1rem 1.25rem; margin-bottom: 1.5rem; font-size: 0.88rem; }
+  .info-box strong { color: var(--teal-light); }
+  .warn-box { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.4); border-radius: var(--radius-sm); padding: 1rem 1.25rem; margin-bottom: 1.5rem; font-size: 0.88rem; }
+  .warn-box strong { color: var(--amber); }
+
+  /* ── Memory Hierarchy ── */
+  .memory-pyramid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  .mem-tier {
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    transition: all 0.3s;
+    cursor: pointer;
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  .mem-tier.reveal { opacity: 1; transform: translateY(0); }
+  .mem-tier:hover { border-color: var(--purple); }
+
+  .mem-tier-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+  }
+
+  .tier1 .mem-tier-header { background: linear-gradient(90deg, rgba(124,58,237,0.2), transparent); }
+  .tier2 .mem-tier-header { background: linear-gradient(90deg, rgba(13,148,136,0.2), transparent); }
+  .tier3 .mem-tier-header { background: linear-gradient(90deg, rgba(59,130,246,0.2), transparent); }
+
+  .tier-left { display: flex; align-items: center; gap: 1rem; }
+  .tier-icon { font-size: 1.5rem; }
+  .tier-name { font-weight: 700; font-size: 1rem; }
+  .tier-sub { font-size: 0.8rem; color: var(--text-muted); }
+
+  .tier-badges { display: flex; gap: 0.5rem; }
+  .tier-badge { padding: 0.2rem 0.5rem; border-radius: 100px; font-size: 0.72rem; font-weight: 600; }
+  .badge-speed-fast { background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+  .badge-speed-med { background: rgba(245,158,11,0.15); color: var(--amber); border: 1px solid rgba(245,158,11,0.3); }
+  .badge-speed-slow { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+  .badge-cost-high { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+  .badge-cost-low { background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+  .badge-cost-med { background: rgba(245,158,11,0.15); color: var(--amber); border: 1px solid rgba(245,158,11,0.3); }
+
+  .mem-tier-body { padding: 1rem 1.5rem; background: var(--surface2); display: none; }
+  .mem-tier.open .mem-tier-body { display: block; }
+
+  .tier-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.85rem; }
+  .tier-grid-item .tg-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); margin-bottom: 0.25rem; }
+  .tier-grid-item .tg-value { color: var(--text); }
+
+  /* ── Embedding Visualizer ── */
+  #embed-canvas {
+    width: 100%;
+    height: 420px;
+    background: #0d0d14;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: crosshair;
+    display: block;
+  }
+
+  .embed-controls {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .embed-search {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.5rem 0.75rem;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    outline: none;
+    width: 200px;
+    transition: border-color 0.2s;
+  }
+  .embed-search:focus { border-color: var(--purple); }
+
+  .embed-legend {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 0.75rem;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+  }
+  .legend-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 0.3rem; vertical-align: middle; }
+
+  /* ── RAG Pipeline ── */
+  .rag-flow {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .rag-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 1.5rem;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  .rag-pipeline {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .rag-step {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    padding: 1rem 1.25rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    opacity: 0.35;
+    transition: all 0.4s;
+    position: relative;
+    overflow: hidden;
+  }
+  .rag-step.active { opacity: 1; border-color: var(--purple); }
+  .rag-step.done { opacity: 0.7; border-color: var(--teal); }
+  .rag-step::after {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+  }
+  .rag-step.active::after { background: var(--purple); }
+  .rag-step.done::after { background: var(--teal); }
+
+  .rag-step-num {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--surface2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem; font-weight: 700;
+    color: var(--text-dim);
+    flex-shrink: 0;
+    transition: all 0.3s;
+  }
+  .rag-step.active .rag-step-num { background: var(--purple); color: white; }
+  .rag-step.done .rag-step-num { background: var(--teal); color: white; }
+
+  .rag-step-content { flex: 1; }
+  .rag-step-title { font-weight: 600; font-size: 0.9rem; margin-bottom: 0.25rem; }
+  .rag-step-desc { font-size: 0.82rem; color: var(--text-muted); }
+  .rag-step-visual {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--teal-light);
+    margin-top: 0.5rem;
+    background: var(--bg);
+    padding: 0.4rem 0.6rem;
+    border-radius: 5px;
+    display: none;
+  }
+  .rag-step.active .rag-step-visual, .rag-step.done .rag-step-visual { display: block; }
+
+  .rag-controls { display: flex; gap: 0.75rem; padding: 1rem 1.5rem; border-top: 1px solid var(--border); align-items: center; }
+  .rag-progress { font-size: 0.85rem; color: var(--text-muted); }
+
+  /* ── RAG vs Fine-tuning ── */
+  .comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+  }
+  .comparison-table th {
+    background: var(--surface);
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 2px solid var(--border);
+  }
+  .comparison-table th.rag-col { color: var(--teal-light); }
+  .comparison-table th.ft-col { color: var(--purple-light); }
+  .comparison-table td {
+    padding: 0.7rem 1rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-muted);
+    vertical-align: top;
+  }
+  .comparison-table tr:last-child td { border-bottom: none; }
+  .comparison-table tr:hover td { background: var(--surface2); }
+  .comparison-table .criterion { color: var(--text); font-weight: 500; }
+  .yes { color: var(--green); }
+  .no { color: var(--red); }
+  .maybe { color: var(--amber); }
+
+  /* ── Chunking Strategies ── */
+  .chunking-tabs {
+    display: flex; gap: 0.5rem; margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .chunk-tab {
+    background: none; border: none; color: var(--text-muted);
+    font-family: 'Inter', sans-serif; font-size: 0.85rem;
+    padding: 0.5rem 1rem; cursor: pointer;
+    border-bottom: 2px solid transparent; transition: all 0.2s; margin-bottom: -1px;
+  }
+  .chunk-tab.active { color: var(--purple-light); border-bottom-color: var(--purple); }
+
+  .chunk-panel { display: none; }
+  .chunk-panel.active { display: block; }
+
+  .chunks-visual {
+    display: flex; flex-wrap: wrap; gap: 0.5rem;
+    padding: 1.25rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    min-height: 100px;
+    margin-bottom: 1rem;
+  }
+
+  .chunk-box {
+    border-radius: var(--radius-sm);
+    padding: 0.5rem 0.75rem;
+    font-size: 0.78rem;
+    font-family: 'JetBrains Mono', monospace;
+    line-height: 1.5;
+    max-width: 200px;
+    animation: chunkAppear 0.4s ease;
+  }
+
+  @keyframes chunkAppear { from { opacity:0; transform:scale(0.9); } to { opacity:1; transform:scale(1); } }
+
+  .chunk-c1 { background: var(--purple-dim); border: 1px solid var(--purple); color: var(--purple-light); }
+  .chunk-c2 { background: var(--teal-dim); border: 1px solid var(--teal); color: var(--teal-light); }
+  .chunk-c3 { background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.4); color: var(--amber); }
+  .chunk-c4 { background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.4); color: var(--green); }
+  .chunk-c5 { background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.4); color: var(--blue); }
+
+  .overlap-chunk {
+    border-style: dashed !important;
+    opacity: 0.6;
+  }
+
+  /* Code blocks */
+  .code-block { background: #0d0d14; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 1.5rem; }
+  .code-header { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; background: var(--surface); border-bottom: 1px solid var(--border); font-size: 0.8rem; }
+  .code-title { color: var(--text-muted); font-weight: 500; }
+  .code-lang { background: var(--purple-dim); color: var(--purple-light); padding: 0.2rem 0.5rem; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; }
+  .code-content { padding: 1.25rem 1.5rem; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; line-height: 1.8; white-space: pre; }
+  .kw { color: #c678dd; }
+  .fn { color: #61afef; }
+  .str { color: #98c379; }
+  .num { color: #d19a66; }
+  .cm { color: #5c6370; font-style: italic; }
+  .var { color: #e06c75; }
+  .key { color: #e5c07b; }
+
+  .tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border); }
+  .tab-btn { background: none; border: none; color: var(--text-muted); font-family: 'Inter', sans-serif; font-size: 0.85rem; padding: 0.5rem 1rem; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; margin-bottom: -1px; }
+  .tab-btn.active { color: var(--purple-light); border-bottom-color: var(--purple); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* Exercises */
+  .exercises-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; }
+  .exercise-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; }
+  .exercise-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--purple), var(--teal)); transform: scaleX(0); transition: transform 0.3s; transform-origin: left; }
+  .exercise-card:hover { border-color: var(--purple); transform: translateY(-2px); }
+  .exercise-card:hover::before { transform: scaleX(1); }
+  .exercise-card.done { border-color: var(--green); }
+  .exercise-card.done::before { background: var(--green); transform: scaleX(1); }
+  .ex-num { font-size: 0.75rem; font-weight: 700; color: var(--purple-light); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+  .ex-title { font-weight: 600; font-size: 0.95rem; margin-bottom: 0.5rem; }
+  .ex-desc { font-size: 0.8rem; color: var(--text-muted); }
+  .ex-check { position: absolute; top: 1rem; right: 1rem; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; transition: all 0.2s; }
+  .exercise-card.done .ex-check { background: var(--green); border-color: var(--green); color: white; }
+
+  footer { border-top: 1px solid var(--border); padding: 2rem; text-align: center; color: var(--text-dim); font-size: 0.85rem; }
+  footer a { color: var(--purple-light); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  /* ── Day 3 Enhancements ── */
+  .d3-enhance-section {
+    max-width: 900px;
+    margin: 3rem auto;
+    padding: 0 2rem;
+  }
+  .d3-enhance-section h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 0.4rem;
+  }
+  .d3-section-tag {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--purple-light);
+    margin-bottom: 1rem;
+    display: block;
+  }
+
+  /* Chunking lab */
+  .chunk-textarea {
+    width: 100%;
+    background: #0d0d18;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.85rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--text);
+    resize: vertical;
+    min-height: 110px;
+    line-height: 1.5;
+    box-sizing: border-box;
+  }
+  .chunk-textarea:focus { outline: none; border-color: var(--purple); }
+  .chunk-strategy-btns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0.85rem 0;
+  }
+  .chunk-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.45rem 0.9rem;
+    font-size: 0.8rem;
+    color: var(--text);
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.2s;
+  }
+  .chunk-btn:hover { border-color: var(--teal); color: var(--teal-light); }
+  .chunk-btn.active { background: rgba(13,148,136,0.15); border-color: var(--teal); color: #2dd4bf; }
+  .chunk-overlap-wrap {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.82rem;
+    color: var(--text-dim);
+  }
+  .chunk-overlap-wrap input[type=range] { accent-color: var(--teal); cursor: pointer; }
+  .chunk-results-area {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-height: 40px;
+    margin-bottom: 1rem;
+  }
+  .chunk-box {
+    padding: 0.4rem 0.65rem;
+    border-radius: 5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: #e2e8f0;
+    line-height: 1.4;
+    max-width: 220px;
+    word-break: break-all;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .chunk-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.65rem;
+    margin-bottom: 1rem;
+  }
+  @media (max-width: 600px) { .chunk-stats { grid-template-columns: repeat(2,1fr); } }
+  .chunk-stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.65rem;
+    text-align: center;
+  }
+  .chunk-stat-num { font-size: 1.05rem; font-weight: 700; color: var(--teal-light); font-family: 'JetBrains Mono', monospace; }
+  .chunk-stat-lbl { font-size: 0.68rem; color: var(--text-dim); margin-top: 0.2rem; }
+  .chunk-visual-note {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--teal);
+    border-radius: 8px;
+    padding: 0.85rem 1.1rem;
+    font-size: 0.84rem;
+    color: var(--text);
+    margin-bottom: 1rem;
+  }
+  .chunk-visual-note strong { color: #2dd4bf; }
+  .chunk-rec-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+  }
+  .chunk-rec-table th {
+    background: #1a1a2e;
+    color: var(--text-dim);
+    font-weight: 600;
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    border: 1px solid var(--border);
+  }
+  .chunk-rec-table td {
+    padding: 0.45rem 0.75rem;
+    border: 1px solid var(--border);
+    color: var(--text);
+    background: var(--surface);
+  }
+  .chunk-rec-table tr:hover td { background: #1a1a2e; }
+
+  /* RAG quality metrics */
+  .rag-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.1rem;
+    margin-bottom: 1.25rem;
+  }
+  @media (max-width: 680px) { .rag-metrics-grid { grid-template-columns: 1fr; } }
+  .rag-metric-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.1rem;
+  }
+  .rag-metric-name {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--purple-light);
+    margin-bottom: 0.4rem;
+  }
+  .rag-metric-desc {
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    margin-bottom: 0.75rem;
+    line-height: 1.4;
+  }
+  .rag-dot-row {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+  }
+  .rag-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    transition: background 0.3s, border-color 0.3s;
+  }
+  .rag-dot.relevant  { background: #f59e0b; border-color: #f59e0b; }
+  .rag-dot.retrieved { border-color: #7c3aed; }
+  .rag-dot.hit       { background: #7c3aed; border-color: #7c3aed; }
+  .rag-rank-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .rag-rank-list li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.78rem;
+    margin-bottom: 3px;
+  }
+  .rag-rank-list li.rank-hit { background: rgba(16,185,129,0.12); color: #6ee7b7; }
+  .rag-rank-num { font-family: 'JetBrains Mono', monospace; font-weight: 700; min-width: 20px; color: var(--text-dim); }
+  .rag-k-slider-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .rag-k-label { font-size: 0.82rem; color: var(--text-dim); }
+  .rag-k-slider-wrap input[type=range] { accent-color: var(--purple); cursor: pointer; }
+  .rag-k-metrics {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .rag-k-metric { font-size: 0.85rem; }
+  .rag-targets-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-left: 3px solid #10b981;
+    border-radius: 8px;
+    padding: 0.85rem 1.1rem;
+    font-size: 0.84rem;
+    color: var(--text);
+    margin-bottom: 0.75rem;
+  }
+  .rag-targets-box strong { color: #10b981; }
+  .rag-failures-box {
+    background: rgba(239,68,68,0.06);
+    border: 1px solid rgba(239,68,68,0.25);
+    border-left: 3px solid #ef4444;
+    border-radius: 8px;
+    padding: 0.85rem 1.1rem;
+    font-size: 0.84rem;
+    color: var(--text);
+  }
+  .rag-failures-box strong { color: #ef4444; }
+
+  /* Hybrid search */
+  .hybrid-diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+  .hybrid-pipes {
+    display: grid;
+    grid-template-columns: 1fr 60px 1fr;
+    gap: 0;
+    align-items: center;
+    margin-bottom: 1.25rem;
+  }
+  .hybrid-pipe {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .hybrid-node {
+    background: #0d0d18;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 0.5rem 0.8rem;
+    font-size: 0.78rem;
+    text-align: center;
+    color: var(--text);
+    position: relative;
+  }
+  .hybrid-node.keyword-node { border-color: #f59e0b; color: #fcd34d; }
+  .hybrid-node.semantic-node { border-color: #7c3aed; color: #c084fc; }
+  .hybrid-node.merge-node { border-color: #10b981; color: #6ee7b7; font-weight: 600; }
+  .hybrid-pipe-arrow {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    margin: 2px 0;
+  }
+  .hybrid-middle { text-align: center; color: var(--text-dim); font-size: 1.5rem; align-self: center; }
+  .hybrid-rrf-box {
+    background: #0d0d18;
+    border: 1px solid rgba(16,185,129,0.4);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 0.5rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--text);
+    text-align: center;
+  }
+  .hybrid-rrf-formula { font-size: 1rem; color: #6ee7b7; margin: 0.5rem 0; }
+  .hybrid-when-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+  @media (max-width: 600px) { .hybrid-when-grid { grid-template-columns: 1fr; } }
+  .hybrid-when-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+  }
+  .hybrid-when-card.keyword  { border-color: rgba(245,158,11,0.5); }
+  .hybrid-when-card.semantic { border-color: rgba(124,58,237,0.5); }
+  .hybrid-when-title {
+    font-size: 0.82rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+  .hybrid-when-card.keyword  .hybrid-when-title { color: #f59e0b; }
+  .hybrid-when-card.semantic .hybrid-when-title { color: #a855f7; }
+  .hybrid-when-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    font-size: 0.78rem;
+    color: var(--text-dim);
+  }
+  .hybrid-when-list li::before { content: "→ "; }
+  .hybrid-when-list li { margin-bottom: 0.2rem; }
+  .hybrid-rule-box {
+    background: rgba(16,185,129,0.08);
+    border: 1px solid rgba(16,185,129,0.3);
+    border-left: 3px solid #10b981;
+    border-radius: 8px;
+    padding: 0.85rem 1.1rem;
+    font-size: 0.875rem;
+    color: var(--text);
+    margin-top: 1rem;
+  }
+  .hybrid-rule-box strong { color: #10b981; }
+  .d3-code-block {
+    background: #0d0d18;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    line-height: 1.6;
+    color: var(--text);
+    white-space: pre;
+    overflow-x: auto;
+    margin: 1rem 0;
+  }
+  .d3-kw  { color: #c084fc; }
+  .d3-str { color: #86efac; }
+  .d3-cmt { color: #64748b; }
+  .d3-fn  { color: #7dd3fc; }
+  .d3-num { color: #fb923c; }
+</style>
+</head>
+<body>
+
+<div id="progress-bar" style="width:0%"></div>
+
+<nav>
+  <div class="nav-inner">
+    <a href="day2.html" class="nav-btn">← Day 2: Tool Use</a>
+    <a href="../index.html" class="nav-brand">🤖 Agentic AI</a>
+    <a href="day4.html" class="nav-btn next">Day 4: LangGraph →</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="day-badge">📅 Day 3 of 30</div>
+  <h1>Memory &<br>Retrieval-Augmented Generation</h1>
+  <p>Give your agents persistent memory and the ability to recall information from massive knowledge bases — without fine-tuning.</p>
+  <div class="objectives">
+    <span class="obj-tag">🧠 Memory Hierarchy</span>
+    <span class="obj-tag">🗺️ Embedding Space</span>
+    <span class="obj-tag">🔍 RAG Pipeline</span>
+    <span class="obj-tag">✂️ Chunking Strategies</span>
+    <span class="obj-tag">🆚 RAG vs Fine-tuning</span>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ============================================================ -->
+<!-- SECTION 1: Memory Hierarchy -->
+<!-- ============================================================ -->
+<section class="fade-in">
+  <div class="section-header">
+    <div class="section-num">1</div>
+    <div>
+      <h2>Memory Hierarchy</h2>
+      <p>Agents have 3 tiers of memory — each with different speed, cost, and capacity tradeoffs. Click each tier to expand.</p>
+    </div>
+  </div>
+
+  <div class="memory-pyramid" id="memory-pyramid">
+    <div class="mem-tier tier1" id="tier-1" onclick="toggleTier('tier-1')">
+      <div class="mem-tier-header">
+        <div class="tier-left">
+          <div class="tier-icon">⚡</div>
+          <div>
+            <div class="tier-name" style="color:var(--purple-light)">Tier 1: In-Context Memory</div>
+            <div class="tier-sub">The messages[] array — your working memory</div>
+          </div>
+        </div>
+        <div class="tier-badges">
+          <span class="tier-badge badge-speed-fast">Fast</span>
+          <span class="tier-badge badge-cost-high">$$ High Cost</span>
+        </div>
+      </div>
+      <div class="mem-tier-body">
+        <div class="tier-grid">
+          <div class="tier-grid-item">
+            <div class="tg-label">What it stores</div>
+            <div class="tg-value">Current conversation, retrieved chunks, tool results, instructions</div>
+          </div>
+          <div class="tier-grid-item">
+            <div class="tg-label">Capacity limit</div>
+            <div class="tg-value">200k tokens (Claude 3.5 Haiku). ~150k words = 2 books</div>
+          </div>
+          <div class="tier-grid-item">
+            <div class="tg-label">When to use</div>
+            <div class="tg-value">Short-lived data needed in the current turn. System prompt. User's current request.</div>
+          </div>
+          <div class="tier-grid-item">
+            <div class="tg-label">Persistence</div>
+            <div class="tg-value">None — gone after the API call. You must rebuild each request.</div>
+          </div>
+          <div class="tier-grid-item">
+            <div class="tg-label">Access pattern</div>
+            <div class="tg-value">Model reads ALL of it, every token. Full attention across everything.</div>
+          </div>
+          <div class="tier-grid-item">
+            <div class="tg-label">Cost model</div>
+            <div class="tg-value">You pay input tokens for every character. 200k ctx = ~$0.05 per call at Haiku.</div>
+          </div>
+        </div>
+        <div style="margin-top:0.75rem;padding:0.75rem;background:var(--bg);border-radius:var(--radius-sm);font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--teal-light)">
+          messages = [<br>
+          &nbsp;&nbsp;{"role":"system", "content":"..."},<br>
+          &nbsp;&nbsp;{"role":"user", "content":"..."},<br>
+          &nbsp;&nbsp;{"role":"assistant", "content":"..."},<br>
+          ]  <span style="color:var(--text-dim)"># This IS your Tier 1 memory</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="mem-tier tier2" id="tier-2" onclick="toggleTier('tier-2')">
+      <div class="mem-tier-header">
+        <div class="tier-left">
+          <div class="tier-icon">🗄️</div>
+          <div>
+            <div class="tier-name" style="color:var(--teal-light)">Tier 2: Vector Store Memory</div>
+            <div class="tier-sub">Semantic search over embedded documents</div>
+          </div>
+        </div>
+        <div class="tier-badges">
+          <span class="tier-badge badge-speed-med">~50ms</span>
+          <span class="tier-badge badge-cost-med">$ Medium Cost</span>
+        </div>
+      </div>
+      <div class="mem-tier-body">
+        <div class="tier-grid">
+          <div class="tier-grid-item">
+            <div class="tg-label">What it stores</div>
+            <div class="tg-value">Document chunks as float32 vectors (1536d for OpenAI, 1024d for Claude)</div>
+          </div>
+          <div class="tier-grid-item">
+            <div class="tg-label">Capacity</div>
+            <div class="tg-value">Millions of vectors — your entire knowledge base</div>
+          </div>
+          <div class="tier-grid-item">
+            <div class="tg-label">Search type</div>
+            <div class="tg-value">Approximate Nearest Neighbor (ANN). Semantic meaning, not exact match.</div>
+          </div>
+          <div class="tier-grid-item">
+            <div class="tg-label">Tools</div>
+            <div class="tg-value">pgvector, Pinecone, Weaviate, Chroma, Qdrant, Redis</div>
+          </div>
+          <div class="tier-grid-item">
+            <div class="tg-label">When to use</div>
+            <div class="tg-value">Knowledge bases, documentation search, long-term episodic memory</div>
+          </div>
+          <div class="tier-grid-item">
+            <div class="tg-label">Your FastAPI angle</div>
+            <div class="tg-value">pgvector in Postgres — same DB you likely already use. Zero new infra.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mem-tier tier3" id="tier-3" onclick="toggleTier('tier-3')">
+      <div class="mem-tier-header">
+        <div class="tier-left">
+          <div class="tier-icon">🏛️</div>
+          <div>
+            <div class="tier-name" style="color:#60a5fa)">Tier 3: External Database Memory</div>
+            <div class="tier-sub">Structured, persistent, queryable long-term storage</div>
+          </div>
+        </div>
+        <div class="tier-badges">
+          <span class="tier-badge badge-speed-slow">~5-100ms</span>
+          <span class="tier-badge badge-cost-low">$ Low Cost</span>
+        </div>
+      </div>
+      <div class="mem-tier-body">
+        <div class="tier-grid">
+          <div class="tier-grid-item">
+            <div class="tg-label">What it stores</div>
+            <div class="tg-value">User profiles, conversation summaries, preferences, agent state, tool outputs</div>
+          </div>
+          <div class="tier-grid-item">
+            <div class="tg-label">Tools</div>
+            <div class="tg-value">PostgreSQL, Redis (short-term), MongoDB, DynamoDB</div>
+          </div>
+          <div class="tier-grid-item">
+            <div class="tg-label">Access pattern</div>
+            <div class="tg-value">Explicit SQL/ORM queries. Must know what to look for. Not semantic.</div>
+          </div>
+          <div class="tier-grid-item">
+            <div class="tg-label">When to use</div>
+            <div class="tg-value">Cross-session state, user settings, summaries to avoid token bloat</div>
+          </div>
+          <div class="tier-grid-item">
+            <div class="tg-label">Memory pattern</div>
+            <div class="tg-value">After long conversations, summarize + store. Retrieve summary at session start.</div>
+          </div>
+          <div class="tier-grid-item">
+            <div class="tg-label">Production pattern</div>
+            <div class="tg-value">Store: user_id, session_id, summary text, key facts, timestamp</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION 2: Embedding Space Visualizer -->
+<!-- ============================================================ -->
+<section class="fade-in">
+  <div class="section-header">
+    <div class="section-num">2</div>
+    <div>
+      <h2>Embedding Space Visualizer</h2>
+      <p>Embeddings place semantically similar things close together in high-dimensional space. Projected to 2D here.</p>
+    </div>
+  </div>
+
+  <div class="info-box">
+    <strong>How embeddings work:</strong> Each token/sentence/document maps to a dense vector of ~1000 numbers. Similar meanings = small cosine distance. "Python" and "FastAPI" are close. "Tokyo" and "London" are close. "Python" and "Tokyo" are far.
+  </div>
+
+  <canvas id="embed-canvas"></canvas>
+
+  <div class="embed-controls">
+    <input type="text" class="embed-search" id="embed-search" placeholder="Type to search (e.g. Python)" oninput="searchEmbedding(this.value)">
+    <button class="btn btn-secondary" onclick="clearSearch()">Clear</button>
+    <span id="embed-result" style="font-size:0.85rem;color:var(--text-muted)"></span>
+  </div>
+
+  <div class="embed-legend">
+    <span><span class="legend-dot" style="background:#a855f7"></span>Programming Languages</span>
+    <span><span class="legend-dot" style="background:#2dd4bf"></span>Frameworks</span>
+    <span><span class="legend-dot" style="background:#f59e0b"></span>Databases</span>
+    <span><span class="legend-dot" style="background:#60a5fa"></span>Cities</span>
+    <span><span class="legend-dot" style="background:#34d399"></span>Animals</span>
+    <span><span class="legend-dot" style="background:#f87171"></span>Query</span>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION 3: RAG Pipeline Animation -->
+<!-- ============================================================ -->
+<section class="fade-in">
+  <div class="section-header">
+    <div class="section-num">3</div>
+    <div>
+      <h2>RAG Pipeline — Step by Step</h2>
+      <p>Indexing (once) then retrieval (per query). Click through to see each stage.</p>
+    </div>
+  </div>
+
+  <div class="rag-flow">
+    <div class="rag-header">
+      <div style="font-weight:600;font-size:0.9rem;">RAG System Architecture</div>
+      <div style="font-size:0.8rem;color:var(--text-muted)">Offline indexing + Online retrieval</div>
+    </div>
+
+    <div class="rag-pipeline" id="rag-pipeline">
+      <div style="font-size:0.75rem;color:var(--text-dim);font-weight:600;letter-spacing:0.05em;text-transform:uppercase;padding: 0 0.25rem">📥 INDEXING PHASE (run once)</div>
+
+      <div class="rag-step" id="rag-0">
+        <div class="rag-step-num">1</div>
+        <div class="rag-step-content">
+          <div class="rag-step-title">Load &amp; Chunk Documents</div>
+          <div class="rag-step-desc">Split your PDFs, docs, web pages into overlapping chunks (~512 tokens each). Overlap ensures context isn't lost at boundaries.</div>
+          <div class="rag-step-visual">doc.txt → ["Chunk 1: FastAPI is a modern...", "Chunk 2: modern Python web...", "Chunk 3: web framework for..."]</div>
+        </div>
+      </div>
+
+      <div class="rag-step" id="rag-1">
+        <div class="rag-step-num">2</div>
+        <div class="rag-step-content">
+          <div class="rag-step-title">Embed Each Chunk</div>
+          <div class="rag-step-desc">Send each chunk to an embedding model (voyage-3, text-embedding-3-small, etc.). Get back a dense vector per chunk.</div>
+          <div class="rag-step-visual">"FastAPI is modern..." → embed() → [0.23, -0.41, 0.87, ..., 0.12] (1024 dims)</div>
+        </div>
+      </div>
+
+      <div class="rag-step" id="rag-2">
+        <div class="rag-step-num">3</div>
+        <div class="rag-step-content">
+          <div class="rag-step-title">Store in Vector DB</div>
+          <div class="rag-step-desc">Insert vector + original text + metadata into pgvector/Pinecone. Create an HNSW or IVFFlat index for fast ANN search.</div>
+          <div class="rag-step-visual">INSERT INTO embeddings (content, embedding, source) VALUES ($1, $2, $3)</div>
+        </div>
+      </div>
+
+      <div style="font-size:0.75rem;color:var(--text-dim);font-weight:600;letter-spacing:0.05em;text-transform:uppercase;padding:0.5rem 0.25rem 0">🔍 RETRIEVAL PHASE (per query)</div>
+
+      <div class="rag-step" id="rag-3">
+        <div class="rag-step-num">4</div>
+        <div class="rag-step-content">
+          <div class="rag-step-title">Embed the User Query</div>
+          <div class="rag-step-desc">Same embedding model that indexed the chunks must embed the query. Consistent embedding space = meaningful similarity scores.</div>
+          <div class="rag-step-visual">"How do I add auth to FastAPI?" → [0.31, -0.18, 0.92, ..., 0.04]</div>
+        </div>
+      </div>
+
+      <div class="rag-step" id="rag-4">
+        <div class="rag-step-num">5</div>
+        <div class="rag-step-content">
+          <div class="rag-step-title">Find Top-K Similar Chunks</div>
+          <div class="rag-step-desc">Vector DB computes cosine similarity between query vector and all stored vectors. Returns the K most similar chunks (typically K=3-5).</div>
+          <div class="rag-step-visual">SELECT content, 1-(embedding &lt;=&gt; $1) AS score FROM embeddings ORDER BY score DESC LIMIT 5</div>
+        </div>
+      </div>
+
+      <div class="rag-step" id="rag-5">
+        <div class="rag-step-num">6</div>
+        <div class="rag-step-content">
+          <div class="rag-step-title">Inject Chunks + Generate Answer</div>
+          <div class="rag-step-desc">Retrieved chunks go into the system/user prompt as context. The LLM generates an answer grounded in your documents — not hallucinated knowledge.</div>
+          <div class="rag-step-visual">system: "Answer using ONLY this context:\n{chunk1}\n{chunk2}\n{chunk3}"<br>user: "How do I add auth to FastAPI?"</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="rag-controls">
+      <button class="btn btn-primary" onclick="ragNext()">Next Step →</button>
+      <button class="btn btn-secondary" onclick="ragReset()">↺ Reset</button>
+      <span class="rag-progress" id="rag-progress">Step 0 / 6 — Click Next Step to begin</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION 4: Chunking Strategies -->
+<!-- ============================================================ -->
+<section class="fade-in">
+  <div class="section-header">
+    <div class="section-num">4</div>
+    <div>
+      <h2>Chunking Strategies</h2>
+      <p>How you split documents dramatically affects retrieval quality. Three main approaches, plus overlap.</p>
+    </div>
+  </div>
+
+  <div class="chunking-tabs">
+    <button class="chunk-tab active" onclick="switchChunk('fixed')">Fixed Size</button>
+    <button class="chunk-tab" onclick="switchChunk('sentence')">Sentence-Based</button>
+    <button class="chunk-tab" onclick="switchChunk('semantic')">Semantic</button>
+    <button class="chunk-tab" onclick="switchChunk('overlap')">Overlap Demo</button>
+  </div>
+
+  <div id="chunk-fixed" class="chunk-panel active">
+    <div class="chunks-visual" id="fixed-chunks"></div>
+    <div style="font-size:0.85rem;color:var(--text-muted);padding:0 0.25rem">
+      <strong style="color:var(--text)">Fixed size chunking:</strong> Split every N tokens/characters. Fast, simple, predictable. Problem: often splits mid-sentence or mid-concept, breaking context. Best for: homogeneous text where structure doesn't matter.
+    </div>
+  </div>
+
+  <div id="chunk-sentence" class="chunk-panel">
+    <div class="chunks-visual" id="sentence-chunks"></div>
+    <div style="font-size:0.85rem;color:var(--text-muted);padding:0 0.25rem">
+      <strong style="color:var(--text)">Sentence-based chunking:</strong> Split on sentence boundaries (., !, ?). Group N sentences per chunk. Respects natural language structure. Better retrieval coherence. Works well for prose, articles, documentation.
+    </div>
+  </div>
+
+  <div id="chunk-semantic" class="chunk-panel">
+    <div class="chunks-visual" id="semantic-chunks"></div>
+    <div style="font-size:0.85rem;color:var(--text-muted);padding:0 0.25rem">
+      <strong style="color:var(--text)">Semantic chunking:</strong> Use embedding cosine similarity to find topic boundaries. Each chunk is a coherent semantic unit. Higher quality, more expensive to build. Best for: mixed-topic documents, books, research papers.
+    </div>
+  </div>
+
+  <div id="chunk-overlap" class="chunk-panel">
+    <div style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1rem;padding:0 0.25rem">
+      <strong style="color:var(--text)">Why overlap matters:</strong> Key information often appears at chunk boundaries. Without overlap, a sentence split across two chunks may never be retrieved together.
+    </div>
+    <div class="chunks-visual" id="overlap-chunks"></div>
+    <div style="margin-top:0.5rem;font-size:0.82rem;color:var(--text-muted);padding:0 0.25rem">
+      Solid = primary chunk. Dashed = overlap region (typically 10-20% of chunk size). Overlap = same text included in adjacent chunks so no context is lost at boundaries.
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION 5: RAG vs Fine-tuning -->
+<!-- ============================================================ -->
+<section class="fade-in">
+  <div class="section-header">
+    <div class="section-num">5</div>
+    <div>
+      <h2>RAG vs Fine-tuning</h2>
+      <p>When to use each. Spoiler: you almost always want RAG first.</p>
+    </div>
+  </div>
+
+  <div style="overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius);">
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th style="width:200px">Criterion</th>
+          <th class="rag-col">🔍 RAG</th>
+          <th class="ft-col">🎛️ Fine-tuning</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="criterion">Knowledge updates</td>
+          <td><span class="yes">✓ Real-time</span> — add docs, immediately searchable</td>
+          <td><span class="no">✗ Static</span> — requires retraining to add knowledge</td>
+        </tr>
+        <tr>
+          <td class="criterion">Training cost</td>
+          <td><span class="yes">✓ None</span> — just embedding + storage</td>
+          <td><span class="no">✗ $100s–$10,000s</span> depending on model size</td>
+        </tr>
+        <tr>
+          <td class="criterion">Source attribution</td>
+          <td><span class="yes">✓ Traceable</span> — you know which chunk answered the question</td>
+          <td><span class="no">✗ Opaque</span> — knowledge baked into weights, no citation possible</td>
+        </tr>
+        <tr>
+          <td class="criterion">Hallucination risk</td>
+          <td><span class="yes">✓ Lower</span> — grounded in retrieved text</td>
+          <td><span class="maybe">~ Similar</span> — model still generates, can still hallucinate</td>
+        </tr>
+        <tr>
+          <td class="criterion">Style / tone change</td>
+          <td><span class="no">✗ Hard</span> — base model tone persists</td>
+          <td><span class="yes">✓ Easy</span> — fine-tuning changes how the model writes</td>
+        </tr>
+        <tr>
+          <td class="criterion">Task-specific format</td>
+          <td><span class="maybe">~ Possible</span> via prompting, less reliable</td>
+          <td><span class="yes">✓ Reliable</span> — model learns exact output format from examples</td>
+        </tr>
+        <tr>
+          <td class="criterion">Private knowledge</td>
+          <td><span class="yes">✓ Best fit</span> — your docs never leave your infrastructure</td>
+          <td><span class="maybe">~ Works</span> but expensive and inflexible</td>
+        </tr>
+        <tr>
+          <td class="criterion">Time to deploy</td>
+          <td><span class="yes">✓ Hours</span> — index docs, write retrieval logic, ship</td>
+          <td><span class="no">✗ Weeks</span> — data prep, training, eval, iteration</td>
+        </tr>
+        <tr>
+          <td class="criterion">Inference cost</td>
+          <td><span class="maybe">~ Slightly higher</span> — longer prompts from context injection</td>
+          <td><span class="yes">✓ Same</span> as base model inference</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div style="margin-top:1.5rem;background:var(--surface2);border:1px solid var(--teal);border-radius:var(--radius);padding:1.25rem">
+    <div style="font-weight:600;color:var(--teal-light);margin-bottom:0.75rem">📐 Decision Rule of Thumb</div>
+    <div style="font-size:0.88rem;color:var(--text-muted)">
+      Start with RAG. If the problem is <em>"the model needs to know X fact"</em> → RAG. If the problem is <em>"the model needs to respond in a specific way"</em> → Fine-tuning. For most production systems: RAG for knowledge, prompting for behavior, fine-tuning only when you have hundreds of high-quality examples and a clear format target.
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION 6: Code -->
+<!-- ============================================================ -->
+<section class="fade-in">
+  <div class="section-header">
+    <div class="section-num">6</div>
+    <div>
+      <h2>Code: RAG with pgvector</h2>
+      <p>A production-ready RAG implementation using PostgreSQL + pgvector + Claude. Fits your FastAPI background.</p>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('embed')">Create Embeddings</button>
+    <button class="tab-btn" onclick="switchTab('store')">Store + Search</button>
+    <button class="tab-btn" onclick="switchTab('rag')">Full RAG Function</button>
+  </div>
+
+  <div id="tab-embed" class="tab-panel active">
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-title">create_embeddings.py — using Voyage AI (Anthropic's recommended)</span>
+        <span class="code-lang">python</span>
+      </div>
+      <div class="code-content"><span class="kw">import</span> <span class="fn">voyageai</span>
+<span class="kw">from</span> <span class="fn">anthropic</span> <span class="kw">import</span> <span class="fn">Anthropic</span>
+
+<span class="var">voyage</span> = <span class="fn">voyageai</span>.<span class="fn">Client</span>()  <span class="cm"># VOYAGE_API_KEY env var</span>
+
+<span class="kw">def</span> <span class="fn">embed_text</span>(<span class="var">text</span>: <span class="fn">str</span>) -> <span class="fn">list</span>[<span class="fn">float</span>]:
+    <span class="cm">"""Embed a single text using voyage-3."""</span>
+    <span class="var">result</span> = <span class="var">voyage</span>.<span class="fn">embed</span>([<span class="var">text</span>], <span class="key">model</span>=<span class="str">"voyage-3"</span>)
+    <span class="kw">return</span> <span class="var">result</span>.<span class="var">embeddings</span>[<span class="num">0</span>]  <span class="cm"># 1024-dimensional vector</span>
+
+<span class="kw">def</span> <span class="fn">embed_batch</span>(<span class="var">texts</span>: <span class="fn">list</span>[<span class="fn">str</span>]) -> <span class="fn">list</span>[<span class="fn">list</span>[<span class="fn">float</span>]]:
+    <span class="cm">"""Embed a batch — much more efficient than one-by-one."""</span>
+    <span class="var">result</span> = <span class="var">voyage</span>.<span class="fn">embed</span>(<span class="var">texts</span>, <span class="key">model</span>=<span class="str">"voyage-3"</span>)
+    <span class="kw">return</span> <span class="var">result</span>.<span class="var">embeddings</span>
+
+<span class="kw">def</span> <span class="fn">chunk_text</span>(<span class="var">text</span>: <span class="fn">str</span>, <span class="var">chunk_size</span>: <span class="fn">int</span> = <span class="num">512</span>, <span class="var">overlap</span>: <span class="fn">int</span> = <span class="num">64</span>) -> <span class="fn">list</span>[<span class="fn">str</span>]:
+    <span class="cm">"""Split text into overlapping chunks by word count."""</span>
+    <span class="var">words</span> = <span class="var">text</span>.<span class="fn">split</span>()
+    <span class="var">chunks</span> = []
+    <span class="var">start</span> = <span class="num">0</span>
+    <span class="kw">while</span> <span class="var">start</span> < <span class="fn">len</span>(<span class="var">words</span>):
+        <span class="var">end</span> = <span class="fn">min</span>(<span class="var">start</span> + <span class="var">chunk_size</span>, <span class="fn">len</span>(<span class="var">words</span>))
+        <span class="var">chunks</span>.<span class="fn">append</span>(<span class="str">" "</span>.<span class="fn">join</span>(<span class="var">words</span>[<span class="var">start</span>:<span class="var">end</span>]))
+        <span class="var">start</span> += <span class="var">chunk_size</span> - <span class="var">overlap</span>  <span class="cm"># overlap by N words</span>
+    <span class="kw">return</span> <span class="var">chunks</span></div>
+    </div>
+  </div>
+
+  <div id="tab-store" class="tab-panel">
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-title">pgvector_store.py — store and semantic search</span>
+        <span class="code-lang">python</span>
+      </div>
+      <div class="code-content"><span class="kw">import</span> <span class="fn">asyncpg</span>
+<span class="kw">from</span> <span class="fn">pgvector.asyncpg</span> <span class="kw">import</span> <span class="fn">register_vector</span>
+
+<span class="cm"># Schema: CREATE EXTENSION vector;</span>
+<span class="cm"># CREATE TABLE docs (</span>
+<span class="cm">#   id SERIAL PRIMARY KEY,</span>
+<span class="cm">#   content TEXT,</span>
+<span class="cm">#   embedding vector(1024),</span>
+<span class="cm">#   source TEXT,</span>
+<span class="cm">#   created_at TIMESTAMPTZ DEFAULT NOW()</span>
+<span class="cm"># );</span>
+<span class="cm"># CREATE INDEX ON docs USING hnsw (embedding vector_cosine_ops);</span>
+
+<span class="kw">async def</span> <span class="fn">store_document</span>(<span class="var">conn</span>, <span class="var">content</span>: <span class="fn">str</span>, <span class="var">source</span>: <span class="fn">str</span>):
+    <span class="cm">"""Chunk, embed, and store a document."""</span>
+    <span class="var">chunks</span> = <span class="fn">chunk_text</span>(<span class="var">content</span>)
+    <span class="var">embeddings</span> = <span class="fn">embed_batch</span>(<span class="var">chunks</span>)
+
+    <span class="kw">await</span> <span class="var">conn</span>.<span class="fn">executemany</span>(
+        <span class="str">"INSERT INTO docs (content, embedding, source) VALUES ($1, $2, $3)"</span>,
+        [(<span class="var">chunk</span>, <span class="fn">str</span>(<span class="var">emb</span>), <span class="var">source</span>) <span class="kw">for</span> <span class="var">chunk</span>, <span class="var">emb</span> <span class="kw">in</span> <span class="fn">zip</span>(<span class="var">chunks</span>, <span class="var">embeddings</span>)]
+    )
+
+<span class="kw">async def</span> <span class="fn">semantic_search</span>(<span class="var">conn</span>, <span class="var">query</span>: <span class="fn">str</span>, <span class="var">k</span>: <span class="fn">int</span> = <span class="num">5</span>) -> <span class="fn">list</span>[<span class="fn">dict</span>]:
+    <span class="cm">"""Find the K most semantically similar chunks."""</span>
+    <span class="var">query_vec</span> = <span class="fn">embed_text</span>(<span class="var">query</span>)
+
+    <span class="var">rows</span> = <span class="kw">await</span> <span class="var">conn</span>.<span class="fn">fetch</span>(<span class="str">"""
+        SELECT content, source,
+               1 - (embedding &lt;=&gt; $1::vector) AS similarity
+        FROM docs
+        ORDER BY embedding &lt;=&gt; $1::vector
+        LIMIT $2
+    """</span>, <span class="fn">str</span>(<span class="var">query_vec</span>), <span class="var">k</span>)
+
+    <span class="kw">return</span> [{<span class="str">"content"</span>: <span class="var">r</span>[<span class="str">"content"</span>], <span class="str">"source"</span>: <span class="var">r</span>[<span class="str">"source"</span>],
+             <span class="str">"score"</span>: <span class="fn">round</span>(<span class="var">r</span>[<span class="str">"similarity"</span>], <span class="num">4</span>)} <span class="kw">for</span> <span class="var">r</span> <span class="kw">in</span> <span class="var">rows</span>]</div>
+    </div>
+  </div>
+
+  <div id="tab-rag" class="tab-panel">
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-title">rag_function.py — full RAG with Claude</span>
+        <span class="code-lang">python</span>
+      </div>
+      <div class="code-content"><span class="var">client</span> = <span class="fn">Anthropic</span>()
+
+<span class="kw">async def</span> <span class="fn">rag_answer</span>(
+    <span class="var">conn</span>,
+    <span class="var">question</span>: <span class="fn">str</span>,
+    <span class="var">k</span>: <span class="fn">int</span> = <span class="num">5</span>,
+    <span class="var">min_score</span>: <span class="fn">float</span> = <span class="num">0.7</span>,
+) -> <span class="fn">dict</span>:
+    <span class="cm">"""Answer a question using retrieved context."""</span>
+
+    <span class="cm"># 1. Retrieve relevant chunks</span>
+    <span class="var">chunks</span> = <span class="kw">await</span> <span class="fn">semantic_search</span>(<span class="var">conn</span>, <span class="var">question</span>, <span class="var">k</span>=<span class="var">k</span>)
+    <span class="var">chunks</span> = [<span class="var">c</span> <span class="kw">for</span> <span class="var">c</span> <span class="kw">in</span> <span class="var">chunks</span> <span class="kw">if</span> <span class="var">c</span>[<span class="str">"score"</span>] >= <span class="var">min_score</span>]
+
+    <span class="kw">if not</span> <span class="var">chunks</span>:
+        <span class="kw">return</span> {<span class="str">"answer"</span>: <span class="str">"No relevant documents found."</span>, <span class="str">"sources"</span>: []}
+
+    <span class="cm"># 2. Build context string</span>
+    <span class="var">context</span> = <span class="str">"\n\n---\n\n"</span>.<span class="fn">join</span>(
+        <span class="fn">f</span><span class="str">"[Source: {c['source']} | Score: {c['score']}]\n{c['content']}"</span>
+        <span class="kw">for</span> <span class="var">c</span> <span class="kw">in</span> <span class="var">chunks</span>
+    )
+
+    <span class="cm"># 3. Ask Claude with retrieved context</span>
+    <span class="var">response</span> = <span class="var">client</span>.<span class="var">messages</span>.<span class="fn">create</span>(
+        <span class="key">model</span>=<span class="str">"claude-haiku-4-5-20251001"</span>,
+        <span class="key">max_tokens</span>=<span class="num">1024</span>,
+        <span class="key">system</span>=<span class="fn">f</span><span class="str">"""Answer questions using ONLY the provided context.
+If the answer is not in the context, say so explicitly.
+Always cite which source you used.
+
+CONTEXT:
+{context}"""</span>,
+        <span class="key">messages</span>=[{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: <span class="var">question</span>}]
+    )
+
+    <span class="kw">return</span> {
+        <span class="str">"answer"</span>: <span class="var">response</span>.<span class="var">content</span>[<span class="num">0</span>].<span class="var">text</span>,
+        <span class="str">"sources"</span>: [<span class="var">c</span>[<span class="str">"source"</span>] <span class="kw">for</span> <span class="var">c</span> <span class="kw">in</span> <span class="var">chunks</span>],
+        <span class="str">"scores"</span>: [<span class="var">c</span>[<span class="str">"score"</span>] <span class="kw">for</span> <span class="var">c</span> <span class="kw">in</span> <span class="var">chunks</span>],
+        <span class="str">"tokens"</span>: <span class="var">response</span>.<span class="var">usage</span>.<span class="var">input_tokens</span> + <span class="var">response</span>.<span class="var">usage</span>.<span class="var">output_tokens</span>,
+    }</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION 7: Exercises -->
+<!-- ============================================================ -->
+<section class="fade-in">
+  <div class="section-header">
+    <div class="section-num">7</div>
+    <div>
+      <h2>Day 3 Exercises</h2>
+      <p>Build a complete RAG pipeline. Click to mark exercises complete.</p>
+    </div>
+  </div>
+
+  <a href="../exercises/day3_exercises.html" style="display:inline-flex;align-items:center;gap:0.5rem;margin-bottom:1.5rem;padding:0.6rem 1.25rem;background:linear-gradient(135deg,var(--purple),var(--teal));color:white;font-weight:700;font-size:0.9rem;border-radius:8px;text-decoration:none;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">⚡ Open Interactive Exercises →</a>
+
+  <div class="exercises-grid">
+    <div class="exercise-card" id="d3-ex-1" onclick="toggleExercise('d3-ex-1')">
+      <div class="ex-check" id="d3-ex-1-check">✓</div>
+      <div class="ex-num">Exercise 1</div>
+      <div class="ex-title">Build a RAG API</div>
+      <div class="ex-desc">FastAPI endpoint: POST /documents (index), GET /ask?q=... (retrieve+answer). Use pgvector or Chroma locally. Index 3+ documents and test retrieval quality.</div>
+    </div>
+    <div class="exercise-card" id="d3-ex-2" onclick="toggleExercise('d3-ex-2')">
+      <div class="ex-check" id="d3-ex-2-check">✓</div>
+      <div class="ex-num">Exercise 2</div>
+      <div class="ex-title">Add Conversation Memory</div>
+      <div class="ex-desc">Extend the RAG API to maintain conversation history. After 5 turns, summarize and compress. Store summaries in a DB. Load previous summary on new sessions.</div>
+    </div>
+    <div class="exercise-card" id="d3-ex-3" onclick="toggleExercise('d3-ex-3')">
+      <div class="ex-check" id="d3-ex-3-check">✓</div>
+      <div class="ex-num">Exercise 3</div>
+      <div class="ex-title">Chunking Experiments</div>
+      <div class="ex-desc">Compare retrieval quality: fixed vs sentence vs semantic chunking on the same document. Build an evaluation harness: 10 questions with known answers, measure top-1 accuracy.</div>
+    </div>
+    <div class="exercise-card" id="d3-ex-4" onclick="toggleExercise('d3-ex-4')">
+      <div class="ex-check" id="d3-ex-4-check">✓</div>
+      <div class="ex-num">Exercise 4</div>
+      <div class="ex-title">Hybrid Search</div>
+      <div class="ex-desc">Combine vector search (semantic) with full-text search (BM25/tsvector). Reciprocal Rank Fusion to merge results. Compare vs pure vector search on keyword-heavy queries.</div>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<footer>
+  <p>
+    <a href="day2.html">← Day 2: Tool Use & ReAct</a>
+    &nbsp;·&nbsp;
+    Day 3 of 30
+    &nbsp;·&nbsp;
+    <a href="day4.html">Day 4 →</a>
+  </p>
+  <p style="margin-top:0.5rem">Sharjeel Sohail's GenAI Learning Journey · April 2026</p>
+</footer>
+
+<script>
+// Progress bar
+window.addEventListener('scroll', () => {
+  const total = document.documentElement.scrollHeight - window.innerHeight;
+  document.getElementById('progress-bar').style.width = (window.scrollY / total * 100) + '%';
+});
+
+// Scroll animations
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+// ============================================================
+// Memory Tiers — staggered reveal + toggle
+// ============================================================
+const tierObserver = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      const tiers = document.querySelectorAll('.mem-tier');
+      tiers.forEach((t, i) => setTimeout(() => t.classList.add('reveal'), i * 200));
+      tierObserver.disconnect();
+    }
+  });
+}, { threshold: 0.2 });
+tierObserver.observe(document.getElementById('memory-pyramid'));
+
+function toggleTier(id) {
+  const tier = document.getElementById(id);
+  tier.classList.toggle('open');
+}
+
+// ============================================================
+// Embedding Space Canvas
+// ============================================================
+const embedPoints = [
+  // Programming languages (purple)
+  { label: 'Python',      x: 0.18, y: 0.28, cat: 'lang',   color: '#a855f7' },
+  { label: 'JavaScript',  x: 0.28, y: 0.22, cat: 'lang',   color: '#a855f7' },
+  { label: 'Rust',        x: 0.12, y: 0.38, cat: 'lang',   color: '#a855f7' },
+  { label: 'Go',          x: 0.22, y: 0.35, cat: 'lang',   color: '#a855f7' },
+  // Frameworks (teal)
+  { label: 'FastAPI',     x: 0.32, y: 0.30, cat: 'fw',     color: '#2dd4bf' },
+  { label: 'Django',      x: 0.26, y: 0.40, cat: 'fw',     color: '#2dd4bf' },
+  { label: 'React',       x: 0.38, y: 0.20, cat: 'fw',     color: '#2dd4bf' },
+  { label: 'Vue',         x: 0.44, y: 0.24, cat: 'fw',     color: '#2dd4bf' },
+  // Databases (amber)
+  { label: 'PostgreSQL',  x: 0.15, y: 0.62, cat: 'db',     color: '#fbbf24' },
+  { label: 'MongoDB',     x: 0.22, y: 0.68, cat: 'db',     color: '#fbbf24' },
+  { label: 'Redis',       x: 0.08, y: 0.55, cat: 'db',     color: '#fbbf24' },
+  // Cities (blue)
+  { label: 'Tokyo',       x: 0.72, y: 0.32, cat: 'city',   color: '#60a5fa' },
+  { label: 'Paris',       x: 0.80, y: 0.28, cat: 'city',   color: '#60a5fa' },
+  { label: 'London',      x: 0.76, y: 0.38, cat: 'city',   color: '#60a5fa' },
+  { label: 'Seoul',       x: 0.68, y: 0.42, cat: 'city',   color: '#60a5fa' },
+  // Animals (green)
+  { label: 'Cat',         x: 0.70, y: 0.68, cat: 'animal', color: '#34d399' },
+  { label: 'Dog',         x: 0.78, y: 0.72, cat: 'animal', color: '#34d399' },
+  { label: 'Bird',        x: 0.74, y: 0.62, cat: 'animal', color: '#34d399' },
+  { label: 'Fish',        x: 0.82, y: 0.66, cat: 'animal', color: '#34d399' },
+];
+
+let queryPoint = null;
+let highlightedPoints = new Set();
+
+function dist(a, b) {
+  return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
+}
+
+function drawEmbeddings() {
+  const canvas = document.getElementById('embed-canvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.offsetWidth;
+  const H = canvas.offsetHeight;
+  canvas.width = W;
+  canvas.height = H;
+  ctx.clearRect(0, 0, W, H);
+
+  // Draw grid
+  ctx.strokeStyle = '#1c1c2e';
+  ctx.lineWidth = 1;
+  for (let x = 0; x < W; x += 50) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  }
+  for (let y = 0; y < H; y += 50) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+
+  // Draw lines from query to neighbors
+  if (queryPoint && highlightedPoints.size > 0) {
+    const qx = queryPoint.x * W;
+    const qy = queryPoint.y * H;
+    embedPoints.forEach((p, i) => {
+      if (highlightedPoints.has(i)) {
+        ctx.beginPath();
+        ctx.moveTo(qx, qy);
+        ctx.lineTo(p.x * W, p.y * H);
+        ctx.strokeStyle = 'rgba(248,113,113,0.4)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 4]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    });
+  }
+
+  // Draw points
+  embedPoints.forEach((p, i) => {
+    const px = p.x * W;
+    const py = p.y * H;
+    const isHighlighted = highlightedPoints.has(i);
+    const r = isHighlighted ? 8 : 6;
+
+    // Glow for highlighted
+    if (isHighlighted) {
+      ctx.beginPath();
+      ctx.arc(px, py, 16, 0, Math.PI * 2);
+      ctx.fillStyle = p.color + '25';
+      ctx.fill();
+    }
+
+    ctx.beginPath();
+    ctx.arc(px, py, r, 0, Math.PI * 2);
+    ctx.fillStyle = isHighlighted ? p.color : p.color + '80';
+    ctx.fill();
+    ctx.strokeStyle = p.color;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    ctx.font = `${isHighlighted ? 600 : 400} ${isHighlighted ? 13 : 11}px Inter`;
+    ctx.fillStyle = isHighlighted ? p.color : p.color + 'cc';
+    ctx.fillText(p.label, px + 10, py + 4);
+  });
+
+  // Draw query point
+  if (queryPoint) {
+    const qx = queryPoint.x * W;
+    const qy = queryPoint.y * H;
+    ctx.beginPath();
+    ctx.arc(qx, qy, 10, 0, Math.PI * 2);
+    ctx.fillStyle = '#f87171';
+    ctx.fill();
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.font = 'bold 12px Inter';
+    ctx.fillStyle = '#f87171';
+    ctx.fillText('⬤ "' + queryPoint.label + '"', qx + 14, qy + 4);
+  }
+}
+
+function searchEmbedding(query) {
+  if (!query.trim()) { clearSearch(); return; }
+
+  const q = query.toLowerCase();
+  // Find best match in our dataset
+  const match = embedPoints.find(p => p.label.toLowerCase().includes(q));
+
+  if (match) {
+    // Place query point near the matched point with slight offset
+    queryPoint = { x: match.x + 0.04, y: match.y - 0.06, label: query };
+
+    // Find 3 nearest neighbors
+    const distances = embedPoints.map((p, i) => ({ i, d: dist(queryPoint, p) }));
+    distances.sort((a, b) => a.d - b.d);
+    highlightedPoints = new Set(distances.slice(0, 3).map(x => x.i));
+
+    const nearest = distances.slice(0, 3).map(x => embedPoints[x.i].label).join(', ');
+    document.getElementById('embed-result').textContent = `Nearest neighbors: ${nearest}`;
+  } else {
+    // Place query randomly if no match
+    queryPoint = { x: 0.5 + Math.random()*0.2, y: 0.5 + Math.random()*0.2, label: query };
+    highlightedPoints = new Set();
+    document.getElementById('embed-result').textContent = 'No pre-computed match — placed in uncharted space';
+  }
+  drawEmbeddings();
+}
+
+function clearSearch() {
+  queryPoint = null;
+  highlightedPoints = new Set();
+  document.getElementById('embed-search').value = '';
+  document.getElementById('embed-result').textContent = '';
+  drawEmbeddings();
+}
+
+// Responsive canvas
+window.addEventListener('resize', drawEmbeddings);
+setTimeout(drawEmbeddings, 200);
+
+// ============================================================
+// RAG Pipeline Steps
+// ============================================================
+let ragStep = -1;
+const ragTotal = 6;
+
+function ragNext() {
+  if (ragStep >= ragTotal - 1) return;
+  if (ragStep >= 0) document.getElementById('rag-' + ragStep).classList.add('done');
+  ragStep++;
+  const el = document.getElementById('rag-' + ragStep);
+  el.classList.add('active');
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  document.getElementById('rag-progress').textContent = `Step ${ragStep + 1} / ${ragTotal}${ragStep === ragTotal - 1 ? ' — Pipeline Complete!' : ''}`;
+}
+
+function ragReset() {
+  ragStep = -1;
+  for (let i = 0; i < ragTotal; i++) {
+    const el = document.getElementById('rag-' + i);
+    el.classList.remove('active', 'done');
+  }
+  document.getElementById('rag-progress').textContent = 'Step 0 / 6 — Click Next Step to begin';
+}
+
+// ============================================================
+// Chunking Visualizer
+// ============================================================
+const sampleText = [
+  'FastAPI is a modern web framework for Python',
+  'built on top of Starlette and Pydantic.',
+  'It is designed for building APIs quickly',
+  'with automatic validation and documentation.',
+  'The framework supports async by default',
+  'making it ideal for high-performance services.',
+  'Dependency injection is a core feature',
+  'enabling clean and testable code architecture.',
+  'Type hints drive both validation and IDE support.',
+  'OpenAPI docs are generated automatically.'
+];
+
+const chunkColors = ['chunk-c1','chunk-c2','chunk-c3','chunk-c4','chunk-c5'];
+
+function renderFixedChunks() {
+  const container = document.getElementById('fixed-chunks');
+  container.innerHTML = '';
+  // Fixed size: 3 sentences per chunk, no awareness of meaning
+  const groups = [[0,1,2],[3,4,5],[6,7,8],[9]];
+  groups.forEach((g, i) => {
+    const box = document.createElement('div');
+    box.className = 'chunk-box ' + chunkColors[i % chunkColors.length];
+    box.textContent = g.map(idx => sampleText[idx]).join(' ');
+    container.appendChild(box);
+  });
+}
+
+function renderSentenceChunks() {
+  const container = document.getElementById('sentence-chunks');
+  container.innerHTML = '';
+  // 2 sentences per chunk
+  const groups = [[0,1],[2,3],[4,5],[6,7],[8,9]];
+  groups.forEach((g, i) => {
+    const box = document.createElement('div');
+    box.className = 'chunk-box ' + chunkColors[i % chunkColors.length];
+    box.textContent = g.map(idx => sampleText[idx]).join(' ');
+    container.appendChild(box);
+  });
+}
+
+function renderSemanticChunks() {
+  const container = document.getElementById('semantic-chunks');
+  container.innerHTML = '';
+  // Semantic groups by topic
+  const groups = [
+    { topic: 'Introduction', idxs: [0,1] },
+    { topic: 'Design Goals', idxs: [2,3] },
+    { topic: 'Async & Performance', idxs: [4,5] },
+    { topic: 'Code Quality', idxs: [6,7] },
+    { topic: 'Type System', idxs: [8,9] },
+  ];
+  groups.forEach((g, i) => {
+    const box = document.createElement('div');
+    box.className = 'chunk-box ' + chunkColors[i];
+    box.innerHTML = `<strong>${g.topic}:</strong> ${g.idxs.map(idx => sampleText[idx]).join(' ')}`;
+    container.appendChild(box);
+  });
+}
+
+function renderOverlapChunks() {
+  const container = document.getElementById('overlap-chunks');
+  container.innerHTML = '';
+  // Show chunks with visible overlap regions
+  const chunks = [
+    { main: [0,1,2], overlap: [3] },
+    { main: [2,3,4,5], overlap: [5,6] },
+    { main: [5,6,7,8], overlap: [8,9] },
+    { main: [8,9], overlap: [] },
+  ];
+  chunks.forEach((c, i) => {
+    const box = document.createElement('div');
+    box.className = 'chunk-box ' + chunkColors[i % chunkColors.length];
+    box.style.maxWidth = '260px';
+    const mainText = c.main.map(idx => sampleText[idx]).join(' ');
+    const overlapText = c.overlap.map(idx => sampleText[idx]).join(' ');
+    box.innerHTML = `<span>${mainText}</span>${overlapText ? `<span style="opacity:0.5;border-top:1px dashed currentColor;display:block;margin-top:4px;padding-top:4px;font-size:0.72em"> ↩ ${overlapText}</span>` : ''}`;
+    container.appendChild(box);
+  });
+}
+
+renderFixedChunks();
+renderSentenceChunks();
+renderSemanticChunks();
+renderOverlapChunks();
+
+function switchChunk(name) {
+  document.querySelectorAll('.chunk-tab').forEach((b, i) => {
+    const names = ['fixed','sentence','semantic','overlap'];
+    b.classList.toggle('active', names[i] === name);
+  });
+  document.querySelectorAll('.chunk-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('chunk-' + name).classList.add('active');
+}
+
+// ============================================================
+// Code Tabs
+// ============================================================
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    const names = ['embed','store','rag'];
+    b.classList.toggle('active', names[i] === name);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+// ============================================================
+// Exercises localStorage
+// ============================================================
+function toggleExercise(id) {
+  const card = document.getElementById(id);
+  const done = card.classList.toggle('done');
+  localStorage.setItem('day3_' + id, done ? '1' : '0');
+}
+
+['d3-ex-1','d3-ex-2','d3-ex-3','d3-ex-4'].forEach(id => {
+  if (localStorage.getItem('day3_' + id) === '1') {
+    document.getElementById(id).classList.add('done');
+  }
+});
+</script>
+
+<!-- ============================================================
+     NEW SECTION A — Interactive Chunking Lab
+     ============================================================ -->
+<section class="d3-enhance-section">
+  <span class="d3-section-tag">Interactive Lab</span>
+  <h2>Chunking Strategies: See Them in Action</h2>
+
+  <textarea class="chunk-textarea" id="chunkText2">FastAPI is a modern, high-performance web framework for building APIs with Python based on standard Python type hints. It is designed to be easy to use and learn, while also being ready for production environments. FastAPI automatically generates interactive API documentation using OpenAPI standards. One of its key advantages is speed — it is one of the fastest Python frameworks available, comparable to Node.js and Go. FastAPI supports asynchronous programming natively, meaning you can use async and await keywords to handle concurrent requests efficiently. The framework includes built-in data validation using Pydantic models, which reduces the amount of boilerplate code developers need to write. Additionally, FastAPI integrates seamlessly with SQLAlchemy for database operations and supports dependency injection out of the box.</textarea>
+
+  <div class="chunk-strategy-btns">
+    <button class="chunk-btn active" onclick="applyChunking2('fixed',this)">Fixed-Size (200 chars)</button>
+    <button class="chunk-btn" onclick="applyChunking2('sentence',this)">Sentence-Based</button>
+    <button class="chunk-btn" onclick="applyChunking2('paragraph',this)">Paragraph-Based</button>
+    <button class="chunk-btn" onclick="applyChunking2('recursive',this)">Recursive</button>
+  </div>
+
+  <div class="chunk-overlap-wrap">
+    <span>Overlap:</span>
+    <input type="range" id="overlapSlider2" min="0" max="30" step="5" value="0" style="width:140px;">
+    <span id="overlapVal2" style="font-family:'JetBrains Mono',monospace;color:var(--text);">0%</span>
+    <span style="font-size:0.75rem;">(adds text from previous chunk to next)</span>
+  </div>
+
+  <div class="chunk-stats">
+    <div class="chunk-stat"><div class="chunk-stat-num" id="chunkCount2">—</div><div class="chunk-stat-lbl">Chunks</div></div>
+    <div class="chunk-stat"><div class="chunk-stat-num" id="chunkAvg2">—</div><div class="chunk-stat-lbl">Avg Size (chars)</div></div>
+    <div class="chunk-stat"><div class="chunk-stat-num" id="chunkMax2">—</div><div class="chunk-stat-lbl">Largest Chunk</div></div>
+    <div class="chunk-stat"><div class="chunk-stat-num" id="chunkMin2">—</div><div class="chunk-stat-lbl">Smallest Chunk</div></div>
+  </div>
+
+  <div class="chunk-results-area" id="chunkResultsArea2"></div>
+
+  <div class="chunk-visual-note">
+    <strong>Notice:</strong> Fixed-size cuts mid-sentence — fast but semantically broken.
+    Sentence-based creates variable sizes — better meaning preservation.
+    Neither is perfect — choose based on your document type.
+  </div>
+
+  <table class="chunk-rec-table">
+    <thead>
+      <tr><th>Document Type</th><th>Recommended Size</th><th>Overlap</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Code</td><td>512 tokens</td><td>10%</td></tr>
+      <tr><td>Legal / Technical</td><td>256 tokens</td><td>20%</td></tr>
+      <tr><td>FAQ</td><td>128 tokens</td><td>5%</td></tr>
+      <tr><td>Narrative</td><td>512 tokens</td><td>15%</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================================================
+     NEW SECTION B — Retrieval Quality Metrics
+     ============================================================ -->
+<section class="d3-enhance-section">
+  <span class="d3-section-tag">Evaluation</span>
+  <h2>Measuring RAG Quality: Recall, Precision, MRR</h2>
+
+  <div class="rag-metrics-grid">
+    <!-- Recall@K -->
+    <div class="rag-metric-card">
+      <div class="rag-metric-name">Recall@K</div>
+      <div class="rag-metric-desc">Of all relevant chunks, how many appear in your top-K results?</div>
+      <div style="font-size:0.75rem;color:var(--text-dim);margin-bottom:0.4rem;">5 relevant chunks (gold):</div>
+      <div class="rag-dot-row" id="recallDots2"></div>
+      <div style="font-size:0.75rem;color:var(--text-dim);margin-top:0.4rem;" id="recallCaption2"></div>
+    </div>
+
+    <!-- Precision@K -->
+    <div class="rag-metric-card">
+      <div class="rag-metric-name">Precision@K</div>
+      <div class="rag-metric-desc">Of K retrieved chunks, how many are actually relevant?</div>
+      <div style="font-size:0.75rem;color:var(--text-dim);margin-bottom:0.4rem;">Retrieved results (purple = relevant):</div>
+      <div class="rag-dot-row" id="precisionDots2"></div>
+      <div style="font-size:0.75rem;color:var(--text-dim);margin-top:0.4rem;" id="precisionCaption2"></div>
+    </div>
+
+    <!-- MRR -->
+    <div class="rag-metric-card">
+      <div class="rag-metric-name">MRR</div>
+      <div class="rag-metric-desc">Mean Reciprocal Rank — is the best chunk ranked #1?</div>
+      <div style="font-size:0.75rem;color:var(--text-dim);margin-bottom:0.4rem;">Ranking (green = first relevant hit):</div>
+      <ul class="rag-rank-list" id="mrrList2"></ul>
+      <div style="font-size:0.75rem;color:var(--text-dim);margin-top:0.4rem;" id="mrrCaption2"></div>
+    </div>
+  </div>
+
+  <!-- K slider -->
+  <div class="rag-k-slider-wrap">
+    <span class="rag-k-label">K =</span>
+    <input type="range" id="kSlider2" min="1" max="10" step="1" value="5" style="width:140px;">
+    <span id="kVal2" style="font-family:'JetBrains Mono',monospace;color:var(--text);font-weight:700;">5</span>
+    <div class="rag-k-metrics" id="ragKMetrics2"></div>
+  </div>
+
+  <div class="rag-targets-box">
+    <strong>Target numbers for good RAG:</strong> Recall@5 &gt; 0.85 &nbsp;·&nbsp; Precision@3 &gt; 0.70 &nbsp;·&nbsp; MRR &gt; 0.75
+  </div>
+  <div class="rag-failures-box">
+    <strong>Common failure modes:</strong> Low recall = chunks too large or wrong embedding model.
+    Low precision = chunks too small or query too broad. Low MRR = embeddings don't capture relevance ordering.
+  </div>
+</section>
+
+<!-- ============================================================
+     NEW SECTION C — Hybrid Search Architecture
+     ============================================================ -->
+<section class="d3-enhance-section">
+  <span class="d3-section-tag">Architecture</span>
+  <h2>Hybrid Search: Best of Both Worlds</h2>
+
+  <div class="hybrid-diagram">
+    <div style="text-align:center;font-size:0.82rem;font-weight:700;color:var(--text-dim);margin-bottom:1rem;text-transform:uppercase;letter-spacing:0.07em;">Two parallel retrieval pipelines merge at RRF</div>
+
+    <div class="hybrid-pipes">
+      <!-- Keyword pipe -->
+      <div class="hybrid-pipe">
+        <div class="hybrid-node" style="background:#1a1a0d;border-color:#f59e0b;color:#fcd34d;text-align:center;font-weight:600;">Query</div>
+        <div class="hybrid-pipe-arrow">&#8595;</div>
+        <div class="hybrid-node keyword-node">BM25<br><span style="font-size:0.68rem;color:#94a3b8;">Full-text keyword index</span></div>
+        <div class="hybrid-pipe-arrow">&#8595;</div>
+        <div class="hybrid-node keyword-node">Keyword-ranked results<br><span style="font-size:0.68rem;color:#94a3b8;">exact term matching</span></div>
+      </div>
+
+      <!-- Middle merge arrow -->
+      <div class="hybrid-middle">&#10137;<br>RRF<br>&#10136;</div>
+
+      <!-- Semantic pipe -->
+      <div class="hybrid-pipe">
+        <div class="hybrid-node" style="background:#1a1a0d;border-color:#7c3aed;color:#c084fc;text-align:center;font-weight:600;">Query</div>
+        <div class="hybrid-pipe-arrow">&#8595;</div>
+        <div class="hybrid-node semantic-node">Embedding model<br><span style="font-size:0.68rem;color:#94a3b8;">text-embedding-3-small</span></div>
+        <div class="hybrid-pipe-arrow">&#8595;</div>
+        <div class="hybrid-node semantic-node">Vector DB results<br><span style="font-size:0.68rem;color:#94a3b8;">cosine similarity</span></div>
+      </div>
+    </div>
+
+    <div class="hybrid-node merge-node" style="text-align:center;">
+      &#9679; RRF Combined Results &rarr; returned to LLM
+    </div>
+
+    <div class="hybrid-rrf-box" style="margin-top:1rem;">
+      <div style="font-size:0.75rem;color:var(--text-dim);margin-bottom:0.4rem;">Reciprocal Rank Fusion formula:</div>
+      <div class="hybrid-rrf-formula">RRF_score(doc) = &sum; 1 / (k + rank<sub>i</sub>)</div>
+      <div style="font-size:0.72rem;color:var(--text-dim);">
+        k = 60 (constant) &nbsp;·&nbsp; rank = position in each list &nbsp;·&nbsp; scores from both lists are summed
+        <br>Example: doc ranked #2 in keyword, #1 in semantic &rarr; 1/(60+2) + 1/(60+1) = 0.0161 + 0.0164 = 0.0325
+      </div>
+    </div>
+  </div>
+
+  <div class="hybrid-when-grid">
+    <div class="hybrid-when-card keyword">
+      <div class="hybrid-when-title">&#128273; When Keyword (BM25) Wins</div>
+      <ul class="hybrid-when-list">
+        <li>Exact product IDs (SKU-4821)</li>
+        <li>Names and proper nouns</li>
+        <li>Technical codes and jargon</li>
+        <li>Version numbers (v3.2.1)</li>
+        <li>Quoted phrases</li>
+      </ul>
+    </div>
+    <div class="hybrid-when-card semantic">
+      <div class="hybrid-when-title">&#129504; When Semantic Wins</div>
+      <ul class="hybrid-when-list">
+        <li>Concept queries ("how to connect")</li>
+        <li>Paraphrases &amp; synonyms</li>
+        <li>Natural language questions</li>
+        <li>Intent-based retrieval</li>
+        <li>Cross-lingual queries</li>
+      </ul>
+    </div>
+  </div>
+
+  <div style="font-size:0.85rem;font-weight:600;color:var(--text-dim);margin-bottom:0.5rem;text-transform:uppercase;letter-spacing:0.06em;">Hybrid search with pgvector + tsvector (PostgreSQL)</div>
+  <div class="d3-code-block"><span class="d3-cmt">-- Table with both vector and full-text search columns</span>
+<span class="d3-kw">CREATE TABLE</span> documents (
+  id          BIGSERIAL <span class="d3-kw">PRIMARY KEY</span>,
+  content     TEXT <span class="d3-kw">NOT NULL</span>,
+  embedding   vector(<span class="d3-num">1536</span>),                    <span class="d3-cmt">-- pgvector column</span>
+  tsv         tsvector <span class="d3-kw">GENERATED ALWAYS AS</span>   <span class="d3-cmt">-- auto full-text index</span>
+              (to_tsvector(<span class="d3-str">'english'</span>, content)) <span class="d3-kw">STORED</span>
+);
+<span class="d3-kw">CREATE INDEX</span> ON documents <span class="d3-kw">USING</span> ivfflat (embedding vector_cosine_ops);
+<span class="d3-kw">CREATE INDEX</span> ON documents <span class="d3-kw">USING</span> gin(tsv);
+
+<span class="d3-cmt">-- Hybrid search: semantic + keyword, fused with RRF (k=60)</span>
+<span class="d3-kw">WITH</span> semantic <span class="d3-kw">AS</span> (
+  <span class="d3-kw">SELECT</span> id, <span class="d3-kw">ROW_NUMBER</span>() <span class="d3-kw">OVER</span> (<span class="d3-kw">ORDER BY</span> embedding &lt;=&gt; $1) <span class="d3-kw">AS</span> rank
+  <span class="d3-kw">FROM</span>   documents <span class="d3-kw">ORDER BY</span> embedding &lt;=&gt; $1 <span class="d3-kw">LIMIT</span> <span class="d3-num">20</span>
+),
+keyword <span class="d3-kw">AS</span> (
+  <span class="d3-kw">SELECT</span> id, <span class="d3-kw">ROW_NUMBER</span>() <span class="d3-kw">OVER</span> (<span class="d3-kw">ORDER BY</span> ts_rank(tsv, query) <span class="d3-kw">DESC</span>) <span class="d3-kw">AS</span> rank
+  <span class="d3-kw">FROM</span>   documents, to_tsquery(<span class="d3-str">'english'</span>, $2) query
+  <span class="d3-kw">WHERE</span>  tsv @@ query <span class="d3-kw">ORDER BY</span> ts_rank(tsv, query) <span class="d3-kw">DESC</span> <span class="d3-kw">LIMIT</span> <span class="d3-num">20</span>
+)
+<span class="d3-kw">SELECT</span>
+  d.id, d.content,
+  <span class="d3-kw">COALESCE</span>(<span class="d3-num">1.0</span>/(<span class="d3-num">60</span>+s.rank),<span class="d3-num">0</span>) + <span class="d3-kw">COALESCE</span>(<span class="d3-num">1.0</span>/(<span class="d3-num">60</span>+k.rank),<span class="d3-num">0</span>) <span class="d3-kw">AS</span> rrf_score
+<span class="d3-kw">FROM</span>   documents d
+  <span class="d3-kw">LEFT JOIN</span> semantic s <span class="d3-kw">ON</span> d.id = s.id
+  <span class="d3-kw">LEFT JOIN</span> keyword  k <span class="d3-kw">ON</span> d.id = k.id
+<span class="d3-kw">WHERE</span>  s.id <span class="d3-kw">IS NOT NULL OR</span> k.id <span class="d3-kw">IS NOT NULL</span>
+<span class="d3-kw">ORDER BY</span> rrf_score <span class="d3-kw">DESC</span>
+<span class="d3-kw">LIMIT</span>  <span class="d3-num">5</span>;</div>
+
+  <div class="hybrid-rule-box">
+    <strong>Rule of thumb:</strong> Hybrid search consistently outperforms either approach alone by 10–15% in recall.
+    Worth the extra complexity for production. Start with pgvector + tsvector if you are already on PostgreSQL —
+    no extra infrastructure needed.
+  </div>
+</section>
+
+<!-- ── Conversation Memory Management ── -->
+<section class="d3-enhance-section" style="margin-top:4rem;">
+  <span class="d3-section-tag">Agent Patterns</span>
+  <h2>Conversation Memory Management</h2>
+  <p style="color:var(--text-muted);margin-bottom:2rem;line-height:1.7;">Long-running agents face a hard constraint: the context window fills up. Here are the practical patterns for keeping agents running indefinitely without hitting token limits.</p>
+
+  <!-- 1. The Memory Problem -->
+  <h3 style="font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:1rem;">The Memory Problem</h3>
+  <div style="background:var(--bg-card,#141420);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin-bottom:2rem;">
+    <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.75rem;text-transform:uppercase;letter-spacing:0.06em;font-weight:600;">Context Window Fills Over Time</div>
+    <div style="display:flex;gap:3px;height:36px;border-radius:8px;overflow:hidden;margin-bottom:0.75rem;">
+      <div style="flex:0 0 18%;background:rgba(124,58,237,0.6);display:flex;align-items:center;justify-content:center;font-size:0.62rem;font-weight:700;color:#fff;letter-spacing:0.03em;">SYSTEM</div>
+      <div style="flex:0 0 14%;background:rgba(13,148,136,0.55);display:flex;align-items:center;justify-content:center;font-size:0.62rem;font-weight:700;color:#fff;">TOOLS</div>
+      <div style="flex:0 0 20%;background:rgba(59,130,246,0.5);display:flex;align-items:center;justify-content:center;font-size:0.62rem;font-weight:700;color:#fff;">RAG CTX</div>
+      <div id="mem-history-bar" style="flex:1;background:rgba(245,158,11,0.45);display:flex;align-items:center;justify-content:center;font-size:0.62rem;font-weight:700;color:#fff;transition:background 0.4s;">HISTORY ▲ grows</div>
+    </div>
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;">
+      <button onclick="setMemStage('fresh')" id="mem-btn-fresh" style="padding:0.3rem 0.8rem;border-radius:6px;border:1px solid var(--border);background:rgba(16,185,129,0.15);color:#10b981;font-size:0.78rem;cursor:pointer;font-weight:600;">Fresh</button>
+      <button onclick="setMemStage('mid')" id="mem-btn-mid" style="padding:0.3rem 0.8rem;border-radius:6px;border:1px solid var(--border);background:var(--surface,#1c1c2e);color:var(--text-muted);font-size:0.78rem;cursor:pointer;font-weight:600;">Mid session</button>
+      <button onclick="setMemStage('eighty')" id="mem-btn-eighty" style="padding:0.3rem 0.8rem;border-radius:6px;border:1px solid var(--border);background:var(--surface,#1c1c2e);color:var(--text-muted);font-size:0.78rem;cursor:pointer;font-weight:600;">80% full</button>
+      <button onclick="setMemStage('full')" id="mem-btn-full" style="padding:0.3rem 0.8rem;border-radius:6px;border:1px solid var(--border);background:rgba(239,68,68,0.12);color:#ef4444;font-size:0.78rem;cursor:pointer;font-weight:600;">Full → truncation</button>
+    </div>
+    <div id="mem-stage-label" style="font-size:0.82rem;color:var(--text-muted);padding:0.6rem 0.85rem;background:rgba(0,0,0,0.25);border-radius:8px;border-left:3px solid #10b981;transition:border-color 0.3s;">
+      Turn 1 — context is wide open. All history fits comfortably.
+    </div>
+    <div style="display:flex;gap:1.5rem;margin-top:0.85rem;flex-wrap:wrap;">
+      <span style="font-size:0.72rem;color:var(--text-muted);display:flex;align-items:center;gap:0.35rem;"><span style="width:10px;height:10px;border-radius:2px;background:rgba(124,58,237,0.6);display:inline-block;"></span>Fixed (system prompt)</span>
+      <span style="font-size:0.72rem;color:var(--text-muted);display:flex;align-items:center;gap:0.35rem;"><span style="width:10px;height:10px;border-radius:2px;background:rgba(13,148,136,0.55);display:inline-block;"></span>Fixed (tool schemas)</span>
+      <span style="font-size:0.72rem;color:var(--text-muted);display:flex;align-items:center;gap:0.35rem;"><span style="width:10px;height:10px;border-radius:2px;background:rgba(59,130,246,0.5);display:inline-block;"></span>Per-turn (RAG context)</span>
+      <span style="font-size:0.72rem;color:var(--text-muted);display:flex;align-items:center;gap:0.35rem;"><span style="width:10px;height:10px;border-radius:2px;background:rgba(245,158,11,0.45);display:inline-block;"></span>Grows unbounded (history)</span>
+    </div>
+  </div>
+
+  <!-- 2. Three Patterns -->
+  <h3 style="font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:1rem;">Three Patterns</h3>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:1rem;margin-bottom:2rem;">
+    <!-- Pattern 1 -->
+    <div style="background:var(--bg-card,#141420);border:1px solid var(--border);border-radius:12px;padding:1.25rem;border-top:3px solid var(--purple);">
+      <div style="font-size:0.7rem;font-weight:700;color:var(--purple-light,#a855f7);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:0.4rem;">Pattern 1</div>
+      <div style="font-weight:700;font-size:1rem;color:var(--text);margin-bottom:0.5rem;">Sliding Window</div>
+      <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:0.75rem;line-height:1.6;">Keep only the last <em>N</em> turns. Simple, slightly lossy. Best for chat and short-lived agents.</div>
+      <div style="display:flex;gap:0.5rem;margin-bottom:0.1rem;flex-wrap:wrap;">
+        <span style="font-size:0.72rem;padding:0.2rem 0.55rem;border-radius:20px;background:rgba(124,58,237,0.15);color:var(--purple-light,#a855f7);font-weight:600;">Simple</span>
+        <span style="font-size:0.72rem;padding:0.2rem 0.55rem;border-radius:20px;background:rgba(245,158,11,0.1);color:#f59e0b;font-weight:600;">Lossy</span>
+        <span style="font-size:0.72rem;padding:0.2rem 0.55rem;border-radius:20px;background:rgba(16,185,129,0.1);color:#10b981;font-weight:600;">O(1) overhead</span>
+      </div>
+    </div>
+    <!-- Pattern 2 -->
+    <div style="background:var(--bg-card,#141420);border:1px solid var(--border);border-radius:12px;padding:1.25rem;border-top:3px solid var(--teal);">
+      <div style="font-size:0.7rem;font-weight:700;color:var(--teal-light,#2dd4bf);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:0.4rem;">Pattern 2</div>
+      <div style="font-weight:700;font-size:1rem;color:var(--text);margin-bottom:0.5rem;">Summarization</div>
+      <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:0.75rem;line-height:1.6;">When history exceeds a threshold, call a cheap LLM to summarize old turns. Replace with the summary, keep recent turns fresh.</div>
+      <div style="display:flex;gap:0.5rem;margin-bottom:0.1rem;flex-wrap:wrap;">
+        <span style="font-size:0.72rem;padding:0.2rem 0.55rem;border-radius:20px;background:rgba(13,148,136,0.15);color:var(--teal-light,#2dd4bf);font-weight:600;">Lossless-ish</span>
+        <span style="font-size:0.72rem;padding:0.2rem 0.55rem;border-radius:20px;background:rgba(245,158,11,0.1);color:#f59e0b;font-weight:600;">Extra LLM call</span>
+        <span style="font-size:0.72rem;padding:0.2rem 0.55rem;border-radius:20px;background:rgba(16,185,129,0.1);color:#10b981;font-weight:600;">Hours/days</span>
+      </div>
+    </div>
+    <!-- Pattern 3 -->
+    <div style="background:var(--bg-card,#141420);border:1px solid var(--border);border-radius:12px;padding:1.25rem;border-top:3px solid var(--amber);">
+      <div style="font-size:0.7rem;font-weight:700;color:#f59e0b;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:0.4rem;">Pattern 3</div>
+      <div style="font-weight:700;font-size:1rem;color:var(--text);margin-bottom:0.5rem;">External Memory</div>
+      <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:0.75rem;line-height:1.6;">Extract key facts from each turn, store in a vector DB (mem0, pgvector). Retrieve on demand — full RAG loop for agent memory. Unlimited horizon.</div>
+      <div style="display:flex;gap:0.5rem;margin-bottom:0.1rem;flex-wrap:wrap;">
+        <span style="font-size:0.72rem;padding:0.2rem 0.55rem;border-radius:20px;background:rgba(245,158,11,0.12);color:#f59e0b;font-weight:600;">Weeks/persistent</span>
+        <span style="font-size:0.72rem;padding:0.2rem 0.55rem;border-radius:20px;background:rgba(59,130,246,0.12);color:#3b82f6;font-weight:600;">Infra needed</span>
+        <span style="font-size:0.72rem;padding:0.2rem 0.55rem;border-radius:20px;background:rgba(16,185,129,0.1);color:#10b981;font-weight:600;">Best fidelity</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Code: Pattern 1 -->
+  <div class="code-block" style="margin-bottom:1.25rem;">
+    <div class="code-header">
+      <span class="code-title" style="color:var(--purple-light,#a855f7);">Pattern 1 — sliding_window.py</span>
+      <span class="code-lang">python</span>
+    </div>
+    <div class="code-content"><span class="kw">def</span> <span class="fn">trim_history</span>(<span class="var">messages</span>: <span class="fn">list</span>, <span class="var">max_turns</span>: <span class="fn">int</span> = <span class="num">10</span>) -> <span class="fn">list</span>:
+    <span class="cm"># Always keep system messages</span>
+    <span class="cm"># Keep last max_turns * 2 messages (user + assistant pairs)</span>
+    <span class="kw">if</span> <span class="fn">len</span>(<span class="var">messages</span>) > <span class="var">max_turns</span> * <span class="num">2</span>:
+        <span class="kw">return</span> <span class="var">messages</span>[-(<span class="var">max_turns</span> * <span class="num">2</span>):]
+    <span class="kw">return</span> <span class="var">messages</span></div>
+  </div>
+
+  <!-- Code: Pattern 2 -->
+  <div class="code-block" style="margin-bottom:1.25rem;">
+    <div class="code-header">
+      <span class="code-title" style="color:var(--teal-light,#2dd4bf);">Pattern 2 — summarize_history.py</span>
+      <span class="code-lang">python</span>
+    </div>
+    <div class="code-content"><span class="kw">async def</span> <span class="fn">compress_history</span>(<span class="var">messages</span>: <span class="fn">list</span>, <span class="var">client</span>, <span class="var">threshold</span>: <span class="fn">int</span> = <span class="num">8000</span>) -> <span class="fn">list</span>:
+    <span class="var">total_tokens</span> = <span class="fn">estimate_tokens</span>(<span class="var">messages</span>)
+    <span class="kw">if</span> <span class="var">total_tokens</span> < <span class="var">threshold</span>:
+        <span class="kw">return</span> <span class="var">messages</span>
+
+    <span class="cm"># Summarize the old part, keep recent turns fresh</span>
+    <span class="var">old_messages</span> = <span class="var">messages</span>[:-<span class="num">4</span>]  <span class="cm"># keep last 2 turns fresh</span>
+    <span class="var">recent</span> = <span class="var">messages</span>[-<span class="num">4</span>:]
+
+    <span class="var">summary_resp</span> = <span class="kw">await</span> <span class="var">client</span>.<span class="var">messages</span>.<span class="fn">create</span>(
+        <span class="key">model</span>=<span class="str">"claude-haiku-4-5-20251001"</span>,  <span class="cm"># cheap model for summarization</span>
+        <span class="key">max_tokens</span>=<span class="num">500</span>,
+        <span class="key">messages</span>=[{
+            <span class="key">"role"</span>: <span class="str">"user"</span>,
+            <span class="key">"content"</span>: <span class="fn">f</span><span class="str">"Summarize this conversation in 3-5 bullet points:\n\n{<span class="fn">format_messages</span>(<span class="var">old_messages</span>)}"</span>
+        }]
+    )
+
+    <span class="var">summary_msg</span> = {
+        <span class="key">"role"</span>: <span class="str">"user"</span>,
+        <span class="key">"content"</span>: <span class="fn">f</span><span class="str">"[CONVERSATION SUMMARY]\n{<span class="var">summary_resp</span>.<span class="var">content</span>[<span class="num">0</span>].<span class="var">text</span>}"</span>
+    }
+    <span class="kw">return</span> [<span class="var">summary_msg</span>] + <span class="var">recent</span></div>
+  </div>
+
+  <!-- 3. Decision Flowchart -->
+  <h3 style="font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:1rem;">Which Pattern to Choose?</h3>
+  <div style="background:var(--bg-card,#141420);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin-bottom:2rem;">
+    <div style="display:flex;align-items:center;gap:0;flex-wrap:wrap;row-gap:0.5rem;">
+      <div style="background:rgba(124,58,237,0.18);border:1px solid rgba(124,58,237,0.4);border-radius:8px;padding:0.55rem 1rem;font-size:0.82rem;font-weight:600;color:var(--text);white-space:nowrap;">How long does the session run?</div>
+      <div style="display:flex;flex-direction:column;gap:0.4rem;margin-left:1rem;">
+        <div style="display:flex;align-items:center;gap:0.5rem;">
+          <span style="font-size:0.72rem;color:var(--text-muted);white-space:nowrap;min-width:80px;">&#60; 1 hour</span>
+          <div style="width:32px;height:2px;background:var(--purple);flex-shrink:0;"></div>
+          <div style="background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.35);border-radius:6px;padding:0.35rem 0.75rem;font-size:0.78rem;font-weight:600;color:var(--purple-light,#a855f7);">Sliding Window</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.5rem;">
+          <span style="font-size:0.72rem;color:var(--text-muted);white-space:nowrap;min-width:80px;">Hours / days</span>
+          <div style="width:32px;height:2px;background:var(--teal);flex-shrink:0;"></div>
+          <div style="background:rgba(13,148,136,0.12);border:1px solid rgba(13,148,136,0.35);border-radius:6px;padding:0.35rem 0.75rem;font-size:0.78rem;font-weight:600;color:var(--teal-light,#2dd4bf);">Summarization</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.5rem;">
+          <span style="font-size:0.72rem;color:var(--text-muted);white-space:nowrap;min-width:80px;">Weeks / always-on</span>
+          <div style="width:32px;height:2px;background:#f59e0b;flex-shrink:0;"></div>
+          <div style="background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.35);border-radius:6px;padding:0.35rem 0.75rem;font-size:0.78rem;font-weight:600;color:#f59e0b;">External Memory Store</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Token Estimation Utility -->
+  <h3 style="font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:0.75rem;">Token Estimation Utility</h3>
+  <div style="background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.25);border-radius:10px;padding:0.7rem 1rem;margin-bottom:1rem;font-size:0.82rem;color:#f59e0b;font-weight:600;">
+    Use this to decide when to trigger compression — no API call needed.
+  </div>
+  <div class="code-block" style="margin-bottom:0;">
+    <div class="code-header">
+      <span class="code-title">token_utils.py</span>
+      <span class="code-lang">python</span>
+    </div>
+    <div class="code-content"><span class="kw">def</span> <span class="fn">estimate_tokens</span>(<span class="var">messages</span>: <span class="fn">list</span>) -> <span class="fn">int</span>:
+    <span class="cm">"""Rough estimate: 1 token ≈ 4 chars"""</span>
+    <span class="var">total_chars</span> = <span class="fn">sum</span>(
+        <span class="fn">len</span>(<span class="fn">str</span>(<span class="var">m</span>.<span class="fn">get</span>(<span class="str">"content"</span>, <span class="str">""</span>)))
+        <span class="kw">for</span> <span class="var">m</span> <span class="kw">in</span> <span class="var">messages</span>
+    )
+    <span class="kw">return</span> <span class="var">total_chars</span> // <span class="num">4</span></div>
+  </div>
+</section>
+
+<script>
+// Memory Problem stage switcher
+(function() {
+  var stages = {
+    fresh:  { label: 'Turn 1 — context is wide open. All history fits comfortably.', histBg: 'rgba(245,158,11,0.2)', barColor: '#10b981', histWidth: '10%', histText: 'HISTORY' },
+    mid:    { label: 'Turn 20 — history growing. Still plenty of room, no pressure.', histBg: 'rgba(245,158,11,0.38)', barColor: '#f59e0b', histWidth: '35%', histText: 'HISTORY ▲' },
+    eighty: { label: '80% full — compression should trigger soon. latency risk increases.', histBg: 'rgba(245,158,11,0.55)', barColor: '#f97316', histWidth: '58%', histText: 'HISTORY ▲▲' },
+    full:   { label: 'Context full — hard truncation. Oldest messages silently dropped.', histBg: 'rgba(239,68,68,0.5)', barColor: '#ef4444', histWidth: '80%', histText: '⚠ TRUNCATED' }
+  };
+  window.setMemStage = function(key) {
+    var s = stages[key];
+    var bar = document.getElementById('mem-history-bar');
+    var lbl = document.getElementById('mem-stage-label');
+    if (!bar || !lbl) return;
+    bar.style.background = s.histBg;
+    bar.textContent = s.histText;
+    lbl.style.borderLeftColor = s.barColor;
+    lbl.textContent = s.label;
+    ['fresh','mid','eighty','full'].forEach(function(k) {
+      var btn = document.getElementById('mem-btn-' + k);
+      if (!btn) return;
+      btn.style.opacity = k === key ? '1' : '0.5';
+    });
+  };
+  setMemStage('fresh');
+})();
+</script>
+
+<script>
+// ============================================================
+// Chunking Lab (day3 new section)
+// ============================================================
+(function() {
+  const COLORS = [
+    'rgba(124,58,237,0.25)', 'rgba(13,148,136,0.25)', 'rgba(16,185,129,0.25)',
+    'rgba(245,158,11,0.25)', 'rgba(239,68,68,0.22)',  'rgba(59,130,246,0.25)',
+    'rgba(168,85,247,0.22)', 'rgba(6,182,212,0.22)',  'rgba(251,146,60,0.22)'
+  ];
+  const BORDER_COLORS = [
+    '#7c3aed','#0d9488','#10b981','#f59e0b','#ef4444','#3b82f6','#a855f7','#06b6d4','#fb923c'
+  ];
+
+  let currentStrategy2 = 'fixed';
+
+  function chunkFixed2(text, size) { size = size || 200; const chunks = []; for (let i = 0; i < text.length; i += size) chunks.push(text.slice(i, i+size)); return chunks; }
+  function chunkSentence2(text) { return text.match(/[^.!?]+[.!?]+[\s]*/g) || [text]; }
+  function chunkParagraph2(text) { const p = text.split(/\n\n+/).filter(function(s){ return s.trim(); }); return p.length > 1 ? p : chunkSentence2(text); }
+  function chunkRecursive2(text) {
+    if (text.length <= 180) return [text];
+    const para = text.split(/\n\n+/).filter(function(s){ return s.trim(); });
+    if (para.length > 1) { var out = []; para.forEach(function(p){ out = out.concat(chunkRecursive2(p)); }); return out; }
+    const sent = text.match(/[^.!?]+[.!?]+[\s]*/g) || [];
+    if (sent.length > 1) {
+      const result = []; let current = '';
+      sent.forEach(function(s){ if ((current + s).length > 200 && current) { result.push(current.trim()); current = s; } else current += s; });
+      if (current.trim()) result.push(current.trim());
+      return result;
+    }
+    return chunkFixed2(text, 180);
+  }
+
+  function applyOverlap2(chunks, pct) {
+    if (pct === 0) return chunks;
+    return chunks.map(function(chunk, i) {
+      if (i === 0) return chunk;
+      const prev = chunks[i-1];
+      const overlapLen = Math.floor(prev.length * pct / 100);
+      return prev.slice(-overlapLen) + chunk;
+    });
+  }
+
+  function renderChunks2(strategy, overlap) {
+    const text = document.getElementById('chunkText2').value;
+    let raw;
+    if (strategy === 'fixed')          raw = chunkFixed2(text);
+    else if (strategy === 'sentence')  raw = chunkSentence2(text);
+    else if (strategy === 'paragraph') raw = chunkParagraph2(text);
+    else                               raw = chunkRecursive2(text);
+
+    const chunks = applyOverlap2(raw, overlap);
+    const area = document.getElementById('chunkResultsArea2');
+    area.innerHTML = '';
+    chunks.forEach(function(c, i) {
+      const div = document.createElement('div');
+      div.className = 'chunk-box';
+      div.style.background = COLORS[i % COLORS.length];
+      div.style.borderColor = BORDER_COLORS[i % BORDER_COLORS.length];
+      const preview = c.trim().slice(0, 60) + (c.length > 60 ? '\u2026' : '');
+      div.textContent = '[' + (i+1) + '] ' + preview;
+      div.title = c.trim();
+      area.appendChild(div);
+    });
+
+    const sizes = chunks.map(function(c){ return c.length; });
+    document.getElementById('chunkCount2').textContent = chunks.length;
+    document.getElementById('chunkAvg2').textContent   = chunks.length ? Math.round(sizes.reduce(function(a,b){return a+b;},0)/sizes.length) : 0;
+    document.getElementById('chunkMax2').textContent   = chunks.length ? Math.max.apply(null, sizes) : 0;
+    document.getElementById('chunkMin2').textContent   = chunks.length ? Math.min.apply(null, sizes) : 0;
+  }
+
+  window.applyChunking2 = function(strategy, btn) {
+    document.querySelectorAll('.chunk-btn').forEach(function(b){ b.classList.remove('active'); });
+    btn.classList.add('active');
+    currentStrategy2 = strategy;
+    renderChunks2(strategy, +document.getElementById('overlapSlider2').value);
+  };
+
+  document.getElementById('overlapSlider2').addEventListener('input', function() {
+    document.getElementById('overlapVal2').textContent = this.value + '%';
+    renderChunks2(currentStrategy2, +this.value);
+  });
+
+  document.getElementById('chunkText2').addEventListener('input', function() {
+    renderChunks2(currentStrategy2, +document.getElementById('overlapSlider2').value);
+  });
+
+  renderChunks2('fixed', 0);
+})();
+
+// ============================================================
+// RAG Quality Metrics (day3 new section)
+// ============================================================
+(function() {
+  const RELEVANT2 = [0,2,4,6,8];
+  const RETRIEVAL_ORDER2 = [0,3,2,7,4,1,8,5,6,9];
+
+  function updateMetrics2(k) {
+    const retrieved = RETRIEVAL_ORDER2.slice(0, k);
+    const relSet = new Set(RELEVANT2);
+    const hits = retrieved.filter(function(id){ return relSet.has(id); });
+    const recall    = (hits.length / RELEVANT2.length).toFixed(2);
+    const precision = (hits.length / k).toFixed(2);
+
+    let firstRank = null;
+    for (let i = 0; i < retrieved.length; i++) {
+      if (relSet.has(retrieved[i])) { firstRank = i+1; break; }
+    }
+    const mrr = firstRank ? (1/firstRank).toFixed(3) : '0.000';
+
+    // Recall dots
+    const rDots = document.getElementById('recallDots2');
+    rDots.innerHTML = '';
+    RELEVANT2.forEach(function(id) {
+      const d = document.createElement('div');
+      const isHit = hits.indexOf(id) !== -1;
+      d.className = 'rag-dot relevant' + (isHit ? ' hit' : '');
+      d.title = 'Chunk ' + id + ' — ' + (isHit ? 'retrieved' : 'missed');
+      if (isHit) d.style.boxShadow = '0 0 6px #f59e0b';
+      rDots.appendChild(d);
+    });
+    document.getElementById('recallCaption2').textContent = 'Recall@' + k + ' = ' + hits.length + '/' + RELEVANT2.length + ' = ' + recall;
+
+    // Precision dots
+    const pDots = document.getElementById('precisionDots2');
+    pDots.innerHTML = '';
+    retrieved.forEach(function(id) {
+      const d = document.createElement('div');
+      d.className = 'rag-dot' + (relSet.has(id) ? ' hit' : ' retrieved');
+      d.title = 'Chunk ' + id + ' — ' + (relSet.has(id) ? 'relevant' : 'noise');
+      pDots.appendChild(d);
+    });
+    document.getElementById('precisionCaption2').textContent = 'Precision@' + k + ' = ' + hits.length + '/' + k + ' = ' + precision;
+
+    // MRR rank list
+    const list = document.getElementById('mrrList2');
+    list.innerHTML = '';
+    const show = Math.min(k, 6);
+    for (let i = 0; i < show; i++) {
+      const id = RETRIEVAL_ORDER2[i];
+      const rel = relSet.has(id);
+      const li = document.createElement('li');
+      if (rel && i+1 === firstRank) li.className = 'rank-hit';
+      li.innerHTML = '<span class="rag-rank-num">#' + (i+1) + '</span> Chunk ' + id + ' ' + (rel ? '&#9733; relevant' : '&#9900; noise') + (rel && i+1===firstRank ? ' &#8592; 1st hit' : '');
+      list.appendChild(li);
+    }
+    document.getElementById('mrrCaption2').textContent = 'MRR = 1/' + (firstRank || '\u221e') + ' = ' + mrr;
+
+    document.getElementById('ragKMetrics2').innerHTML =
+      '<span class="rag-k-metric" style="color:#f59e0b;">Recall@' + k + ': <strong>' + recall + '</strong></span>' +
+      '<span class="rag-k-metric" style="color:#7c3aed;">Precision@' + k + ': <strong>' + precision + '</strong></span>' +
+      '<span class="rag-k-metric" style="color:#10b981;">MRR: <strong>' + mrr + '</strong></span>';
+  }
+
+  const kSlider2 = document.getElementById('kSlider2');
+  kSlider2.addEventListener('input', function() {
+    document.getElementById('kVal2').textContent = this.value;
+    updateMetrics2(+this.value);
+  });
+
+  updateMetrics2(5);
+})();
+</script>
+<script src="../bg-animation.js"></script>
+</body>
+</html>

@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Building Your Own LLM Stack — What's Next</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f; --card: #141420; --surface2: #1a1a2e; --border: #2a2a45;
+  --purple: #7c3aed; --purple-light: #a855f7; --teal: #0d9488; --green: #10b981;
+  --red: #ef4444; --yellow: #f59e0b; --text: #e2e8f0; --muted: #64748b;
+  --font: 'Inter', sans-serif; --mono: 'JetBrains Mono', monospace;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; overflow-x: hidden; }
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(13,148,136,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 10% 80%, rgba(124,58,237,0.04) 0%, transparent 60%);
+  pointer-events: none; z-index: 0;
+}
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+nav { border-bottom: 1px solid var(--border); padding: 14px 0; background: rgba(10,10,15,0.85); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; }
+.nav-inner { display: flex; align-items: center; justify-content: space-between; }
+.nav-back { color: var(--muted); font-size: 13px; text-decoration: none; transition: color 0.2s; }
+.nav-back:hover { color: var(--text); }
+.nav-tag { font-size: 13px; font-weight: 700; background: linear-gradient(90deg,#0d9488,#10b981); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+.hero { padding: 60px 0 48px; }
+.hero-eyebrow { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.hero-icon { font-size: 40px; }
+.difficulty-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: rgba(100,116,139,0.15); color: var(--muted); }
+.time-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+.hero h1 { font-size: clamp(28px, 5vw, 48px); font-weight: 900; letter-spacing: -2px; margin-bottom: 14px; line-height: 1.1; }
+.hero h1 span { background: linear-gradient(135deg, #0d9488, #10b981); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.hero p { font-size: 16px; color: var(--muted); max-width: 620px; line-height: 1.7; }
+
+.section { padding: 56px 0; border-top: 1px solid var(--border); }
+.section-header { margin-bottom: 32px; }
+.section-num { font-size: 11px; font-weight: 700; color: var(--teal); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.section-header h2 { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 10px; }
+.section-header p { color: var(--muted); font-size: 15px; line-height: 1.6; max-width: 640px; }
+
+/* CODE BLOCKS — white-space: pre is REQUIRED */
+.code-block {
+  background: #0d1117; border: 1px solid #30363d; border-radius: 12px;
+  padding: 24px; font-family: var(--mono); font-size: 12.5px; line-height: 1.8;
+  overflow-x: auto; white-space: pre;
+}
+.code-wrap { position: relative; margin-top: 16px; }
+.code-label { position: absolute; top: -10px; left: 16px; background: var(--teal); color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.5px; }
+.c-cmt { color: #8b949e; }
+.c-kw { color: #ff7b72; }
+.c-fn { color: #d2a8ff; }
+.c-str { color: #a5d6ff; }
+.c-type { color: #ffa657; }
+.c-num { color: #f2cc60; }
+.c-bi { color: #79c0ff; }
+
+/* DECISION GUIDE */
+.decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.decision-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+.decision-card.local { border-color: rgba(16,185,129,0.3); }
+.decision-card.cloud { border-color: rgba(124,58,237,0.3); }
+.decision-header { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+.decision-card.local .decision-header { color: var(--green); }
+.decision-card.cloud .decision-header { color: var(--purple-light); }
+.decision-items { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.decision-items li { font-size: 12px; color: var(--muted); display: flex; gap: 8px; line-height: 1.5; }
+
+/* MODEL TABLE */
+.model-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.model-table th { background: var(--surface2); padding: 10px 12px; text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); border-bottom: 1px solid var(--border); }
+.model-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.model-table tr:last-child td { border-bottom: none; }
+.model-table tr:hover td { background: rgba(255,255,255,0.02); }
+.model-rec { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
+.rec-general { background: rgba(16,185,129,0.15); color: var(--green); }
+.rec-code { background: rgba(13,148,136,0.15); color: var(--teal); }
+.rec-local { background: rgba(245,158,11,0.15); color: var(--yellow); }
+.rec-think { background: rgba(168,85,247,0.15); color: var(--purple-light); }
+
+/* ARCHITECTURE LAYERS */
+.arch-layers { display: flex; flex-direction: column; gap: 8px; }
+.arch-layer { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; display: flex; align-items: center; gap: 14px; }
+.arch-layer-num { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; flex-shrink: 0; }
+.layer-1 { background: rgba(16,185,129,0.15); color: var(--green); }
+.layer-2 { background: rgba(13,148,136,0.15); color: var(--teal); }
+.layer-3 { background: rgba(124,58,237,0.15); color: var(--purple-light); }
+.layer-4 { background: rgba(245,158,11,0.15); color: var(--yellow); }
+.arch-layer-body { flex: 1; }
+.arch-layer-title { font-size: 13px; font-weight: 700; }
+.arch-layer-tech { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+/* CALLOUT */
+.callout { background: rgba(13,148,136,0.07); border: 1px solid rgba(13,148,136,0.25); border-radius: 12px; padding: 16px 20px; display: flex; gap: 12px; align-items: flex-start; margin: 20px 0; }
+.callout-icon { font-size: 18px; flex-shrink: 0; }
+.callout-text { font-size: 13px; color: var(--text); line-height: 1.6; }
+.callout-text strong { color: var(--teal); }
+.callout.warn { background: rgba(245,158,11,0.07); border-color: rgba(245,158,11,0.25); }
+.callout.warn .callout-text strong { color: var(--yellow); }
+.callout.info { background: rgba(124,58,237,0.07); border-color: rgba(124,58,237,0.25); }
+.callout.info .callout-text strong { color: var(--purple-light); }
+
+/* PREREQS */
+.prereq-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.prereq-chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.prereq-day { background: var(--teal); color: white; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; }
+
+/* EXERCISES */
+.ex-list { display: flex; flex-direction: column; gap: 12px; }
+.ex-item { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; display: flex; gap: 14px; }
+.ex-num { width: 32px; height: 32px; border-radius: 50%; background: rgba(13,148,136,0.15); border: 2px solid var(--teal); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: var(--teal); flex-shrink: 0; }
+.ex-body { flex: 1; }
+.ex-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.ex-desc { font-size: 12px; color: var(--muted); line-height: 1.6; }
+.ex-difficulty { display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+.diff-easy { background: rgba(16,185,129,0.15); color: var(--green); }
+.diff-med { background: rgba(245,158,11,0.15); color: var(--yellow); }
+.diff-hard { background: rgba(239,68,68,0.15); color: var(--red); }
+
+@media(max-width:700px) {
+  .decision-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="container">
+    <div class="nav-inner">
+      <a href="../days/day7.html" class="nav-back">← Back to Day 7</a>
+      <span class="nav-tag">What's Next — LLM Stack</span>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+
+  <section class="hero">
+    <div class="hero-eyebrow">
+      <span class="hero-icon">🏗️</span>
+      <span class="difficulty-badge">Optional Deep Dive</span>
+      <span class="time-badge">⏱ 3–5 days</span>
+    </div>
+    <h1>Building Your<br><span>Own LLM Stack</span></h1>
+    <p>Go beyond cloud APIs. Run models locally with Ollama, deploy production-grade inference servers with vLLM, and build a complete self-hosted LLM stack — including monitoring. Full control, no rate limits, no per-token billing.</p>
+  </section>
+
+  <!-- SECTION 1: Why Self-Hosted -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">01 — Decision Guide</div>
+      <h2>Why Local/Self-Hosted?</h2>
+      <p>Self-hosting isn't always the right answer. Know the tradeoffs before committing to the operational complexity.</p>
+    </div>
+
+    <div class="decision-grid">
+      <div class="decision-card local">
+        <div class="decision-header">Go self-hosted when...</div>
+        <ul class="decision-items">
+          <li><span style="color:var(--green)">✓</span> High volume makes per-token cost painful (&gt;$5K/month)</li>
+          <li><span style="color:var(--green)">✓</span> Data cannot leave your infrastructure (HIPAA, GDPR)</li>
+          <li><span style="color:var(--green)">✓</span> You need fine-tuned models with proprietary weights</li>
+          <li><span style="color:var(--green)">✓</span> Offline operation is required (air-gapped environments)</li>
+          <li><span style="color:var(--green)">✓</span> Latency requirements are extremely tight (&lt;100ms P99)</li>
+          <li><span style="color:var(--green)">✓</span> You want to experiment with cutting-edge open models</li>
+        </ul>
+      </div>
+      <div class="decision-card cloud">
+        <div class="decision-header">Stay with cloud APIs when...</div>
+        <ul class="decision-items">
+          <li><span style="color:var(--purple-light)">✓</span> You need Claude 3.5/4 or GPT-4 level capability</li>
+          <li><span style="color:var(--purple-light)">✓</span> You don't want to manage GPU infrastructure</li>
+          <li><span style="color:var(--purple-light)">✓</span> Volume is &lt;$1K/month (self-hosting isn't worth it)</li>
+          <li><span style="color:var(--purple-light)">✓</span> You need the absolute latest model versions</li>
+          <li><span style="color:var(--purple-light)">✓</span> Your team has no MLOps experience</li>
+          <li><span style="color:var(--purple-light)">✓</span> You need 99.9%+ uptime SLAs</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 2: Ollama -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">02 — Local Dev</div>
+      <h2>Ollama — Local Models in Minutes</h2>
+      <p>Ollama makes running local models as simple as brew install. It exposes an OpenAI-compatible API — you can swap it in for your existing agent code by just changing one URL.</p>
+    </div>
+
+    <div class="callout">
+      <span class="callout-icon">⚡</span>
+      <div class="callout-text"><strong>Drop-in replacement:</strong> Ollama's API is compatible with the OpenAI SDK. Change base_url to http://localhost:11434/v1 and model name to "llama3.2" — your existing agent code works without modification. Zero refactoring.</div>
+    </div>
+
+    <div class="code-wrap">
+      <span class="code-label">BASH — Install & Run</span>
+      <div class="code-block"><span class="c-cmt"># Install Ollama (macOS/Linux)</span>
+curl -fsSL https://ollama.com/install.sh | sh
+
+<span class="c-cmt"># Pull a model (downloads weights, ~4GB for 7B model)</span>
+ollama pull llama3.2           <span class="c-cmt"># 3B params, 2GB — very fast</span>
+ollama pull llama3.1:8b        <span class="c-cmt"># 8B params, 5GB — good quality</span>
+ollama pull codellama:13b      <span class="c-cmt"># 13B code specialist</span>
+ollama pull mistral:7b         <span class="c-cmt"># Strong general model</span>
+ollama pull phi3:mini          <span class="c-cmt"># 3.8B, excellent for its size</span>
+
+<span class="c-cmt"># Run inference (blocks, shows output)</span>
+ollama run llama3.2 "Explain RAG in 2 sentences"
+
+<span class="c-cmt"># Serve API (runs in background, OpenAI-compatible)</span>
+ollama serve &   <span class="c-cmt"># starts on http://localhost:11434</span></div>
+    </div>
+
+    <div class="code-wrap" style="margin-top:20px">
+      <span class="code-label">PYTHON — Use Ollama with Your Existing Agent Code</span>
+      <div class="code-block"><span class="c-kw">from</span> <span class="c-bi">openai</span> <span class="c-kw">import</span> AsyncOpenAI
+
+<span class="c-cmt"># This is the ONLY change needed to use Ollama instead of OpenAI</span>
+client = <span class="c-fn">AsyncOpenAI</span>(
+    base_url=<span class="c-str">"http://localhost:11434/v1"</span>,
+    api_key=<span class="c-str">"ollama"</span>,    <span class="c-cmt"># required by SDK but ignored by Ollama</span>
+)
+
+<span class="c-cmt"># Everything else is identical to your existing OpenAI code</span>
+response = <span class="c-kw">await</span> client.chat.completions.<span class="c-fn">create</span>(
+    model=<span class="c-str">"llama3.2"</span>,     <span class="c-cmt"># local model name</span>
+    messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: <span class="c-str">"Hello from local model!"</span>}],
+    temperature=<span class="c-num">0.7</span>,
+)
+<span class="c-fn">print</span>(response.choices[<span class="c-num">0</span>].message.content)
+
+<span class="c-cmt"># Streaming also works identically</span>
+<span class="c-kw">async with</span> client.chat.completions.<span class="c-fn">stream</span>(
+    model=<span class="c-str">"llama3.2"</span>,
+    messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: <span class="c-str">"Write a poem"</span>}],
+) <span class="c-kw">as</span> stream:
+    <span class="c-kw">async for</span> chunk <span class="c-kw">in</span> stream:
+        <span class="c-fn">print</span>(chunk.choices[<span class="c-num">0</span>].delta.content <span class="c-kw">or</span> <span class="c-str">""</span>, end=<span class="c-str">""</span>, flush=<span class="c-bi">True</span>)
+
+<span class="c-cmt"># Use langchain with Ollama</span>
+<span class="c-kw">from</span> <span class="c-bi">langchain_ollama</span> <span class="c-kw">import</span> ChatOllama
+llm = <span class="c-fn">ChatOllama</span>(model=<span class="c-str">"llama3.2"</span>)
+result = llm.<span class="c-fn">invoke</span>(<span class="c-str">"Summarize the key points of RAG"</span>)</div>
+    </div>
+  </section>
+
+  <!-- SECTION 3: vLLM -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">03 — Production Inference</div>
+      <h2>vLLM — Production-Grade Inference</h2>
+      <p>vLLM is the industry standard for serving open models in production. PagedAttention makes KV cache management dramatically more efficient. Continuous batching means no waiting — requests are served as GPU capacity becomes available.</p>
+    </div>
+
+    <div class="callout info">
+      <span class="callout-icon">🚀</span>
+      <div class="callout-text"><strong>Performance:</strong> vLLM achieves 10–24x higher throughput vs naive HuggingFace inference. PagedAttention eliminates KV cache memory waste. Continuous batching eliminates idle GPU time. If you're serving &gt;10 RPS, use vLLM.</div>
+    </div>
+
+    <div class="code-wrap">
+      <span class="code-label">BASH — Deploy Mistral-7B with vLLM</span>
+      <div class="code-block"><span class="c-cmt"># Install vLLM (requires NVIDIA GPU)</span>
+pip install vllm
+
+<span class="c-cmt"># Serve a model — exposes OpenAI-compatible API on port 8000</span>
+python -m vllm.entrypoints.openai.api_server \
+  --model mistralai/Mistral-7B-Instruct-v0.3 \
+  --host 0.0.0.0 \
+  --port 8000 \
+  --dtype bfloat16 \
+  --max-model-len 32768 \
+  --gpu-memory-utilization 0.90
+
+<span class="c-cmt"># Docker deployment (production-ready)</span>
+docker run --runtime nvidia --gpus all \
+  -v ~/.cache/huggingface:/root/.cache/huggingface \
+  -p 8000:8000 \
+  --ipc=host \
+  vllm/vllm-openai:latest \
+  --model mistralai/Mistral-7B-Instruct-v0.3 \
+  --tensor-parallel-size 1   <span class="c-cmt"># 1 GPU; set to 2 for 2x A100</span></div>
+    </div>
+
+    <div class="code-wrap" style="margin-top:20px">
+      <span class="code-label">PYTHON — vLLM Client (same as OpenAI SDK)</span>
+      <div class="code-block"><span class="c-kw">from</span> <span class="c-bi">openai</span> <span class="c-kw">import</span> AsyncOpenAI
+<span class="c-kw">import</span> <span class="c-bi">asyncio</span>, <span class="c-bi">time</span>
+
+client = <span class="c-fn">AsyncOpenAI</span>(
+    base_url=<span class="c-str">"http://localhost:8000/v1"</span>,
+    api_key=<span class="c-str">"not-needed"</span>,    <span class="c-cmt"># vLLM doesn't require auth by default</span>
+)
+
+<span class="c-kw">async def</span> <span class="c-fn">benchmark_throughput</span>(n_concurrent: <span class="c-bi">int</span> = <span class="c-num">10</span>):
+    <span class="c-str">"""Measure tokens/second with concurrent requests."""</span>
+    prompt = <span class="c-str">"Explain the benefits of microservice architecture in detail."</span>
+
+    <span class="c-kw">async def</span> <span class="c-fn">single_request</span>() -> <span class="c-bi">int</span>:
+        response = <span class="c-kw">await</span> client.chat.completions.<span class="c-fn">create</span>(
+            model=<span class="c-str">"mistralai/Mistral-7B-Instruct-v0.3"</span>,
+            messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: prompt}],
+            max_tokens=<span class="c-num">256</span>,
+        )
+        <span class="c-kw">return</span> response.usage.completion_tokens
+
+    start = time.<span class="c-fn">monotonic</span>()
+    results = <span class="c-kw">await</span> asyncio.<span class="c-fn">gather</span>(*[<span class="c-fn">single_request</span>() <span class="c-kw">for</span> _ <span class="c-kw">in</span> <span class="c-bi">range</span>(n_concurrent)])
+    elapsed = time.<span class="c-fn">monotonic</span>() - start
+
+    total_tokens = <span class="c-bi">sum</span>(results)
+    <span class="c-fn">print</span>(f<span class="c-str">"Concurrent requests: {n_concurrent}"</span>)
+    <span class="c-fn">print</span>(f<span class="c-str">"Total tokens generated: {total_tokens}"</span>)
+    <span class="c-fn">print</span>(f<span class="c-str">"Throughput: {total_tokens/elapsed:.0f} tokens/sec"</span>)
+    <span class="c-fn">print</span>(f<span class="c-str">"Avg latency: {elapsed/n_concurrent*1000:.0f}ms"</span>)
+
+asyncio.<span class="c-fn">run</span>(<span class="c-fn">benchmark_throughput</span>(<span class="c-num">20</span>))</div>
+    </div>
+  </section>
+
+  <!-- SECTION 4: Hugging Face Pipeline -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">04 — HuggingFace</div>
+      <h2>Hugging Face Pipeline</h2>
+      <p>The transformers library gives you the most control: load any model, run inference, experiment with quantization. Essential for fine-tuning and research work.</p>
+    </div>
+
+    <div class="code-wrap">
+      <span class="code-label">PYTHON — 4-bit Quantized Inference</span>
+      <div class="code-block"><span class="c-kw">import</span> <span class="c-bi">torch</span>
+<span class="c-kw">from</span> <span class="c-bi">transformers</span> <span class="c-kw">import</span> (
+    AutoModelForCausalLM,
+    AutoTokenizer,
+    BitsAndBytesConfig,
+    pipeline,
+)
+
+<span class="c-cmt"># ── 4-bit quantization (QLoRA) — runs 7B model on consumer GPU ──</span>
+quant_config = <span class="c-fn">BitsAndBytesConfig</span>(
+    load_in_4bit=<span class="c-bi">True</span>,
+    bnb_4bit_quant_type=<span class="c-str">"nf4"</span>,
+    bnb_4bit_compute_dtype=torch.bfloat16,
+    bnb_4bit_use_double_quant=<span class="c-bi">True</span>,
+)
+
+model_name = <span class="c-str">"meta-llama/Meta-Llama-3.1-8B-Instruct"</span>
+
+tokenizer = <span class="c-fn">AutoTokenizer</span>.from_pretrained(model_name)
+model = <span class="c-fn">AutoModelForCausalLM</span>.from_pretrained(
+    model_name,
+    quantization_config=quant_config,
+    device_map=<span class="c-str">"auto"</span>,         <span class="c-cmt"># automatically distribute across available GPUs</span>
+    attn_implementation=<span class="c-str">"flash_attention_2"</span>,   <span class="c-cmt"># 2x faster attention (if supported)</span>
+)
+
+<span class="c-cmt"># ── Pipeline API (simpler, same performance) ──</span>
+pipe = <span class="c-fn">pipeline</span>(
+    <span class="c-str">"text-generation"</span>,
+    model=model,
+    tokenizer=tokenizer,
+    torch_dtype=torch.bfloat16,
+    device_map=<span class="c-str">"auto"</span>,
+)
+
+messages = [
+    {<span class="c-str">"role"</span>: <span class="c-str">"system"</span>, <span class="c-str">"content"</span>: <span class="c-str">"You are a helpful FastAPI expert."</span>},
+    {<span class="c-str">"role"</span>: <span class="c-str">"user"</span>,   <span class="c-str">"content"</span>: <span class="c-str">"How do I add rate limiting to a FastAPI endpoint?"</span>},
+]
+
+outputs = <span class="c-fn">pipe</span>(
+    messages,
+    max_new_tokens=<span class="c-num">512</span>,
+    temperature=<span class="c-num">0.7</span>,
+    do_sample=<span class="c-bi">True</span>,
+    pad_token_id=tokenizer.eos_token_id,
+)
+<span class="c-fn">print</span>(outputs[<span class="c-num">0</span>][<span class="c-str">"generated_text"</span>][-<span class="c-num">1</span>][<span class="c-str">"content"</span>])
+
+<span class="c-cmt"># ── Memory usage check ──</span>
+<span class="c-fn">print</span>(f<span class="c-str">"GPU memory used: {torch.cuda.memory_allocated() / 1e9:.1f} GB"</span>)
+<span class="c-cmt"># 4-bit 8B model: ~5GB VRAM vs ~16GB for full precision</span></div>
+    </div>
+  </section>
+
+  <!-- SECTION 5: Model Comparison -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">05 — Model Selection</div>
+      <h2>Choosing a Model</h2>
+      <p>The open model landscape moves fast. As of April 2026, these are the leading options by category. Always benchmark on your specific task — general benchmarks don't always predict performance on your workload.</p>
+    </div>
+
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden">
+      <table class="model-table">
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>Size</th>
+            <th>VRAM needed</th>
+            <th>Strengths</th>
+            <th>Best for</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Llama 3.1 8B</strong></td>
+            <td>8B</td>
+            <td>5GB (4-bit)</td>
+            <td>Strong reasoning, fast, multilingual</td>
+            <td><span class="model-rec rec-general">General use</span></td>
+          </tr>
+          <tr>
+            <td><strong>Llama 3.1 70B</strong></td>
+            <td>70B</td>
+            <td>40GB</td>
+            <td>Near-GPT-4 quality, best open model</td>
+            <td><span class="model-rec rec-general">Production quality</span></td>
+          </tr>
+          <tr>
+            <td><strong>Mistral 7B v0.3</strong></td>
+            <td>7B</td>
+            <td>4.5GB (4-bit)</td>
+            <td>Excellent quality/size ratio, function calling</td>
+            <td><span class="model-rec rec-general">Lean production</span></td>
+          </tr>
+          <tr>
+            <td><strong>Mixtral 8x7B</strong></td>
+            <td>47B (8x7B MoE)</td>
+            <td>24GB</td>
+            <td>8 experts, only 2 active per token</td>
+            <td><span class="model-rec rec-general">High quality, MoE</span></td>
+          </tr>
+          <tr>
+            <td><strong>Qwen2.5 Coder 32B</strong></td>
+            <td>32B</td>
+            <td>18GB (4-bit)</td>
+            <td>Best code model, all languages</td>
+            <td><span class="model-rec rec-code">Code generation</span></td>
+          </tr>
+          <tr>
+            <td><strong>Phi-3 Mini</strong></td>
+            <td>3.8B</td>
+            <td>2.5GB (4-bit)</td>
+            <td>Remarkable quality for tiny size</td>
+            <td><span class="model-rec rec-local">Edge/mobile</span></td>
+          </tr>
+          <tr>
+            <td><strong>DeepSeek-R1</strong></td>
+            <td>7B–671B</td>
+            <td>Varies</td>
+            <td>Chain-of-thought reasoning, math</td>
+            <td><span class="model-rec rec-think">Complex reasoning</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout warn" style="margin-top:20px">
+      <span class="callout-icon">⚠️</span>
+      <div class="callout-text"><strong>Size is not everything:</strong> A well-prompted Mistral 7B often outperforms a poorly-prompted 70B model on specific tasks. Optimize your prompts before assuming you need a larger model. Only upgrade size when you've plateaued on prompt optimization.</div>
+    </div>
+  </section>
+
+  <!-- SECTION 6: Full Stack Architecture -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">06 — Full Stack</div>
+      <h2>Full Stack Architecture</h2>
+      <p>Production self-hosted LLM stack: vLLM serving + your agent framework + Prometheus metrics + Grafana dashboards. Docker Compose brings it all together.</p>
+    </div>
+
+    <div class="arch-layers" style="margin-bottom:24px">
+      <div class="arch-layer">
+        <div class="arch-layer-num layer-4">4</div>
+        <div class="arch-layer-body">
+          <div class="arch-layer-title">Monitoring Layer</div>
+          <div class="arch-layer-tech">Prometheus (metrics scraping) + Grafana (dashboards). vLLM exports: tokens/sec, TTFT, queue depth, GPU utilization.</div>
+        </div>
+      </div>
+      <div class="arch-layer">
+        <div class="arch-layer-num layer-3">3</div>
+        <div class="arch-layer-body">
+          <div class="arch-layer-title">Agent Layer</div>
+          <div class="arch-layer-tech">Your FastAPI agent service. Uses OpenAI-compatible client pointed at vLLM. Same agent code as cloud — just different base_url.</div>
+        </div>
+      </div>
+      <div class="arch-layer">
+        <div class="arch-layer-num layer-2">2</div>
+        <div class="arch-layer-body">
+          <div class="arch-layer-title">Inference Layer</div>
+          <div class="arch-layer-tech">vLLM serving Mistral-7B (or your model). OpenAI-compatible API on :8000. Handles batching, KV cache, model parallelism.</div>
+        </div>
+      </div>
+      <div class="arch-layer">
+        <div class="arch-layer-num layer-1">1</div>
+        <div class="arch-layer-body">
+          <div class="arch-layer-title">Hardware Layer</div>
+          <div class="arch-layer-tech">NVIDIA GPU (RTX 4090 for 7B, A100 for 70B). CUDA 12+. 32GB+ system RAM. NVMe SSD for model weights.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="code-wrap">
+      <span class="code-label">YAML — Docker Compose: Full LLM Stack</span>
+      <div class="code-block"><span class="c-cmt"># docker-compose.yml</span>
+<span class="c-kw">services</span>:
+
+  <span class="c-cmt"># ── vLLM inference server ──</span>
+  <span class="c-kw">vllm</span>:
+    <span class="c-kw">image</span>: vllm/vllm-openai:latest
+    <span class="c-kw">runtime</span>: nvidia
+    <span class="c-kw">environment</span>:
+      - <span class="c-str">HUGGING_FACE_HUB_TOKEN=${HF_TOKEN}</span>
+    <span class="c-kw">volumes</span>:
+      - <span class="c-str">~/.cache/huggingface:/root/.cache/huggingface</span>
+    <span class="c-kw">ports</span>:
+      - <span class="c-str">"8000:8000"</span>
+    <span class="c-kw">command</span>: |
+      --model mistralai/Mistral-7B-Instruct-v0.3
+      --gpu-memory-utilization 0.85
+      --max-model-len 16384
+    <span class="c-kw">healthcheck</span>:
+      <span class="c-kw">test</span>: [<span class="c-str">"CMD"</span>, <span class="c-str">"curl"</span>, <span class="c-str">"-f"</span>, <span class="c-str">"http://localhost:8000/health"</span>]
+      <span class="c-kw">interval</span>: 30s
+      <span class="c-kw">retries</span>: 3
+
+  <span class="c-cmt"># ── Your agent FastAPI service ──</span>
+  <span class="c-kw">agent</span>:
+    <span class="c-kw">build</span>: .
+    <span class="c-kw">environment</span>:
+      - <span class="c-str">LLM_BASE_URL=http://vllm:8000/v1</span>
+      - <span class="c-str">LLM_MODEL=mistralai/Mistral-7B-Instruct-v0.3</span>
+    <span class="c-kw">ports</span>:
+      - <span class="c-str">"8080:8080"</span>
+    <span class="c-kw">depends_on</span>:
+      <span class="c-kw">vllm</span>:
+        <span class="c-kw">condition</span>: service_healthy
+
+  <span class="c-cmt"># ── Prometheus metrics collection ──</span>
+  <span class="c-kw">prometheus</span>:
+    <span class="c-kw">image</span>: prom/prometheus:latest
+    <span class="c-kw">volumes</span>:
+      - <span class="c-str">./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml</span>
+    <span class="c-kw">ports</span>:
+      - <span class="c-str">"9090:9090"</span>
+
+  <span class="c-cmt"># ── Grafana dashboards ──</span>
+  <span class="c-kw">grafana</span>:
+    <span class="c-kw">image</span>: grafana/grafana:latest
+    <span class="c-kw">environment</span>:
+      - <span class="c-str">GF_SECURITY_ADMIN_PASSWORD=admin</span>
+    <span class="c-kw">ports</span>:
+      - <span class="c-str">"3000:3000"</span>
+    <span class="c-kw">volumes</span>:
+      - <span class="c-str">grafana-data:/var/lib/grafana</span>
+
+<span class="c-kw">volumes</span>:
+  <span class="c-kw">grafana-data</span>:</div>
+    </div>
+
+    <div class="code-wrap" style="margin-top:20px">
+      <span class="code-label">PYTHON — Agent Using Local vLLM (same code, different URL)</span>
+      <div class="code-block"><span class="c-kw">import</span> <span class="c-bi">os</span>
+<span class="c-kw">from</span> <span class="c-bi">openai</span> <span class="c-kw">import</span> AsyncOpenAI
+
+<span class="c-cmt"># Config driven by environment variables</span>
+<span class="c-cmt"># Local: LLM_BASE_URL=http://localhost:8000/v1, LLM_MODEL=mistral-7b</span>
+<span class="c-cmt"># Cloud: LLM_BASE_URL=https://api.openai.com/v1, LLM_MODEL=gpt-4o-mini</span>
+client = <span class="c-fn">AsyncOpenAI</span>(
+    base_url=os.<span class="c-fn">getenv</span>(<span class="c-str">"LLM_BASE_URL"</span>, <span class="c-str">"https://api.openai.com/v1"</span>),
+    api_key=os.<span class="c-fn">getenv</span>(<span class="c-str">"OPENAI_API_KEY"</span>, <span class="c-str">"local"</span>),
+)
+MODEL = os.<span class="c-fn">getenv</span>(<span class="c-str">"LLM_MODEL"</span>, <span class="c-str">"gpt-4o-mini"</span>)
+
+<span class="c-cmt"># Everything else in your agent code is identical</span>
+<span class="c-cmt"># Switching from cloud to local is just changing two env vars</span>
+<span class="c-kw">async def</span> <span class="c-fn">ask</span>(question: <span class="c-bi">str</span>) -> <span class="c-bi">str</span>:
+    response = <span class="c-kw">await</span> client.chat.completions.<span class="c-fn">create</span>(
+        model=MODEL,
+        messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: question}],
+        max_tokens=<span class="c-num">512</span>,
+    )
+    <span class="c-kw">return</span> response.choices[<span class="c-num">0</span>].message.content</div>
+    </div>
+  </section>
+
+  <!-- PREREQS -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">Prerequisites</div>
+      <h2>Which Days Are Relevant</h2>
+    </div>
+    <div class="prereq-grid">
+      <div class="prereq-chip"><span class="prereq-day">Day 1</span> LLM fundamentals — understand what you're serving</div>
+      <div class="prereq-chip"><span class="prereq-day">Day 7</span> Docker, production deployment patterns</div>
+    </div>
+    <div style="margin-top:16px;font-size:13px;color:var(--muted);line-height:1.6">
+      Hardware minimum: Apple M1/M2 Mac (16GB RAM) for Ollama with 7B models, or NVIDIA GPU with 8GB+ VRAM for vLLM. Cloud GPU options: Google Colab Pro (A100), vast.ai, RunPod ($0.30–0.80/hr for A100).
+      <br><br>
+      External: CUDA 12.1+, Docker with NVIDIA container toolkit, Hugging Face account (free, required for gated models like Llama). Install time: ~2 hours for full stack on a fresh machine.
+    </div>
+  </section>
+
+  <!-- EXERCISES -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">Exercises</div>
+      <h2>Practice Exercises</h2>
+    </div>
+    <div class="ex-list">
+      <div class="ex-item">
+        <div class="ex-num">1</div>
+        <div class="ex-body">
+          <div class="ex-title">Run your first local model with Ollama</div>
+          <div class="ex-desc">Install Ollama, pull llama3.2, and replace the model in any agent you built during the curriculum by just changing base_url. Run your Day 2 tool-use agent against the local model. Compare output quality to Claude Haiku. Note latency difference.</div>
+          <span class="ex-difficulty diff-easy">Easy — 1 hour, no GPU needed</span>
+        </div>
+      </div>
+      <div class="ex-item">
+        <div class="ex-num">2</div>
+        <div class="ex-body">
+          <div class="ex-title">Benchmark vLLM vs Ollama vs HuggingFace</div>
+          <div class="ex-desc">If you have a GPU, deploy Mistral-7B with all three inference methods. Run 50 concurrent requests to each. Measure: tokens/second, VRAM usage, P50/P95 latency. Plot the results. This will tell you exactly when vLLM's PagedAttention matters.</div>
+          <span class="ex-difficulty diff-med">Medium — GPU required, 4 hours</span>
+        </div>
+      </div>
+      <div class="ex-item">
+        <div class="ex-num">3</div>
+        <div class="ex-body">
+          <div class="ex-title">Full stack with Docker Compose</div>
+          <div class="ex-desc">Deploy the full Docker Compose stack from Section 6. Set up Prometheus to scrape vLLM metrics and Grafana to visualize them. Run a load test (100 req/s for 5 minutes) and watch the GPU utilization, throughput, and TTFT dashboards in real time.</div>
+          <span class="ex-difficulty diff-hard">Hard — GPU + Docker, full day</span>
+        </div>
+      </div>
+      <div class="ex-item">
+        <div class="ex-num">4</div>
+        <div class="ex-body">
+          <div class="ex-title">Cost analysis: cloud vs self-hosted break-even</div>
+          <div class="ex-desc">Calculate the break-even point for self-hosting. Take your application's expected monthly token usage. Price it on Claude Sonnet vs self-hosting Mistral-7B on a $1.50/hr A10G GPU. At what RPS does self-hosting become cheaper? Factor in engineering time.</div>
+          <span class="ex-difficulty diff-easy">Easy — spreadsheet, no code</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer style="border-top:1px solid var(--border);padding:32px 0;margin-top:40px">
+  <div class="container" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+    <div style="font-size:13px;color:var(--muted)">Agentic AI Mastery — Sharjeel Sohail</div>
+    <a href="../days/day7.html" style="color:var(--muted);font-size:13px;text-decoration:none">← Back to Day 7</a>
+  </div>
+</footer>
+
+<script src="../bg-animation.js"></script>
+</body>
+</html>

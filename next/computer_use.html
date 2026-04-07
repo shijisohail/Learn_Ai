@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Computer Use API — What's Next</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f; --card: #141420; --surface2: #1a1a2e; --border: #2a2a45;
+  --purple: #7c3aed; --purple-light: #a855f7; --teal: #0d9488; --green: #10b981;
+  --red: #ef4444; --yellow: #f59e0b; --text: #e2e8f0; --muted: #64748b;
+  --font: 'Inter', sans-serif; --mono: 'JetBrains Mono', monospace;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; overflow-x: hidden; }
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(13,148,136,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 90% 80%, rgba(124,58,237,0.05) 0%, transparent 60%);
+  pointer-events: none; z-index: 0;
+}
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+nav { border-bottom: 1px solid var(--border); padding: 14px 0; background: rgba(10,10,15,0.85); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; }
+.nav-inner { display: flex; align-items: center; justify-content: space-between; }
+.nav-back { color: var(--muted); font-size: 13px; text-decoration: none; transition: color 0.2s; }
+.nav-back:hover { color: var(--text); }
+.nav-tag { font-size: 13px; font-weight: 700; background: linear-gradient(90deg,#0d9488,#a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+.hero { padding: 60px 0 48px; }
+.hero-eyebrow { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.hero-icon { font-size: 40px; }
+.difficulty-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: rgba(13,148,136,0.15); color: var(--teal); }
+.time-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+.hero h1 { font-size: clamp(28px, 5vw, 48px); font-weight: 900; letter-spacing: -2px; margin-bottom: 14px; line-height: 1.1; }
+.hero h1 span { background: linear-gradient(135deg, #0d9488, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.hero p { font-size: 16px; color: var(--muted); max-width: 620px; line-height: 1.7; }
+
+.section { padding: 56px 0; border-top: 1px solid var(--border); }
+.section-header { margin-bottom: 32px; }
+.section-num { font-size: 11px; font-weight: 700; color: var(--teal); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.section-header h2 { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 10px; }
+.section-header p { color: var(--muted); font-size: 15px; line-height: 1.6; max-width: 640px; }
+
+/* CODE BLOCKS — white-space: pre is REQUIRED */
+.code-block {
+  background: #0d1117; border: 1px solid #30363d; border-radius: 12px;
+  padding: 24px; font-family: var(--mono); font-size: 12.5px; line-height: 1.8;
+  overflow-x: auto; white-space: pre;
+}
+.code-content { white-space: pre; }
+.code-wrap { position: relative; margin-top: 16px; }
+.code-label { position: absolute; top: -10px; left: 16px; background: var(--teal); color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.5px; }
+.c-cmt { color: #8b949e; }
+.c-kw { color: #ff7b72; }
+.c-fn { color: #d2a8ff; }
+.c-str { color: #a5d6ff; }
+.c-type { color: #ffa657; }
+.c-num { color: #f2cc60; }
+.c-bi { color: #79c0ff; }
+.c-dec { color: #ffa657; }
+
+/* CALLOUT */
+.callout { background: rgba(239,68,68,0.07); border: 1px solid rgba(239,68,68,0.25); border-radius: 12px; padding: 16px 20px; display: flex; gap: 12px; align-items: flex-start; margin: 20px 0; }
+.callout-icon { font-size: 18px; flex-shrink: 0; }
+.callout-text { font-size: 13px; color: var(--text); line-height: 1.6; }
+.callout-text strong { color: var(--red); }
+.callout.info { background: rgba(124,58,237,0.07); border-color: rgba(124,58,237,0.25); }
+.callout.info .callout-text strong { color: var(--purple-light); }
+.callout.teal { background: rgba(13,148,136,0.07); border-color: rgba(13,148,136,0.25); }
+.callout.teal .callout-text strong { color: var(--teal); }
+.callout.yellow { background: rgba(245,158,11,0.07); border-color: rgba(245,158,11,0.25); }
+.callout.yellow .callout-text strong { color: var(--yellow); }
+
+/* LOOP DIAGRAM */
+.loop-diagram { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 32px 24px; display: flex; flex-direction: column; align-items: center; gap: 0; overflow: hidden; }
+.loop-title { font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 28px; }
+.loop-row { display: flex; align-items: center; justify-content: center; gap: 0; width: 100%; }
+.loop-node { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; text-align: center; min-width: 130px; }
+.loop-node.active { border-color: rgba(13,148,136,0.5); background: rgba(13,148,136,0.08); }
+.loop-node-icon { font-size: 22px; margin-bottom: 6px; }
+.loop-node-label { font-size: 12px; font-weight: 700; }
+.loop-node-sub { font-size: 10px; color: var(--muted); margin-top: 2px; }
+.loop-arrow { color: var(--teal); font-size: 20px; padding: 0 8px; flex-shrink: 0; }
+.loop-return { display: flex; align-items: center; justify-content: center; margin-top: 12px; gap: 8px; }
+.loop-return-line { height: 2px; background: rgba(13,148,136,0.3); flex: 1; max-width: 300px; position: relative; }
+.loop-return-label { font-size: 11px; color: var(--teal); font-weight: 600; padding: 4px 12px; background: rgba(13,148,136,0.1); border: 1px solid rgba(13,148,136,0.25); border-radius: 20px; }
+.loop-caption { font-size: 12px; color: var(--muted); margin-top: 20px; text-align: center; line-height: 1.6; }
+
+/* TOOL CARDS */
+.tool-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.tool-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; transition: all 0.2s; }
+.tool-card:hover { transform: translateY(-2px); }
+.tool-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.tool-icon { font-size: 22px; }
+.tool-name { font-size: 15px; font-weight: 800; font-family: var(--mono); color: var(--teal); }
+.tool-desc { font-size: 12px; color: var(--muted); line-height: 1.6; margin-bottom: 14px; }
+.tool-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.action-chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 3px 8px; font-size: 10px; font-weight: 600; font-family: var(--mono); color: var(--text); }
+
+/* COMPARISON TABLE */
+.compare-table { width: 100%; border-collapse: collapse; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
+.compare-table th { background: var(--surface2); padding: 12px 16px; font-size: 12px; font-weight: 700; text-align: left; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); }
+.compare-table td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid rgba(42,42,69,0.5); line-height: 1.5; }
+.compare-table tr:last-child td { border-bottom: none; }
+.compare-table tr:nth-child(even) td { background: rgba(26,26,46,0.3); }
+.compare-table td:first-child { font-weight: 600; color: var(--muted); font-size: 12px; }
+.badge-green { background: rgba(16,185,129,0.15); color: var(--green); padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.badge-red { background: rgba(239,68,68,0.15); color: var(--red); padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.badge-yellow { background: rgba(245,158,11,0.15); color: var(--yellow); padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.badge-teal { background: rgba(13,148,136,0.15); color: var(--teal); padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+
+/* USE CASE CARDS */
+.usecase-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.usecase-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; transition: all 0.2s; }
+.usecase-card:hover { transform: translateY(-2px); border-color: rgba(13,148,136,0.3); }
+.usecase-icon { font-size: 28px; margin-bottom: 10px; }
+.usecase-title { font-size: 14px; font-weight: 800; margin-bottom: 6px; }
+.usecase-desc { font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+/* SAFETY ITEMS */
+.safety-list { display: flex; flex-direction: column; gap: 10px; }
+.safety-item { display: flex; gap: 12px; align-items: flex-start; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+.safety-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); flex-shrink: 0; margin-top: 5px; }
+.safety-text { font-size: 13px; line-height: 1.6; }
+.safety-text strong { color: var(--text); }
+
+/* EXERCISES */
+.ex-list { display: flex; flex-direction: column; gap: 12px; }
+.ex-item { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; display: flex; gap: 14px; }
+.ex-num { width: 32px; height: 32px; border-radius: 50%; background: rgba(13,148,136,0.15); border: 2px solid var(--teal); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: var(--teal); flex-shrink: 0; }
+.ex-body { flex: 1; }
+.ex-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.ex-desc { font-size: 12px; color: var(--muted); line-height: 1.6; }
+.ex-difficulty { display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+.diff-easy { background: rgba(16,185,129,0.15); color: var(--green); }
+.diff-med { background: rgba(245,158,11,0.15); color: var(--yellow); }
+.diff-hard { background: rgba(239,68,68,0.15); color: var(--red); }
+
+/* PREREQS */
+.prereq-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.prereq-chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.prereq-day { background: var(--teal); color: white; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; }
+
+@media(max-width:700px) {
+  .tool-grid { grid-template-columns: 1fr; }
+  .usecase-grid { grid-template-columns: 1fr; }
+  .loop-row { flex-direction: column; gap: 8px; }
+  .loop-arrow { transform: rotate(90deg); }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="container">
+    <div class="nav-inner">
+      <a href="../index.html" class="nav-back">← Back to Overview</a>
+      <span class="nav-tag">What's Next — Computer Use</span>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+
+  <section class="hero">
+    <div class="hero-eyebrow">
+      <span class="hero-icon">🖥️</span>
+      <span class="difficulty-badge">Advanced</span>
+      <span class="time-badge">⏱ 2–3 days</span>
+    </div>
+    <h1>Claude Computer<br><span>Use API</span></h1>
+    <p>Give Claude eyes and hands. The model sees your screen as a screenshot, decides what to click or type, and your code executes the action — creating a closed-loop GUI agent that can operate any desktop application, browser, or terminal without a programmatic API.</p>
+  </section>
+
+  <!-- SECTION 1: What It Is -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">01 — What It Is</div>
+      <h2>Computer Use in One Model</h2>
+      <p>Computer Use is not a special API endpoint — it is a standard Messages API call with three built-in tools enabled. The model receives a screenshot, reasons about the current state, and emits structured tool-use blocks. Your code translates those blocks into real OS actions.</p>
+    </div>
+
+    <div class="callout teal">
+      <span class="callout-icon">💡</span>
+      <div class="callout-text"><strong>Mental model:</strong> Think of it as a ReAct loop where the "observation" is always a screenshot. Claude is the brain, your code is the body, and the display is the shared world state. Every iteration: observe (screenshot) → reason → act (click/type/key/bash) → observe again.</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:24px">
+      <div style="background:var(--card);border:1px solid rgba(13,148,136,0.3);border-radius:12px;padding:18px">
+        <div style="font-size:12px;font-weight:700;color:var(--teal);margin-bottom:10px">WHAT CLAUDE RECEIVES</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.7">A <strong style="color:var(--text)">PNG screenshot</strong> as a base64-encoded image in the user message, plus a text task description. On each loop iteration, the latest screenshot replaces the previous observation.</div>
+      </div>
+      <div style="background:var(--card);border:1px solid rgba(124,58,237,0.3);border-radius:12px;padding:18px">
+        <div style="font-size:12px;font-weight:700;color:var(--purple-light);margin-bottom:10px">WHAT CLAUDE EMITS</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.7">Structured <strong style="color:var(--text)">tool_use content blocks</strong> — each block names a tool (<code style="font-size:11px;background:var(--surface2);padding:1px 5px;border-radius:3px">computer</code>, <code style="font-size:11px;background:var(--surface2);padding:1px 5px;border-radius:3px">bash</code>, <code style="font-size:11px;background:var(--surface2);padding:1px 5px;border-radius:3px">str_replace_based_edit_tool</code>) and its input parameters.</div>
+      </div>
+      <div style="background:var(--card);border:1px solid rgba(245,158,11,0.3);border-radius:12px;padding:18px">
+        <div style="font-size:12px;font-weight:700;color:var(--yellow);margin-bottom:10px">WHAT YOUR CODE DOES</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.7">Dispatches each tool_use block to the appropriate handler — <strong style="color:var(--text)">xdotool / pyautogui</strong> for mouse/keyboard, <strong style="color:var(--text)">subprocess</strong> for bash, file I/O for editor actions — then captures a fresh screenshot.</div>
+      </div>
+      <div style="background:var(--card);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:18px">
+        <div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:10px">WHEN THE LOOP ENDS</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.7">Claude emits <strong style="color:var(--text)">stop_reason == "end_turn"</strong> with no tool_use blocks — meaning it considers the task complete. Your code also enforces a max-iteration limit as a hard safety stop.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 2: Loop Diagram -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">02 — The Agent Loop</div>
+      <h2>How the Loop Works</h2>
+      <p>Each iteration is one round-trip to the API. The loop runs until Claude signals completion or your iteration limit is hit. Latency is dominated by the vision call — budget 2–5 seconds per step.</p>
+    </div>
+
+    <div class="loop-diagram">
+      <div class="loop-title">Computer Use Agent Loop — Single Iteration</div>
+      <div class="loop-row">
+        <div class="loop-node active">
+          <div class="loop-node-icon">📸</div>
+          <div class="loop-node-label">Screenshot</div>
+          <div class="loop-node-sub">PNG → base64</div>
+        </div>
+        <div class="loop-arrow">→</div>
+        <div class="loop-node active">
+          <div class="loop-node-icon">🧠</div>
+          <div class="loop-node-label">Claude</div>
+          <div class="loop-node-sub">sees + reasons</div>
+        </div>
+        <div class="loop-arrow">→</div>
+        <div class="loop-node active">
+          <div class="loop-node-icon">📋</div>
+          <div class="loop-node-label">tool_use block</div>
+          <div class="loop-node-sub">click / type / bash</div>
+        </div>
+        <div class="loop-arrow">→</div>
+        <div class="loop-node active">
+          <div class="loop-node-icon">⚙️</div>
+          <div class="loop-node-label">Execute</div>
+          <div class="loop-node-sub">pyautogui / subprocess</div>
+        </div>
+      </div>
+      <div class="loop-return">
+        <div class="loop-return-line"></div>
+        <div class="loop-return-label">↑ tool_result = new screenshot — loop until end_turn</div>
+        <div class="loop-return-line"></div>
+      </div>
+      <div class="loop-caption">The tool_result for a <code style="font-size:11px;background:rgba(255,255,255,0.05);padding:1px 6px;border-radius:3px">computer</code> action is always an image — the next screenshot. For <code style="font-size:11px;background:rgba(255,255,255,0.05);padding:1px 6px;border-radius:3px">bash</code> actions, the tool_result is stdout/stderr text.</div>
+    </div>
+
+    <div class="callout info" style="margin-top:24px">
+      <span class="callout-icon">🔁</span>
+      <div class="callout-text"><strong>Message history grows linearly.</strong> Every screenshot is appended to the messages array. A 20-step task with 1920×1080 screenshots can consume 200k+ tokens in context. Use image compression (downscale to 1366×768) and consider truncating old images from history for long-running sessions.</div>
+    </div>
+  </section>
+
+  <!-- SECTION 3: The Three Tools -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">03 — Built-in Tools</div>
+      <h2>The Three Built-in Tools</h2>
+      <p>Declare these in the <code style="font-size:13px;background:var(--surface2);padding:1px 6px;border-radius:4px">tools</code> array of your Messages call. Claude decides which to call; your dispatch loop handles execution.</p>
+    </div>
+
+    <div class="tool-grid">
+      <div class="tool-card">
+        <div class="tool-header">
+          <span class="tool-icon">🖱️</span>
+          <span class="tool-name">computer</span>
+        </div>
+        <div class="tool-desc">Controls the graphical display — mouse, keyboard, and screen capture. The type identifier is versioned (<code style="font-size:10px">computer_20250124</code>). Requires display dimensions at declaration time.</div>
+        <div class="tool-actions">
+          <span class="action-chip">screenshot</span>
+          <span class="action-chip">left_click</span>
+          <span class="action-chip">right_click</span>
+          <span class="action-chip">double_click</span>
+          <span class="action-chip">middle_click</span>
+          <span class="action-chip">type</span>
+          <span class="action-chip">key</span>
+          <span class="action-chip">mouse_move</span>
+          <span class="action-chip">scroll</span>
+          <span class="action-chip">left_click_drag</span>
+          <span class="action-chip">cursor_position</span>
+        </div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-header">
+          <span class="tool-icon">💻</span>
+          <span class="tool-name">bash</span>
+        </div>
+        <div class="tool-desc">Runs arbitrary shell commands in a persistent session. Stdout and stderr are returned as the tool_result text. Claude can chain commands, install packages, read logs, or query APIs without touching the GUI.</div>
+        <div class="tool-actions">
+          <span class="action-chip">run shell cmd</span>
+          <span class="action-chip">persistent session</span>
+          <span class="action-chip">stdout + stderr</span>
+          <span class="action-chip">env access</span>
+          <span class="action-chip">file I/O</span>
+          <span class="action-chip">curl / wget</span>
+        </div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-header">
+          <span class="tool-icon">📝</span>
+          <span class="tool-name">str_replace_based_edit_tool</span>
+        </div>
+        <div class="tool-desc">View and edit files with surgical string replacements — no need to rewrite entire files. Supports <code style="font-size:10px">view</code>, <code style="font-size:10px">create</code>, and <code style="font-size:10px">str_replace</code> sub-commands. Ideal for code editing workflows.</div>
+        <div class="tool-actions">
+          <span class="action-chip">view</span>
+          <span class="action-chip">create</span>
+          <span class="action-chip">str_replace</span>
+          <span class="action-chip">insert</span>
+          <span class="action-chip">undo_edit</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="code-wrap" style="margin-top:28px">
+      <span class="code-label">PYTHON — Declaring Tools</span>
+      <div class="code-block"><span class="c-cmt"># Declare all three tools in the messages.create() call</span>
+tools = [
+    {
+        <span class="c-str">"type"</span>: <span class="c-str">"computer_20250124"</span>,   <span class="c-cmt"># versioned — check docs for latest</span>
+        <span class="c-str">"name"</span>: <span class="c-str">"computer"</span>,
+        <span class="c-str">"display_width_px"</span>: <span class="c-num">1920</span>,
+        <span class="c-str">"display_height_px"</span>: <span class="c-num">1080</span>,
+        <span class="c-str">"display_number"</span>: <span class="c-num">1</span>,          <span class="c-cmt"># X11 display number (Linux)</span>
+    },
+    {
+        <span class="c-str">"type"</span>: <span class="c-str">"bash_20250124"</span>,
+        <span class="c-str">"name"</span>: <span class="c-str">"bash"</span>,
+    },
+    {
+        <span class="c-str">"type"</span>: <span class="c-str">"text_editor_20250429"</span>,  <span class="c-cmt"># str_replace_based_edit_tool</span>
+        <span class="c-str">"name"</span>: <span class="c-str">"str_replace_based_edit_tool"</span>,
+    },
+]</div>
+    </div>
+  </section>
+
+  <!-- SECTION 4: Full Loop Code -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">04 — Code</div>
+      <h2>Full Working Agent Loop</h2>
+      <p>A complete Python implementation of the computer use agent loop. Each iteration takes a screenshot, sends it to Claude, executes the returned actions, and feeds the result back. The loop exits on <code style="font-size:13px;background:var(--surface2);padding:1px 6px;border-radius:4px">end_turn</code> or a max-iteration guard.</p>
+    </div>
+
+    <div class="code-wrap">
+      <span class="code-label">PYTHON — Computer Use Agent Loop</span>
+      <div class="code-block"><span class="c-kw">import</span> <span class="c-bi">anthropic</span>
+<span class="c-kw">import</span> <span class="c-bi">base64</span>
+<span class="c-kw">import</span> <span class="c-bi">subprocess</span>
+<span class="c-kw">import</span> <span class="c-bi">time</span>
+<span class="c-kw">from</span> <span class="c-bi">pathlib</span> <span class="c-kw">import</span> Path
+
+client = anthropic.<span class="c-fn">Anthropic</span>()
+
+
+<span class="c-kw">def</span> <span class="c-fn">take_screenshot</span>() -> <span class="c-bi">str</span>:
+    <span class="c-str">"""Capture the screen and return as base64-encoded PNG string."""</span>
+    <span class="c-cmt"># Linux: requires scrot  →  sudo apt install scrot</span>
+    <span class="c-bi">subprocess</span>.<span class="c-fn">run</span>(
+        [<span class="c-str">"scrot"</span>, <span class="c-str">"--quality"</span>, <span class="c-str">"80"</span>, <span class="c-str">"/tmp/cu_screenshot.png"</span>],
+        check=<span class="c-bi">True</span>, capture_output=<span class="c-bi">True</span>
+    )
+    <span class="c-kw">with</span> <span class="c-fn">open</span>(<span class="c-str">"/tmp/cu_screenshot.png"</span>, <span class="c-str">"rb"</span>) <span class="c-kw">as</span> f:
+        <span class="c-kw">return</span> <span class="c-bi">base64</span>.standard_b64encode(f.<span class="c-fn">read</span>()).<span class="c-fn">decode</span>()
+
+
+<span class="c-kw">def</span> <span class="c-fn">execute_computer_action</span>(action_input: <span class="c-bi">dict</span>) -> <span class="c-bi">str</span>:
+    <span class="c-str">"""Execute a computer tool_use block and return result screenshot as base64."""</span>
+    action = action_input[<span class="c-str">"action"</span>]
+
+    <span class="c-kw">if</span> action == <span class="c-str">"screenshot"</span>:
+        <span class="c-kw">return</span> <span class="c-fn">take_screenshot</span>()
+
+    <span class="c-kw">elif</span> action <span class="c-kw">in</span> (<span class="c-str">"left_click"</span>, <span class="c-str">"right_click"</span>, <span class="c-str">"double_click"</span>, <span class="c-str">"middle_click"</span>):
+        x, y = action_input[<span class="c-str">"coordinate"</span>]
+        btn_map = {
+            <span class="c-str">"left_click"</span>: <span class="c-str">"1"</span>, <span class="c-str">"right_click"</span>: <span class="c-str">"3"</span>,
+            <span class="c-str">"middle_click"</span>: <span class="c-str">"2"</span>, <span class="c-str">"double_click"</span>: <span class="c-str">"1"</span>,
+        }
+        clicks = <span class="c-str">"--repeat 2"</span> <span class="c-kw">if</span> action == <span class="c-str">"double_click"</span> <span class="c-kw">else</span> <span class="c-str">""</span>
+        <span class="c-bi">subprocess</span>.<span class="c-fn">run</span>(
+            f<span class="c-str">"xdotool mousemove {x} {y} click {clicks} {btn_map[action]}"</span>,
+            shell=<span class="c-bi">True</span>, check=<span class="c-bi">True</span>
+        )
+
+    <span class="c-kw">elif</span> action == <span class="c-str">"type"</span>:
+        text = action_input[<span class="c-str">"text"</span>]
+        <span class="c-bi">subprocess</span>.<span class="c-fn">run</span>([<span class="c-str">"xdotool"</span>, <span class="c-str">"type"</span>, <span class="c-str">"--clearmodifiers"</span>, text], check=<span class="c-bi">True</span>)
+
+    <span class="c-kw">elif</span> action == <span class="c-str">"key"</span>:
+        key = action_input[<span class="c-str">"text"</span>]          <span class="c-cmt"># e.g. "Return", "ctrl+c", "Tab"</span>
+        <span class="c-bi">subprocess</span>.<span class="c-fn">run</span>([<span class="c-str">"xdotool"</span>, <span class="c-str">"key"</span>, key], check=<span class="c-bi">True</span>)
+
+    <span class="c-kw">elif</span> action == <span class="c-str">"mouse_move"</span>:
+        x, y = action_input[<span class="c-str">"coordinate"</span>]
+        <span class="c-bi">subprocess</span>.<span class="c-fn">run</span>([<span class="c-str">"xdotool"</span>, <span class="c-str">"mousemove"</span>, <span class="c-bi">str</span>(x), <span class="c-bi">str</span>(y)], check=<span class="c-bi">True</span>)
+
+    <span class="c-kw">elif</span> action == <span class="c-str">"scroll"</span>:
+        x, y = action_input[<span class="c-str">"coordinate"</span>]
+        direction = action_input[<span class="c-str">"direction"</span>]    <span class="c-cmt"># "up" | "down" | "left" | "right"</span>
+        amount = action_input.<span class="c-fn">get</span>(<span class="c-str">"amount"</span>, <span class="c-num">3</span>)
+        btn = {<span class="c-str">"up"</span>: <span class="c-str">"4"</span>, <span class="c-str">"down"</span>: <span class="c-str">"5"</span>, <span class="c-str">"left"</span>: <span class="c-str">"6"</span>, <span class="c-str">"right"</span>: <span class="c-str">"7"</span>}[direction]
+        <span class="c-bi">subprocess</span>.<span class="c-fn">run</span>(
+            f<span class="c-str">"xdotool mousemove {x} {y} click --repeat {amount} {btn}"</span>,
+            shell=<span class="c-bi">True</span>, check=<span class="c-bi">True</span>
+        )
+
+    <span class="c-bi">time</span>.<span class="c-fn">sleep</span>(<span class="c-num">0.3</span>)                              <span class="c-cmt"># let UI settle before screenshotting</span>
+    <span class="c-kw">return</span> <span class="c-fn">take_screenshot</span>()
+
+
+<span class="c-kw">def</span> <span class="c-fn">execute_bash_action</span>(cmd: <span class="c-bi">str</span>) -> <span class="c-bi">str</span>:
+    <span class="c-str">"""Run a shell command and return combined stdout + stderr."""</span>
+    result = <span class="c-bi">subprocess</span>.<span class="c-fn">run</span>(
+        cmd, shell=<span class="c-bi">True</span>, capture_output=<span class="c-bi">True</span>, text=<span class="c-bi">True</span>, timeout=<span class="c-num">30</span>
+    )
+    output = (result.stdout + result.stderr).<span class="c-fn">strip</span>()
+    <span class="c-kw">return</span> output[:<span class="c-num">8000</span>] <span class="c-kw">if</span> output <span class="c-kw">else</span> <span class="c-str">"(no output)"</span>
+
+
+<span class="c-kw">def</span> <span class="c-fn">run_computer_use_agent</span>(task: <span class="c-bi">str</span>, max_iterations: <span class="c-bi">int</span> = <span class="c-num">20</span>) -> <span class="c-bi">str</span>:
+    <span class="c-str">"""Run a computer use task. Returns final status message."""</span>
+    tools = [
+        {
+            <span class="c-str">"type"</span>: <span class="c-str">"computer_20250124"</span>,
+            <span class="c-str">"name"</span>: <span class="c-str">"computer"</span>,
+            <span class="c-str">"display_width_px"</span>: <span class="c-num">1920</span>,
+            <span class="c-str">"display_height_px"</span>: <span class="c-num">1080</span>,
+            <span class="c-str">"display_number"</span>: <span class="c-num">1</span>,
+        },
+        {<span class="c-str">"type"</span>: <span class="c-str">"bash_20250124"</span>, <span class="c-str">"name"</span>: <span class="c-str">"bash"</span>},
+        {<span class="c-str">"type"</span>: <span class="c-str">"text_editor_20250429"</span>, <span class="c-str">"name"</span>: <span class="c-str">"str_replace_based_edit_tool"</span>},
+    ]
+
+    screenshot = <span class="c-fn">take_screenshot</span>()
+    messages = [{
+        <span class="c-str">"role"</span>: <span class="c-str">"user"</span>,
+        <span class="c-str">"content"</span>: [
+            {
+                <span class="c-str">"type"</span>: <span class="c-str">"image"</span>,
+                <span class="c-str">"source"</span>: {
+                    <span class="c-str">"type"</span>: <span class="c-str">"base64"</span>,
+                    <span class="c-str">"media_type"</span>: <span class="c-str">"image/png"</span>,
+                    <span class="c-str">"data"</span>: screenshot,
+                },
+            },
+            {<span class="c-str">"type"</span>: <span class="c-str">"text"</span>, <span class="c-str">"text"</span>: task},
+        ],
+    }]
+
+    <span class="c-kw">for</span> iteration <span class="c-kw">in</span> <span class="c-fn">range</span>(max_iterations):
+        response = client.messages.<span class="c-fn">create</span>(
+            model=<span class="c-str">"claude-opus-4-5"</span>,     <span class="c-cmt"># use a capable vision model</span>
+            max_tokens=<span class="c-num">4096</span>,
+            tools=tools,
+            messages=messages,
+            betas=[<span class="c-str">"computer-use-2025-01-24"</span>],   <span class="c-cmt"># required beta header</span>
+        )
+
+        messages.<span class="c-fn">append</span>({<span class="c-str">"role"</span>: <span class="c-str">"assistant"</span>, <span class="c-str">"content"</span>: response.content})
+        <span class="c-fn">print</span>(f<span class="c-str">"[{iteration+1}] stop_reason={response.stop_reason}"</span>)
+
+        <span class="c-kw">if</span> response.stop_reason == <span class="c-str">"end_turn"</span>:
+            final_text = <span class="c-fn">next</span>(
+                (b.text <span class="c-kw">for</span> b <span class="c-kw">in</span> response.content <span class="c-kw">if</span> <span class="c-fn">hasattr</span>(b, <span class="c-str">"text"</span>)), <span class="c-str">"Done."</span>
+            )
+            <span class="c-kw">return</span> final_text
+
+        <span class="c-cmt"># Collect and dispatch all tool_use blocks in this response</span>
+        tool_results = []
+        <span class="c-kw">for</span> block <span class="c-kw">in</span> response.content:
+            <span class="c-kw">if</span> block.type != <span class="c-str">"tool_use"</span>:
+                <span class="c-kw">continue</span>
+
+            <span class="c-fn">print</span>(f<span class="c-str">"  tool={block.name} input={block.input}"</span>)
+
+            <span class="c-kw">if</span> block.name == <span class="c-str">"computer"</span>:
+                result_b64 = <span class="c-fn">execute_computer_action</span>(block.input)
+                tool_results.<span class="c-fn">append</span>({
+                    <span class="c-str">"type"</span>: <span class="c-str">"tool_result"</span>,
+                    <span class="c-str">"tool_use_id"</span>: block.id,
+                    <span class="c-str">"content"</span>: [{
+                        <span class="c-str">"type"</span>: <span class="c-str">"image"</span>,
+                        <span class="c-str">"source"</span>: {
+                            <span class="c-str">"type"</span>: <span class="c-str">"base64"</span>,
+                            <span class="c-str">"media_type"</span>: <span class="c-str">"image/png"</span>,
+                            <span class="c-str">"data"</span>: result_b64,
+                        },
+                    }],
+                })
+
+            <span class="c-kw">elif</span> block.name == <span class="c-str">"bash"</span>:
+                output = <span class="c-fn">execute_bash_action</span>(block.input[<span class="c-str">"command"</span>])
+                tool_results.<span class="c-fn">append</span>({
+                    <span class="c-str">"type"</span>: <span class="c-str">"tool_result"</span>,
+                    <span class="c-str">"tool_use_id"</span>: block.id,
+                    <span class="c-str">"content"</span>: [{<span class="c-str">"type"</span>: <span class="c-str">"text"</span>, <span class="c-str">"text"</span>: output}],
+                })
+
+        messages.<span class="c-fn">append</span>({<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: tool_results})
+
+    <span class="c-kw">return</span> <span class="c-str">f"Max iterations ({max_iterations}) reached without end_turn."</span>
+
+
+<span class="c-kw">if</span> __name__ == <span class="c-str">"__main__"</span>:
+    result = <span class="c-fn">run_computer_use_agent</span>(
+        task=<span class="c-str">"Open Firefox, navigate to https://example.com, and tell me the page title."</span>
+    )
+    <span class="c-fn">print</span>(<span class="c-str">"Agent result:"</span>, result)</div>
+    </div>
+  </section>
+
+  <!-- SECTION 5: Safety -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">05 — Safety</div>
+      <h2>Safety Considerations</h2>
+      <p>Computer Use gives Claude real OS-level power. A single miscommunicated instruction can delete files, submit forms, or exfiltrate data. Treat every run as potentially destructive until proven otherwise.</p>
+    </div>
+
+    <div class="callout">
+      <span class="callout-icon">⚠️</span>
+      <div class="callout-text"><strong>Never run on your main machine.</strong> Always use a dedicated VM, Docker container, or cloud sandbox (e.g., Anthropic's reference Docker image). Assume the agent can reach your entire home directory, browser cookies, and SSH keys if not isolated.</div>
+    </div>
+
+    <div class="safety-list" style="margin-top:20px">
+      <div class="safety-item">
+        <div class="safety-dot"></div>
+        <div class="safety-text"><strong>Principle of least privilege.</strong> Run the agent as a non-root user with no sudo. Mount the filesystem read-only except for the working directory. Disable clipboard access and limit network egress to the specific domains the task requires.</div>
+      </div>
+      <div class="safety-item">
+        <div class="safety-dot"></div>
+        <div class="safety-text"><strong>Human-in-the-loop checkpoints.</strong> Before any destructive action — file deletion, form submission, database write, git push — pause and prompt the user for approval. Implement a confirmation wrapper around high-risk bash commands.</div>
+      </div>
+      <div class="safety-item">
+        <div class="safety-dot"></div>
+        <div class="safety-text"><strong>Rate-limit and add hard timeouts.</strong> Each API call involves vision inference — enforce a per-task budget (e.g., max 20 iterations, max 5 minutes wall time). Without limits, a stuck loop can burn significant API credits and leave processes hanging.</div>
+      </div>
+      <div class="safety-item">
+        <div class="safety-dot"></div>
+        <div class="safety-text"><strong>Scrub screenshots before logging.</strong> Screenshots may contain passwords, auth tokens, or PII visible on screen. If you log screenshots for debugging, either disable logging by default or run them through a PII-detection filter before persisting.</div>
+      </div>
+      <div class="safety-item">
+        <div class="safety-dot"></div>
+        <div class="safety-text"><strong>Prompt injection via screen content.</strong> Websites or documents can display text like "Ignore all previous instructions." The model may follow these instructions. Sanitize untrusted display content or use a separate confirmation step before acting on information from the screen.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 6: Use Cases -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">06 — Use Cases</div>
+      <h2>Where Computer Use Shines</h2>
+      <p>Computer Use is best applied where no programmatic alternative exists — legacy GUIs, visually-oriented tasks, and scenarios where maintaining a custom scraper or driver is costlier than agent inference.</p>
+    </div>
+
+    <div class="usecase-grid">
+      <div class="usecase-card">
+        <div class="usecase-icon">🏛️</div>
+        <div class="usecase-title">Legacy GUI Automation</div>
+        <div class="usecase-desc">Automate desktop apps with no REST API — ERP systems, government portals, insurance platforms. Computer Use handles any GUI that a human can operate.</div>
+      </div>
+      <div class="usecase-card">
+        <div class="usecase-icon">🧪</div>
+        <div class="usecase-title">Visual E2E Testing</div>
+        <div class="usecase-desc">Describe test cases in plain language. Claude navigates the app, verifies visual states, and reports failures — no Selenium selectors to maintain when the UI changes.</div>
+      </div>
+      <div class="usecase-card">
+        <div class="usecase-icon">🔍</div>
+        <div class="usecase-title">Web Research & Extraction</div>
+        <div class="usecase-desc">Extract data from sites with heavy JavaScript, anti-scraping, or login walls. Claude reads what it sees, not what the DOM exposes — immune to selector changes.</div>
+      </div>
+      <div class="usecase-card">
+        <div class="usecase-icon">🎯</div>
+        <div class="usecase-title">IT Helpdesk Automation</div>
+        <div class="usecase-desc">Resolve tier-1 tickets autonomously — reset passwords, clear caches, update user accounts in tools that only expose a web UI. Escalate to humans when uncertain.</div>
+      </div>
+      <div class="usecase-card">
+        <div class="usecase-icon">♿</div>
+        <div class="usecase-title">Accessibility Auditing</div>
+        <div class="usecase-desc">Navigate your app as a keyboard-only or screen-reader user would. Claude identifies unreachable elements, missing ARIA labels, and focus trap failures that automated tools miss.</div>
+      </div>
+      <div class="usecase-card">
+        <div class="usecase-icon">🤖</div>
+        <div class="usecase-title">Autonomous Dev Tasks</div>
+        <div class="usecase-desc">Point Claude at a repo, a failing CI screenshot, or a bug report, and let it open a terminal, reproduce the error, write a fix, and run the test suite — all inside a sandbox VM.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 7: Computer Use vs API Tool Use -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">07 — Comparison</div>
+      <h2>Computer Use vs. API Tool Use</h2>
+      <p>Both approaches let Claude take actions in the world — but they target very different problem shapes. Use the cheapest tool that solves your problem.</p>
+    </div>
+
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th>API Tool Use</th>
+          <th>Computer Use</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Interface</td>
+          <td>JSON API / function calls</td>
+          <td>GUI + Screenshots</td>
+        </tr>
+        <tr>
+          <td>Speed per action</td>
+          <td><span class="badge-green">Fast (~100ms)</span></td>
+          <td><span class="badge-red">Slow (2–5s per step)</span></td>
+        </tr>
+        <tr>
+          <td>Reliability</td>
+          <td><span class="badge-green">High — deterministic</span></td>
+          <td><span class="badge-yellow">Variable — UI can change</span></td>
+        </tr>
+        <tr>
+          <td>Setup cost</td>
+          <td><span class="badge-green">Low — define schema</span></td>
+          <td><span class="badge-red">High — sandbox, display, xdotool</span></td>
+        </tr>
+        <tr>
+          <td>Token cost</td>
+          <td><span class="badge-green">Low — text only</span></td>
+          <td><span class="badge-red">High — image per step</span></td>
+        </tr>
+        <tr>
+          <td>Requires API</td>
+          <td>Yes</td>
+          <td>No — works on any GUI</td>
+        </tr>
+        <tr>
+          <td>Best used when</td>
+          <td>A programmatic API exists for the target system</td>
+          <td>No API exists; system only exposes a GUI</td>
+        </tr>
+        <tr>
+          <td>Maintenance burden</td>
+          <td><span class="badge-teal">Low — API schema is stable</span></td>
+          <td><span class="badge-yellow">Medium — UI redesigns can break flows</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout info" style="margin-top:24px">
+      <span class="callout-icon">🧩</span>
+      <div class="callout-text"><strong>Hybrid pattern:</strong> Many production agents combine both. Use API tool use for structured data (databases, REST APIs) and Computer Use only for the parts of the workflow that exist behind a GUI. This keeps cost and latency low while covering legacy surfaces.</div>
+    </div>
+  </section>
+
+  <!-- SECTION 8: Limitations -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">08 — Limitations</div>
+      <h2>Current Limitations</h2>
+      <p>Computer Use is powerful but not production-ready for all workflows. Know where it breaks before committing to an architecture that depends on it.</p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px">
+      <div style="background:var(--card);border:1px solid rgba(239,68,68,0.2);border-radius:12px;padding:18px">
+        <div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:8px">LATENCY</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.7">2–5 seconds per action due to vision inference. A 20-step workflow takes 1–2 minutes minimum. Not suitable for real-time or high-frequency automation.</div>
+      </div>
+      <div style="background:var(--card);border:1px solid rgba(239,68,68,0.2);border-radius:12px;padding:18px">
+        <div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:8px">COORDINATE PRECISION</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.7">Claude sometimes mis-clicks on small UI elements (sub-20px buttons, dense dropdowns). Use higher-resolution screenshots and scale-aware prompting to improve accuracy.</div>
+      </div>
+      <div style="background:var(--card);border:1px solid rgba(239,68,68,0.2);border-radius:12px;padding:18px">
+        <div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:8px">SYSTEM DIALOGS</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.7">OS-level modal dialogs (file pickers, permission prompts, UAC dialogs) are rendered by the compositor and may not appear in regular screenshots depending on your capture method.</div>
+      </div>
+      <div style="background:var(--card);border:1px solid rgba(239,68,68,0.2);border-radius:12px;padding:18px">
+        <div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:8px">DRAG &amp; SCROLL RELIABILITY</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.7">Complex drag operations and scrolling through long pages to find content are error-prone. Consider adding explicit scroll commands with verification screenshots after each scroll.</div>
+      </div>
+      <div style="background:var(--card);border:1px solid rgba(239,68,68,0.2);border-radius:12px;padding:18px">
+        <div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:8px">DYNAMIC UI RELIABILITY</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.7">Heavily animated UIs, canvas-based apps, video players, and WebGL content are difficult to reason about from static screenshots. Claude may misidentify state mid-animation.</div>
+      </div>
+      <div style="background:var(--card);border:1px solid rgba(239,68,68,0.2);border-radius:12px;padding:18px">
+        <div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:8px">CONTEXT WINDOW GROWTH</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.7">Each screenshot adds ~500–1000 tokens. Long sessions approach context limits. Implement image pruning (keep only the last N screenshots) or periodic context summarization for extended tasks.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PREREQS -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">Prerequisites</div>
+      <h2>What You Should Know First</h2>
+    </div>
+    <div class="prereq-grid">
+      <div class="prereq-chip"><span class="prereq-day">Day 2</span> Tool use &amp; structured outputs</div>
+      <div class="prereq-chip"><span class="prereq-day">Day 3</span> Agent loop patterns</div>
+      <div class="prereq-chip"><span class="prereq-day">Day 5</span> Multi-step agents</div>
+      <div class="prereq-chip"><span class="prereq-day">Day 7</span> Production safety patterns</div>
+    </div>
+    <div style="margin-top:16px;font-size:13px;color:var(--muted);line-height:1.6">
+      External: Linux environment with X11 display, <code style="font-size:12px;background:var(--surface2);padding:1px 5px;border-radius:3px">scrot</code> and <code style="font-size:12px;background:var(--surface2);padding:1px 5px;border-radius:3px">xdotool</code> installed, Docker for sandboxing. Anthropic's reference Docker image (<code style="font-size:12px;background:var(--surface2);padding:1px 5px;border-radius:3px">ghcr.io/anthropics/anthropic-quickstarts:computer-use-demo-latest</code>) ships with all dependencies pre-configured.
+    </div>
+  </section>
+
+  <!-- EXERCISES -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">Exercises</div>
+      <h2>Practice Exercises</h2>
+    </div>
+    <div class="ex-list">
+      <div class="ex-item">
+        <div class="ex-num">1</div>
+        <div class="ex-body">
+          <div class="ex-title">Spin up the reference Docker image and run a simple task</div>
+          <div class="ex-desc">Pull <code style="font-size:11px;background:var(--surface2);padding:1px 5px;border-radius:3px">anthropic-quickstarts:computer-use-demo-latest</code>, set your API key, and ask Claude to open a terminal and print the current date. Inspect the message history — count how many screenshots were exchanged and calculate the total image tokens used.</div>
+          <span class="ex-difficulty diff-easy">Easy — 30 minutes</span>
+        </div>
+      </div>
+      <div class="ex-item">
+        <div class="ex-num">2</div>
+        <div class="ex-body">
+          <div class="ex-title">Build a minimal loop from scratch without the reference implementation</div>
+          <div class="ex-desc">Implement the full agent loop using only the Anthropic Python SDK, <code style="font-size:11px;background:var(--surface2);padding:1px 5px;border-radius:3px">scrot</code>, and <code style="font-size:11px;background:var(--surface2);padding:1px 5px;border-radius:3px">xdotool</code>. Task: open Firefox (already installed), navigate to google.com, search for "Anthropic", and return the first result title. Add structured logging of every tool call.</div>
+          <span class="ex-difficulty diff-med">Medium — 3 hours</span>
+        </div>
+      </div>
+      <div class="ex-item">
+        <div class="ex-num">3</div>
+        <div class="ex-body">
+          <div class="ex-title">Add a human-in-the-loop confirmation gate for destructive actions</div>
+          <div class="ex-desc">Wrap your bash executor so that any command matching <code style="font-size:11px;background:var(--surface2);padding:1px 5px;border-radius:3px">rm</code>, <code style="font-size:11px;background:var(--surface2);padding:1px 5px;border-radius:3px">sudo</code>, <code style="font-size:11px;background:var(--surface2);padding:1px 5px;border-radius:3px">dd</code>, or <code style="font-size:11px;background:var(--surface2);padding:1px 5px;border-radius:3px">curl.*POST</code> pauses and asks for human confirmation in the terminal. Test it by giving Claude a task that naturally triggers a destructive command.</div>
+          <span class="ex-difficulty diff-med">Medium — 2 hours</span>
+        </div>
+      </div>
+      <div class="ex-item">
+        <div class="ex-num">4</div>
+        <div class="ex-body">
+          <div class="ex-title">Implement context pruning to support 50+ step sessions</div>
+          <div class="ex-desc">Modify the agent loop so that after every 10 iterations, old screenshots are replaced with a text summary ("screenshot at step N showed X"). Measure context token usage before and after. Run a 40-step task end-to-end — verify it completes without hitting context limits.</div>
+          <span class="ex-difficulty diff-hard">Hard — half day</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+<script src="../bg-animation.js"></script>
+</body>
+</html>

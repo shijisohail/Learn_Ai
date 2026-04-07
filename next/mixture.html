@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mixture-of-Agents — What's Next</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f; --card: #141420; --surface2: #1a1a2e; --border: #2a2a45;
+  --purple: #7c3aed; --purple-light: #a855f7; --teal: #0d9488; --green: #10b981;
+  --red: #ef4444; --yellow: #f59e0b; --text: #e2e8f0; --muted: #64748b;
+  --font: 'Inter', sans-serif; --mono: 'JetBrains Mono', monospace;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; overflow-x: hidden; }
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(245,158,11,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 90% 80%, rgba(124,58,237,0.05) 0%, transparent 60%);
+  pointer-events: none; z-index: 0;
+}
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+nav { border-bottom: 1px solid var(--border); padding: 14px 0; background: rgba(10,10,15,0.85); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; }
+.nav-inner { display: flex; align-items: center; justify-content: space-between; }
+.nav-back { color: var(--muted); font-size: 13px; text-decoration: none; transition: color 0.2s; }
+.nav-back:hover { color: var(--text); }
+.nav-tag { font-size: 13px; font-weight: 700; background: linear-gradient(90deg,#f59e0b,#a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+.hero { padding: 60px 0 48px; }
+.hero-eyebrow { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.hero-icon { font-size: 40px; }
+.difficulty-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: rgba(239,68,68,0.15); color: var(--red); }
+.time-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+.hero h1 { font-size: clamp(28px, 5vw, 48px); font-weight: 900; letter-spacing: -2px; margin-bottom: 14px; line-height: 1.1; }
+.hero h1 span { background: linear-gradient(135deg, #f59e0b, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.hero p { font-size: 16px; color: var(--muted); max-width: 620px; line-height: 1.7; }
+
+.section { padding: 56px 0; border-top: 1px solid var(--border); }
+.section-header { margin-bottom: 32px; }
+.section-num { font-size: 11px; font-weight: 700; color: var(--yellow); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.section-header h2 { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 10px; }
+.section-header p { color: var(--muted); font-size: 15px; line-height: 1.6; max-width: 640px; }
+
+/* CODE BLOCKS — white-space: pre is REQUIRED */
+.code-block {
+  background: #0d1117; border: 1px solid #30363d; border-radius: 12px;
+  padding: 24px; font-family: var(--mono); font-size: 12.5px; line-height: 1.8;
+  overflow-x: auto; white-space: pre;
+}
+.code-wrap { position: relative; margin-top: 16px; }
+.code-label { position: absolute; top: -10px; left: 16px; background: var(--yellow); color: #000; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.5px; }
+.c-cmt { color: #8b949e; }
+.c-kw { color: #ff7b72; }
+.c-fn { color: #d2a8ff; }
+.c-str { color: #a5d6ff; }
+.c-type { color: #ffa657; }
+.c-num { color: #f2cc60; }
+.c-bi { color: #79c0ff; }
+
+/* ROUTING DIAGRAM */
+.routing-visual { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; }
+.route-center { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+.router-box { background: rgba(245,158,11,0.1); border: 2px solid var(--yellow); border-radius: 12px; padding: 14px 24px; text-align: center; }
+.router-box h3 { font-size: 13px; font-weight: 800; color: var(--yellow); }
+.router-box p { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.route-branches { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: 100%; }
+.route-branch { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 14px; text-align: center; }
+.route-branch.haiku { border-color: rgba(16,185,129,0.4); }
+.route-branch.sonnet { border-color: rgba(245,158,11,0.4); }
+.route-branch.opus { border-color: rgba(168,85,247,0.4); }
+.route-model { font-size: 12px; font-weight: 800; margin-bottom: 4px; }
+.route-model.haiku-c { color: var(--green); }
+.route-model.sonnet-c { color: var(--yellow); }
+.route-model.opus-c { color: var(--purple-light); }
+.route-use { font-size: 10px; color: var(--muted); line-height: 1.5; }
+.route-cost { font-size: 10px; font-weight: 700; margin-top: 4px; }
+
+/* STRATEGY CARDS */
+.strategy-list { display: flex; flex-direction: column; gap: 12px; }
+.strategy-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; display: flex; gap: 14px; align-items: flex-start; transition: all 0.2s; }
+.strategy-card:hover { border-color: var(--yellow); }
+.strategy-icon { font-size: 24px; flex-shrink: 0; }
+.strategy-body { flex: 1; }
+.strategy-name { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.strategy-desc { font-size: 12px; color: var(--muted); line-height: 1.6; }
+.strategy-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; margin-top: 6px; }
+.tag-simple { background: rgba(16,185,129,0.15); color: var(--green); }
+.tag-smart { background: rgba(245,158,11,0.15); color: var(--yellow); }
+.tag-adv { background: rgba(168,85,247,0.15); color: var(--purple-light); }
+
+/* CALLOUT */
+.callout { background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.25); border-radius: 12px; padding: 16px 20px; display: flex; gap: 12px; align-items: flex-start; margin: 20px 0; }
+.callout-icon { font-size: 18px; flex-shrink: 0; }
+.callout-text { font-size: 13px; color: var(--text); line-height: 1.6; }
+.callout-text strong { color: var(--yellow); }
+.callout.info { background: rgba(124,58,237,0.07); border-color: rgba(124,58,237,0.25); }
+.callout.info .callout-text strong { color: var(--purple-light); }
+
+/* MODEL COMPARISON TABLE */
+.model-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.model-table th { background: var(--surface2); padding: 10px 12px; text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); border-bottom: 1px solid var(--border); }
+.model-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.model-table tr:last-child td { border-bottom: none; }
+.model-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+/* PREREQS */
+.prereq-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.prereq-chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.prereq-day { background: var(--yellow); color: #000; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; }
+
+/* EXERCISES */
+.ex-list { display: flex; flex-direction: column; gap: 12px; }
+.ex-item { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; display: flex; gap: 14px; }
+.ex-num { width: 32px; height: 32px; border-radius: 50%; background: rgba(245,158,11,0.15); border: 2px solid var(--yellow); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: var(--yellow); flex-shrink: 0; }
+.ex-body { flex: 1; }
+.ex-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.ex-desc { font-size: 12px; color: var(--muted); line-height: 1.6; }
+.ex-difficulty { display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+.diff-easy { background: rgba(16,185,129,0.15); color: var(--green); }
+.diff-med { background: rgba(245,158,11,0.15); color: var(--yellow); }
+.diff-hard { background: rgba(239,68,68,0.15); color: var(--red); }
+
+@media(max-width:700px) {
+  .route-branches { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="container">
+    <div class="nav-inner">
+      <a href="../days/day7.html" class="nav-back">← Back to Day 7</a>
+      <span class="nav-tag">What's Next — Mixture-of-Agents</span>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+
+  <section class="hero">
+    <div class="hero-eyebrow">
+      <span class="hero-icon">🔀</span>
+      <span class="difficulty-badge">Advanced</span>
+      <span class="time-badge">⏱ 2–3 days</span>
+    </div>
+    <h1>Mixture-of-<br><span>Agents</span></h1>
+    <p>Route requests to the right model for the job. Build intelligent routing layers, model ensembles, and consensus mechanisms that cut costs while maintaining quality — across multiple AI providers.</p>
+  </section>
+
+  <!-- SECTION 1: What is MoA -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">01 — Concept</div>
+      <h2>What is Mixture-of-Agents?</h2>
+      <p>Not to be confused with Mixture-of-Experts (MoE) — which is an internal model architecture. Mixture-of-Agents is an external routing pattern: one request → router → appropriate model → response.</p>
+    </div>
+
+    <div class="callout">
+      <span class="callout-icon">⚡</span>
+      <div class="callout-text"><strong>The key insight:</strong> A simple factual question doesn't need Claude Opus. A haiku doesn't need a code-specialist model. Using the wrong model is either wasting money (over-powered) or degrading quality (under-powered). A router solves this.</div>
+    </div>
+
+    <div class="routing-visual">
+      <div class="route-center">
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 20px;font-size:12px;font-weight:600;color:var(--muted)">
+          Incoming request: "What year was Python created?"
+        </div>
+        <div style="font-size:20px;color:var(--muted)">↓</div>
+        <div class="router-box">
+          <h3>Router</h3>
+          <p>Classifies request complexity, type, and required capabilities</p>
+        </div>
+        <div style="font-size:20px;color:var(--muted)">↓ routes to appropriate model ↓</div>
+        <div class="route-branches">
+          <div class="route-branch haiku">
+            <div class="route-model haiku-c">Claude Haiku 3.5</div>
+            <div class="route-use">Simple Q&A, classification, short generation. &lt;500 tokens input/output.</div>
+            <div class="route-cost" style="color:var(--green)">$0.0008/1K tokens</div>
+          </div>
+          <div class="route-branch sonnet">
+            <div class="route-model sonnet-c">Claude Sonnet 4.5</div>
+            <div class="route-use">Complex reasoning, long-form generation, code review, analysis.</div>
+            <div class="route-cost" style="color:var(--yellow)">$0.003/1K tokens</div>
+          </div>
+          <div class="route-branch opus">
+            <div class="route-model opus-c">Claude Opus 4</div>
+            <div class="route-use">Hardest problems, strategic decisions, high-stakes outputs.</div>
+            <div class="route-cost" style="color:var(--purple-light)">$0.015/1K tokens</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 2: Routing Strategies -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">02 — Strategies</div>
+      <h2>Model Routing Strategies</h2>
+      <p>Four approaches to routing, ranging from dead-simple to sophisticated. Start simple and add complexity only when you have data showing it's needed.</p>
+    </div>
+
+    <div class="strategy-list">
+      <div class="strategy-card">
+        <span class="strategy-icon">📏</span>
+        <div class="strategy-body">
+          <div class="strategy-name">Rule-based routing</div>
+          <div class="strategy-desc">Simple keyword or pattern matching. If "code" or "debug" in query → code model. If query length &lt; 100 tokens → cheap model. If "financial" or "legal" → careful model with disclaimers. Fast, zero latency overhead, fully predictable.</div>
+          <span class="strategy-tag tag-simple">Easiest — start here</span>
+        </div>
+      </div>
+      <div class="strategy-card">
+        <span class="strategy-icon">🏷️</span>
+        <div class="strategy-body">
+          <div class="strategy-name">Classifier-based routing</div>
+          <div class="strategy-desc">Train a small text classifier (BERT-based, ~100MB) that predicts the optimal model tier from the input. Latency: ~5ms. Requires a labeled routing dataset — collect from production traffic by logging which model was used and the quality outcome.</div>
+          <span class="strategy-tag tag-smart">Better — needs training data</span>
+        </div>
+      </div>
+      <div class="strategy-card">
+        <span class="strategy-icon">🧠</span>
+        <div class="strategy-body">
+          <div class="strategy-name">LLM-based routing</div>
+          <div class="strategy-desc">Use a fast cheap model (Haiku) to classify the query, then route to the appropriate model. The classifier prompt gives it a rubric for complexity assessment. Latency overhead: ~300ms. Highly accurate but adds one LLM call per request.</div>
+          <span class="strategy-tag tag-smart">Smart — best accuracy</span>
+        </div>
+      </div>
+      <div class="strategy-card">
+        <span class="strategy-icon">💰</span>
+        <div class="strategy-body">
+          <div class="strategy-name">Cost-aware escalation</div>
+          <div class="strategy-desc">Try the cheapest model first. If confidence is low or quality check fails, escalate to the next tier. "Try Haiku, if response quality score &lt; 3.5, retry with Sonnet." Maximizes cost savings while maintaining quality SLA. Adds latency on escalation.</div>
+          <span class="strategy-tag tag-adv">Advanced — best cost/quality tradeoff</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 3: Router Code -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">03 — Implementation</div>
+      <h2>Building a Router</h2>
+      <p>A FastAPI service that classifies incoming requests and routes to the appropriate model. Supports the LLM-based classification strategy with cost-aware fallback.</p>
+    </div>
+
+    <div class="code-wrap">
+      <span class="code-label">PYTHON — FastAPI Intelligent Router</span>
+      <div class="code-block"><span class="c-kw">from</span> <span class="c-bi">fastapi</span> <span class="c-kw">import</span> FastAPI, HTTPException
+<span class="c-kw">from</span> <span class="c-bi">pydantic</span> <span class="c-kw">import</span> BaseModel
+<span class="c-kw">import</span> <span class="c-bi">anthropic</span>, <span class="c-bi">asyncio</span>, <span class="c-bi">json</span>, <span class="c-bi">time</span>
+<span class="c-kw">from</span> <span class="c-bi">typing</span> <span class="c-kw">import</span> Literal
+<span class="c-kw">from</span> <span class="c-bi">dataclasses</span> <span class="c-kw">import</span> dataclass, field
+
+app = <span class="c-fn">FastAPI</span>()
+client = anthropic.<span class="c-fn">AsyncAnthropic</span>()
+
+<span class="c-kw">class</span> <span class="c-type">RouteRequest</span>(<span class="c-bi">BaseModel</span>):
+    prompt: <span class="c-bi">str</span>
+    max_tokens: <span class="c-bi">int</span> = <span class="c-num">1024</span>
+    require_tier: Literal[<span class="c-str">"auto"</span>, <span class="c-str">"haiku"</span>, <span class="c-str">"sonnet"</span>, <span class="c-str">"opus"</span>] = <span class="c-str">"auto"</span>
+
+MODEL_TIERS = {
+    <span class="c-str">"haiku"</span>:  {<span class="c-str">"model"</span>: <span class="c-str">"claude-haiku-3-5"</span>,  <span class="c-str">"cost_per_1k"</span>: <span class="c-num">0.0008</span>},
+    <span class="c-str">"sonnet"</span>: {<span class="c-str">"model"</span>: <span class="c-str">"claude-sonnet-4-5"</span>, <span class="c-str">"cost_per_1k"</span>: <span class="c-num">0.003</span>},
+    <span class="c-str">"opus"</span>:   {<span class="c-str">"model"</span>: <span class="c-str">"claude-opus-4-0"</span>,   <span class="c-str">"cost_per_1k"</span>: <span class="c-num">0.015</span>},
+}
+
+CLASSIFIER_PROMPT = <span class="c-str">"""Classify the complexity of this user request for model routing.
+
+Request: {prompt}
+
+Rules:
+- haiku: simple factual Q&A, greetings, yes/no, <100 word summaries, single-step tasks
+- sonnet: code review, analysis, multi-step reasoning, 100-1000 word generation, debugging
+- opus: complex strategy, high-stakes decisions, long documents (>2000 tokens), difficult math
+
+Return ONLY valid JSON: {{"tier": "haiku"|"sonnet"|"opus", "confidence": 0.0-1.0, "reason": "brief explanation"}}"""</span>
+
+<span class="c-kw">async def</span> <span class="c-fn">classify_request</span>(prompt: <span class="c-bi">str</span>) -> <span class="c-bi">tuple</span>[<span class="c-bi">str</span>, <span class="c-bi">float</span>]:
+    <span class="c-str">"""Use Haiku to classify the request tier. Returns (tier, confidence)."""</span>
+    response = <span class="c-kw">await</span> client.messages.<span class="c-fn">create</span>(
+        model=<span class="c-str">"claude-haiku-3-5"</span>,
+        max_tokens=<span class="c-num">128</span>,
+        messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: CLASSIFIER_PROMPT.<span class="c-fn">format</span>(prompt=prompt[:500])}],
+    )
+    data = json.<span class="c-fn">loads</span>(response.content[<span class="c-num">0</span>].text)
+    <span class="c-kw">return</span> data[<span class="c-str">"tier"</span>], data[<span class="c-str">"confidence"</span>]
+
+<span class="c-kw">async def</span> <span class="c-fn">call_model</span>(tier: <span class="c-bi">str</span>, prompt: <span class="c-bi">str</span>, max_tokens: <span class="c-bi">int</span>) -> <span class="c-bi">dict</span>:
+    <span class="c-str">"""Call the specified model tier."""</span>
+    model_info = MODEL_TIERS[tier]
+    start = time.<span class="c-fn">monotonic</span>()
+    response = <span class="c-kw">await</span> client.messages.<span class="c-fn">create</span>(
+        model=model_info[<span class="c-str">"model"</span>],
+        max_tokens=max_tokens,
+        messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: prompt}],
+    )
+    latency_ms = <span class="c-bi">int</span>((<span class="c-fn">time</span>.<span class="c-fn">monotonic</span>() - start) * <span class="c-num">1000</span>)
+    tokens_used = response.usage.input_tokens + response.usage.output_tokens
+
+    <span class="c-kw">return</span> {
+        <span class="c-str">"content"</span>: response.content[<span class="c-num">0</span>].text,
+        <span class="c-str">"tier_used"</span>: tier,
+        <span class="c-str">"model"</span>: model_info[<span class="c-str">"model"</span>],
+        <span class="c-str">"tokens_used"</span>: tokens_used,
+        <span class="c-str">"cost_usd"</span>: tokens_used / <span class="c-num">1000</span> * model_info[<span class="c-str">"cost_per_1k"</span>],
+        <span class="c-str">"latency_ms"</span>: latency_ms,
+    }
+
+<span class="c-dec">@app.post</span>(<span class="c-str">"/v1/route"</span>)
+<span class="c-kw">async def</span> <span class="c-fn">route_request</span>(req: <span class="c-type">RouteRequest</span>) -> <span class="c-bi">dict</span>:
+    <span class="c-kw">if</span> req.require_tier != <span class="c-str">"auto"</span>:
+        <span class="c-cmt"># Explicit tier override — skip classifier</span>
+        <span class="c-kw">return</span> <span class="c-kw">await</span> <span class="c-fn">call_model</span>(req.require_tier, req.prompt, req.max_tokens)
+
+    <span class="c-cmt"># Run classifier concurrently with first attempt at Haiku</span>
+    <span class="c-cmt"># (optimistic: if haiku is enough, we're already done)</span>
+    tier, confidence = <span class="c-kw">await</span> <span class="c-fn">classify_request</span>(req.prompt)
+
+    <span class="c-kw">if</span> confidence < <span class="c-num">0.7</span>:
+        <span class="c-cmt"># Low confidence → escalate one tier</span>
+        escalation = {<span class="c-str">"haiku"</span>: <span class="c-str">"sonnet"</span>, <span class="c-str">"sonnet"</span>: <span class="c-str">"opus"</span>, <span class="c-str">"opus"</span>: <span class="c-str">"opus"</span>}
+        tier = escalation[tier]
+
+    <span class="c-kw">return</span> <span class="c-kw">await</span> <span class="c-fn">call_model</span>(tier, req.prompt, req.max_tokens)</div>
+    </div>
+  </section>
+
+  <!-- SECTION 4: Model Ensembles -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">04 — Ensembles</div>
+      <h2>Model Ensembles</h2>
+      <p>Run the same query on multiple models simultaneously, then aggregate. Higher cost, but significantly better accuracy for high-stakes decisions where correctness matters more than speed.</p>
+    </div>
+
+    <div class="callout info">
+      <span class="callout-icon">🎯</span>
+      <div class="callout-text"><strong>When ensembles are worth the cost:</strong> Medical/legal advice, high-stakes factual questions, security-critical decisions. For most applications, a well-routed single model is better value. Use ensembles for &lt;5% of your traffic.</div>
+    </div>
+
+    <div class="code-wrap">
+      <span class="code-label">PYTHON — Ensemble with Majority Vote</span>
+      <div class="code-block"><span class="c-kw">import</span> <span class="c-bi">asyncio</span>
+<span class="c-kw">from</span> <span class="c-bi">collections</span> <span class="c-kw">import</span> Counter
+
+<span class="c-kw">async def</span> <span class="c-fn">query_model</span>(client, model: <span class="c-bi">str</span>, prompt: <span class="c-bi">str</span>) -> <span class="c-bi">str</span>:
+    response = <span class="c-kw">await</span> client.messages.<span class="c-fn">create</span>(
+        model=model, max_tokens=<span class="c-num">512</span>,
+        messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: prompt}],
+    )
+    <span class="c-kw">return</span> response.content[<span class="c-num">0</span>].text
+
+<span class="c-kw">async def</span> <span class="c-fn">ensemble_vote</span>(
+    prompt: <span class="c-bi">str</span>,
+    models: <span class="c-bi">list</span>[<span class="c-bi">str</span>] = [<span class="c-str">"claude-haiku-3-5"</span>, <span class="c-str">"claude-sonnet-4-5"</span>, <span class="c-str">"claude-sonnet-4-5"</span>],
+) -> <span class="c-bi">str</span>:
+    <span class="c-str">"""Run prompt on multiple models, return majority answer.
+    Best for classification/structured tasks where answers are comparable."""</span>
+    client = anthropic.<span class="c-fn">AsyncAnthropic</span>()
+
+    <span class="c-cmt"># Query all models in parallel</span>
+    responses = <span class="c-kw">await</span> asyncio.<span class="c-fn">gather</span>(*[
+        <span class="c-fn">query_model</span>(client, model, prompt)
+        <span class="c-kw">for</span> model <span class="c-kw">in</span> models
+    ])
+
+    <span class="c-cmt"># For structured output (e.g., classification), vote</span>
+    vote_counts = <span class="c-fn">Counter</span>(responses)
+    winner, count = vote_counts.<span class="c-fn">most_common</span>(<span class="c-num">1</span>)[<span class="c-num">0</span>]
+
+    <span class="c-fn">print</span>(f<span class="c-str">"Ensemble: {len(models)} models voted, winner got {count}/{len(models)} votes"</span>)
+    <span class="c-kw">return</span> winner
+
+<span class="c-kw">async def</span> <span class="c-fn">ensemble_judge</span>(
+    prompt: <span class="c-bi">str</span>,
+    models: <span class="c-bi">list</span>[<span class="c-bi">str</span>] = [<span class="c-str">"claude-haiku-3-5"</span>, <span class="c-str">"claude-sonnet-4-5"</span>, <span class="c-str">"claude-opus-4-0"</span>],
+) -> <span class="c-bi">str</span>:
+    <span class="c-str">"""Run on multiple models, use a judge to pick the best response.
+    Better for open-ended generation where voting doesn't apply."""</span>
+    client = anthropic.<span class="c-fn">AsyncAnthropic</span>()
+
+    responses = <span class="c-kw">await</span> asyncio.<span class="c-fn">gather</span>(*[
+        <span class="c-fn">query_model</span>(client, model, prompt)
+        <span class="c-kw">for</span> model <span class="c-kw">in</span> models
+    ])
+
+    <span class="c-cmt"># Judge prompt — present all responses, ask to pick best</span>
+    judge_prompt = f<span class="c-str">"""You are evaluating multiple AI responses to this prompt:
+{prompt}
+
+Responses:
+{chr(10).join(f'Option {i+1}: {r}' for i, r in enumerate(responses))}
+
+Which option is most accurate, helpful, and complete?
+Reply with ONLY "Option N" where N is the number."""</span>
+
+    judgment = <span class="c-kw">await</span> <span class="c-fn">query_model</span>(client, <span class="c-str">"claude-sonnet-4-5"</span>, judge_prompt)
+    <span class="c-kw">try</span>:
+        idx = <span class="c-bi">int</span>(judgment.<span class="c-fn">split</span>(<span class="c-str">"Option "</span>)[<span class="c-num">1</span>].<span class="c-fn">strip</span>()) - <span class="c-num">1</span>
+        <span class="c-kw">return</span> responses[idx]
+    <span class="c-kw">except</span> (<span class="c-type">IndexError</span>, <span class="c-type">ValueError</span>):
+        <span class="c-kw">return</span> responses[<span class="c-num">0</span>]   <span class="c-cmt"># fallback to first</span></div>
+    </div>
+  </section>
+
+  <!-- SECTION 5: Production Architecture -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">05 — Production</div>
+      <h2>Production Architecture</h2>
+      <p>Running a router in production adds operational complexity. Rate limiting, cost tracking, fallback chains, and latency budgets are non-negotiable before going live.</p>
+    </div>
+
+    <div class="code-wrap">
+      <span class="code-label">PYTHON — Production Router with Cost Tracking</span>
+      <div class="code-block"><span class="c-kw">import</span> <span class="c-bi">asyncio</span>, <span class="c-bi">time</span>
+<span class="c-kw">from</span> <span class="c-bi">collections</span> <span class="c-kw">import</span> defaultdict
+<span class="c-kw">from</span> <span class="c-bi">dataclasses</span> <span class="c-kw">import</span> dataclass, field
+<span class="c-kw">from</span> <span class="c-bi">typing</span> <span class="c-kw">import</span> Optional
+
+<span class="c-dec">@dataclass</span>
+<span class="c-kw">class</span> <span class="c-type">RouterMetrics</span>:
+    <span class="c-cmt"># Track per-tier usage for cost attribution</span>
+    requests_per_tier: <span class="c-bi">dict</span>[<span class="c-bi">str</span>, <span class="c-bi">int</span>] = field(default_factory=<span class="c-kw">lambda</span>: <span class="c-fn">defaultdict</span>(<span class="c-bi">int</span>))
+    cost_per_tier: <span class="c-bi">dict</span>[<span class="c-bi">str</span>, <span class="c-bi">float</span>] = field(default_factory=<span class="c-kw">lambda</span>: <span class="c-fn">defaultdict</span>(<span class="c-bi">float</span>))
+    latency_per_tier: <span class="c-bi">dict</span>[<span class="c-bi">str</span>, <span class="c-bi">list</span>] = field(default_factory=<span class="c-kw">lambda</span>: <span class="c-fn">defaultdict</span>(<span class="c-bi">list</span>))
+    escalations: <span class="c-bi">int</span> = <span class="c-num">0</span>
+    errors: <span class="c-bi">int</span> = <span class="c-num">0</span>
+
+    <span class="c-kw">def</span> <span class="c-fn">record</span>(self, tier: <span class="c-bi">str</span>, cost: <span class="c-bi">float</span>, latency_ms: <span class="c-bi">int</span>):
+        self.requests_per_tier[tier] += <span class="c-num">1</span>
+        self.cost_per_tier[tier] += cost
+        self.latency_per_tier[tier].<span class="c-fn">append</span>(latency_ms)
+
+    <span class="c-kw">def</span> <span class="c-fn">report</span>(self) -> <span class="c-bi">dict</span>:
+        <span class="c-kw">import</span> <span class="c-bi">statistics</span>
+        <span class="c-kw">return</span> {
+            tier: {
+                <span class="c-str">"requests"</span>: self.requests_per_tier[tier],
+                <span class="c-str">"total_cost_usd"</span>: <span class="c-bi">round</span>(self.cost_per_tier[tier], <span class="c-num">4</span>),
+                <span class="c-str">"avg_latency_ms"</span>: statistics.<span class="c-fn">mean</span>(self.latency_per_tier[tier]) <span class="c-kw">if</span> self.latency_per_tier[tier] <span class="c-kw">else</span> <span class="c-num">0</span>,
+            }
+            <span class="c-kw">for</span> tier <span class="c-kw">in</span> [<span class="c-str">"haiku"</span>, <span class="c-str">"sonnet"</span>, <span class="c-str">"opus"</span>]
+        }
+
+<span class="c-cmt"># Fallback chain: if primary tier fails, try next</span>
+FALLBACK_CHAIN = {<span class="c-str">"haiku"</span>: <span class="c-str">"sonnet"</span>, <span class="c-str">"sonnet"</span>: <span class="c-str">"opus"</span>, <span class="c-str">"opus"</span>: <span class="c-bi">None</span>}
+
+<span class="c-kw">async def</span> <span class="c-fn">call_with_fallback</span>(
+    client,
+    tier: <span class="c-bi">str</span>,
+    prompt: <span class="c-bi">str</span>,
+    max_tokens: <span class="c-bi">int</span>,
+    latency_budget_ms: <span class="c-bi">int</span> = <span class="c-num">5000</span>,
+    metrics: Optional[<span class="c-type">RouterMetrics</span>] = <span class="c-bi">None</span>,
+) -> <span class="c-bi">dict</span>:
+    current_tier = tier
+    <span class="c-kw">while</span> current_tier <span class="c-kw">is not None</span>:
+        start = time.<span class="c-fn">monotonic</span>()
+        <span class="c-kw">try</span>:
+            response = <span class="c-kw">await</span> asyncio.<span class="c-fn">wait_for</span>(
+                client.messages.<span class="c-fn">create</span>(
+                    model=MODEL_TIERS[current_tier][<span class="c-str">"model"</span>],
+                    max_tokens=max_tokens,
+                    messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: prompt}],
+                ),
+                timeout=latency_budget_ms / <span class="c-num">1000</span>,
+            )
+            latency_ms = <span class="c-bi">int</span>((<span class="c-fn">time</span>.<span class="c-fn">monotonic</span>() - start) * <span class="c-num">1000</span>)
+            tokens = response.usage.input_tokens + response.usage.output_tokens
+            cost = tokens / <span class="c-num">1000</span> * MODEL_TIERS[current_tier][<span class="c-str">"cost_per_1k"</span>]
+
+            <span class="c-kw">if</span> metrics:
+                metrics.<span class="c-fn">record</span>(current_tier, cost, latency_ms)
+
+            <span class="c-kw">return</span> {<span class="c-str">"content"</span>: response.content[<span class="c-num">0</span>].text, <span class="c-str">"tier"</span>: current_tier}
+
+        <span class="c-kw">except</span> (<span class="c-type">asyncio.TimeoutError</span>, <span class="c-type">Exception</span>) <span class="c-kw">as</span> e:
+            <span class="c-fn">print</span>(f<span class="c-str">"Tier {current_tier} failed: {e}. Trying fallback..."</span>)
+            <span class="c-kw">if</span> metrics: metrics.errors += <span class="c-num">1</span>
+            current_tier = FALLBACK_CHAIN[current_tier]
+
+    <span class="c-kw">raise</span> <span class="c-type">RuntimeError</span>(<span class="c-str">"All model tiers failed"</span>)</div>
+    </div>
+  </section>
+
+  <!-- PREREQS -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">Prerequisites</div>
+      <h2>Which Days Are Relevant</h2>
+    </div>
+    <div class="prereq-grid">
+      <div class="prereq-chip"><span class="prereq-day">Day 1</span> Anthropic SDK & model selection</div>
+      <div class="prereq-chip"><span class="prereq-day">Day 5</span> Async patterns with asyncio.gather</div>
+      <div class="prereq-chip"><span class="prereq-day">Day 6</span> Multi-agent coordination concepts</div>
+      <div class="prereq-chip"><span class="prereq-day">Day 7</span> FastAPI + production deployment</div>
+    </div>
+    <div style="margin-top:16px;font-size:13px;color:var(--muted);line-height:1.6">
+      External: LiteLLM (unified API across providers), RouteLLM (open-source router from Anthropic), Prometheus + Grafana for cost tracking dashboards.
+    </div>
+  </section>
+
+  <!-- EXERCISES -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">Exercises</div>
+      <h2>Practice Exercises</h2>
+    </div>
+    <div class="ex-list">
+      <div class="ex-item">
+        <div class="ex-num">1</div>
+        <div class="ex-body">
+          <div class="ex-title">Implement rule-based routing for your domain</div>
+          <div class="ex-desc">For any application you've built in this curriculum, define a rule-based routing policy: what query characteristics map to which tier? Implement it, test on 50 prompts, and calculate the cost savings vs always using Sonnet.</div>
+          <span class="ex-difficulty diff-easy">Easy — 1 hour</span>
+        </div>
+      </div>
+      <div class="ex-item">
+        <div class="ex-num">2</div>
+        <div class="ex-body">
+          <div class="ex-title">Build the LLM-based router from Section 3</div>
+          <div class="ex-desc">Implement the FastAPI router service. Test it with 30 different prompts — ranging from "what is 2+2" to "write a secure payment processing system in Python." Log which tier was chosen and the classifier's confidence. Identify patterns where it mis-routes.</div>
+          <span class="ex-difficulty diff-med">Medium — 2 hours</span>
+        </div>
+      </div>
+      <div class="ex-item">
+        <div class="ex-num">3</div>
+        <div class="ex-body">
+          <div class="ex-title">Measure cost savings in production</div>
+          <div class="ex-desc">Take 100 real prompts from your application's history. Run each through the router and log tier + cost. Compare to baseline cost of always using Sonnet. Calculate: cost reduction %, quality impact (judge the routed outputs). Is the router worth the complexity?</div>
+          <span class="ex-difficulty diff-med">Medium — 3 hours</span>
+        </div>
+      </div>
+      <div class="ex-item">
+        <div class="ex-num">4</div>
+        <div class="ex-body">
+          <div class="ex-title">Cross-provider ensemble for high-stakes queries</div>
+          <div class="ex-desc">Build an ensemble that queries Claude Sonnet + GPT-4o + Gemini 1.5 Pro simultaneously for the same prompt. Implement a judge that picks the best answer. Use this for a "premium" API tier. Calculate cost/request and response quality vs single-model baseline.</div>
+          <span class="ex-difficulty diff-hard">Hard — full day</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer style="border-top:1px solid var(--border);padding:32px 0;margin-top:40px">
+  <div class="container" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+    <div style="font-size:13px;color:var(--muted)">Agentic AI Mastery — Sharjeel Sohail</div>
+    <a href="../days/day7.html" style="color:var(--muted);font-size:13px;text-decoration:none">← Back to Day 7</a>
+  </div>
+</footer>
+
+<script src="../bg-animation.js"></script>
+</body>
+</html>

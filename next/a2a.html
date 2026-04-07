@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent-to-Agent (A2A) Protocol — What's Next</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f; --card: #141420; --surface2: #1a1a2e; --border: #2a2a45;
+  --purple: #7c3aed; --purple-light: #a855f7; --teal: #0d9488; --green: #10b981;
+  --red: #ef4444; --yellow: #f59e0b; --text: #e2e8f0; --muted: #64748b;
+  --blue: #3b82f6; --blue-light: #60a5fa;
+  --font: 'Inter', sans-serif; --mono: 'JetBrains Mono', monospace;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; overflow-x: hidden; }
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(59,130,246,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 90% 80%, rgba(124,58,237,0.05) 0%, transparent 60%);
+  pointer-events: none; z-index: 0;
+}
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+nav { border-bottom: 1px solid var(--border); padding: 14px 0; background: rgba(10,10,15,0.85); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; }
+.nav-inner { display: flex; align-items: center; justify-content: space-between; }
+.nav-back { color: var(--muted); font-size: 13px; text-decoration: none; transition: color 0.2s; }
+.nav-back:hover { color: var(--text); }
+.nav-tag { font-size: 13px; font-weight: 700; background: linear-gradient(90deg, #3b82f6, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+.hero { padding: 60px 0 48px; }
+.hero-eyebrow { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.hero-icon { font-size: 40px; }
+.difficulty-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: rgba(59,130,246,0.15); color: var(--blue-light); }
+.time-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+.hero h1 { font-size: clamp(28px, 5vw, 48px); font-weight: 900; letter-spacing: -2px; margin-bottom: 14px; line-height: 1.1; }
+.hero h1 span { background: linear-gradient(135deg, #3b82f6, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.hero p { font-size: 16px; color: var(--muted); max-width: 620px; line-height: 1.7; }
+
+.section { padding: 56px 0; border-top: 1px solid var(--border); }
+.section-header { margin-bottom: 32px; }
+.section-num { font-size: 11px; font-weight: 700; color: var(--blue-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.section-header h2 { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 10px; }
+.section-header p { color: var(--muted); font-size: 15px; line-height: 1.6; max-width: 640px; }
+
+/* CODE BLOCKS — white-space: pre is REQUIRED */
+.code-block {
+  background: #0d1117; border: 1px solid #30363d; border-radius: 0 0 12px 12px;
+  font-family: var(--mono); font-size: 12.5px; line-height: 1.8;
+  overflow-x: auto; white-space: pre;
+}
+.code-content { padding: 20px 24px; }
+.code-wrap { position: relative; margin-top: 16px; }
+.code-header {
+  background: #161b22; border: 1px solid #30363d; border-bottom: 1px solid #21262d;
+  border-radius: 12px 12px 0 0; padding: 8px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.code-header-label { font-family: var(--mono); font-size: 11px; color: #8b949e; font-weight: 500; }
+.code-header-lang { font-family: var(--mono); font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.5px; }
+.lang-python { background: rgba(59,130,246,0.2); color: var(--blue-light); }
+.lang-json { background: rgba(245,158,11,0.2); color: var(--yellow); }
+.lang-bash { background: rgba(16,185,129,0.2); color: var(--green); }
+.c-cmt { color: #8b949e; }
+.c-kw { color: #ff7b72; }
+.c-fn { color: #d2a8ff; }
+.c-str { color: #a5d6ff; }
+.c-type { color: #ffa657; }
+.c-num { color: #f2cc60; }
+.c-bi { color: #79c0ff; }
+.c-key { color: #a5d6ff; }
+
+/* CALLOUT */
+.callout { background: rgba(59,130,246,0.07); border: 1px solid rgba(59,130,246,0.25); border-radius: 12px; padding: 16px 20px; display: flex; gap: 12px; align-items: flex-start; margin: 20px 0; }
+.callout-icon { font-size: 18px; flex-shrink: 0; }
+.callout-text { font-size: 13px; color: var(--text); line-height: 1.6; }
+.callout-text strong { color: var(--blue-light); }
+.callout.warn { background: rgba(245,158,11,0.07); border-color: rgba(245,158,11,0.25); }
+.callout.warn .callout-text strong { color: var(--yellow); }
+.callout.green { background: rgba(16,185,129,0.07); border-color: rgba(16,185,129,0.25); }
+.callout.green .callout-text strong { color: var(--green); }
+.callout.purple { background: rgba(124,58,237,0.07); border-color: rgba(124,58,237,0.25); }
+.callout.purple .callout-text strong { color: var(--purple-light); }
+
+/* PROBLEM CARDS */
+.problem-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
+.problem-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+.problem-card.after { border-color: rgba(16,185,129,0.3); background: rgba(16,185,129,0.04); }
+.problem-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+.label-before { color: var(--red); }
+.label-after { color: var(--green); }
+.problem-card p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+.problem-card.after p { color: var(--text); }
+
+/* ARCHITECTURE DIAGRAM */
+.arch-diagram { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 32px; margin-top: 24px; overflow-x: auto; }
+.arch-diagram svg { display: block; margin: 0 auto; }
+
+/* COMPARISON TABLE */
+.compare-table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+.compare-table th { background: var(--surface2); padding: 12px 16px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); text-align: left; border-bottom: 1px solid var(--border); }
+.compare-table th:first-child { border-radius: 8px 0 0 0; }
+.compare-table th:last-child { border-radius: 0 8px 0 0; }
+.compare-table td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid rgba(42,42,69,0.5); vertical-align: top; line-height: 1.5; }
+.compare-table tr:last-child td { border-bottom: none; }
+.compare-table tr:hover td { background: rgba(255,255,255,0.02); }
+.compare-table td:first-child { color: var(--muted); font-weight: 600; font-size: 12px; }
+.mcp-col { color: var(--purple-light); font-weight: 600; }
+.a2a-col { color: var(--blue-light); font-weight: 600; }
+
+/* FLOW STEPS */
+.flow-steps { display: flex; flex-direction: column; gap: 0; margin-top: 24px; }
+.flow-step { display: flex; gap: 16px; }
+.flow-step-left { display: flex; flex-direction: column; align-items: center; }
+.flow-step-num { width: 32px; height: 32px; border-radius: 50%; background: rgba(59,130,246,0.15); border: 2px solid var(--blue); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: var(--blue-light); flex-shrink: 0; }
+.flow-step-line { width: 2px; flex: 1; background: var(--border); margin: 4px 0; min-height: 20px; }
+.flow-step:last-child .flow-step-line { display: none; }
+.flow-step-body { flex: 1; padding-bottom: 24px; }
+.flow-step-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.flow-step-desc { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+/* STATUS CALLOUT */
+.status-callout { background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.3); border-radius: 14px; padding: 20px 24px; margin-top: 24px; }
+.status-callout-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--yellow); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+.status-callout-title { font-size: 13px; font-weight: 700; color: var(--yellow); }
+.status-callout p { font-size: 13px; color: var(--muted); line-height: 1.7; }
+.status-callout a { color: var(--blue-light); text-decoration: none; }
+.status-callout a:hover { text-decoration: underline; }
+
+/* SKILL CARD */
+.skills-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 16px; }
+.skill-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+.skill-id { font-family: var(--mono); font-size: 11px; color: var(--blue-light); margin-bottom: 6px; }
+.skill-name { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.skill-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+.skill-modes { display: flex; gap: 6px; margin-top: 8px; }
+.mode-tag { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 4px; background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+
+@media(max-width:700px) {
+  .problem-grid { grid-template-columns: 1fr; }
+  .skills-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="container">
+    <div class="nav-inner">
+      <a href="../index.html" class="nav-back">← Back to Index</a>
+      <span class="nav-tag">What's Next — A2A Protocol</span>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+
+  <section class="hero">
+    <div class="hero-eyebrow">
+      <span class="hero-icon">🔗</span>
+      <span class="difficulty-badge">Intermediate</span>
+      <span class="time-badge">&#9200; 1–2 days</span>
+    </div>
+    <h1>Agent-to-Agent<br><span>(A2A) Protocol</span></h1>
+    <p>Google's open standard for cross-framework agent communication. Just as MCP standardizes how agents connect to tools, A2A standardizes how agents talk to each other — enabling a LangGraph orchestrator to delegate to a CrewAI specialist without bespoke glue code.</p>
+  </section>
+
+  <!-- SECTION 1: Why A2A -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">01 — The Problem</div>
+      <h2>Why A2A Exists</h2>
+      <p>Before A2A, every inter-agent integration was bespoke. If your team built a specialist in LangGraph and another team built one in AutoGen, connecting them required custom HTTP contracts, hand-rolled schemas, and shared documentation that drifted. Multiply by N teams and you get N² integration problems.</p>
+    </div>
+
+    <div class="problem-grid">
+      <div class="problem-card">
+        <div class="problem-label label-before">Before A2A</div>
+        <p>Each agent exposes a custom REST API with its own schema. Every orchestrator must know each specialist's exact contract. Changing one agent's interface breaks every caller. No discoverability — you can't ask "what can you do?"</p>
+      </div>
+      <div class="problem-card after">
+        <div class="problem-label label-after">After A2A</div>
+        <p>Every agent publishes a standard Agent Card at <code style="font-family:var(--mono);font-size:11px;color:var(--blue-light)">/.well-known/agent.json</code>. Tasks follow a single wire format. Any compliant agent can be both a client and a server. Orchestrators discover capabilities at runtime.</p>
+      </div>
+    </div>
+
+    <div class="callout" style="margin-top:24px">
+      <span class="callout-icon">&#128161;</span>
+      <div class="callout-text"><strong>The mental model:</strong> MCP gave agents a standard way to reach tools and data. A2A gives agents a standard way to reach each other. They are complementary layers — most production systems will use both. MCP for tool calls, A2A for agent delegation.</div>
+    </div>
+  </section>
+
+  <!-- SECTION 2: Architecture Diagram -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">02 — Architecture</div>
+      <h2>How A2A and MCP Fit Together</h2>
+      <p>An orchestrator agent uses MCP to reach tools and data, and A2A to delegate tasks to specialist agents. The specialist agents may themselves use MCP internally. The protocols stack without conflict.</p>
+    </div>
+
+    <div class="arch-diagram">
+      <svg viewBox="0 0 860 340" width="100%" xmlns="http://www.w3.org/2000/svg" style="max-width:860px">
+        <defs>
+          <marker id="arrowBlue" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#3b82f6"/>
+          </marker>
+          <marker id="arrowTeal" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#0d9488"/>
+          </marker>
+          <marker id="arrowMuted" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#64748b"/>
+          </marker>
+        </defs>
+
+        <!-- Orchestrator box -->
+        <rect x="20" y="120" width="200" height="100" rx="12" fill="#1a1a2e" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="120" y="152" text-anchor="middle" fill="#e2e8f0" font-family="Inter,sans-serif" font-size="13" font-weight="700">Orchestrator Agent</text>
+        <text x="120" y="170" text-anchor="middle" fill="#64748b" font-family="JetBrains Mono,monospace" font-size="10">(LangGraph)</text>
+        <rect x="60" y="180" width="120" height="22" rx="6" fill="rgba(59,130,246,0.15)"/>
+        <text x="120" y="195" text-anchor="middle" fill="#60a5fa" font-family="Inter,sans-serif" font-size="10" font-weight="600">A2A Client + MCP Client</text>
+
+        <!-- A2A arrow to Specialist 1 -->
+        <line x1="220" y1="148" x2="340" y2="105" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arrowBlue)"/>
+        <rect x="252" y="108" width="58" height="18" rx="4" fill="#0a0a0f"/>
+        <text x="281" y="120" text-anchor="middle" fill="#3b82f6" font-family="Inter,sans-serif" font-size="10" font-weight="700">A2A</text>
+
+        <!-- A2A arrow to Specialist 2 -->
+        <line x1="220" y1="188" x2="340" y2="235" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arrowBlue)"/>
+        <rect x="252" y="218" width="58" height="18" rx="4" fill="#0a0a0f"/>
+        <text x="281" y="230" text-anchor="middle" fill="#3b82f6" font-family="Inter,sans-serif" font-size="10" font-weight="700">A2A</text>
+
+        <!-- MCP arrow to Tools -->
+        <line x1="220" y1="168" x2="680" y2="168" stroke="#0d9488" stroke-width="1.5" stroke-dasharray="4,4" marker-end="url(#arrowTeal)"/>
+        <rect x="420" y="152" width="56" height="18" rx="4" fill="#0a0a0f"/>
+        <text x="448" y="164" text-anchor="middle" fill="#0d9488" font-family="Inter,sans-serif" font-size="10" font-weight="700">MCP</text>
+
+        <!-- Specialist 1 box -->
+        <rect x="340" y="50" width="200" height="90" rx="12" fill="#1a1a2e" stroke="#a855f7" stroke-width="1.5"/>
+        <text x="440" y="80" text-anchor="middle" fill="#e2e8f0" font-family="Inter,sans-serif" font-size="12" font-weight="700">Specialist Agent 1</text>
+        <text x="440" y="96" text-anchor="middle" fill="#64748b" font-family="JetBrains Mono,monospace" font-size="10">(CrewAI)</text>
+        <rect x="375" y="106" width="130" height="20" rx="5" fill="rgba(168,85,247,0.12)"/>
+        <text x="440" y="119" text-anchor="middle" fill="#a855f7" font-family="Inter,sans-serif" font-size="10" font-weight="600">Research &amp; Summarization</text>
+
+        <!-- Specialist 2 box -->
+        <rect x="340" y="200" width="200" height="90" rx="12" fill="#1a1a2e" stroke="#a855f7" stroke-width="1.5"/>
+        <text x="440" y="230" text-anchor="middle" fill="#e2e8f0" font-family="Inter,sans-serif" font-size="12" font-weight="700">Specialist Agent 2</text>
+        <text x="440" y="246" text-anchor="middle" fill="#64748b" font-family="JetBrains Mono,monospace" font-size="10">(AutoGen)</text>
+        <rect x="375" y="256" width="130" height="20" rx="5" fill="rgba(168,85,247,0.12)"/>
+        <text x="440" y="269" text-anchor="middle" fill="#a855f7" font-family="Inter,sans-serif" font-size="10" font-weight="600">Code Review</text>
+
+        <!-- Tools/Data box -->
+        <rect x="680" y="130" width="160" height="76" rx="12" fill="#1a1a2e" stroke="#0d9488" stroke-width="1.5"/>
+        <text x="760" y="162" text-anchor="middle" fill="#e2e8f0" font-family="Inter,sans-serif" font-size="12" font-weight="700">Tools / Data</text>
+        <text x="760" y="178" text-anchor="middle" fill="#64748b" font-family="Inter,sans-serif" font-size="10">DB, APIs, Files, Search</text>
+        <rect x="710" y="188" width="100" height="18" rx="5" fill="rgba(13,148,136,0.12)"/>
+        <text x="760" y="200" text-anchor="middle" fill="#0d9488" font-family="Inter,sans-serif" font-size="10" font-weight="600">MCP Servers</text>
+
+        <!-- Legend -->
+        <line x1="20" y1="310" x2="50" y2="310" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="6,3"/>
+        <text x="56" y="314" fill="#64748b" font-family="Inter,sans-serif" font-size="11">A2A — agent to agent</text>
+        <line x1="240" y1="310" x2="270" y2="310" stroke="#0d9488" stroke-width="1.5" stroke-dasharray="4,4"/>
+        <text x="276" y="314" fill="#64748b" font-family="Inter,sans-serif" font-size="11">MCP — agent to tools</text>
+      </svg>
+    </div>
+  </section>
+
+  <!-- SECTION 3: Agent Card -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">03 — Agent Card</div>
+      <h2>The Agent Card: Runtime Discovery</h2>
+      <p>Every A2A-compliant agent publishes a JSON manifest at <code style="font-family:var(--mono);font-size:13px;color:var(--blue-light)">/.well-known/agent.json</code>. This is the entry point — any orchestrator can fetch it to discover what the agent can do, whether it supports streaming, and how to reach it. Think of it as OpenAPI for an agent.</p>
+    </div>
+
+    <div class="callout green">
+      <span class="callout-icon">&#128196;</span>
+      <div class="callout-text"><strong>Discovery pattern:</strong> Before sending any tasks, an orchestrator GETs <code style="font-family:var(--mono);font-size:11px">/.well-known/agent.json</code> to read the Agent Card. This tells it the available skills, capability flags (streaming, push notifications), and the task endpoint URL. No out-of-band documentation required.</div>
+    </div>
+
+    <div class="skills-grid" style="margin-top:20px;margin-bottom:20px">
+      <div class="skill-card">
+        <div class="skill-id">review_code</div>
+        <div class="skill-name">Review Code</div>
+        <div class="skill-desc">Analyze Python code and return structured feedback on bugs, security, and style.</div>
+        <div class="skill-modes">
+          <span class="mode-tag">input: text</span>
+          <span class="mode-tag">output: text</span>
+        </div>
+      </div>
+      <div class="skill-card">
+        <div class="skill-id">explain_error</div>
+        <div class="skill-name">Explain Error</div>
+        <div class="skill-desc">Given a stack trace, explain the root cause and suggest a fix.</div>
+        <div class="skill-modes">
+          <span class="mode-tag">input: text</span>
+          <span class="mode-tag">output: text</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-header">
+        <span class="code-header-label">/.well-known/agent.json</span>
+        <span class="code-header-lang lang-json">JSON</span>
+      </div>
+      <div class="code-block"><div class="code-content">{
+  <span class="c-key">"name"</span>: <span class="c-str">"Code Review Agent"</span>,
+  <span class="c-key">"description"</span>: <span class="c-str">"Reviews Python code for bugs, security, and style"</span>,
+  <span class="c-key">"url"</span>: <span class="c-str">"https://code-reviewer.internal/a2a"</span>,
+  <span class="c-key">"version"</span>: <span class="c-str">"1.0.0"</span>,
+  <span class="c-key">"capabilities"</span>: {
+    <span class="c-key">"streaming"</span>: <span class="c-kw">true</span>,
+    <span class="c-key">"pushNotifications"</span>: <span class="c-kw">false</span>
+  },
+  <span class="c-key">"skills"</span>: [
+    {
+      <span class="c-key">"id"</span>: <span class="c-str">"review_code"</span>,
+      <span class="c-key">"name"</span>: <span class="c-str">"Review Code"</span>,
+      <span class="c-key">"description"</span>: <span class="c-str">"Analyze Python code and return structured feedback"</span>,
+      <span class="c-key">"inputModes"</span>: [<span class="c-str">"text"</span>],
+      <span class="c-key">"outputModes"</span>: [<span class="c-str">"text"</span>],
+      <span class="c-key">"examples"</span>: [
+        <span class="c-str">"Review this function for security issues: def login(user, pwd): ..."</span>
+      ]
+    }
+  ]
+}</div></div>
+    </div>
+  </section>
+
+  <!-- SECTION 4: Sending a Task (Client) -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">04 — Client Side</div>
+      <h2>Sending a Task from an Orchestrator</h2>
+      <p>An orchestrator sends tasks via HTTP POST to the agent's task endpoint. The response carries a task ID and state. For short tasks the result is inline; for longer ones you poll or stream.</p>
+    </div>
+
+    <div class="flow-steps">
+      <div class="flow-step">
+        <div class="flow-step-left">
+          <div class="flow-step-num">1</div>
+          <div class="flow-step-line"></div>
+        </div>
+        <div class="flow-step-body">
+          <div class="flow-step-title">Fetch the Agent Card</div>
+          <div class="flow-step-desc">GET <code style="font-family:var(--mono);font-size:11px;color:var(--blue-light)">https://agent-host/.well-known/agent.json</code> — verify the agent supports the skill you need.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step-left">
+          <div class="flow-step-num">2</div>
+          <div class="flow-step-line"></div>
+        </div>
+        <div class="flow-step-body">
+          <div class="flow-step-title">POST /tasks/send</div>
+          <div class="flow-step-desc">Send a task object with a unique ID and a message containing one or more parts (text, file, data).</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step-left">
+          <div class="flow-step-num">3</div>
+          <div class="flow-step-line"></div>
+        </div>
+        <div class="flow-step-body">
+          <div class="flow-step-title">Poll or Stream for Result</div>
+          <div class="flow-step-desc">If state is <code style="font-family:var(--mono);font-size:11px;color:var(--yellow)">"working"</code>, poll GET <code style="font-family:var(--mono);font-size:11px;color:var(--blue-light)">/tasks/{id}</code> or open an SSE stream at <code style="font-family:var(--mono);font-size:11px;color:var(--blue-light)">/tasks/{id}/subscribe</code>.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step-left">
+          <div class="flow-step-num">4</div>
+        </div>
+        <div class="flow-step-body">
+          <div class="flow-step-title">Read Artifacts</div>
+          <div class="flow-step-desc">When state reaches <code style="font-family:var(--mono);font-size:11px;color:var(--green)">"completed"</code>, extract results from <code style="font-family:var(--mono);font-size:11px;color:var(--blue-light)">task.artifacts[].parts[]</code>.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="code-wrap" style="margin-top:32px">
+      <div class="code-header">
+        <span class="code-header-label">orchestrator_client.py</span>
+        <span class="code-header-lang lang-python">Python</span>
+      </div>
+      <div class="code-block"><div class="code-content"><span class="c-kw">import</span> <span class="c-bi">httpx</span>
+<span class="c-kw">import</span> <span class="c-bi">asyncio</span>
+
+<span class="c-kw">async def</span> <span class="c-fn">call_agent</span>(agent_url: <span class="c-bi">str</span>, task_text: <span class="c-bi">str</span>) -> <span class="c-bi">str</span>:
+    <span class="c-kw">async with</span> <span class="c-bi">httpx</span>.<span class="c-fn">AsyncClient</span>() <span class="c-kw">as</span> client:
+        <span class="c-cmt"># 1. Send the task</span>
+        response = <span class="c-kw">await</span> client.<span class="c-fn">post</span>(
+            <span class="c-fn">f</span><span class="c-str">"{agent_url}/tasks/send"</span>,
+            json={
+                <span class="c-str">"id"</span>: <span class="c-str">"task-001"</span>,
+                <span class="c-str">"message"</span>: {
+                    <span class="c-str">"role"</span>: <span class="c-str">"user"</span>,
+                    <span class="c-str">"parts"</span>: [{<span class="c-str">"type"</span>: <span class="c-str">"text"</span>, <span class="c-str">"text"</span>: task_text}]
+                }
+            }
+        )
+        task = response.<span class="c-fn">json</span>()
+
+        <span class="c-cmt"># 2. Poll until terminal state</span>
+        <span class="c-kw">while</span> task[<span class="c-str">"status"</span>][<span class="c-str">"state"</span>] <span class="c-kw">not in</span> [<span class="c-str">"completed"</span>, <span class="c-str">"failed"</span>]:
+            <span class="c-kw">await</span> <span class="c-bi">asyncio</span>.<span class="c-fn">sleep</span>(<span class="c-num">1</span>)
+            result = <span class="c-kw">await</span> client.<span class="c-fn">get</span>(<span class="c-fn">f</span><span class="c-str">"{agent_url}/tasks/{task['id']}"</span>)
+            task = result.<span class="c-fn">json</span>()
+
+        <span class="c-cmt"># 3. Extract artifact text</span>
+        <span class="c-kw">return</span> task[<span class="c-str">"artifacts"</span>][<span class="c-num">0</span>][<span class="c-str">"parts"</span>][<span class="c-num">0</span>][<span class="c-str">"text"</span>]
+
+
+<span class="c-cmt"># Orchestrator delegates to specialist</span>
+result = <span class="c-bi">asyncio</span>.<span class="c-fn">run</span>(
+    <span class="c-fn">call_agent</span>(
+        <span class="c-str">"https://code-reviewer.internal/a2a"</span>,
+        <span class="c-str">"Review: def add(a, b): return a + b"</span>
+    )
+)
+<span class="c-fn">print</span>(result)</div></div>
+    </div>
+
+    <div class="callout" style="margin-top:20px">
+      <span class="callout-icon">&#128295;</span>
+      <div class="callout-text"><strong>Streaming alternative:</strong> If the Agent Card shows <code style="font-family:var(--mono);font-size:11px">"streaming": true</code>, POST to <code style="font-family:var(--mono);font-size:11px">/tasks/sendSubscribe</code> instead. The response is a Server-Sent Events stream with incremental <code style="font-family:var(--mono);font-size:11px">TaskStatusUpdateEvent</code> and <code style="font-family:var(--mono);font-size:11px">TaskArtifactUpdateEvent</code> messages — useful for showing live progress in a UI.</div>
+    </div>
+  </section>
+
+  <!-- SECTION 5: Building an A2A Server (FastAPI) -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">05 — Server Side</div>
+      <h2>Building an A2A Server with FastAPI</h2>
+      <p>Any FastAPI (or any HTTP framework) service can become an A2A-compliant agent by implementing two endpoints: the Agent Card endpoint and the task endpoint. This is the server side of what the orchestrator calls.</p>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-header">
+        <span class="code-header-label">agent_server.py</span>
+        <span class="code-header-lang lang-python">Python</span>
+      </div>
+      <div class="code-block"><div class="code-content"><span class="c-kw">from</span> <span class="c-bi">fastapi</span> <span class="c-kw">import</span> <span class="c-type">FastAPI</span>
+<span class="c-kw">from</span> <span class="c-bi">pydantic</span> <span class="c-kw">import</span> <span class="c-type">BaseModel</span>
+<span class="c-kw">from</span> <span class="c-bi">typing</span> <span class="c-kw">import</span> <span class="c-type">Any</span>
+
+app = <span class="c-fn">FastAPI</span>(title=<span class="c-str">"Code Review A2A Agent"</span>)
+
+
+<span class="c-cmt"># ── Wire types ──────────────────────────────────────────────────</span>
+
+<span class="c-kw">class</span> <span class="c-type">TaskRequest</span>(<span class="c-type">BaseModel</span>):
+    id: <span class="c-bi">str</span>
+    message: <span class="c-bi">dict</span>[<span class="c-bi">str</span>, <span class="c-type">Any</span>]
+
+
+<span class="c-cmt"># ── Agent Card — discovery endpoint ─────────────────────────────</span>
+
+<span class="c-kw">@app</span>.<span class="c-fn">get</span>(<span class="c-str">"/.well-known/agent.json"</span>)
+<span class="c-kw">async def</span> <span class="c-fn">agent_card</span>():
+    <span class="c-kw">return</span> {
+        <span class="c-str">"name"</span>: <span class="c-str">"Code Review Agent"</span>,
+        <span class="c-str">"description"</span>: <span class="c-str">"Reviews Python code for bugs, security, and style"</span>,
+        <span class="c-str">"url"</span>: <span class="c-str">"https://code-reviewer.internal/a2a"</span>,
+        <span class="c-str">"version"</span>: <span class="c-str">"1.0.0"</span>,
+        <span class="c-str">"capabilities"</span>: {<span class="c-str">"streaming"</span>: <span class="c-kw">False</span>, <span class="c-str">"pushNotifications"</span>: <span class="c-kw">False</span>},
+        <span class="c-str">"skills"</span>: [{
+            <span class="c-str">"id"</span>: <span class="c-str">"review_code"</span>,
+            <span class="c-str">"name"</span>: <span class="c-str">"Review Code"</span>,
+            <span class="c-str">"description"</span>: <span class="c-str">"Analyze Python code and return structured feedback"</span>,
+            <span class="c-str">"inputModes"</span>: [<span class="c-str">"text"</span>],
+            <span class="c-str">"outputModes"</span>: [<span class="c-str">"text"</span>]
+        }]
+    }
+
+
+<span class="c-cmt"># ── Task endpoint — receives work from orchestrators ────────────</span>
+
+<span class="c-kw">@app</span>.<span class="c-fn">post</span>(<span class="c-str">"/tasks/send"</span>)
+<span class="c-kw">async def</span> <span class="c-fn">send_task</span>(task: <span class="c-type">TaskRequest</span>):
+    <span class="c-cmt"># Extract the text from the first message part</span>
+    user_text = task.message[<span class="c-str">"parts"</span>][<span class="c-num">0</span>][<span class="c-str">"text"</span>]
+
+    <span class="c-cmt"># Process with your LLM / agent logic</span>
+    result = <span class="c-kw">await</span> <span class="c-fn">process_with_agent</span>(user_text)
+
+    <span class="c-cmt"># Return standard A2A task response</span>
+    <span class="c-kw">return</span> {
+        <span class="c-str">"id"</span>: task.id,
+        <span class="c-str">"status"</span>: {<span class="c-str">"state"</span>: <span class="c-str">"completed"</span>},
+        <span class="c-str">"artifacts"</span>: [{
+            <span class="c-str">"parts"</span>: [{<span class="c-str">"type"</span>: <span class="c-str">"text"</span>, <span class="c-str">"text"</span>: result}]
+        }]
+    }
+
+
+<span class="c-cmt"># ── GET endpoint for polling ─────────────────────────────────────</span>
+
+<span class="c-kw">@app</span>.<span class="c-fn">get</span>(<span class="c-str">"/tasks/{task_id}"</span>)
+<span class="c-kw">async def</span> <span class="c-fn">get_task</span>(task_id: <span class="c-bi">str</span>):
+    <span class="c-cmt"># Look up task from your store (Redis, DB, in-memory)</span>
+    task = <span class="c-kw">await</span> <span class="c-fn">task_store</span>.<span class="c-fn">get</span>(task_id)
+    <span class="c-kw">return</span> task</div></div>
+    </div>
+
+    <div class="callout purple" style="margin-top:20px">
+      <span class="callout-icon">&#9889;</span>
+      <div class="callout-text"><strong>FastAPI is a natural fit:</strong> You already know Pydantic models and async handlers. The A2A wire format is just JSON, so there is no special SDK required. Google's <code style="font-family:var(--mono);font-size:11px">a2a-samples</code> repo has reference Python implementations if you want a battle-tested starting point.</div>
+    </div>
+  </section>
+
+  <!-- SECTION 6: A2A vs MCP -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">06 — Comparison</div>
+      <h2>A2A vs MCP — When to Use Each</h2>
+      <p>These protocols solve different problems and are designed to be used together, not to replace one another. The question is never "which one" — it is "which layer am I operating at."</p>
+    </div>
+
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th><span class="mcp-col">MCP</span></th>
+          <th><span class="a2a-col">A2A</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Connects</td>
+          <td>Agent ↔ Tools / Data</td>
+          <td>Agent ↔ Agent</td>
+        </tr>
+        <tr>
+          <td>Made by</td>
+          <td>Anthropic</td>
+          <td>Google</td>
+        </tr>
+        <tr>
+          <td>Announced</td>
+          <td>November 2024</td>
+          <td>May 2025</td>
+        </tr>
+        <tr>
+          <td>Primary use case</td>
+          <td>Database queries, file ops, API calls, search</td>
+          <td>Specialist delegation, cross-framework multi-agent systems</td>
+        </tr>
+        <tr>
+          <td>Transport</td>
+          <td>stdio (local) / HTTP + SSE (remote)</td>
+          <td>HTTP / SSE (push optional)</td>
+        </tr>
+        <tr>
+          <td>Discovery</td>
+          <td>Tool schema returned at connect time</td>
+          <td>Agent Card at <code style="font-family:var(--mono);font-size:11px">/.well-known/agent.json</code></td>
+        </tr>
+        <tr>
+          <td>Work unit</td>
+          <td>Tool call (request / response)</td>
+          <td>Task (stateful, async, streamable)</td>
+        </tr>
+        <tr>
+          <td>Are they complementary?</td>
+          <td colspan="2" style="text-align:center;color:var(--green);font-weight:700">Yes — use both. MCP for tools, A2A for agents.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout green" style="margin-top:24px">
+      <span class="callout-icon">&#128640;</span>
+      <div class="callout-text"><strong>Layered architecture:</strong> In a typical production system your orchestrator uses <strong>MCP</strong> to call tools (web search, code execution, databases) and uses <strong>A2A</strong> to delegate to specialist agents (legal reviewer, data analyst, code reviewer). Each specialist may itself use MCP internally. The layers nest cleanly.</div>
+    </div>
+  </section>
+
+  <!-- SECTION 7: Status Note -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-num">07 — Status</div>
+      <h2>Where A2A Is Today</h2>
+      <p>A2A is early-stage. The spec is open and moving fast. Understanding it now puts you ahead of the curve before it becomes the default inter-agent contract.</p>
+    </div>
+
+    <div class="status-callout">
+      <div class="status-callout-header">
+        <div class="status-dot"></div>
+        <div class="status-callout-title">Actively Evolving — April 2026</div>
+      </div>
+      <p>A2A was announced in May 2025 and is actively evolving. The spec and reference implementations are open-source at <a href="https://github.com/google-a2a/a2a-samples" target="_blank">google-a2a/a2a-samples</a>. Production adoption is early-stage — most teams are evaluating rather than deploying. LangGraph, CrewAI, and AutoGen all have experimental A2A adapters. The core wire format (Agent Card, tasks/send, artifacts) is stable enough to build on; the streaming and push-notification surfaces are still being refined. Watch this space.</p>
+    </div>
+
+    <div class="callout warn" style="margin-top:20px">
+      <span class="callout-icon">&#128064;</span>
+      <div class="callout-text"><strong>What to watch:</strong> Authentication (how agents verify each other's identity), capability negotiation (skill versioning), and standardized error codes are the open questions as of mid-2025. Framework-native A2A support (first-class LangGraph nodes, CrewAI task bridges) will be the unlock for mainstream adoption.</div>
+    </div>
+  </section>
+
+</div>
+<script src="../bg-animation.js"></script>
+</body>
+</html>

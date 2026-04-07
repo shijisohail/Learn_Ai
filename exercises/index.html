@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exercises Dashboard — Agentic AI Mastery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0a0a0f;
+  --card: #141420;
+  --surface2: #1a1a2e;
+  --border: #2a2a45;
+  --purple: #7c3aed;
+  --purple-light: #a855f7;
+  --teal: #0d9488;
+  --green: #10b981;
+  --yellow: #f59e0b;
+  --red: #ef4444;
+  --text: #e2e8f0;
+  --muted: #64748b;
+  --font: 'Inter', sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 10%, rgba(124,58,237,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(13,148,136,0.05) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  position: relative;
+  z-index: 1;
+}
+
+/* HEADER */
+header {
+  border-bottom: 1px solid var(--border);
+  padding: 14px 0;
+  position: sticky;
+  top: 0;
+  background: rgba(10,10,15,0.88);
+  backdrop-filter: blur(12px);
+  z-index: 100;
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: -0.3px;
+  text-decoration: none;
+  color: var(--text);
+}
+
+.logo-icon {
+  width: 30px; height: 30px;
+  background: linear-gradient(135deg, var(--purple), var(--teal));
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.nav-btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--text);
+  transition: all 0.2s;
+  font-family: var(--font);
+  cursor: pointer;
+}
+.nav-btn:hover { background: var(--card); transform: translateY(-1px); border-color: rgba(124,58,237,0.4); }
+.nav-btn.course { border-color: rgba(124,58,237,0.3); color: var(--purple-light); }
+
+.header-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: rgba(124,58,237,0.12);
+  border: 1px solid rgba(124,58,237,0.3);
+  color: var(--purple-light);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* HERO */
+.hero {
+  padding: 64px 0 44px;
+  text-align: center;
+}
+
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: 20px;
+  background: rgba(124,58,237,0.1);
+  border: 1px solid rgba(124,58,237,0.25);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--purple-light);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+  animation: fadeDown 0.5s ease forwards;
+}
+
+.hero-eyebrow::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--purple-light);
+  animation: blink 2s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.7); }
+}
+
+h1.hero-title {
+  font-size: clamp(36px, 6vw, 64px);
+  font-weight: 900;
+  letter-spacing: -2px;
+  line-height: 1.05;
+  margin-bottom: 10px;
+  animation: fadeDown 0.5s 0.1s ease forwards;
+  opacity: 0;
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #a855f7 0%, #06b6d4 50%, #10b981 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  background-size: 200% 200%;
+  animation: gradShift 4s ease infinite;
+}
+
+@keyframes gradShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.hero-tagline {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 8px;
+  letter-spacing: -0.2px;
+  animation: fadeDown 0.5s 0.15s ease forwards;
+  opacity: 0;
+}
+
+.hero-tagline span {
+  background: linear-gradient(135deg, var(--purple-light), #06b6d4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-sub {
+  font-size: 15px;
+  color: var(--muted);
+  margin: 0 auto 36px;
+  line-height: 1.6;
+  max-width: 500px;
+  animation: fadeDown 0.5s 0.2s ease forwards;
+  opacity: 0;
+}
+
+/* STATS BAR */
+.stats-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 48px;
+  animation: fadeUp 0.5s 0.3s ease forwards;
+  opacity: 0;
+}
+
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px 16px;
+  text-align: center;
+  transition: border-color 0.2s, transform 0.2s;
+  cursor: default;
+}
+.stat-card:hover { border-color: var(--purple); transform: translateY(-2px); }
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: -1.5px;
+  margin-bottom: 4px;
+  display: block;
+}
+.stat-label { font-size: 11px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.4px; }
+
+/* SECTION TITLE */
+.section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--muted);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* EXERCISES GRID */
+.exercises-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+  margin-bottom: 48px;
+}
+
+@media (max-width: 800px) {
+  .exercises-grid { grid-template-columns: 1fr; }
+  .stats-bar { grid-template-columns: repeat(2, 1fr); }
+}
+
+.day-ex-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  overflow: hidden;
+  text-decoration: none;
+  color: var(--text);
+  display: block;
+  transition: transform 0.25s, border-color 0.25s, box-shadow 0.25s;
+  position: relative;
+  animation: fadeUp 0.5s ease forwards;
+  opacity: 0;
+}
+.day-ex-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+}
+
+.day-ex-card.done { border-color: rgba(16,185,129,0.35); }
+.day-ex-card.done:hover { box-shadow: 0 16px 40px rgba(16,185,129,0.1); }
+
+.card-top-bar {
+  height: 3px;
+}
+
+.card-inner { padding: 20px 22px 18px; }
+
+.card-row1 {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 12px;
+}
+
+.day-num-badge {
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 900;
+  flex-shrink: 0;
+  letter-spacing: -0.5px;
+}
+
+.card-badges {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+}
+
+.completion-badge {
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.completion-badge.done { background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); color: var(--green); }
+.completion-badge.partial { background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.25); color: #fbbf24; }
+.completion-badge.locked { background: rgba(100,116,139,0.1); border: 1px solid rgba(100,116,139,0.2); color: var(--muted); }
+
+.boss-chip {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  background: rgba(239,68,68,0.12);
+  border: 1px solid rgba(239,68,68,0.25);
+  color: #f87171;
+}
+
+.card-day-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+
+.card-title {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  margin-bottom: 12px;
+  line-height: 1.2;
+}
+
+.ex-list {
+  list-style: none;
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.ex-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.ex-list-num {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+.ex-list-num.done {
+  background: rgba(16,185,129,0.15);
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  margin-top: 4px;
+}
+
+.progress-mini {
+  flex: 1;
+  margin-right: 14px;
+}
+.progress-mini-label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+.progress-mini-track {
+  height: 4px;
+  background: var(--surface2);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.progress-mini-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.6s ease;
+}
+
+.card-arrow {
+  font-size: 18px;
+  color: var(--muted);
+  transition: transform 0.2s, color 0.2s;
+  flex-shrink: 0;
+}
+.day-ex-card:hover .card-arrow { transform: translateX(4px); }
+
+/* YOUR PROGRESS SECTION */
+.progress-section {
+  margin-bottom: 56px;
+}
+
+.progress-overview {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 28px;
+  margin-bottom: 20px;
+}
+
+.po-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.po-title {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+}
+
+.po-count {
+  font-size: 32px;
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--purple-light), var(--teal));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -1.5px;
+}
+
+.po-track {
+  height: 8px;
+  background: var(--surface2);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+.po-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--purple), var(--teal), var(--green));
+  transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+  background-size: 200% 100%;
+  animation: shimmer 3s linear infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.po-day-dots {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.po-day-dot {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--surface2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  transition: all 0.25s;
+  cursor: pointer;
+  position: relative;
+}
+.po-day-dot:hover { border-color: var(--purple-light); color: var(--purple-light); }
+.po-day-dot.partial {
+  border-color: var(--yellow);
+  color: var(--yellow);
+  background: rgba(245,158,11,0.08);
+}
+.po-day-dot.done {
+  border-color: var(--green);
+  background: rgba(16,185,129,0.15);
+  color: var(--green);
+}
+
+/* STREAK + ACHIEVEMENTS */
+.progress-row {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 18px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 700px) {
+  .progress-row { grid-template-columns: 1fr; }
+}
+
+.streak-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 22px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.streak-icon { font-size: 36px; }
+.streak-num {
+  font-size: 48px;
+  font-weight: 900;
+  letter-spacing: -3px;
+  background: linear-gradient(135deg, var(--yellow), #f97316);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+}
+.streak-label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.streak-sub { font-size: 11px; color: var(--muted); }
+
+/* ACHIEVEMENTS */
+.achievements-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 22px;
+}
+
+.ach-title {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 14px;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ach-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px;
+}
+
+.ach-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+.ach-item.unlocked {
+  background: rgba(16,185,129,0.06);
+  border-color: rgba(16,185,129,0.25);
+}
+.ach-icon {
+  font-size: 22px;
+  flex-shrink: 0;
+  filter: grayscale(1);
+  opacity: 0.4;
+  transition: all 0.3s;
+}
+.ach-item.unlocked .ach-icon { filter: none; opacity: 1; }
+.ach-body {}
+.ach-name { font-weight: 700; color: var(--muted); transition: color 0.2s; font-size: 12px; }
+.ach-item.unlocked .ach-name { color: var(--text); }
+.ach-desc { font-size: 10px; color: var(--muted); margin-top: 1px; line-height: 1.4; }
+
+/* RESET BUTTON */
+.reset-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 12px;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 12px;
+}
+.reset-btn:hover { border-color: var(--red); color: var(--red); }
+
+/* TOAST */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  z-index: 999;
+  transform: translateY(80px);
+  opacity: 0;
+  transition: transform 0.3s, opacity 0.3s;
+  max-width: 300px;
+  color: var(--text);
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+
+/* FOOTER */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 28px 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+footer a { color: var(--purple-light); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+
+/* ANIMATIONS */
+@keyframes fadeDown {
+  from { opacity: 0; transform: translateY(-14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <div class="header-inner">
+      <a href="../index.html" class="logo">
+        <div class="logo-icon">🤖</div>
+        Agentic AI Mastery
+      </a>
+      <div class="header-right">
+        <a href="../index.html" class="nav-btn course">← Back to Course</a>
+        <a href="../glossary.html" class="nav-btn" style="border-color:rgba(13,148,136,0.35);color:#2dd4bf;">📖 Glossary</a>
+        <a href="../interview.html" class="nav-btn" style="border-color:rgba(245,158,11,0.35);color:#fbbf24;">🎯 Interview</a>
+        <span class="header-badge">Senior Backend</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+<div class="container">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-eyebrow">7-Day Intensive Curriculum</div>
+    <h1 class="hero-title">
+      <span class="gradient-text">Hands-On Exercises</span>
+    </h1>
+    <p class="hero-tagline"><span>Build. Break. Learn.</span></p>
+    <p class="hero-sub">
+      28 exercises across 7 days. Each day ends with a Boss exercise<br>
+      that integrates everything you've learned.
+    </p>
+  </section>
+
+  <!-- STATS BAR -->
+  <div class="stats-bar">
+    <div class="stat-card">
+      <span class="stat-value" style="color:var(--purple-light)" id="stat-days">7</span>
+      <div class="stat-label">Days Total</div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value" style="color:#2dd4bf" id="stat-total">28</span>
+      <div class="stat-label">Exercises</div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value" style="color:var(--green)" id="stat-done">0</span>
+      <div class="stat-label">Completed</div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value" style="color:var(--yellow)" id="stat-pct">0%</span>
+      <div class="stat-label">Progress</div>
+    </div>
+  </div>
+
+  <!-- EXERCISES GRID -->
+  <div class="section-title">All 7 Days</div>
+  <div class="exercises-grid" id="exercisesGrid"></div>
+
+  <!-- YOUR PROGRESS -->
+  <div class="section-title">Your Progress</div>
+  <div class="progress-section">
+
+    <div class="progress-overview">
+      <div class="po-header">
+        <div>
+          <div class="po-title">Overall Completion</div>
+          <div style="font-size:12px; color:var(--muted); margin-top:3px;" id="po-sub">0 of 28 exercises complete</div>
+        </div>
+        <div class="po-count" id="po-count">0/28</div>
+      </div>
+      <div class="po-track"><div class="po-fill" id="po-fill" style="width:0%"></div></div>
+      <div class="po-day-dots" id="po-dots"></div>
+      <button class="reset-btn" onclick="resetAllProgress()">↺ Reset All Progress</button>
+    </div>
+
+    <div class="progress-row">
+      <div class="streak-card">
+        <div class="streak-icon">🔥</div>
+        <div class="streak-num" id="streak-num">0</div>
+        <div class="streak-label">Day Streak</div>
+        <div class="streak-sub" id="streak-sub">No days started yet</div>
+      </div>
+
+      <div class="achievements-card">
+        <div class="ach-title">🏆 Achievements</div>
+        <div class="ach-grid" id="ach-grid"></div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+</main>
+
+<footer>
+  <div class="container">
+    <p>Built for <strong>Sharjeel Sohail</strong> · Python · FastAPI · Anthropic SDK · LangGraph · Production AI</p>
+    <p style="margin-top:8px; font-size:11px;">
+      <a href="../index.html">Course Home</a> ·
+      <a href="../glossary.html">Glossary</a> ·
+      <a href="../interview.html">Interview Prep</a>
+    </p>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── Day data ─────────────────────────────────────────────────────────────────
+const DAYS = [
+  {
+    num: 1,
+    title: "LLMs & The API",
+    color: { accent: '#7c3aed', light: '#a855f7', bg: 'rgba(124,58,237,0.12)', border: 'rgba(124,58,237,0.35)', bar: 'linear-gradient(90deg,#7c3aed,#a855f7)' },
+    exercises: [
+      "Tokenize & measure context windows",
+      "Build a multi-turn conversation",
+      "Implement stateless memory patterns",
+      "Boss: Streaming chat with FastAPI"
+    ],
+    file: "day1_exercises.html"
+  },
+  {
+    num: 2,
+    title: "Tool Use & ReAct",
+    color: { accent: '#0d9488', light: '#2dd4bf', bg: 'rgba(13,148,136,0.12)', border: 'rgba(13,148,136,0.35)', bar: 'linear-gradient(90deg,#0d9488,#2dd4bf)' },
+    exercises: [
+      "Define & call a JSON schema tool",
+      "Build a multi-step tool chain",
+      "Implement a ReAct reasoning loop",
+      "Boss: Agent dispatcher with routing"
+    ],
+    file: "day2_exercises.html"
+  },
+  {
+    num: 3,
+    title: "Memory & RAG",
+    color: { accent: '#3b82f6', light: '#60a5fa', bg: 'rgba(59,130,246,0.12)', border: 'rgba(59,130,246,0.35)', bar: 'linear-gradient(90deg,#3b82f6,#60a5fa)' },
+    exercises: [
+      "Compute & visualize embeddings",
+      "Build a vector search with pgvector",
+      "Implement chunking strategies",
+      "Boss: Full RAG pipeline with reranking"
+    ],
+    file: "day3_exercises.html"
+  },
+  {
+    num: 4,
+    title: "LangGraph: Stateful Agents",
+    color: { accent: '#d97706', light: '#fbbf24', bg: 'rgba(217,119,6,0.12)', border: 'rgba(217,119,6,0.35)', bar: 'linear-gradient(90deg,#d97706,#f59e0b)' },
+    exercises: [
+      "Build a simple StateGraph",
+      "Add conditional routing & cycles",
+      "Implement checkpointing",
+      "Boss: Human-in-the-loop agent"
+    ],
+    file: "day4_exercises.html"
+  },
+  {
+    num: 5,
+    title: "Multi-Agent Systems",
+    color: { accent: '#db2777', light: '#f472b6', bg: 'rgba(219,39,119,0.12)', border: 'rgba(219,39,119,0.35)', bar: 'linear-gradient(90deg,#db2777,#f472b6)' },
+    exercises: [
+      "Orchestrator/worker handoff",
+      "Async fan-out with Send()",
+      "Implement agent failure recovery",
+      "Boss: Parallel research agent"
+    ],
+    file: "day5_exercises.html"
+  },
+  {
+    num: 6,
+    title: "Production Engineering",
+    color: { accent: '#10b981', light: '#34d399', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.35)', bar: 'linear-gradient(90deg,#10b981,#34d399)' },
+    exercises: [
+      "Token cost optimization audit",
+      "Implement prompt caching",
+      "Add LangSmith tracing",
+      "Boss: Eval harness for an agent"
+    ],
+    file: "day6_exercises.html"
+  },
+  {
+    num: 7,
+    title: "Capstone: Code Review Agent",
+    color: { accent: '#f59e0b', light: '#fbbf24', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.35)', bar: 'linear-gradient(90deg,#f59e0b,#f97316)' },
+    exercises: [
+      "Build the PR diff parser",
+      "Build specialist agents (3x)",
+      "Critic & formatter agents",
+      "Boss: Full agent + FastAPI"
+    ],
+    file: "day7_exercises.html"
+  }
+];
+
+// ─── Achievements ──────────────────────────────────────────────────────────────
+const ACHIEVEMENTS = [
+  { id: 'first_blood', icon: '⚡', name: 'First Blood', desc: 'Complete any exercise', check: (s) => s.total >= 1 },
+  { id: 'day1_done',  icon: '1️⃣', name: 'Day 1 Done',  desc: 'Complete all Day 1 exercises', check: (s) => s.day_done[1] },
+  { id: 'day2_done',  icon: '2️⃣', name: 'Day 2 Done',  desc: 'Complete all Day 2 exercises', check: (s) => s.day_done[2] },
+  { id: 'day3_done',  icon: '3️⃣', name: 'Day 3 Done',  desc: 'Complete all Day 3 exercises', check: (s) => s.day_done[3] },
+  { id: 'day4_done',  icon: '4️⃣', name: 'Day 4 Done',  desc: 'Complete all Day 4 exercises', check: (s) => s.day_done[4] },
+  { id: 'day5_done',  icon: '5️⃣', name: 'Day 5 Done',  desc: 'Complete all Day 5 exercises', check: (s) => s.day_done[5] },
+  { id: 'day6_done',  icon: '6️⃣', name: 'Day 6 Done',  desc: 'Complete all Day 6 exercises', check: (s) => s.day_done[6] },
+  { id: 'day7_done',  icon: '7️⃣', name: 'Day 7 Done',  desc: 'Complete all Day 7 exercises', check: (s) => s.day_done[7] },
+  { id: 'boss_hunter', icon: '🎯', name: 'Boss Hunter', desc: 'Complete all 7 boss exercises', check: (s) => s.bosses_done >= 7 },
+  { id: 'full_stack', icon: '🏆', name: 'Full Stack', desc: 'Complete all 28 exercises', check: (s) => s.total >= 28 }
+];
+
+// ─── Storage ───────────────────────────────────────────────────────────────────
+const EX_KEY = 'aai_exercises';
+const PREV_ACH_KEY = 'aai_ach_unlocked';
+
+function getExercises() {
+  try { return JSON.parse(localStorage.getItem(EX_KEY) || '{}'); }
+  catch { return {}; }
+}
+
+function saveExercises(obj) {
+  localStorage.setItem(EX_KEY, JSON.stringify(obj));
+}
+
+function resetAllProgress() {
+  if (!confirm('Reset all exercise progress? This cannot be undone.')) return;
+  localStorage.removeItem(EX_KEY);
+  localStorage.removeItem(PREV_ACH_KEY);
+  // Also clear day-specific stores
+  for (let d = 1; d <= 7; d++) {
+    localStorage.removeItem('aai_ex_day' + d);
+  }
+  showToast('All progress reset.');
+  render();
+}
+
+// ─── Compute stats from exercises store ───────────────────────────────────────
+function computeStats() {
+  const ex = getExercises();
+  let total = 0;
+  let bosses_done = 0;
+  const day_done = {};
+  const day_progress = {}; // how many out of 4
+
+  for (let d = 1; d <= 7; d++) {
+    let dayCount = 0;
+    for (let e = 1; e <= 4; e++) {
+      const key = 'day' + d + '_ex' + e;
+      if (ex[key]) { dayCount++; total++; }
+    }
+    day_progress[d] = dayCount;
+    day_done[d] = dayCount === 4;
+    // Boss is exercise 4 for each day
+    if (ex['day' + d + '_ex4']) bosses_done++;
+  }
+
+  // Streak = consecutive days with at least 1 exercise done
+  let streak = 0;
+  for (let d = 7; d >= 1; d--) {
+    if (day_progress[d] > 0) streak++;
+    else break;
+  }
+
+  return { total, bosses_done, day_done, day_progress, streak };
+}
+
+// ─── Achievement checking ─────────────────────────────────────────────────────
+function checkAchievements(stats) {
+  const prev = JSON.parse(localStorage.getItem(PREV_ACH_KEY) || '[]');
+  const newlyUnlocked = [];
+
+  ACHIEVEMENTS.forEach(ach => {
+    const unlocked = ach.check(stats);
+    if (unlocked && !prev.includes(ach.id)) {
+      newlyUnlocked.push(ach);
+    }
+  });
+
+  if (newlyUnlocked.length > 0) {
+    const ids = [...prev, ...newlyUnlocked.map(a => a.id)];
+    localStorage.setItem(PREV_ACH_KEY, JSON.stringify(ids));
+    newlyUnlocked.forEach((a, i) => {
+      setTimeout(() => showToast('🏆 Achievement unlocked: ' + a.name + '!'), i * 1200);
+    });
+  }
+
+  return JSON.parse(localStorage.getItem(PREV_ACH_KEY) || '[]');
+}
+
+// ─── Render ───────────────────────────────────────────────────────────────────
+function render() {
+  const stats = computeStats();
+  const unlockedIds = checkAchievements(stats);
+
+  // Stats bar
+  document.getElementById('stat-done').textContent = stats.total;
+  document.getElementById('stat-pct').textContent = Math.round((stats.total / 28) * 100) + '%';
+
+  // Progress overview
+  document.getElementById('po-count').textContent = stats.total + '/28';
+  document.getElementById('po-sub').textContent = stats.total + ' of 28 exercises complete';
+  document.getElementById('po-fill').style.width = Math.round((stats.total / 28) * 100) + '%';
+
+  // Day dots in overview
+  const dotsEl = document.getElementById('po-dots');
+  dotsEl.innerHTML = '';
+  DAYS.forEach(day => {
+    const dp = stats.day_progress[day.num];
+    const dot = document.createElement('div');
+    dot.className = 'po-day-dot' + (dp === 4 ? ' done' : dp > 0 ? ' partial' : '');
+    dot.textContent = day.num;
+    dot.title = 'Day ' + day.num + ': ' + day.title + ' — ' + dp + '/4';
+    dot.style.borderColor = dp > 0 ? day.color.accent : '';
+    dot.style.color = dp > 0 ? day.color.light : '';
+    if (dp > 0 && dp < 4) {
+      dot.style.background = day.color.bg;
+    } else if (dp === 4) {
+      dot.style.background = 'rgba(16,185,129,0.15)';
+      dot.style.borderColor = 'var(--green)';
+      dot.style.color = 'var(--green)';
+    }
+    dot.addEventListener('click', () => {
+      window.location.href = day.file;
+    });
+    dotsEl.appendChild(dot);
+  });
+
+  // Streak
+  document.getElementById('streak-num').textContent = stats.streak;
+  document.getElementById('streak-sub').textContent = stats.streak === 0
+    ? 'No days started yet'
+    : stats.streak === 7
+    ? 'All 7 days active!'
+    : stats.streak + ' day' + (stats.streak === 1 ? '' : 's') + ' in a row';
+
+  // Achievements
+  const achGrid = document.getElementById('ach-grid');
+  achGrid.innerHTML = '';
+  ACHIEVEMENTS.forEach(ach => {
+    const isUnlocked = unlockedIds.includes(ach.id);
+    const div = document.createElement('div');
+    div.className = 'ach-item' + (isUnlocked ? ' unlocked' : '');
+    div.innerHTML = `
+      <div class="ach-icon">${ach.icon}</div>
+      <div class="ach-body">
+        <div class="ach-name">${ach.name}</div>
+        <div class="ach-desc">${ach.desc}</div>
+      </div>
+    `;
+    achGrid.appendChild(div);
+  });
+
+  // Exercises grid
+  const grid = document.getElementById('exercisesGrid');
+  grid.innerHTML = '';
+
+  DAYS.forEach((day, idx) => {
+    const dp = stats.day_progress[day.num];
+    const isDayDone = dp === 4;
+    const ex = getExercises();
+
+    const card = document.createElement('a');
+    card.href = day.file;
+    card.className = 'day-ex-card' + (isDayDone ? ' done' : '');
+    card.style.animationDelay = (idx * 0.07) + 's';
+
+    const completionClass = isDayDone ? 'done' : dp > 0 ? 'partial' : 'locked';
+    const completionText = isDayDone ? '✓ Complete' : dp > 0 ? dp + '/4 Done' : 'Not Started';
+    const pctFill = Math.round((dp / 4) * 100);
+
+    const exListItems = day.exercises.map((title, i) => {
+      const exNum = i + 1;
+      const isDone = !!ex['day' + day.num + '_ex' + exNum];
+      const isBoss = exNum === 4;
+      return `
+        <li>
+          <div class="ex-list-num${isDone ? ' done' : ''}">${isDone ? '✓' : exNum}</div>
+          <span style="color:${isDone ? 'var(--muted)' : '#94a3b8'}; ${isDone ? 'text-decoration:line-through;' : ''}">
+            ${title}${isBoss ? ' <span style="font-size:10px;color:#f87171;font-weight:700;">BOSS</span>' : ''}
+          </span>
+        </li>
+      `;
+    }).join('');
+
+    card.innerHTML = `
+      <div class="card-top-bar" style="background:${day.color.bar}"></div>
+      <div class="card-inner">
+        <div class="card-row1">
+          <div>
+            <div class="day-num-badge" style="background:${day.color.bg}; border:2px solid ${day.color.border}; color:${day.color.light};">D${day.num}</div>
+          </div>
+          <div class="card-badges">
+            <span class="completion-badge ${completionClass}">${completionText}</span>
+            ${day.num === 7 ? '<span class="boss-chip">Capstone</span>' : ''}
+          </div>
+        </div>
+        <div class="card-day-label">Day ${day.num} Exercises</div>
+        <div class="card-title" style="color:${day.color.light}">${day.title}</div>
+        <ul class="ex-list">${exListItems}</ul>
+        <div class="card-footer">
+          <div class="progress-mini">
+            <div class="progress-mini-label">${dp}/4 complete</div>
+            <div class="progress-mini-track">
+              <div class="progress-mini-fill" style="width:${pctFill}%; background:${day.color.bar}"></div>
+            </div>
+          </div>
+          <div class="card-arrow" style="color:${day.color.light}">→</div>
+        </div>
+      </div>
+    `;
+
+    card.addEventListener('mouseover', () => {
+      card.querySelector('.card-arrow').style.transform = 'translateX(5px)';
+    });
+    card.addEventListener('mouseout', () => {
+      card.querySelector('.card-arrow').style.transform = '';
+    });
+
+    grid.appendChild(card);
+  });
+}
+
+// ─── Toast ────────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ─── Listen for changes from exercise pages (cross-tab) ───────────────────────
+window.addEventListener('storage', (e) => {
+  if (e.key === EX_KEY) render();
+});
+
+// ─── Init ──────────────────────────────────────────────────────────────────────
+render();
+</script>
+<script src="../bg-animation.js"></script>
+</body>
+</html>

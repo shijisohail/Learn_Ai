@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 6 Exercises — Production Engineering</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f;
+  --card: #141420;
+  --surface2: #1a1a2e;
+  --border: #2a2a45;
+  --purple: #7c3aed;
+  --purple-light: #a855f7;
+  --teal: #0d9488;
+  --green: #10b981;
+  --yellow: #f59e0b;
+  --red: #ef4444;
+  --text: #e2e8f0;
+  --muted: #64748b;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
+
+.sticky-nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(10,10,15,0.95); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 32px;
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+}
+.sticky-nav a { color: var(--muted); text-decoration: none; font-size: 0.85rem; padding: 6px 12px; border-radius: 6px; transition: all 0.2s; border: 1px solid transparent; }
+.sticky-nav a:hover { color: var(--text); background: var(--card); border-color: var(--border); }
+.sticky-nav .brand { color: var(--purple-light); font-weight: 600; font-size: 0.9rem; }
+.nav-sep { color: var(--border); }
+.nav-title { color: var(--text); font-weight: 700; font-size: 0.95rem; flex: 1; }
+
+.hero { padding: 56px 32px 32px; max-width: 1100px; margin: 0 auto; border-bottom: 1px solid var(--border); }
+.hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: 8px; }
+.hero h1 span { color: var(--purple-light); }
+.hero p { color: var(--muted); font-size: 1rem; max-width: 700px; }
+.hero-meta { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
+.badge-purple { background: rgba(124,58,237,0.15); color: var(--purple-light); border: 1px solid rgba(124,58,237,0.3); }
+.badge-teal { background: rgba(13,148,136,0.15); color: #2dd4bf; border: 1px solid rgba(13,148,136,0.3); }
+.badge-green { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+
+.progress-bar-wrap { max-width: 1100px; margin: 24px auto; padding: 0 32px; }
+.progress-label { font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
+.progress-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--purple), var(--teal)); border-radius: 3px; transition: width 0.5s ease; }
+
+.main { max-width: 1100px; margin: 0 auto; padding: 32px; display: flex; flex-direction: column; gap: 64px; }
+
+.exercise { border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: var(--card); }
+.exercise-header {
+  padding: 24px 32px;
+  background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(13,148,136,0.05));
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+}
+.exercise-num { font-size: 0.75rem; color: var(--purple-light); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.exercise-header h2 { font-size: 1.4rem; font-weight: 700; margin: 4px 0 8px; }
+.exercise-header p { color: var(--muted); font-size: 0.9rem; }
+.ex-status { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); transition: background 0.3s; }
+.status-dot.done { background: var(--green); }
+
+.tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--surface2); flex-wrap: wrap; }
+.tab-btn { padding: 12px 20px; font-size: 0.82rem; font-weight: 600; color: var(--muted); cursor: pointer; border: none; background: none; border-bottom: 2px solid transparent; transition: all 0.2s; font-family: 'Inter', sans-serif; }
+.tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+.tab-btn.active { color: var(--purple-light); border-bottom-color: var(--purple-light); background: rgba(124,58,237,0.05); }
+.tab-panel { display: none; padding: 28px 32px; }
+.tab-panel.active { display: block; }
+
+.section-label { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.section-label.purple { color: var(--purple-light); }
+.section-label.yellow { color: var(--yellow); }
+.section-label.green { color: #34d399; }
+.section-label.teal { color: #2dd4bf; }
+.section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+.code-wrap { background: #0d0d18; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin: 12px 0; }
+.code-header { padding: 8px 16px; background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; color: var(--muted); }
+.code-dots { display: flex; gap: 6px; }
+.code-dots span { width: 10px; height: 10px; border-radius: 50%; }
+.code-dots .dot-r { background: var(--red); }
+.code-dots .dot-y { background: var(--yellow); }
+.code-dots .dot-g { background: var(--green); }
+.code-body { display: flex; }
+.line-nums { padding: 16px 8px; background: rgba(0,0,0,0.3); border-right: 1px solid var(--border); display: flex; flex-direction: column; min-width: 40px; text-align: right; }
+.line-nums span { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: #3a3a5c; line-height: 1.7; padding: 0 8px; }
+.code-content { padding: 16px; overflow-x: auto; flex: 1; white-space: pre; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; line-height: 1.7; }
+.code-line { display: block; transition: background 0.2s; border-radius: 3px; padding: 0 4px; margin: 0 -4px; }
+.code-line.highlight { background: rgba(124,58,237,0.2); border-left: 3px solid var(--purple); padding-left: 8px; }
+.kw { color: #c792ea; } .fn { color: #82aaff; } .st { color: #c3e88d; }
+.cm { color: #546e7a; font-style: italic; } .nm { color: #f78c6c; }
+.tp { color: #ffcb6b; } .dt { color: #89ddff; } .va { color: #eeffff; } .bi { color: #ff5370; }
+
+.task-requirements { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); border-radius: 10px; padding: 16px 20px; margin-bottom: 16px; }
+.task-requirements li { color: var(--text); font-size: 0.88rem; margin: 6px 0 6px 16px; }
+.task-requirements li::marker { color: var(--yellow); }
+
+.tests-grid { display: flex; flex-direction: column; gap: 8px; }
+.test-case { display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+.test-badge { flex-shrink: 0; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; font-family: 'Inter', sans-serif; letter-spacing: 0.5px; }
+.test-badge.pass { background: rgba(16,185,129,0.2); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.test-badge.pending { background: rgba(100,116,139,0.2); color: var(--muted); border: 1px solid rgba(100,116,139,0.3); }
+.test-content { flex: 1; }
+.test-input { color: var(--text); }
+.test-expected { color: var(--muted); margin-top: 2px; }
+
+.hints-list { display: flex; flex-direction: column; gap: 8px; }
+.hint-toggle { width: 100%; text-align: left; padding: 10px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--muted); cursor: pointer; font-family: 'Inter', sans-serif; font-size: 0.85rem; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s; }
+.hint-toggle:hover { border-color: var(--purple); color: var(--text); }
+.hint-toggle .arrow { transition: transform 0.2s; }
+.hint-toggle.open .arrow { transform: rotate(90deg); }
+.hint-body { display: none; padding: 12px 16px; margin-top: 4px; background: rgba(124,58,237,0.05); border: 1px solid rgba(124,58,237,0.2); border-radius: 8px; font-size: 0.85rem; color: var(--text); line-height: 1.6; }
+.hint-body code { background: rgba(124,58,237,0.15); padding: 1px 5px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--purple-light); }
+
+.animate-btn { margin-top: 12px; padding: 8px 18px; border-radius: 8px; background: var(--purple); color: white; border: none; cursor: pointer; font-size: 0.82rem; font-weight: 600; font-family: 'Inter', sans-serif; transition: background 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+.animate-btn:hover { background: var(--purple-light); }
+
+.insight-box { background: rgba(13,148,136,0.08); border: 1px solid rgba(13,148,136,0.25); border-radius: 10px; padding: 14px 18px; margin: 14px 0; font-size: 0.86rem; }
+.insight-box strong { color: #2dd4bf; }
+.warn-box { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25); border-radius: 10px; padding: 14px 18px; margin: 14px 0; font-size: 0.86rem; }
+.warn-box strong { color: #f87171; }
+
+/* Retry timeline */
+.retry-timeline { display: flex; flex-direction: column; gap: 6px; margin: 14px 0; }
+.retry-row { display: flex; align-items: center; gap: 0; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+.retry-label { min-width: 90px; color: var(--muted); }
+.retry-bar-wrap { flex: 1; display: flex; align-items: center; gap: 6px; }
+.retry-attempt { height: 22px; border-radius: 4px; display: flex; align-items: center; padding: 0 8px; font-size: 0.72rem; font-weight: 700; white-space: nowrap; }
+.retry-attempt.fail { background: rgba(239,68,68,0.2); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+.retry-attempt.success { background: rgba(16,185,129,0.2); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.retry-wait { display: flex; align-items: center; }
+.retry-wait-bar { height: 6px; background: var(--border); border-radius: 3px; transition: width 1.2s ease; }
+.retry-wait-label { font-size: 0.7rem; color: var(--muted); margin-left: 6px; white-space: nowrap; }
+
+/* Circuit breaker */
+.cb-states { display: flex; gap: 16px; align-items: center; justify-content: center; flex-wrap: wrap; margin: 14px 0; }
+.cb-state { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.cb-circle { width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; font-weight: 700; text-align: center; border: 3px solid; transition: box-shadow 0.4s; }
+.cb-circle.closed { background: rgba(16,185,129,0.15); border-color: var(--green); color: #34d399; }
+.cb-circle.open { background: rgba(239,68,68,0.15); border-color: var(--red); color: #f87171; }
+.cb-circle.half { background: rgba(245,158,11,0.15); border-color: var(--yellow); color: var(--yellow); }
+.cb-circle.active { box-shadow: 0 0 20px rgba(124,58,237,0.5); }
+.cb-label { font-size: 0.75rem; color: var(--muted); text-align: center; }
+.cb-arrow { color: var(--muted); font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; text-align: center; }
+.cb-controls { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.cb-btn { padding: 6px 14px; border-radius: 7px; border: 1px solid var(--border); background: var(--card); color: var(--text); cursor: pointer; font-size: 0.8rem; font-weight: 600; font-family: 'Inter', sans-serif; transition: all 0.2s; }
+.cb-btn:hover { background: var(--surface2); border-color: var(--purple); }
+.cb-counter { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--muted); padding: 6px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; }
+
+/* Exception table */
+.exc-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin: 14px 0; }
+.exc-table th { text-align: left; padding: 8px 12px; background: var(--surface2); color: var(--muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border); }
+.exc-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+.exc-table tr:last-child td { border-bottom: none; }
+.retry-yes { color: #34d399; font-weight: 700; }
+.retry-no { color: #f87171; font-weight: 700; }
+
+/* Validation flowchart */
+.val-flow { display: flex; flex-direction: column; gap: 0; align-items: flex-start; margin: 14px 0; }
+.vf-row { display: flex; align-items: center; gap: 10px; }
+.vf-node { padding: 8px 16px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; }
+.vf-node.api { background: rgba(124,58,237,0.15); border: 1px solid rgba(124,58,237,0.3); color: var(--purple-light); }
+.vf-node.valid { background: rgba(13,148,136,0.15); border: 1px solid rgba(13,148,136,0.3); color: #2dd4bf; }
+.vf-node.invalid { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #f87171; }
+.vf-node.ok { background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); color: #34d399; }
+.vf-arrow { color: var(--muted); font-size: 0.9rem; }
+.vf-down { width: 2px; height: 16px; background: var(--border); margin-left: 20px; }
+
+/* Gauge */
+.gauge-wrap { display: flex; flex-direction: column; gap: 8px; margin: 14px 0; }
+.gauge-row { display: flex; align-items: center; gap: 10px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+.gauge-label { min-width: 60px; color: var(--muted); }
+.gauge-bar-wrap { flex: 1; background: var(--border); border-radius: 4px; height: 14px; overflow: hidden; }
+.gauge-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease, background 0.4s; }
+.gauge-fill.normal { background: var(--green); }
+.gauge-fill.warn { background: var(--yellow); }
+.gauge-fill.over { background: var(--red); }
+.gauge-meta { min-width: 200px; font-size: 0.72rem; color: var(--text); }
+.gauge-icon { font-size: 0.85rem; }
+
+/* Stack diagram */
+.stack-diagram { display: flex; flex-direction: column; gap: 0; margin: 14px 0; }
+.stack-layer {
+  padding: 12px 20px; border: 1px solid var(--border); margin-bottom: -1px;
+  display: flex; align-items: center; gap: 12px; cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  background: var(--surface2);
+}
+.stack-layer:first-child { border-radius: 10px 10px 0 0; }
+.stack-layer:last-child { border-radius: 0 0 10px 10px; margin-bottom: 0; }
+.stack-layer:hover { background: rgba(124,58,237,0.08); border-color: var(--purple); z-index: 1; position: relative; }
+.stack-layer.active { background: rgba(124,58,237,0.12); border-color: var(--purple-light); z-index: 1; position: relative; }
+.stack-num { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; font-weight: 700; color: var(--purple-light); min-width: 24px; }
+.stack-name { font-weight: 600; font-size: 0.85rem; flex: 1; }
+.stack-when { font-size: 0.78rem; color: var(--muted); }
+.stack-detail {
+  display: none; padding: 16px 20px;
+  background: rgba(124,58,237,0.06); border: 1px solid rgba(124,58,237,0.2);
+  border-top: none; border-radius: 0 0 8px 8px;
+  font-size: 0.83rem; line-height: 1.65;
+}
+.stack-detail.visible { display: block; }
+
+/* Ann table */
+.ann-table { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin: 12px 0; }
+.ann-row { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--border); }
+.ann-row:last-child { border-bottom: none; }
+.ann-code { padding: 10px 14px; border-right: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; white-space: pre; overflow-x: auto; }
+.ann-desc { padding: 10px 14px; font-size: 0.82rem; color: var(--muted); display: flex; align-items: center; }
+.ann-desc strong { color: var(--yellow); margin-right: 4px; }
+
+.footer { border-top: 1px solid var(--border); padding: 32px; text-align: center; color: var(--muted); font-size: 0.82rem; }
+.footer a { color: var(--purple-light); text-decoration: none; }
+
+@media (max-width: 768px) {
+  .ann-row { grid-template-columns: 1fr; }
+  .cb-states { flex-direction: column; }
+  .tab-btn { padding: 10px 12px; font-size: 0.75rem; }
+}
+</style>
+</head>
+<body>
+
+<nav class="sticky-nav">
+  <a href="day5_exercises.html">← Day 5 Exercises</a>
+  <span class="nav-sep">|</span>
+  <a href="../index.html" class="brand">🤖 Agentic AI</a>
+  <span class="nav-sep">|</span>
+  <span class="nav-title">Day 6 Exercises — Production Engineering</span>
+  <a href="day7_exercises.html" style="margin-left:auto;">Day 7 Exercises →</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-meta">
+    <span class="badge badge-purple">Day 6</span>
+    <span class="badge badge-teal">4 Exercises</span>
+    <span class="badge badge-green">Production / Reliability / Observability</span>
+  </div>
+  <h1>Production <span>Engineering</span></h1>
+  <p>Build agents that survive the real world: automatic retries, circuit breakers, output validation loops, token budgets, and a fully layered production agent with structured logging.</p>
+</div>
+
+<div class="progress-bar-wrap">
+  <div class="progress-label"><span>Progress</span><span id="progress-text">0 / 4 completed</span></div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+</div>
+
+<main class="main">
+
+<!-- ========== EXERCISE 1: RETRY & CIRCUIT BREAKER ========== -->
+<section class="exercise" id="ex1">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 1 of 4</div>
+      <h2>Retry & Circuit Breaker</h2>
+      <p>Implement exponential backoff retry for transient failures and a circuit breaker that stops hammering a failing service.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot1"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex1','visual')">Visual Explainer</button>
+    <button class="tab-btn" onclick="showTab('ex1','code')">Annotated Code</button>
+    <button class="tab-btn" onclick="showTab('ex1','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex1','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex1','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex1-visual">
+    <div class="section-label purple">Exponential Backoff Retry Timeline</div>
+    <div class="retry-timeline" id="retry-timeline">
+      <div class="retry-row">
+        <span class="retry-label">Attempt 1:</span>
+        <div class="retry-bar-wrap">
+          <div class="retry-attempt fail" id="ra1">FAIL</div>
+          <div class="retry-wait"><div class="retry-wait-bar" id="rw1" style="width:0px;"></div><span class="retry-wait-label" id="rl1">wait 1s</span></div>
+        </div>
+      </div>
+      <div class="retry-row">
+        <span class="retry-label">Attempt 2:</span>
+        <div class="retry-bar-wrap">
+          <div class="retry-attempt fail" id="ra2" style="opacity:0.3;">FAIL</div>
+          <div class="retry-wait"><div class="retry-wait-bar" id="rw2" style="width:0px;"></div><span class="retry-wait-label" id="rl2" style="opacity:0.3;">wait 2s</span></div>
+        </div>
+      </div>
+      <div class="retry-row">
+        <span class="retry-label">Attempt 3:</span>
+        <div class="retry-bar-wrap">
+          <div class="retry-attempt fail" id="ra3" style="opacity:0.3;">FAIL</div>
+          <div class="retry-wait"><div class="retry-wait-bar" id="rw3" style="width:0px;"></div><span class="retry-wait-label" id="rl3" style="opacity:0.3;">wait 4s</span></div>
+        </div>
+      </div>
+      <div class="retry-row">
+        <span class="retry-label">Attempt 4:</span>
+        <div class="retry-bar-wrap">
+          <div class="retry-attempt success" id="ra4" style="opacity:0.3;">SUCCESS ✓</div>
+        </div>
+      </div>
+    </div>
+    <button class="animate-btn" onclick="animateRetry()">▶ Animate Retry Timeline</button>
+
+    <div class="section-label teal" style="margin-top:24px;">Circuit Breaker — Three States</div>
+    <div class="cb-states">
+      <div class="cb-state">
+        <div class="cb-circle closed" id="cb-closed">CLOSED<br>✓ OK</div>
+        <div class="cb-label">Normal operation<br>requests pass through</div>
+      </div>
+      <div class="cb-arrow">→ 5 failures →</div>
+      <div class="cb-state">
+        <div class="cb-circle open" id="cb-open">OPEN<br>✗ STOP</div>
+        <div class="cb-label">Tripped<br>reject all requests</div>
+      </div>
+      <div class="cb-arrow">→ 30s →</div>
+      <div class="cb-state">
+        <div class="cb-circle half" id="cb-half">HALF<br>? TRY</div>
+        <div class="cb-label">Probing<br>let one request through</div>
+      </div>
+      <div class="cb-arrow">→ success →</div>
+      <div class="cb-state">
+        <div class="cb-circle closed">CLOSED<br>✓ OK</div>
+        <div class="cb-label">Recovered</div>
+      </div>
+    </div>
+    <div class="cb-controls">
+      <button class="cb-btn" onclick="cbFail()">Trigger Failure</button>
+      <button class="cb-btn" onclick="cbReset()">Reset</button>
+      <span class="cb-counter" id="cb-counter">Failures: 0 / 5</span>
+      <span class="cb-counter" id="cb-state-label">State: CLOSED</span>
+    </div>
+
+    <div class="section-label purple" style="margin-top:24px;">Which Exceptions to Retry vs Fail-Fast</div>
+    <table class="exc-table">
+      <thead><tr><th>Exception</th><th>Retry?</th><th>Reason</th></tr></thead>
+      <tbody>
+        <tr><td><code style="font-family:'JetBrains Mono',monospace;">RateLimitError</code></td><td class="retry-yes">✓ Yes</td><td>Temporary — will clear after backoff wait</td></tr>
+        <tr><td><code style="font-family:'JetBrains Mono',monospace;">APIConnectionError</code></td><td class="retry-yes">✓ Yes</td><td>Network blip — usually resolves within seconds</td></tr>
+        <tr><td><code style="font-family:'JetBrains Mono',monospace;">ServiceUnavailableError</code></td><td class="retry-yes">✓ Yes</td><td>Temporary outage — back off and try again</td></tr>
+        <tr><td><code style="font-family:'JetBrains Mono',monospace;">AuthenticationError</code></td><td class="retry-no">✗ No</td><td>Wrong API key — retrying won't change anything</td></tr>
+        <tr><td><code style="font-family:'JetBrains Mono',monospace;">InvalidRequestError</code></td><td class="retry-no">✗ No</td><td>Bad input format — fix the request, don't retry</td></tr>
+        <tr><td><code style="font-family:'JetBrains Mono',monospace;">ContextWindowExceeded</code></td><td class="retry-no">✗ No</td><td>Input too long — shrink it, don't retry as-is</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="tab-panel" id="ex1-code">
+    <div class="section-label purple">Retry Decorator — Annotated</div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>retry_decorator.py</span></div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span></div>
+        <div class="code-content"><span class="kw">import</span> <span class="va">asyncio</span><span class="dt">,</span> <span class="va">functools</span><span class="dt">,</span> <span class="va">anthropic</span>
+
+<span class="kw">def</span> <span class="fn">retry</span><span class="dt">(</span>
+    <span class="va">max_attempts</span><span class="dt">:</span> <span class="tp">int</span> <span class="dt">=</span> <span class="nm">3</span><span class="dt">,</span>
+    <span class="va">backoff_base</span><span class="dt">:</span> <span class="tp">float</span> <span class="dt">=</span> <span class="nm">1.0</span><span class="dt">,</span>
+    <span class="va">retry_on</span><span class="dt">:</span> <span class="tp">tuple</span> <span class="dt">=</span> <span class="dt">(</span><span class="va">anthropic</span><span class="dt">.</span><span class="tp">RateLimitError</span><span class="dt">,</span> <span class="va">anthropic</span><span class="dt">.</span><span class="tp">APIConnectionError</span><span class="dt">)</span>
+<span class="dt">):</span>
+    <span class="kw">def</span> <span class="fn">decorator</span><span class="dt">(</span><span class="va">fn</span><span class="dt">):</span>
+        <span class="dt">@</span><span class="fn">functools</span><span class="dt">.</span><span class="fn">wraps</span><span class="dt">(</span><span class="va">fn</span><span class="dt">)</span>
+        <span class="kw">async def</span> <span class="fn">wrapper</span><span class="dt">(*</span><span class="va">args</span><span class="dt">, **</span><span class="va">kwargs</span><span class="dt">):</span>
+            <span class="kw">for</span> <span class="va">attempt</span> <span class="kw">in</span> <span class="bi">range</span><span class="dt">(</span><span class="va">max_attempts</span><span class="dt">):</span>
+                <span class="kw">try</span><span class="dt">:</span>
+                    <span class="kw">return</span> <span class="kw">await</span> <span class="fn">fn</span><span class="dt">(*</span><span class="va">args</span><span class="dt">, **</span><span class="va">kwargs</span><span class="dt">)</span>
+                <span class="kw">except</span> <span class="va">retry_on</span> <span class="kw">as</span> <span class="va">e</span><span class="dt">:</span>
+                    <span class="kw">if</span> <span class="va">attempt</span> <span class="dt">==</span> <span class="va">max_attempts</span> <span class="dt">-</span> <span class="nm">1</span><span class="dt">:</span>
+                        <span class="kw">raise</span>                    <span class="cm"># last attempt — give up</span>
+                    <span class="va">wait</span> <span class="dt">=</span> <span class="va">backoff_base</span> <span class="dt">*</span> <span class="dt">(</span><span class="nm">2</span> <span class="dt">**</span> <span class="va">attempt</span><span class="dt">)</span>  <span class="cm"># 1s, 2s, 4s…</span>
+                    <span class="kw">await</span> <span class="va">asyncio</span><span class="dt">.</span><span class="fn">sleep</span><span class="dt">(</span><span class="va">wait</span><span class="dt">)</span>
+        <span class="kw">return</span> <span class="va">wrapper</span>
+    <span class="kw">return</span> <span class="va">decorator</span>
+
+<span class="cm"># Usage: decorate any coroutine that calls the LLM</span>
+<span class="dt">@</span><span class="fn">retry</span><span class="dt">(</span><span class="va">max_attempts</span><span class="dt">=</span><span class="nm">3</span><span class="dt">,</span> <span class="va">backoff_base</span><span class="dt">=</span><span class="nm">1.0</span><span class="dt">)</span>
+<span class="kw">async def</span> <span class="fn">call_llm</span><span class="dt">(</span><span class="va">messages</span><span class="dt">:</span> <span class="tp">list</span><span class="dt">):</span>
+    <span class="kw">return</span> <span class="kw">await</span> <span class="va">client</span><span class="dt">.</span><span class="va">messages</span><span class="dt">.</span><span class="fn">create</span><span class="dt">(</span>
+        <span class="va">model</span><span class="dt">=</span><span class="st">"claude-sonnet-4-5"</span><span class="dt">,</span> <span class="va">max_tokens</span><span class="dt">=</span><span class="nm">1024</span><span class="dt">,</span> <span class="va">messages</span><span class="dt">=</span><span class="va">messages</span>
+    <span class="dt">)</span></div>
+      </div>
+    </div>
+    <div class="section-label teal" style="margin-top:20px;">Circuit Breaker — Annotated</div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>circuit_breaker.py</span></div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span></div>
+        <div class="code-content"><span class="kw">import</span> <span class="va">time</span>
+
+<span class="kw">class</span> <span class="tp">CircuitBreaker</span><span class="dt">:</span>
+    <span class="kw">def</span> <span class="fn">__init__</span><span class="dt">(</span><span class="va">self</span><span class="dt">,</span> <span class="va">failure_threshold</span><span class="dt">=</span><span class="nm">5</span><span class="dt">,</span> <span class="va">recovery_timeout</span><span class="dt">=</span><span class="nm">30</span><span class="dt">):</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">state</span> <span class="dt">=</span> <span class="st">"CLOSED"</span>      <span class="cm"># CLOSED → OPEN → HALF_OPEN → CLOSED</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">failures</span> <span class="dt">=</span> <span class="nm">0</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">opened_at</span> <span class="dt">=</span> <span class="bi">None</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">failure_threshold</span> <span class="dt">=</span> <span class="va">failure_threshold</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">recovery_timeout</span> <span class="dt">=</span> <span class="va">recovery_timeout</span>
+
+    <span class="kw">def</span> <span class="fn">call</span><span class="dt">(</span><span class="va">self</span><span class="dt">,</span> <span class="va">fn</span><span class="dt">, *</span><span class="va">args</span><span class="dt">, **</span><span class="va">kwargs</span><span class="dt">):</span>
+        <span class="kw">if</span> <span class="va">self</span><span class="dt">.</span><span class="va">state</span> <span class="dt">==</span> <span class="st">"OPEN"</span><span class="dt">:</span>
+            <span class="kw">if</span> <span class="va">time</span><span class="dt">.</span><span class="fn">time</span><span class="dt">() -</span> <span class="va">self</span><span class="dt">.</span><span class="va">opened_at</span> <span class="dt">></span> <span class="va">self</span><span class="dt">.</span><span class="va">recovery_timeout</span><span class="dt">:</span>
+                <span class="va">self</span><span class="dt">.</span><span class="va">state</span> <span class="dt">=</span> <span class="st">"HALF_OPEN"</span>  <span class="cm"># time to probe</span>
+            <span class="kw">else</span><span class="dt">:</span>
+                <span class="kw">raise</span> <span class="tp">RuntimeError</span><span class="dt">(</span><span class="st">"Circuit is OPEN — request rejected"</span><span class="dt">)</span>
+        <span class="kw">try</span><span class="dt">:</span>
+            <span class="va">result</span> <span class="dt">=</span> <span class="fn">fn</span><span class="dt">(*</span><span class="va">args</span><span class="dt">, **</span><span class="va">kwargs</span><span class="dt">)</span>
+            <span class="va">self</span><span class="dt">.</span><span class="va">failures</span> <span class="dt">=</span> <span class="nm">0</span><span class="dt">;</span> <span class="va">self</span><span class="dt">.</span><span class="va">state</span> <span class="dt">=</span> <span class="st">"CLOSED"</span>  <span class="cm"># success → reset</span>
+            <span class="kw">return</span> <span class="va">result</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex1-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Implement both <code style="font-family:'JetBrains Mono',monospace;background:rgba(245,158,11,0.15);padding:2px 6px;border-radius:4px;">@retry</code> decorator and <code style="font-family:'JetBrains Mono',monospace;background:rgba(245,158,11,0.15);padding:2px 6px;border-radius:4px;">CircuitBreaker</code> class:</p>
+      <ul>
+        <li><code style="font-family:'JetBrains Mono',monospace;">@retry</code>: max_attempts, backoff_base, retry_on tuple — exponential backoff</li>
+        <li><code style="font-family:'JetBrains Mono',monospace;">CircuitBreaker</code>: failure_threshold=5, recovery_timeout=30s, CLOSED/OPEN/HALF_OPEN states</li>
+        <li>Decorator logs each retry attempt with attempt number and wait time</li>
+        <li>Circuit breaker transitions: CLOSED → OPEN after N failures, OPEN → HALF_OPEN after timeout, HALF_OPEN → CLOSED on success</li>
+      </ul>
+    </div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>starter_ex1.py</span></div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span></div>
+        <div class="code-content"><span class="kw">import</span> <span class="va">asyncio</span><span class="dt">,</span> <span class="va">functools</span><span class="dt">,</span> <span class="va">time</span>
+
+<span class="kw">def</span> <span class="fn">retry</span><span class="dt">(</span><span class="va">max_attempts</span><span class="dt">=</span><span class="nm">3</span><span class="dt">,</span> <span class="va">backoff_base</span><span class="dt">=</span><span class="nm">1.0</span><span class="dt">,</span> <span class="va">retry_on</span><span class="dt">=(</span><span class="tp">Exception</span><span class="dt">,)):</span>
+    <span class="kw">def</span> <span class="fn">decorator</span><span class="dt">(</span><span class="va">fn</span><span class="dt">):</span>
+        <span class="dt">@</span><span class="fn">functools</span><span class="dt">.</span><span class="fn">wraps</span><span class="dt">(</span><span class="va">fn</span><span class="dt">)</span>
+        <span class="kw">async def</span> <span class="fn">wrapper</span><span class="dt">(*</span><span class="va">args</span><span class="dt">, **</span><span class="va">kwargs</span><span class="dt">):</span>
+            <span class="kw">for</span> <span class="va">attempt</span> <span class="kw">in</span> <span class="bi">range</span><span class="dt">(</span><span class="va">max_attempts</span><span class="dt">):</span>
+                <span class="cm"># TODO: try call, on retry_on exception compute wait and sleep</span>
+                <span class="cm"># TODO: last attempt — re-raise without sleeping</span>
+                <span class="dt">...</span>
+        <span class="kw">return</span> <span class="va">wrapper</span>
+    <span class="kw">return</span> <span class="va">decorator</span>
+
+<span class="kw">class</span> <span class="tp">CircuitBreaker</span><span class="dt">:</span>
+    <span class="kw">def</span> <span class="fn">__init__</span><span class="dt">(</span><span class="va">self</span><span class="dt">,</span> <span class="va">failure_threshold</span><span class="dt">=</span><span class="nm">5</span><span class="dt">,</span> <span class="va">recovery_timeout</span><span class="dt">=</span><span class="nm">30</span><span class="dt">):</span>
+        <span class="cm"># TODO: initialise state, failures, opened_at, thresholds</span>
+        <span class="dt">...</span>
+
+    <span class="kw">def</span> <span class="fn">call</span><span class="dt">(</span><span class="va">self</span><span class="dt">,</span> <span class="va">fn</span><span class="dt">, *</span><span class="va">args</span><span class="dt">, **</span><span class="va">kwargs</span><span class="dt">):</span>
+        <span class="cm"># TODO: OPEN → check timeout → HALF_OPEN or reject</span>
+        <span class="cm"># TODO: try fn(*args), on success reset failures + CLOSED</span>
+        <span class="cm"># TODO: on failure increment, if >= threshold → OPEN + record time</span>
+        <span class="dt">...</span></div>
+      </div>
+    </div>
+    <button class="animate-btn" style="margin-top:12px;" onclick="markDone(1)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex1-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t1-1">T1</span><div class="test-content"><div class="test-input"># Function that fails twice then succeeds<br>result = await retry_call(flaky_fn)<br>result == "success"</div><div class="test-expected">→ success after 3rd attempt</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t1-2">T2</span><div class="test-content"><div class="test-input">t0 = time.time()<br>await retry_call(always_fails)  # raises after 3 attempts<br>elapsed = time.time() - t0<br>elapsed >= 1 + 2  # backoff: 1s + 2s</div><div class="test-expected">→ waited at least 3 seconds total (1s + 2s backoff)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t1-3">T3</span><div class="test-content"><div class="test-input">cb = CircuitBreaker(failure_threshold=3)<br>for _ in range(3): try: cb.call(fail_fn) except: pass<br>cb.state == "OPEN"</div><div class="test-expected">→ "OPEN" after threshold failures</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t1-4">T4</span><div class="test-content"><div class="test-input">with pytest.raises(RuntimeError): cb.call(ok_fn)  # OPEN state</div><div class="test-expected">→ raises RuntimeError immediately (request rejected)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t1-5">T5</span><div class="test-content"><div class="test-input"># ValueError should NOT be retried<br>calls = 0<br>async def no_retry(): calls += 1; raise ValueError<br>with pytest.raises(ValueError): await retry_call(no_retry)<br>calls == 1  # called exactly once</div><div class="test-expected">→ True (non-retryable exceptions bypass retry logic)</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(1)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex1-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — Backoff formula</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>wait = backoff_base * (2 ** attempt)</code>. At attempt=0: 1s, attempt=1: 2s, attempt=2: 4s. Add jitter to avoid thundering herd: <code>wait += random.uniform(0, wait * 0.1)</code>.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — Checking if exception is retryable</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>except retry_on as e:</code> works because <code>retry_on</code> is a tuple of exception types. Python's except clause accepts a tuple: <code>except (TypeError, ValueError):</code> catches either. Your decorator receives it as a parameter.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 3 — CircuitBreaker.call() structure</span><span class="arrow">▶</span></button>
+        <div class="hint-body">Check state first: if OPEN and not timed out → raise. If OPEN and timed out → set HALF_OPEN. Then try the call. On success: <code>self.failures = 0; self.state = "CLOSED"</code>. On failure: <code>self.failures += 1; if self.failures >= self.failure_threshold: self.state = "OPEN"; self.opened_at = time.time()</code>. Re-raise the exception.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 4 — Testing with a mock that fails N times</span><span class="arrow">▶</span></button>
+        <div class="hint-body">Use a closure with a counter: <code>count = [0]</code> (mutable list trick in Python 3) → <code>def flaky(): count[0] += 1; raise RateLimitError if count[0] < 3 else "ok"</code>. Or use <code>unittest.mock.side_effect</code> with a list: <code>mock.side_effect = [RateLimitError, RateLimitError, "ok"]</code>.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 2: OUTPUT VALIDATION LOOP ========== -->
+<section class="exercise" id="ex2">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 2 of 4</div>
+      <h2>Output Validation Loop</h2>
+      <p>Force the LLM to produce valid structured output. On schema failure, build a targeted retry prompt that lists each error by field name.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot2"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex2','visual')">Visual Explainer</button>
+    <button class="tab-btn" onclick="showTab('ex2','code')">Annotated Code</button>
+    <button class="tab-btn" onclick="showTab('ex2','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex2','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex2','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex2-visual">
+    <div class="section-label purple">Validation Loop — Flowchart</div>
+    <div class="val-flow">
+      <div class="vf-row"><div class="vf-node api">LLM Response (attempt 1)</div></div>
+      <div class="vf-down"></div>
+      <div class="vf-row"><div class="vf-node valid">Pydantic validation</div></div>
+      <div class="vf-down"></div>
+      <div class="vf-row">
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span class="vf-arrow">VALID →</span>
+            <div class="vf-node ok">return result ✓ (attempt_count=1)</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span class="vf-arrow">INVALID →</span>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <div class="vf-node invalid">Build error prompt listing field errors</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="vf-down"></div>
+      <div class="vf-row"><div class="vf-node api">LLM Response (attempt 2) — corrected</div></div>
+      <div class="vf-down"></div>
+      <div class="vf-row">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span class="vf-arrow">VALID →</span><div class="vf-node ok">return result ✓ (attempt_count=2)</div>
+        </div>
+      </div>
+      <div class="vf-down"></div>
+      <div class="vf-row">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span class="vf-arrow">STILL INVALID →</span><div class="vf-node invalid">raise MaxRetriesExceeded (with all collected errors)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label teal" style="margin-top:24px;">Concrete Bad → Good Example</div>
+    <div style="background:#0d0d18;border:1px solid var(--border);border-radius:10px;padding:16px;margin:12px 0;font-family:'JetBrains Mono',monospace;font-size:0.78rem;white-space:pre;overflow-x:auto;line-height:1.7;">
+<span class="cm"># Attempt 1 — BAD response from model</span>
+<span class="dt">{</span><span class="st">"name"</span><span class="dt">:</span> <span class="st">"Sharjeel"</span><span class="dt">,</span> <span class="st">"age"</span><span class="dt">:</span> <span class="st">"twenty-five"</span><span class="dt">,</span> <span class="st">"skills"</span><span class="dt">:</span> <span class="st">"Python FastAPI"</span><span class="dt">}</span>
+<span class="cm">#                     ^^^^^^^^^^^^^^^^^^^   ^^^^^^^^^^^^^^^^^^^^^^^^</span>
+<span class="cm">#                     ValidationError: int  ValidationError: must be list</span>
+
+<span class="cm"># Retry prompt includes targeted error message:</span>
+<span class="st">"""Fix these validation errors in your JSON response:
+- age: int expected, got str ('twenty-five')  → use 25
+- skills: list[str] expected, got str → use ["Python", "FastAPI"]"""</span>
+
+<span class="cm"># Attempt 2 — FIXED response</span>
+<span class="dt">{</span><span class="st">"name"</span><span class="dt">:</span> <span class="st">"Sharjeel"</span><span class="dt">,</span> <span class="st">"age"</span><span class="dt">:</span> <span class="nm">25</span><span class="dt">,</span> <span class="st">"skills"</span><span class="dt">:</span> <span class="dt">[</span><span class="st">"Python"</span><span class="dt">,</span> <span class="st">"FastAPI"</span><span class="dt">]}</span>  <span class="cm"># ✓</span></div>
+
+    <div class="insight-box">
+      <strong>Key insight:</strong> Generic error messages ("JSON invalid") produce poor corrections. Field-specific messages ("age: int expected, got str 'twenty-five' — use 25") produce excellent corrections. The model has enough context to fix the exact issue.
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex2-code">
+    <div class="section-label purple">validated_llm_call — Annotated</div>
+    <div class="ann-table">
+      <div class="ann-row">
+        <div class="ann-code"><span class="va">response</span> <span class="dt">=</span> <span class="fn">call_llm</span><span class="dt">(</span><span class="va">prompt</span><span class="dt">)</span>
+<span class="va">raw</span> <span class="dt">=</span> <span class="fn">extract_json</span><span class="dt">(</span><span class="va">response</span><span class="dt">)</span></div>
+        <div class="ann-desc"><strong>Step 1:</strong> Call LLM. Extract JSON from response text (handle code blocks, plain JSON).</div>
+      </div>
+      <div class="ann-row">
+        <div class="ann-code"><span class="kw">try</span><span class="dt">:</span>
+  <span class="va">obj</span> <span class="dt">=</span> <span class="va">schema</span><span class="dt">.</span><span class="fn">model_validate</span><span class="dt">(</span><span class="va">raw</span><span class="dt">)</span>
+  <span class="kw">return</span> <span class="va">obj</span><span class="dt">,</span> <span class="va">attempt</span></div>
+        <div class="ann-desc"><strong>Step 2:</strong> Validate with Pydantic. On success, return immediately with attempt count.</div>
+      </div>
+      <div class="ann-row">
+        <div class="ann-code"><span class="kw">except</span> <span class="tp">ValidationError</span> <span class="kw">as</span> <span class="va">e</span><span class="dt">:</span>
+  <span class="va">errors</span> <span class="dt">=</span> <span class="va">e</span><span class="dt">.</span><span class="fn">errors</span><span class="dt">()</span></div>
+        <div class="ann-desc"><strong>Step 3:</strong> Pydantic's <code style="font-family:'JetBrains Mono',monospace;">e.errors()</code> returns a list of dicts with loc, type, msg for each field error.</div>
+      </div>
+      <div class="ann-row">
+        <div class="ann-code"><span class="va">error_lines</span> <span class="dt">=</span> <span class="dt">[</span>
+  <span class="bi">f</span><span class="st">"{'.'.join(map(str,e['loc']))}: {e['msg']}"</span>
+  <span class="kw">for</span> <span class="va">e</span> <span class="kw">in</span> <span class="va">errors</span>
+<span class="dt">]</span></div>
+        <div class="ann-desc"><strong>Step 4:</strong> Build per-field error strings. The <code style="font-family:'JetBrains Mono',monospace;">loc</code> tuple shows which field (e.g. <code style="font-family:'JetBrains Mono',monospace;">('age',)</code>).</div>
+      </div>
+      <div class="ann-row">
+        <div class="ann-code"><span class="va">prompt</span> <span class="dt">=</span> <span class="va">original_prompt</span> <span class="dt">+</span>
+  <span class="st">"\n\nFix these errors:\n"</span> <span class="dt">+</span>
+  <span class="st">"\n"</span><span class="dt">.</span><span class="fn">join</span><span class="dt">(</span><span class="va">error_lines</span><span class="dt">)</span></div>
+        <div class="ann-desc"><strong>Step 5:</strong> Append errors to original prompt. Do NOT start a new conversation — the model needs the original task context to fix it.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex2-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Build <code style="font-family:'JetBrains Mono',monospace;background:rgba(245,158,11,0.15);padding:2px 6px;border-radius:4px;">validated_llm_call(schema, prompt, max_retries=3)</code>:</p>
+      <ul>
+        <li>Calls LLM and parses response as JSON, validates against Pydantic schema</li>
+        <li>On failure: builds targeted retry prompt listing each field error by name</li>
+        <li>Returns <code style="font-family:'JetBrains Mono',monospace;">(result, attempt_count)</code> on success</li>
+        <li>Raises <code style="font-family:'JetBrains Mono',monospace;">MaxRetriesExceeded(all_errors)</code> after max_retries attempts</li>
+        <li>Generic — works with any Pydantic model passed as schema parameter</li>
+      </ul>
+    </div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>starter_ex2.py</span></div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span></div>
+        <div class="code-content"><span class="kw">import</span> <span class="va">json</span><span class="dt">,</span> <span class="va">re</span><span class="dt">,</span> <span class="va">anthropic</span>
+<span class="kw">from</span> <span class="va">pydantic</span> <span class="kw">import</span> <span class="va">BaseModel</span><span class="dt">,</span> <span class="va">ValidationError</span>
+<span class="kw">from</span> <span class="va">typing</span> <span class="kw">import</span> <span class="va">Type</span><span class="dt">,</span> <span class="va">TypeVar</span>
+
+<span class="va">T</span> <span class="dt">=</span> <span class="fn">TypeVar</span><span class="dt">(</span><span class="st">"T"</span><span class="dt">,</span> <span class="va">bound</span><span class="dt">=</span><span class="va">BaseModel</span><span class="dt">)</span>
+<span class="va">client</span> <span class="dt">=</span> <span class="fn">anthropic</span><span class="dt">.</span><span class="fn">Anthropic</span><span class="dt">()</span>
+
+<span class="kw">class</span> <span class="tp">MaxRetriesExceeded</span><span class="dt">(</span><span class="tp">Exception</span><span class="dt">):</span> <span class="kw">pass</span>
+
+<span class="kw">def</span> <span class="fn">extract_json</span><span class="dt">(</span><span class="va">text</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">dict</span><span class="dt">:</span>
+    <span class="cm"># TODO: strip markdown code fences if present, then json.loads()</span>
+    <span class="cm"># Hint: re.sub(r'```json|```', '', text).strip()</span>
+    <span class="dt">...</span>
+
+<span class="kw">def</span> <span class="fn">validated_llm_call</span><span class="dt">(</span>
+    <span class="va">schema</span><span class="dt">:</span> <span class="tp">Type</span><span class="dt">[</span><span class="va">T</span><span class="dt">],</span>
+    <span class="va">prompt</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">,</span>
+    <span class="va">max_retries</span><span class="dt">:</span> <span class="tp">int</span> <span class="dt">=</span> <span class="nm">3</span>
+<span class="dt">)</span> <span class="dt">-></span> <span class="tp">tuple</span><span class="dt">[</span><span class="va">T</span><span class="dt">,</span> <span class="tp">int</span><span class="dt">]:</span>
+    <span class="va">all_errors</span> <span class="dt">=</span> <span class="dt">[]</span>
+    <span class="va">current_prompt</span> <span class="dt">=</span> <span class="va">prompt</span>
+    <span class="kw">for</span> <span class="va">attempt</span> <span class="kw">in</span> <span class="bi">range</span><span class="dt">(</span><span class="nm">1</span><span class="dt">,</span> <span class="va">max_retries</span> <span class="dt">+</span> <span class="nm">1</span><span class="dt">):</span>
+        <span class="cm"># TODO: call LLM with current_prompt</span>
+        <span class="cm"># TODO: extract_json from response</span>
+        <span class="cm"># TODO: try schema.model_validate(raw) — return (obj, attempt) on success</span>
+        <span class="cm"># TODO: on ValidationError: build error lines, update current_prompt</span>
+        <span class="dt">...</span>
+    <span class="kw">raise</span> <span class="fn">MaxRetriesExceeded</span><span class="dt">(</span><span class="bi">f</span><span class="st">"Failed after {max_retries} attempts: {all_errors}"</span><span class="dt">)</span></div>
+      </div>
+    </div>
+    <button class="animate-btn" style="margin-top:12px;" onclick="markDone(2)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex2-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t2-1">T1</span><div class="test-content"><div class="test-input">class User(BaseModel): name: str; age: int; skills: list[str]<br>result, attempts = validated_llm_call(User, "Extract user from: Sharjeel, 25, Python FastAPI")<br>result.age == 25</div><div class="test-expected">→ True (correct parsing on first attempt)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t2-2">T2</span><div class="test-content"><div class="test-input"># Mock LLM to return bad JSON first, good JSON second<br>result, attempts = validated_llm_call(User, prompt)<br>attempts == 2</div><div class="test-expected">→ 2 (corrected on retry)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t2-3">T3</span><div class="test-content"><div class="test-input"># Mock LLM to always return invalid JSON<br>with pytest.raises(MaxRetriesExceeded): validated_llm_call(User, prompt, max_retries=2)</div><div class="test-expected">→ raises MaxRetriesExceeded after 2 attempts</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t2-4">T4</span><div class="test-content"><div class="test-input"># Verify retry prompt contains field names<br>retry_prompt = capture_last_prompt()<br>"age" in retry_prompt and "skills" in retry_prompt</div><div class="test-expected">→ True (retry prompt mentions specific field names)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t2-5">T5</span><div class="test-content"><div class="test-input"># Works with a different schema (generic)<br>class Product(BaseModel): name: str; price: float; in_stock: bool<br>result, _ = validated_llm_call(Product, "Extract: Widget, $9.99, available")<br>isinstance(result, Product)</div><div class="test-expected">→ True (generic — works with any Pydantic model)</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(2)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex2-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — extract_json robustly</span><span class="arrow">▶</span></button>
+        <div class="hint-body">Claude often wraps JSON in markdown: <code>text = re.sub(r'```json\s*|\s*```', '', text).strip()</code>. Then look for the first <code>{</code> and last <code>}</code>: <code>start = text.index('{'); end = text.rindex('}'); return json.loads(text[start:end+1])</code>.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — Building per-field error messages</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>for err in validation_error.errors():</code> → <code>loc = ".".join(map(str, err["loc"]))</code> → <code>msg = err["msg"]</code> → <code>line = f"- {loc}: {msg}"</code>. Example output: <code>"- age: Input should be a valid integer, unable to parse string as an integer"</code>.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 3 — Building the retry prompt</span><span class="arrow">▶</span></button>
+        <div class="hint-body">Append to original prompt: <code>current_prompt = prompt + f"\n\nYour previous response had these validation errors. Fix them:\n" + "\n".join(error_lines) + "\n\nReturn only valid JSON."</code>. Keep the original task visible — the model needs it to produce the right content.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 4 — Collecting all errors for the exception</span><span class="arrow">▶</span></button>
+        <div class="hint-body">Before the loop: <code>all_errors = []</code>. In the except block: <code>all_errors.append({"attempt": attempt, "errors": e.errors()})</code>. After the loop: <code>raise MaxRetriesExceeded(f"Failed {max_retries} attempts", all_errors)</code>. This makes debugging much easier.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 3: TOKEN BUDGET GUARD ========== -->
+<section class="exercise" id="ex3">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 3 of 4</div>
+      <h2>Token Budget Guard</h2>
+      <p>Prevent runaway token spend. Warn at 80%, stop gracefully at 100%, and return a partial result with a budget_exceeded flag.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot3"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex3','visual')">Visual Explainer</button>
+    <button class="tab-btn" onclick="showTab('ex3','code')">Annotated Code</button>
+    <button class="tab-btn" onclick="showTab('ex3','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex3','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex3','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex3-visual">
+    <div class="section-label purple">Token Budget Fuel Gauge</div>
+    <div class="gauge-wrap" id="gauge-wrap">
+      <div class="gauge-row">
+        <span class="gauge-label">Turn 1:</span>
+        <div class="gauge-bar-wrap"><div class="gauge-fill normal" id="g1" style="width:0%;"></div></div>
+        <span class="gauge-meta" id="gm1">used=3,240  remaining=96,760</span>
+        <span class="gauge-icon" id="gi1"></span>
+      </div>
+      <div class="gauge-row">
+        <span class="gauge-label">Turn 2:</span>
+        <div class="gauge-bar-wrap"><div class="gauge-fill normal" id="g2" style="width:0%;"></div></div>
+        <span class="gauge-meta" id="gm2">used=7,180  remaining=92,820</span>
+        <span class="gauge-icon" id="gi2"></span>
+      </div>
+      <div class="gauge-row">
+        <span class="gauge-label">Turn 8:</span>
+        <div class="gauge-bar-wrap"><div class="gauge-fill warn" id="g8" style="width:0%;"></div></div>
+        <span class="gauge-meta" id="gm8">used=81,200  remaining=18,800</span>
+        <span class="gauge-icon" id="gi8"></span>
+      </div>
+      <div class="gauge-row">
+        <span class="gauge-label">Turn 9:</span>
+        <div class="gauge-bar-wrap"><div class="gauge-fill over" id="g9" style="width:0%;"></div></div>
+        <span class="gauge-meta" id="gm9">would use 22,400 → EXCEEDS BUDGET → STOP</span>
+        <span class="gauge-icon" id="gi9"></span>
+      </div>
+    </div>
+    <button class="animate-btn" onclick="animateGauge()">▶ Animate Budget Consumption</button>
+
+    <div class="insight-box" style="margin-top:16px;">
+      <strong>Graceful vs abrupt shutdown:</strong> Graceful means finishing the current tool execution, appending a summary of what was completed, then returning a partial result with <code style="font-family:'JetBrains Mono',monospace;background:rgba(13,148,136,0.15);padding:1px 5px;border-radius:3px;color:#2dd4bf;">budget_exceeded: True</code>. Abrupt means crashing mid-task with no useful output.
+    </div>
+
+    <div class="section-label teal" style="margin-top:24px;">TokenBudget Class Design</div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>token_budget.py</span></div>
+      <div class="code-body">
+        <div class="code-content"><span class="kw">class</span> <span class="tp">TokenBudget</span><span class="dt">:</span>
+    <span class="kw">def</span> <span class="fn">__init__</span><span class="dt">(</span><span class="va">self</span><span class="dt">,</span> <span class="va">max_tokens</span><span class="dt">):</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">max</span> <span class="dt">=</span> <span class="va">max_tokens</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">used</span> <span class="dt">=</span> <span class="nm">0</span>
+
+    <span class="kw">def</span> <span class="fn">consume</span><span class="dt">(</span><span class="va">self</span><span class="dt">,</span> <span class="va">tokens</span><span class="dt">:</span> <span class="tp">int</span><span class="dt">):</span>
+        <span class="kw">if</span> <span class="va">self</span><span class="dt">.</span><span class="va">used</span> <span class="dt">+</span> <span class="va">tokens</span> <span class="dt">></span> <span class="va">self</span><span class="dt">.</span><span class="va">max</span><span class="dt">:</span>
+            <span class="kw">raise</span> <span class="tp">BudgetExceeded</span><span class="dt">(</span><span class="bi">f</span><span class="st">"Used {self.used}, need {tokens}, max {self.max}"</span><span class="dt">)</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">used</span> <span class="dt">+=</span> <span class="va">tokens</span>       <span class="cm"># only increments if allowed</span>
+
+    <span class="dt">@</span><span class="fn">property</span>
+    <span class="kw">def</span> <span class="fn">percent</span><span class="dt">(</span><span class="va">self</span><span class="dt">):</span> <span class="kw">return</span> <span class="va">self</span><span class="dt">.</span><span class="va">used</span> <span class="dt">/</span> <span class="va">self</span><span class="dt">.</span><span class="va">max</span> <span class="dt">*</span> <span class="nm">100</span>
+
+    <span class="dt">@</span><span class="fn">property</span>
+    <span class="kw">def</span> <span class="fn">remaining</span><span class="dt">(</span><span class="va">self</span><span class="dt">):</span> <span class="kw">return</span> <span class="va">self</span><span class="dt">.</span><span class="va">max</span> <span class="dt">-</span> <span class="va">self</span><span class="dt">.</span><span class="va">used</span>
+
+    <span class="kw">def</span> <span class="fn">is_warning</span><span class="dt">(</span><span class="va">self</span><span class="dt">):</span> <span class="kw">return</span> <span class="va">self</span><span class="dt">.</span><span class="va">percent</span> <span class="dt">>=</span> <span class="nm">80</span>   <span class="cm"># warn threshold</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex3-code">
+    <div class="section-label purple">Wrapping an Agent Loop with TokenBudget</div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>budgeted_agent.py</span></div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span></div>
+        <div class="code-content"><span class="kw">import</span> <span class="va">logging</span>
+
+<span class="kw">def</span> <span class="fn">run_budgeted_agent</span><span class="dt">(</span><span class="va">query</span><span class="dt">,</span> <span class="va">max_tokens</span><span class="dt">=</span><span class="nm">50_000</span><span class="dt">):</span>
+    <span class="va">budget</span> <span class="dt">=</span> <span class="fn">TokenBudget</span><span class="dt">(</span><span class="va">max_tokens</span><span class="dt">)</span>
+    <span class="va">turns</span><span class="dt">,</span> <span class="va">partial_answer</span> <span class="dt">=</span> <span class="nm">0</span><span class="dt">,</span> <span class="bi">None</span>
+    <span class="va">messages</span> <span class="dt">=</span> <span class="dt">[{</span><span class="st">"role"</span><span class="dt">:</span> <span class="st">"user"</span><span class="dt">,</span> <span class="st">"content"</span><span class="dt">:</span> <span class="va">query</span><span class="dt">}]</span>
+
+    <span class="kw">while</span> <span class="bi">True</span><span class="dt">:</span>
+        <span class="va">response</span> <span class="dt">=</span> <span class="va">client</span><span class="dt">.</span><span class="va">messages</span><span class="dt">.</span><span class="fn">create</span><span class="dt">(...,</span> <span class="va">messages</span><span class="dt">=</span><span class="va">messages</span><span class="dt">)</span>
+        <span class="va">tokens_used</span> <span class="dt">=</span> <span class="va">response</span><span class="dt">.</span><span class="va">usage</span><span class="dt">.</span><span class="va">input_tokens</span> <span class="dt">+</span> <span class="va">response</span><span class="dt">.</span><span class="va">usage</span><span class="dt">.</span><span class="va">output_tokens</span>
+
+        <span class="kw">try</span><span class="dt">:</span>
+            <span class="va">budget</span><span class="dt">.</span><span class="fn">consume</span><span class="dt">(</span><span class="va">tokens_used</span><span class="dt">)</span>    <span class="cm"># raises if over limit</span>
+        <span class="kw">except</span> <span class="tp">BudgetExceeded</span><span class="dt">:</span>
+            <span class="kw">return</span> <span class="dt">{</span><span class="st">"answer"</span><span class="dt">:</span> <span class="va">partial_answer</span><span class="dt">,</span> <span class="st">"budget_exceeded"</span><span class="dt">:</span> <span class="bi">True</span><span class="dt">,</span>
+                    <span class="st">"turns_completed"</span><span class="dt">:</span> <span class="va">turns</span><span class="dt">,</span> <span class="st">"budget_used"</span><span class="dt">:</span> <span class="va">budget</span><span class="dt">.</span><span class="va">used</span><span class="dt">}</span>
+
+        <span class="kw">if</span> <span class="va">budget</span><span class="dt">.</span><span class="fn">is_warning</span><span class="dt">():</span>
+            <span class="va">logging</span><span class="dt">.</span><span class="fn">warning</span><span class="dt">(</span><span class="bi">f</span><span class="st">"Budget at {budget.percent:.1f}%"</span><span class="dt">)</span>
+
+        <span class="va">turns</span> <span class="dt">+=</span> <span class="nm">1</span>
+        <span class="cm"># ... rest of agent loop (handle stop_reason, tools, etc.) ...</span>
+        <span class="kw">if</span> <span class="va">response</span><span class="dt">.</span><span class="va">stop_reason</span> <span class="dt">==</span> <span class="st">"end_turn"</span><span class="dt">:</span>
+            <span class="va">partial_answer</span> <span class="dt">=</span> <span class="va">response</span><span class="dt">.</span><span class="va">content</span><span class="dt">[</span><span class="nm">0</span><span class="dt">].</span><span class="va">text</span>
+            <span class="kw">return</span> <span class="dt">{</span><span class="st">"answer"</span><span class="dt">:</span> <span class="va">partial_answer</span><span class="dt">,</span> <span class="st">"budget_exceeded"</span><span class="dt">:</span> <span class="bi">False</span><span class="dt">,</span>
+                    <span class="st">"turns_completed"</span><span class="dt">:</span> <span class="va">turns</span><span class="dt">,</span> <span class="st">"budget_used"</span><span class="dt">:</span> <span class="va">budget</span><span class="dt">.</span><span class="va">used</span><span class="dt">}</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex3-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Wrap a 20-iteration agent loop with <code style="font-family:'JetBrains Mono',monospace;background:rgba(245,158,11,0.15);padding:2px 6px;border-radius:4px;">TokenBudget</code>:</p>
+      <ul>
+        <li>Implement <code style="font-family:'JetBrains Mono',monospace;">TokenBudget</code> class with <code style="font-family:'JetBrains Mono',monospace;">consume()</code>, <code style="font-family:'JetBrains Mono',monospace;">percent</code>, <code style="font-family:'JetBrains Mono',monospace;">remaining</code>, <code style="font-family:'JetBrains Mono',monospace;">is_warning()</code></li>
+        <li>Max 50,000 tokens — stop gracefully at 100% (don't crash)</li>
+        <li>Warn via <code style="font-family:'JetBrains Mono',monospace;">logging.warning()</code> at 80% — don't stop yet, just log</li>
+        <li>Return dict: <code style="font-family:'JetBrains Mono',monospace;">&#123;completed_turns, budget_used, budget_exceeded, answer&#125;</code></li>
+        <li>Partial result must include whatever was completed before the budget ran out</li>
+      </ul>
+    </div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>starter_ex3.py</span></div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span></div>
+        <div class="code-content"><span class="kw">import</span> <span class="va">logging</span>
+
+<span class="kw">class</span> <span class="tp">BudgetExceeded</span><span class="dt">(</span><span class="tp">Exception</span><span class="dt">):</span> <span class="kw">pass</span>
+
+<span class="kw">class</span> <span class="tp">TokenBudget</span><span class="dt">:</span>
+    <span class="kw">def</span> <span class="fn">__init__</span><span class="dt">(</span><span class="va">self</span><span class="dt">,</span> <span class="va">max_tokens</span><span class="dt">:</span> <span class="tp">int</span><span class="dt">):</span>
+        <span class="cm"># TODO: store max and used=0</span>
+        <span class="dt">...</span>
+
+    <span class="kw">def</span> <span class="fn">consume</span><span class="dt">(</span><span class="va">self</span><span class="dt">,</span> <span class="va">tokens</span><span class="dt">:</span> <span class="tp">int</span><span class="dt">):</span>
+        <span class="cm"># TODO: raise BudgetExceeded if would exceed; else increment used</span>
+        <span class="dt">...</span>
+
+    <span class="dt">@</span><span class="fn">property</span>
+    <span class="kw">def</span> <span class="fn">percent</span><span class="dt">(</span><span class="va">self</span><span class="dt">)</span><span class="dt">:</span> <span class="dt">...</span>   <span class="cm"># TODO</span>
+
+    <span class="dt">@</span><span class="fn">property</span>
+    <span class="kw">def</span> <span class="fn">remaining</span><span class="dt">(</span><span class="va">self</span><span class="dt">)</span><span class="dt">:</span> <span class="dt">...</span>   <span class="cm"># TODO</span>
+
+    <span class="kw">def</span> <span class="fn">is_warning</span><span class="dt">(</span><span class="va">self</span><span class="dt">)</span><span class="dt">:</span> <span class="dt">...</span>   <span class="cm"># TODO: return True if >= 80%</span>
+
+<span class="kw">def</span> <span class="fn">run_budgeted_agent</span><span class="dt">(</span><span class="va">query</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">,</span> <span class="va">max_tokens</span><span class="dt">:</span> <span class="tp">int</span> <span class="dt">=</span> <span class="nm">50_000</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">dict</span><span class="dt">:</span>
+    <span class="cm"># TODO: wrap 20-iteration loop with TokenBudget, return result dict</span>
+    <span class="dt">...</span></div>
+      </div>
+    </div>
+    <button class="animate-btn" style="margin-top:12px;" onclick="markDone(3)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex3-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t3-1">T1</span><div class="test-content"><div class="test-input">budget = TokenBudget(100)<br>budget.consume(40)<br>budget.percent == 40.0 and budget.remaining == 60</div><div class="test-expected">→ True (basic accounting correct)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t3-2">T2</span><div class="test-content"><div class="test-input">budget = TokenBudget(100)<br>budget.consume(79)     # 79%<br>budget.is_warning() == False<br>budget.consume(2)      # 81%<br>budget.is_warning() == True</div><div class="test-expected">→ warning fires at exactly 80%</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t3-3">T3</span><div class="test-content"><div class="test-input">budget = TokenBudget(100)<br>budget.consume(60)<br>with pytest.raises(BudgetExceeded): budget.consume(50)<br>budget.used == 60  # did NOT increment</div><div class="test-expected">→ True (failed consume leaves used unchanged)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t3-4">T4</span><div class="test-content"><div class="test-input">result = run_budgeted_agent(long_query, max_tokens=5000)<br>result["budget_exceeded"] == True<br>result["completed_turns"] > 0<br>result["answer"] is not None</div><div class="test-expected">→ graceful partial result with budget info</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t3-5">T5</span><div class="test-content"><div class="test-input">result = run_budgeted_agent(short_query, max_tokens=50000)<br>result["budget_exceeded"] == False</div><div class="test-expected">→ False (normal query fits within budget)</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(3)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex3-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — TokenBudget.consume() must be atomic</span><span class="arrow">▶</span></button>
+        <div class="hint-body">Check BEFORE incrementing: <code>if self.used + tokens > self.max: raise BudgetExceeded(...)</code> THEN <code>self.used += tokens</code>. Never do <code>self.used += tokens; if self.used > self.max: raise</code> — that would leave used in an invalid state.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — Where to check budget in the loop</span><span class="arrow">▶</span></button>
+        <div class="hint-body">Check AFTER each API call (you know the actual tokens used). Use <code>tokens_used = response.usage.input_tokens + response.usage.output_tokens</code>. Call <code>budget.consume(tokens_used)</code>. Catch <code>BudgetExceeded</code> and return the partial result.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 3 — Preserving partial answer on budget stop</span><span class="arrow">▶</span></button>
+        <div class="hint-body">Keep a <code>partial_answer</code> variable updated each time a text response is received: <code>if response.stop_reason == "end_turn": partial_answer = response.content[0].text</code>. When budget fires, return partial_answer (may be None if no text yet).</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 4 — Logging the warning correctly</span><span class="arrow">▶</span></button>
+        <div class="hint-body">After each <code>consume()</code> succeeds, check: <code>if budget.is_warning(): logging.warning(f"Token budget at {budget.percent:.1f}% ({budget.used}/{budget.max})")</code>. Log every turn once warning is active so the caller sees it in their logs.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 4: FULL PRODUCTION AGENT ========== -->
+<section class="exercise" id="ex4">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 4 of 4 — Boss</div>
+      <h2>Full Production Agent</h2>
+      <p>Assemble all 5 production layers into one ProductionAgent class. Every request is rate-limited, budgeted, retried, validated, and logged.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot4"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex4','visual')">Visual Explainer</button>
+    <button class="tab-btn" onclick="showTab('ex4','code')">Annotated Code</button>
+    <button class="tab-btn" onclick="showTab('ex4','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex4','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex4','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex4-visual">
+    <div class="section-label purple">Production Middleware Stack — Click Each Layer</div>
+    <div style="text-align:center;font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--muted);margin-bottom:12px;">HTTP Request ↓</div>
+    <div class="stack-diagram">
+      <div class="stack-layer" id="sl1" onclick="toggleStack(1)">
+        <span class="stack-num">[1]</span>
+        <span class="stack-name">Rate Limiter</span>
+        <span class="stack-when">blocks if &gt;10 req/min per user_id</span>
+        <span style="color:var(--muted);font-size:0.75rem;">▶</span>
+      </div>
+      <div class="stack-detail" id="sd1">
+        <strong style="color:#2dd4bf;">What it does:</strong> Tracks per-user request timestamps. If user has made 10+ requests in the last 60 seconds, raises RateLimitExceeded immediately before any LLM call.<br><br>
+        <strong style="color:var(--yellow);">Implementation:</strong> <code style="font-family:'JetBrains Mono',monospace;">self._requests[user_id] = [t for t in self._requests[user_id] if now - t &lt; 60]</code> → if <code>len >= limit</code>: raise. Else: append current time.
+      </div>
+      <div class="stack-layer" id="sl2" onclick="toggleStack(2)">
+        <span class="stack-num">[2]</span>
+        <span class="stack-name">Token Budget Guard</span>
+        <span class="stack-when">enforces 50k token max per request</span>
+        <span style="color:var(--muted);font-size:0.75rem;">▶</span>
+      </div>
+      <div class="stack-detail" id="sd2">
+        <strong style="color:#2dd4bf;">What it does:</strong> Creates a fresh TokenBudget(50_000) for each request. Checks after every LLM call. Returns partial result with budget_exceeded=True instead of crashing.<br><br>
+        <strong style="color:var(--yellow);">When it activates:</strong> After every API call's token count is known. If the call would push past the limit, triggers graceful shutdown.
+      </div>
+      <div class="stack-layer" id="sl3" onclick="toggleStack(3)">
+        <span class="stack-num">[3]</span>
+        <span class="stack-name">Agent Loop</span>
+        <span class="stack-when">the core ReAct loop with tools</span>
+        <span style="color:var(--muted);font-size:0.75rem;">▶</span>
+      </div>
+      <div class="stack-detail" id="sd3">
+        <strong style="color:#2dd4bf;">What it does:</strong> The standard while-loop ReAct agent. Makes API calls, handles tool_use, collects results. Wrapped by layers 1, 2, 4, 5, and 6 on all sides.<br><br>
+        <strong style="color:var(--yellow);">Key constraint:</strong> Max 10 iterations guard still present even inside the production wrapper.
+      </div>
+      <div class="stack-layer" id="sl4" onclick="toggleStack(4)">
+        <span class="stack-num">[4]</span>
+        <span class="stack-name">Retry Decorator</span>
+        <span class="stack-when">on each LLM call — max 3 attempts</span>
+        <span style="color:var(--muted);font-size:0.75rem;">▶</span>
+      </div>
+      <div class="stack-detail" id="sd4">
+        <strong style="color:#2dd4bf;">What it does:</strong> Wraps each individual <code style="font-family:'JetBrains Mono',monospace;">client.messages.create()</code> call with exponential backoff. Retries on RateLimitError and APIConnectionError. Fails-fast on AuthenticationError.<br><br>
+        <strong style="color:var(--yellow);">Note:</strong> This is per-LLM-call, not per-agent-run. An agent with 3 iterations can make up to 9 total LLM calls.
+      </div>
+      <div class="stack-layer" id="sl5" onclick="toggleStack(5)">
+        <span class="stack-num">[5]</span>
+        <span class="stack-name">Output Validator</span>
+        <span class="stack-when">on structured responses — max 3 retries</span>
+        <span style="color:var(--muted);font-size:0.75rem;">▶</span>
+      </div>
+      <div class="stack-detail" id="sd5">
+        <strong style="color:#2dd4bf;">What it does:</strong> When the agent is expected to return a Pydantic schema (e.g. a report object), wraps the final response in validated_llm_call. Adds field-specific error messages on failure.<br><br>
+        <strong style="color:var(--yellow);">Optional:</strong> Only activates when a <code style="font-family:'JetBrains Mono',monospace;">response_schema</code> is provided to the run() method.
+      </div>
+      <div class="stack-layer" id="sl6" onclick="toggleStack(6)">
+        <span class="stack-num">[6]</span>
+        <span class="stack-name">Structured Logging</span>
+        <span class="stack-when">trace_id, latency, tokens, cost per step</span>
+        <span style="color:var(--muted);font-size:0.75rem;">▶</span>
+      </div>
+      <div class="stack-detail" id="sd6">
+        <strong style="color:#2dd4bf;">What it does:</strong> Every LLM call logs a structured JSON record: <code style="font-family:'JetBrains Mono',monospace;">{"trace_id": uuid, "user_id": str, "iteration": int, "tokens": int, "cost_usd": float, "latency_ms": int, "tool_called": str|null}</code>.<br><br>
+        <strong style="color:var(--yellow);">Implementation:</strong> Wrap each API call with <code style="font-family:'JetBrains Mono',monospace;">t0 = time.time()</code> before, <code style="font-family:'JetBrains Mono',monospace;">latency = int((time.time() - t0) * 1000)</code> after.
+      </div>
+    </div>
+    <div style="text-align:center;font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--muted);margin-top:8px;">↓ HTTP Response (never 500 — always structured error)</div>
+  </div>
+
+  <div class="tab-panel" id="ex4-code">
+    <div class="section-label purple">ProductionAgent Skeleton</div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>production_agent.py</span></div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span><span>31</span><span>32</span></div>
+        <div class="code-content"><span class="kw">import</span> <span class="va">uuid</span><span class="dt">,</span> <span class="va">time</span><span class="dt">,</span> <span class="va">logging</span><span class="dt">,</span> <span class="va">anthropic</span>
+<span class="kw">from</span> <span class="va">collections</span> <span class="kw">import</span> <span class="va">defaultdict</span>
+
+<span class="va">client</span> <span class="dt">=</span> <span class="fn">anthropic</span><span class="dt">.</span><span class="fn">Anthropic</span><span class="dt">()</span>
+
+<span class="kw">class</span> <span class="tp">ProductionAgent</span><span class="dt">:</span>
+    <span class="kw">def</span> <span class="fn">__init__</span><span class="dt">(</span><span class="va">self</span><span class="dt">,</span> <span class="va">rate_limit</span><span class="dt">=</span><span class="nm">10</span><span class="dt">,</span> <span class="va">token_budget</span><span class="dt">=</span><span class="nm">50_000</span><span class="dt">):</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">_requests</span> <span class="dt">=</span> <span class="fn">defaultdict</span><span class="dt">(</span><span class="bi">list</span><span class="dt">)</span>   <span class="cm"># user_id → [timestamps]</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">_rate_limit</span> <span class="dt">=</span> <span class="va">rate_limit</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">_token_budget</span> <span class="dt">=</span> <span class="va">token_budget</span>
+
+    <span class="kw">def</span> <span class="fn">_check_rate_limit</span><span class="dt">(</span><span class="va">self</span><span class="dt">,</span> <span class="va">user_id</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">):</span>
+        <span class="va">now</span> <span class="dt">=</span> <span class="va">time</span><span class="dt">.</span><span class="fn">time</span><span class="dt">()</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">_requests</span><span class="dt">[</span><span class="va">user_id</span><span class="dt">]</span> <span class="dt">=</span> <span class="dt">[</span><span class="va">t</span> <span class="kw">for</span> <span class="va">t</span> <span class="kw">in</span> <span class="va">self</span><span class="dt">.</span><span class="va">_requests</span><span class="dt">[</span><span class="va">user_id</span><span class="dt">]</span> <span class="kw">if</span> <span class="va">now</span> <span class="dt">-</span> <span class="va">t</span> <span class="dt">&lt;</span> <span class="nm">60</span><span class="dt">]</span>
+        <span class="kw">if</span> <span class="bi">len</span><span class="dt">(</span><span class="va">self</span><span class="dt">.</span><span class="va">_requests</span><span class="dt">[</span><span class="va">user_id</span><span class="dt">])</span> <span class="dt">>=</span> <span class="va">self</span><span class="dt">.</span><span class="va">_rate_limit</span><span class="dt">:</span>
+            <span class="kw">raise</span> <span class="tp">RuntimeError</span><span class="dt">(</span><span class="bi">f</span><span class="st">"Rate limit exceeded for {user_id}"</span><span class="dt">)</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">_requests</span><span class="dt">[</span><span class="va">user_id</span><span class="dt">].</span><span class="fn">append</span><span class="dt">(</span><span class="va">now</span><span class="dt">)</span>
+
+    <span class="kw">def</span> <span class="fn">run</span><span class="dt">(</span><span class="va">self</span><span class="dt">,</span> <span class="va">query</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">,</span> <span class="va">user_id</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">,</span> <span class="va">tools</span><span class="dt">:</span> <span class="tp">list</span><span class="dt">) -></span> <span class="tp">dict</span><span class="dt">:</span>
+        <span class="va">trace_id</span> <span class="dt">=</span> <span class="bi">str</span><span class="dt">(</span><span class="va">uuid</span><span class="dt">.</span><span class="fn">uuid4</span><span class="dt">())</span>
+        <span class="kw">try</span><span class="dt">:</span>
+            <span class="va">self</span><span class="dt">.</span><span class="fn">_check_rate_limit</span><span class="dt">(</span><span class="va">user_id</span><span class="dt">)</span>
+            <span class="cm"># ... run budgeted agent loop with retry + logging ...</span>
+            <span class="kw">return</span> <span class="dt">{</span><span class="st">"success"</span><span class="dt">:</span> <span class="bi">True</span><span class="dt">,</span> <span class="st">"answer"</span><span class="dt">:</span> <span class="dt">...,</span> <span class="st">"trace_id"</span><span class="dt">:</span> <span class="va">trace_id</span><span class="dt">}</span>
+        <span class="kw">except</span> <span class="tp">Exception</span> <span class="kw">as</span> <span class="va">e</span><span class="dt">:</span>
+            <span class="cm"># NEVER let unhandled exceptions escape — always return structured error</span>
+            <span class="kw">return</span> <span class="dt">{</span><span class="st">"success"</span><span class="dt">:</span> <span class="bi">False</span><span class="dt">,</span> <span class="st">"error"</span><span class="dt">:</span> <span class="bi">str</span><span class="dt">(</span><span class="va">e</span><span class="dt">),</span> <span class="st">"trace_id"</span><span class="dt">:</span> <span class="va">trace_id</span><span class="dt">}</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex4-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Assemble all 5 layers into <code style="font-family:'JetBrains Mono',monospace;background:rgba(245,158,11,0.15);padding:2px 6px;border-radius:4px;">ProductionAgent.run()</code>:</p>
+      <ul>
+        <li>In-memory rate limiter: 10 req/min per user_id using sliding window</li>
+        <li>Token budget: 50k per request, warn at 80%, graceful stop at 100%</li>
+        <li>Retry: 3 attempts, exponential backoff on transient errors only</li>
+        <li>Output validation: Pydantic schema, max 3 retry on schema fail (if schema provided)</li>
+        <li>Structured logging: every LLM call logs <code style="font-family:'JetBrains Mono',monospace;">&#123;trace_id, user_id, iteration, tokens, cost_usd, latency_ms&#125;</code></li>
+        <li>Graceful failure: ALL exceptions return <code style="font-family:'JetBrains Mono',monospace;">&#123;success: False, error: "...", trace_id: "..."&#125;</code></li>
+      </ul>
+    </div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>starter_ex4.py — assemble the layers</span></div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span></div>
+        <div class="code-content"><span class="cm"># Import your implementations from the earlier exercises</span>
+<span class="kw">from</span> <span class="va">ex1</span> <span class="kw">import</span> <span class="va">retry</span><span class="dt">,</span> <span class="va">CircuitBreaker</span>
+<span class="kw">from</span> <span class="va">ex2</span> <span class="kw">import</span> <span class="va">validated_llm_call</span>
+<span class="kw">from</span> <span class="va">ex3</span> <span class="kw">import</span> <span class="va">TokenBudget</span><span class="dt">,</span> <span class="va">BudgetExceeded</span>
+
+<span class="kw">class</span> <span class="tp">ProductionAgent</span><span class="dt">:</span>
+    <span class="kw">def</span> <span class="fn">__init__</span><span class="dt">(</span><span class="va">self</span><span class="dt">,</span> <span class="va">rate_limit</span><span class="dt">=</span><span class="nm">10</span><span class="dt">,</span> <span class="va">token_budget</span><span class="dt">=</span><span class="nm">50_000</span><span class="dt">):</span>
+        <span class="cm"># TODO: init rate limiter dict, store config</span>
+        <span class="dt">...</span>
+
+    <span class="kw">def</span> <span class="fn">_log_call</span><span class="dt">(</span><span class="va">self</span><span class="dt">,</span> <span class="va">trace_id</span><span class="dt">,</span> <span class="va">user_id</span><span class="dt">,</span> <span class="va">iteration</span><span class="dt">,</span> <span class="va">response</span><span class="dt">,</span> <span class="va">latency_ms</span><span class="dt">):</span>
+        <span class="cm"># TODO: log structured JSON record</span>
+        <span class="dt">...</span>
+
+    <span class="dt">@</span><span class="fn">retry</span><span class="dt">(</span><span class="va">max_attempts</span><span class="dt">=</span><span class="nm">3</span><span class="dt">)</span>
+    <span class="kw">async def</span> <span class="fn">_call_llm</span><span class="dt">(</span><span class="va">self</span><span class="dt">,</span> <span class="va">messages</span><span class="dt">,</span> <span class="va">tools</span><span class="dt">):</span>
+        <span class="cm"># TODO: single LLM call with timing</span>
+        <span class="dt">...</span>
+
+    <span class="kw">def</span> <span class="fn">run</span><span class="dt">(</span><span class="va">self</span><span class="dt">,</span> <span class="va">query</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">,</span> <span class="va">user_id</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">,</span> <span class="va">tools</span><span class="dt">:</span> <span class="tp">list</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">dict</span><span class="dt">:</span>
+        <span class="va">trace_id</span> <span class="dt">=</span> <span class="bi">str</span><span class="dt">(</span><span class="va">uuid</span><span class="dt">.</span><span class="fn">uuid4</span><span class="dt">())</span>
+        <span class="kw">try</span><span class="dt">:</span>
+            <span class="cm"># TODO: [1] rate limit check</span>
+            <span class="cm"># TODO: [2] create TokenBudget</span>
+            <span class="cm"># TODO: [3] run agent loop calling _call_llm</span>
+            <span class="cm"># TODO: [4] inside loop: log each call, check budget</span>
+            <span class="cm"># TODO: [6] catch all exceptions → return {success:false}</span>
+            <span class="dt">...</span>
+        <span class="kw">except</span> <span class="tp">Exception</span> <span class="kw">as</span> <span class="va">e</span><span class="dt">:</span>
+            <span class="kw">return</span> <span class="dt">{</span><span class="st">"success"</span><span class="dt">:</span> <span class="bi">False</span><span class="dt">,</span> <span class="st">"error"</span><span class="dt">:</span> <span class="bi">str</span><span class="dt">(</span><span class="va">e</span><span class="dt">),</span> <span class="st">"trace_id"</span><span class="dt">:</span> <span class="va">trace_id</span><span class="dt">}</span></div>
+      </div>
+    </div>
+    <button class="animate-btn" style="margin-top:12px;" onclick="markDone(4)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex4-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t4-1">T1</span><div class="test-content"><div class="test-input"># Make 11 requests in 1 minute from same user<br>results = [agent.run(q, "user_1", []) for _ in range(11)]<br>results[-1]["success"] == False<br>"rate limit" in results[-1]["error"].lower()</div><div class="test-expected">→ 11th request is rate-limited with structured error</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t4-2">T2</span><div class="test-content"><div class="test-input">result = agent.run("long query needing many tokens", "u1", [], token_budget=1000)<br>result["success"] == False or result.get("budget_exceeded") == True</div><div class="test-expected">→ budget exceeded returns structured result (not crash)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t4-3">T3</span><div class="test-content"><div class="test-input"># Verify every result has trace_id<br>result = agent.run("hello", "u1", [])<br>"trace_id" in result and len(result["trace_id"]) == 36  # UUID format</div><div class="test-expected">→ True (every response traceable)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t4-4">T4</span><div class="test-content"><div class="test-input"># Simulate AuthenticationError — should NOT retry, should return error<br>result = agent.run("test", "u1", [], mock_auth_error=True)<br>result["success"] == False and "auth" in result["error"].lower()</div><div class="test-expected">→ structured error, called only once (no retry)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t4-5">T5</span><div class="test-content"><div class="test-input"># Normal successful query<br>result = agent.run("What is 2 + 2?", "u1", [])<br>result["success"] == True and "4" in result["answer"]</div><div class="test-expected">→ True (end-to-end works through all layers)</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(4)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex4-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — Sliding window rate limiter</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>now = time.time()</code> → <code>self._requests[user_id] = [t for t in self._requests[user_id] if now - t &lt; 60]</code> (evict old entries) → check <code>if len(...) >= self._rate_limit: raise</code> → else append <code>now</code>. Use <code>defaultdict(list)</code> so the first request doesn't KeyError.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — Structured logging format</span><span class="arrow">▶</span></button>
+        <div class="hint-body">Use Python's <code>logging</code> module with a JSON-formatted record: <code>logging.info(json.dumps({"trace_id": trace_id, "user_id": user_id, "iteration": i, "tokens": response.usage.input_tokens + response.usage.output_tokens, "cost_usd": cost, "latency_ms": latency}))</code>. Configure the logger to INFO level.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 3 — Wrapping _call_llm with timing</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>t0 = time.time()</code> before the API call → <code>response = await client.messages.create(...)</code> → <code>latency_ms = int((time.time() - t0) * 1000)</code> → call <code>self._log_call(trace_id, user_id, iteration, response, latency_ms)</code>. Return response normally.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 4 — The outer try/except pattern</span><span class="arrow">▶</span></button>
+        <div class="hint-body">The entire <code>run()</code> body (after trace_id is created) should be inside <code>try:</code>. The except catches <code>Exception as e</code> and returns <code>{"success": False, "error": type(e).__name__ + ": " + str(e), "trace_id": trace_id}</code>. Never let the exception propagate to the caller — that would be a 500.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<div class="footer">
+  <p>Day 6 of 7 — <a href="day5_exercises.html">← Day 5</a> | <a href="../index.html">Course Home</a> | <a href="day7_exercises.html">Day 7 →</a></p>
+</div>
+
+<script>
+// ── Tab switching ─────────────────────────────────────────────
+function showTab(exId, tabName) {
+  const section = document.getElementById(exId);
+  section.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  section.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  const panel = document.getElementById(exId + '-' + tabName);
+  if (panel) panel.classList.add('active');
+  const allNames = ['visual','code','trace','task','tests','hints'];
+  const idx = allNames.indexOf(tabName);
+  const btns = section.querySelectorAll('.tab-btn');
+  if (btns[idx]) btns[idx].classList.add('active');
+  else btns.forEach(b => { if (b.textContent.toLowerCase().startsWith(tabName.slice(0,4))) b.classList.add('active'); });
+}
+
+// ── Progress ──────────────────────────────────────────────────
+const KEYS = ['day6_ex1','day6_ex2','day6_ex3','day6_ex4'];
+function updateProgress() {
+  const done = KEYS.filter(k => localStorage.getItem(k) === 'done').length;
+  document.getElementById('progress-text').textContent = done + ' / 4 completed';
+  document.getElementById('progress-fill').style.width = (done * 25) + '%';
+  KEYS.forEach((k, i) => {
+    const dot = document.getElementById('dot' + (i + 1));
+    if (dot) dot.classList.toggle('done', localStorage.getItem(k) === 'done');
+  });
+}
+function markDone(n) {
+  localStorage.setItem(KEYS[n - 1], 'done');
+  updateProgress();
+  event.target.textContent = 'Completed ✓';
+  event.target.style.background = 'var(--green)';
+}
+updateProgress();
+
+// ── Hints ─────────────────────────────────────────────────────
+function toggleHint(btn) {
+  btn.classList.toggle('open');
+  const body = btn.nextElementSibling;
+  body.style.display = body.style.display === 'block' ? 'none' : 'block';
+}
+
+// ── Tests ─────────────────────────────────────────────────────
+function runTests(n) {
+  document.querySelectorAll('#ex' + n + '-tests .test-badge').forEach((b, i) => {
+    setTimeout(() => { b.className = 'test-badge pass'; b.textContent = '✓ T' + (i + 1); }, i * 300);
+  });
+}
+
+// ── Retry animation (Ex1) ─────────────────────────────────────
+function animateRetry() {
+  const steps = [
+    { attempt: 'ra1', wait: 'rw1', label: 'rl1', delay: 200, waitW: 60 },
+    { attempt: 'ra2', wait: 'rw2', label: 'rl2', delay: 1200, waitW: 110 },
+    { attempt: 'ra3', wait: 'rw3', label: 'rl3', delay: 2400, waitW: 200 },
+    { attempt: 'ra4', wait: null, label: null, delay: 3800, waitW: 0 },
+  ];
+  ['ra2','ra3','ra4'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.opacity = '0.3';
+  });
+  ['rl2','rl3'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.opacity = '0.3';
+  });
+  ['rw1','rw2','rw3'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.width = '0px';
+  });
+
+  steps.forEach(s => {
+    setTimeout(() => {
+      const a = document.getElementById(s.attempt); if (a) a.style.opacity = '1';
+      if (s.wait) {
+        const w = document.getElementById(s.wait); if (w) w.style.width = s.waitW + 'px';
+      }
+      if (s.label) {
+        const l = document.getElementById(s.label); if (l) l.style.opacity = '1';
+      }
+    }, s.delay);
+  });
+}
+
+// ── Circuit breaker (Ex1) ────────────────────────────────────
+let cbFailures = 0;
+let cbState = 'CLOSED';
+function cbFail() {
+  if (cbState === 'OPEN') {
+    document.getElementById('cb-state-label').textContent = 'State: OPEN (rejecting)';
+    return;
+  }
+  cbFailures++;
+  document.getElementById('cb-counter').textContent = 'Failures: ' + cbFailures + ' / 5';
+  if (cbFailures >= 5) {
+    cbState = 'OPEN';
+    document.getElementById('cb-open').classList.add('active');
+    document.getElementById('cb-closed').classList.remove('active');
+    document.getElementById('cb-state-label').textContent = 'State: OPEN';
+  } else {
+    document.getElementById('cb-state-label').textContent = 'State: CLOSED (' + cbFailures + ' failures)';
+  }
+}
+function cbReset() {
+  cbFailures = 0;
+  cbState = 'CLOSED';
+  ['cb-closed','cb-open','cb-half'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.classList.remove('active');
+  });
+  document.getElementById('cb-counter').textContent = 'Failures: 0 / 5';
+  document.getElementById('cb-state-label').textContent = 'State: CLOSED';
+}
+
+// ── Gauge animation (Ex3) ────────────────────────────────────
+function animateGauge() {
+  const turns = [
+    { id: 'g1', meta: 'gm1', icon: 'gi1', pct: 3.24, label: 'used=3,240  remaining=96,760', cls: 'normal', ico: '' },
+    { id: 'g2', meta: 'gm2', icon: 'gi2', pct: 7.18, label: 'used=7,180  remaining=92,820', cls: 'normal', ico: '' },
+    { id: 'g8', meta: 'gm8', icon: 'gi8', pct: 81.2, label: 'used=81,200  remaining=18,800', cls: 'warn', ico: '⚠️' },
+    { id: 'g9', meta: 'gm9', icon: 'gi9', pct: 100, label: 'would use 22,400 → EXCEEDS BUDGET → STOP', cls: 'over', ico: '🛑' },
+  ];
+  turns.forEach((t, i) => {
+    setTimeout(() => {
+      const bar = document.getElementById(t.id);
+      if (bar) { bar.className = 'gauge-fill ' + t.cls; bar.style.width = Math.min(t.pct, 100) + '%'; }
+      const meta = document.getElementById(t.meta);
+      if (meta) meta.textContent = t.label;
+      const ico = document.getElementById(t.icon);
+      if (ico) ico.textContent = t.ico;
+    }, i * 600);
+  });
+}
+
+// ── Stack diagram (Ex4) ──────────────────────────────────────
+function toggleStack(n) {
+  const detail = document.getElementById('sd' + n);
+  const layer = document.getElementById('sl' + n);
+  if (!detail) return;
+  const isOpen = detail.classList.contains('visible');
+  document.querySelectorAll('.stack-detail').forEach(d => d.classList.remove('visible'));
+  document.querySelectorAll('.stack-layer').forEach(l => l.classList.remove('active'));
+  if (!isOpen) {
+    detail.classList.add('visible');
+    layer.classList.add('active');
+  }
+}
+
+// ── Init on load ──────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  // set all gauges to 0 on load
+  ['g1','g2','g8','g9'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.width = '0%';
+  });
+});
+</script>
+<script src="../bg-animation.js"></script>
+</body>
+</html>

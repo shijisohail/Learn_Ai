@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 3 Exercises — Memory & RAG | Agentic AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0a0a0f; --card: #141420; --surface2: #1a1a2e; --border: #2a2a45;
+    --purple: #7c3aed; --teal: #0d9488; --green: #10b981; --yellow: #f59e0b; --red: #ef4444;
+    --text: #e2e8f0; --muted: #64748b;
+    --purple-light: #a78bfa; --teal-light: #5eead4; --green-light: #6ee7b7;
+  }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; min-height: 100vh; }
+
+  /* NAV */
+  nav { background: var(--card); border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; position: sticky; top: 0; z-index: 100; }
+  nav a { color: var(--purple-light); text-decoration: none; font-size: 0.875rem; font-weight: 500; transition: color 0.2s; }
+  nav a:hover { color: #fff; }
+  .nav-title { color: var(--text); font-weight: 600; font-size: 0.95rem; }
+
+  /* PROGRESS */
+  .progress-bar-wrap { background: var(--surface2); border-radius: 8px; padding: 12px 24px; margin: 0 24px; display: flex; align-items: center; gap: 16px; }
+  .progress-track { flex: 1; height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--purple), var(--teal)); border-radius: 99px; transition: width 0.5s ease; }
+
+  /* LAYOUT */
+  .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px 80px; }
+  .page-header { text-align: center; margin-bottom: 40px; }
+  .page-header h1 { font-size: 2rem; font-weight: 700; background: linear-gradient(135deg, var(--purple-light), var(--teal-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .page-header p { color: var(--muted); margin-top: 8px; }
+
+  /* EXERCISE CARD */
+  .exercise { background: var(--card); border: 1px solid var(--border); border-radius: 16px; margin-bottom: 40px; overflow: hidden; }
+  .exercise-header { padding: 20px 28px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 16px; cursor: pointer; user-select: none; }
+  .exercise-num { width: 36px; height: 36px; border-radius: 50%; background: var(--purple); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem; flex-shrink: 0; }
+  .exercise-header h2 { font-size: 1.1rem; font-weight: 600; flex: 1; }
+  .ex-badge { font-size: 0.7rem; padding: 3px 10px; border-radius: 99px; font-weight: 600; }
+  .badge-boss { background: rgba(245,158,11,0.15); color: var(--yellow); border: 1px solid rgba(245,158,11,0.3); }
+  .badge-done { background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+  .chevron { color: var(--muted); transition: transform 0.3s; margin-left: auto; }
+  .chevron.open { transform: rotate(180deg); }
+  .exercise-body { display: none; padding: 28px; }
+  .exercise-body.open { display: block; }
+
+  /* SECTION LABELS */
+  .section-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* CODE BLOCKS */
+  pre, code { font-family: 'JetBrains Mono', monospace; }
+  .code-block { background: #0d0d1a; border: 1px solid var(--border); border-radius: 10px; padding: 20px; overflow-x: auto; font-size: 0.82rem; line-height: 1.7; white-space: pre; color: var(--text); position: relative; }
+  .code-block .kw { color: #c792ea; }
+  .code-block .fn { color: #82aaff; }
+  .code-block .str { color: #c3e88d; }
+  .code-block .cm { color: var(--muted); font-style: italic; }
+  .code-block .num { color: #f78c6c; }
+  .code-block .cls { color: var(--teal-light); }
+  .code-block .hl { background: rgba(124,58,237,0.2); display: block; border-left: 3px solid var(--purple); padding-left: 4px; margin-left: -4px; }
+
+  /* VISUAL EXPLAINER AREA */
+  .visual-area { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 20px; min-height: 200px; }
+  .visual-area h3 { font-size: 0.85rem; color: var(--muted); margin-bottom: 16px; font-weight: 500; }
+
+  /* PIPELINE DIAGRAM */
+  .pipeline { display: flex; flex-direction: column; align-items: center; gap: 0; }
+  .pipeline-step { display: flex; align-items: center; flex-direction: column; }
+  .pipeline-box { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 24px; text-align: center; min-width: 260px; transition: all 0.4s; }
+  .pipeline-box.active { border-color: var(--purple); box-shadow: 0 0 20px rgba(124,58,237,0.3); }
+  .pipeline-box.done { border-color: var(--green); }
+  .pipeline-arrow { width: 2px; height: 32px; background: var(--border); position: relative; display: flex; align-items: flex-end; justify-content: center; }
+  .pipeline-arrow::after { content: '▼'; color: var(--muted); font-size: 0.7rem; position: absolute; bottom: -4px; }
+  .pipeline-label { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+  .pipeline-data { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--teal-light); }
+
+  /* VECTOR SPACE CANVAS */
+  .vector-canvas-wrap { position: relative; }
+  #vectorCanvas { background: #0d0d1a; border: 1px solid var(--border); border-radius: 10px; display: block; }
+  .canvas-legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 10px; font-size: 0.75rem; }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+  /* ANATOMY DIAGRAM */
+  .anatomy { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; line-height: 1.9; white-space: pre; background: #0d0d1a; border: 1px solid var(--border); border-radius: 10px; padding: 20px; overflow-x: auto; }
+  .anatomy .branch { color: var(--teal-light); }
+  .anatomy .note { color: var(--yellow); }
+  .anatomy .good { color: var(--green); }
+  .anatomy .fn-sig { color: var(--purple-light); font-weight: 700; }
+
+  /* EXECUTION TRACE */
+  .trace { background: #0d0d1a; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .trace-step { padding: 10px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 12px; font-size: 0.82rem; opacity: 0.4; transition: opacity 0.3s, background 0.3s; }
+  .trace-step.active { opacity: 1; background: rgba(124,58,237,0.08); }
+  .trace-step.done { opacity: 0.75; }
+  .trace-num { width: 22px; height: 22px; border-radius: 50%; background: var(--border); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; flex-shrink: 0; font-family: 'JetBrains Mono', monospace; }
+  .trace-step.active .trace-num { background: var(--purple); }
+  .trace-step.done .trace-num { background: var(--green); }
+  .trace-content { flex: 1; }
+  .trace-var { font-family: 'JetBrains Mono', monospace; color: var(--teal-light); font-size: 0.78rem; margin-top: 3px; }
+  .btn { padding: 8px 18px; border-radius: 8px; border: none; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 0.82rem; font-weight: 600; transition: all 0.2s; }
+  .btn-purple { background: var(--purple); color: #fff; }
+  .btn-purple:hover { background: #6d28d9; }
+  .btn-teal { background: var(--teal); color: #fff; }
+  .btn-teal:hover { background: #0f766e; }
+  .btn-outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
+  .btn-outline:hover { border-color: var(--purple); color: var(--purple-light); }
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+
+  /* TASK / HINTS */
+  .task-box { background: rgba(124,58,237,0.08); border: 1px solid rgba(124,58,237,0.25); border-radius: 10px; padding: 20px; margin-top: 18px; }
+  .task-box h4 { color: var(--purple-light); font-size: 0.85rem; font-weight: 700; margin-bottom: 10px; }
+  .task-box ul { padding-left: 18px; }
+  .task-box ul li { font-size: 0.875rem; margin-bottom: 6px; }
+  .test-box { background: rgba(13,148,136,0.08); border: 1px solid rgba(13,148,136,0.25); border-radius: 10px; padding: 16px 20px; margin-top: 12px; }
+  .test-box h4 { color: var(--teal-light); font-size: 0.82rem; font-weight: 700; margin-bottom: 8px; }
+  .hints-wrap { margin-top: 12px; }
+  .hint-toggle { background: none; border: 1px solid var(--border); color: var(--muted); border-radius: 8px; padding: 6px 14px; cursor: pointer; font-size: 0.78rem; font-family: 'Inter', sans-serif; transition: all 0.2s; }
+  .hint-toggle:hover { border-color: var(--yellow); color: var(--yellow); }
+  .hints-list { display: none; margin-top: 10px; padding-left: 16px; }
+  .hints-list.open { display: block; }
+  .hints-list li { font-size: 0.82rem; color: var(--muted); margin-bottom: 6px; }
+  .hints-list li strong { color: var(--yellow); }
+
+  /* CHUNK VISUALIZER */
+  .chunk-vis { display: flex; flex-direction: column; gap: 12px; }
+  .chunk-strategy { }
+  .chunk-label { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 6px; }
+  .chunk-text-wrap { display: flex; flex-wrap: wrap; gap: 3px; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; line-height: 1.6; }
+  .chunk-piece { padding: 2px 1px; border-radius: 2px; transition: all 0.4s; }
+  .chunk-fixed { background: rgba(239,68,68,0.18); border-top: 2px solid var(--red); }
+  .chunk-sentence { background: rgba(59,130,246,0.18); border-top: 2px solid #3b82f6; }
+  .chunk-recursive { background: rgba(16,185,129,0.18); border-top: 2px solid var(--green); }
+  .chunk-overlap { background: rgba(245,158,11,0.25); border-top: 2px solid var(--yellow); }
+  .chunk-stats { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 8px; font-size: 0.75rem; }
+  .chunk-stat { color: var(--muted); }
+  .chunk-stat span { color: var(--text); font-weight: 600; }
+
+  /* RAG PIPELINE VISUAL */
+  .rag-flow { display: flex; gap: 0; align-items: center; flex-wrap: wrap; margin: 16px 0; }
+  .rag-node { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: 0.78rem; text-align: center; min-width: 90px; transition: all 0.4s; white-space: nowrap; }
+  .rag-node.lit { border-color: var(--teal); box-shadow: 0 0 14px rgba(13,148,136,0.35); color: var(--teal-light); }
+  .rag-arrow { color: var(--muted); padding: 0 6px; font-size: 0.85rem; }
+  .prompt-box { background: #0d0d1a; border: 1px solid var(--border); border-radius: 10px; padding: 16px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; white-space: pre; line-height: 1.8; overflow-x: auto; }
+  .prompt-box .sys { color: var(--muted); }
+  .prompt-box .ctx { color: var(--green-light); }
+  .prompt-box .usr { color: var(--purple-light); }
+  .prompt-box .border-line { color: var(--border); }
+
+  /* MEMORY TIERS */
+  .memory-stack { display: flex; flex-direction: column; gap: 0; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
+  .memory-tier { padding: 18px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 20px; transition: all 0.4s; }
+  .memory-tier:last-child { border-bottom: none; }
+  .tier-label { min-width: 130px; }
+  .tier-label strong { display: block; font-size: 0.88rem; }
+  .tier-label span { font-size: 0.73rem; color: var(--muted); }
+  .tier-bar-wrap { flex: 1; height: 10px; background: var(--border); border-radius: 99px; overflow: hidden; }
+  .tier-bar { height: 100%; border-radius: 99px; width: 0%; transition: width 0.6s ease; }
+  .tier-tokens { font-size: 0.75rem; color: var(--muted); min-width: 80px; text-align: right; }
+  .tier-status { font-size: 0.72rem; padding: 2px 8px; border-radius: 99px; min-width: 60px; text-align: center; }
+
+  /* TABS */
+  .tabs { display: flex; gap: 2px; background: var(--surface2); border-radius: 8px; padding: 4px; margin-bottom: 16px; }
+  .tab { padding: 7px 16px; border-radius: 6px; border: none; background: none; color: var(--muted); cursor: pointer; font-family: 'Inter', sans-serif; font-size: 0.82rem; font-weight: 500; transition: all 0.2s; }
+  .tab.active { background: var(--card); color: var(--text); }
+
+  /* ANNOTATION CALLOUT */
+  .callout { display: inline-flex; align-items: flex-start; gap: 8px; background: rgba(124,58,237,0.1); border-left: 3px solid var(--purple); border-radius: 0 8px 8px 0; padding: 10px 14px; font-size: 0.82rem; margin: 8px 0; }
+  .callout-icon { font-size: 1rem; flex-shrink: 0; }
+
+  /* DECISION TREE */
+  .dtree { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; line-height: 2; white-space: pre; background: #0d0d1a; border: 1px solid var(--border); border-radius: 10px; padding: 20px; overflow-x: auto; }
+
+  /* SIMILARITY SCORES */
+  .sim-pair { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .sim-pair:last-child { border-bottom: none; }
+  .sim-texts { flex: 1; font-size: 0.8rem; }
+  .sim-texts .t1 { color: var(--purple-light); }
+  .sim-texts .t2 { color: var(--teal-light); }
+  .sim-score { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; font-weight: 700; min-width: 50px; text-align: right; }
+  .sim-bar { width: 80px; height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; }
+  .sim-fill { height: 100%; border-radius: 99px; transition: width 1s ease; }
+
+  /* TURN CARDS */
+  .turns-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(46px, 1fr)); gap: 6px; }
+  .turn-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 6px 4px; text-align: center; font-size: 0.68rem; font-weight: 600; transition: all 0.4s; cursor: default; }
+  .turn-card.l1 { border-color: var(--green); color: var(--green); background: rgba(16,185,129,0.1); }
+  .turn-card.l2 { border-color: var(--yellow); color: var(--yellow); background: rgba(245,158,11,0.1); }
+  .turn-card.l3 { border-color: var(--purple); color: var(--purple-light); background: rgba(124,58,237,0.1); }
+  .turn-card.retrieved { box-shadow: 0 0 12px rgba(124,58,237,0.5); animation: glow-pulse 1s ease infinite; }
+  @keyframes glow-pulse { 0%,100% { box-shadow: 0 0 8px rgba(124,58,237,0.4); } 50% { box-shadow: 0 0 20px rgba(124,58,237,0.8); } }
+
+  /* RESPONSIVE */
+  @media (max-width: 600px) {
+    .rag-flow { flex-direction: column; }
+    .rag-arrow { transform: rotate(90deg); }
+    #vectorCanvas { width: 100%; height: auto; }
+  }
+
+  /* COMPLETE CHECKBOX */
+  .complete-btn { display: flex; align-items: center; gap: 8px; background: none; border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; color: var(--muted); cursor: pointer; font-family: 'Inter', sans-serif; font-size: 0.8rem; transition: all 0.2s; }
+  .complete-btn:hover { border-color: var(--green); color: var(--green); }
+  .complete-btn.done { border-color: var(--green); color: var(--green); background: rgba(16,185,129,0.1); }
+  .check-icon { width: 16px; height: 16px; border: 2px solid currentColor; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="day2_exercises.html">← Day 2 Exercises</a>
+  <span class="nav-title">Day 3 — Memory &amp; RAG</span>
+  <div style="display:flex;gap:16px;align-items:center;">
+    <a href="../index.html">🤖 Agentic AI</a>
+    <a href="day4_exercises.html">Day 4 Exercises →</a>
+  </div>
+</nav>
+
+<div style="padding: 12px 24px;">
+  <div class="progress-bar-wrap">
+    <span style="font-size:0.78rem;color:var(--muted);white-space:nowrap;">Progress</span>
+    <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <span style="font-size:0.78rem;color:var(--muted);white-space:nowrap;" id="progressText">0 / 4 done</span>
+  </div>
+</div>
+
+<div class="container">
+  <div class="page-header">
+    <h1>Day 3 Exercises — Memory &amp; RAG</h1>
+    <p>Sharjeel Sohail &nbsp;·&nbsp; Senior Backend Engineer &nbsp;·&nbsp; Python / FastAPI</p>
+  </div>
+
+  <!-- ============================================================ EXERCISE 1 -->
+  <div class="exercise" id="ex1">
+    <div class="exercise-header" onclick="toggleEx('ex1')">
+      <div class="exercise-num">1</div>
+      <h2>Build an Embedding Pipeline</h2>
+      <span class="ex-badge" id="badge-ex1" style="display:none"></span>
+      <span class="chevron" id="chev-ex1">▼</span>
+    </div>
+    <div class="exercise-body open" id="body-ex1">
+
+      <!-- VISUAL EXPLAINER -->
+      <div class="section-label">Visual Explainer</div>
+      <div class="visual-area">
+        <h3>Text → Embedding Pipeline (click "Run Pipeline" to animate)</h3>
+        <div class="pipeline" id="pipe1">
+          <div class="pipeline-step">
+            <div class="pipeline-box" id="pbox0">
+              <div style="font-size:0.82rem;color:var(--muted);">Input Text</div>
+              <div class="pipeline-data" style="margin-top:4px;">"FastAPI is a web framework"</div>
+            </div>
+          </div>
+          <div class="pipeline-arrow"></div>
+          <div class="pipeline-step">
+            <div class="pipeline-box" id="pbox1">
+              <div style="font-size:0.82rem;color:var(--muted);">Embedding Model</div>
+              <div style="margin-top:6px;display:flex;justify-content:center;gap:6px;">
+                <div style="width:8px;height:8px;border-radius:50%;background:var(--border);" class="model-dot"></div>
+                <div style="width:8px;height:8px;border-radius:50%;background:var(--border);" class="model-dot"></div>
+                <div style="width:8px;height:8px;border-radius:50%;background:var(--border);" class="model-dot"></div>
+              </div>
+              <div style="font-size:0.7rem;color:var(--muted);margin-top:4px;">voyage-3 / text-embedding-3-small</div>
+            </div>
+          </div>
+          <div class="pipeline-arrow"></div>
+          <div class="pipeline-step">
+            <div class="pipeline-box" id="pbox2">
+              <div style="font-size:0.82rem;color:var(--muted);">Vector Output</div>
+              <div class="pipeline-data" style="margin-top:4px;" id="vecOutput">[0.23, -0.41, 0.87, 0.12, -0.66, 0.54, ...]</div>
+              <div class="pipeline-label">1536 floats &nbsp;·&nbsp; each: -1.0 to 1.0</div>
+            </div>
+          </div>
+          <div class="pipeline-arrow"></div>
+          <div class="pipeline-step">
+            <div class="pipeline-box" id="pbox3">
+              <div style="font-size:0.82rem;color:var(--muted);">Stored in</div>
+              <div class="pipeline-data" style="margin-top:4px;">pgvector (PostgreSQL)</div>
+              <div class="pipeline-label">indexed for ANN search</div>
+            </div>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-purple" onclick="runPipeline()">Run Pipeline</button>
+          <button class="btn btn-outline" onclick="resetPipeline()">Reset</button>
+        </div>
+      </div>
+
+      <!-- VECTOR SPACE -->
+      <div class="visual-area" style="margin-top:16px;">
+        <h3>Similarity Search — 2D projection (click "Search" to animate)</h3>
+        <div class="vector-canvas-wrap">
+          <canvas id="vectorCanvas" width="560" height="280"></canvas>
+        </div>
+        <div class="canvas-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--teal);"></div><span>Stored vectors</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--green);"></div><span>Retrieved (top-2)</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--yellow);"></div><span>Query vector</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--muted);"></div><span>Not retrieved</span></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-teal" onclick="runVectorSearch()">Search</button>
+          <button class="btn btn-outline" onclick="resetVectorSearch()">Reset</button>
+        </div>
+        <div id="simScores" style="margin-top:12px;"></div>
+      </div>
+
+      <!-- CODE ANATOMY -->
+      <div class="section-label" style="margin-top:20px;">Code Anatomy</div>
+      <div class="anatomy"><span class="fn-sig">embed(text: str) → list[float]</span>
+<span class="branch">│</span>
+<span class="branch">├──</span> <span class="note">Call voyage/openai embedding API</span>
+<span class="branch">│   </span>  "text" ──→ HTTP POST /embeddings ──→ [float, float, ...]
+<span class="branch">│   </span>  API key in env  ·  model: "voyage-3"  ·  ~50ms latency
+<span class="branch">│</span>
+<span class="branch">├──</span> <span class="note">Returns vector of 1536 floats</span>
+<span class="branch">│   </span>  each float ∈ [-1.0, 1.0]
+<span class="branch">│   </span>  vector is L2-normalised (||v|| = 1.0)
+<span class="branch">│</span>
+<span class="branch">└──</span> <span class="note">Vector properties</span>
+    <span class="good">✓</span>  Identical text  → identical vector (deterministic)
+    <span class="good">✓</span>  Similar text    → cosine similarity &gt; 0.85
+    <span class="good">✓</span>  Different text  → cosine similarity &lt; 0.3
+
+    "Python web framework" ←→ "FastAPI builds APIs"   <span class="good">sim = 0.89</span>
+    "Python"              ←→ "Paris"                  sim = 0.12</div>
+
+      <!-- EXECUTION TRACE -->
+      <div class="section-label" style="margin-top:20px;">Execution Trace</div>
+      <div class="trace" id="trace1">
+        <div class="trace-step" id="t1s0"><div class="trace-num">1</div><div class="trace-content"><strong>embed("Python web framework")</strong><div class="trace-var">→ API call: POST /embeddings  {model: "voyage-3", input: "Python web framework"}</div></div></div>
+        <div class="trace-step" id="t1s1"><div class="trace-num">2</div><div class="trace-content"><strong>API returns 1536-dim vector</strong><div class="trace-var">v1 = [0.23, -0.41, 0.87, 0.12, -0.66, 0.54, ...1530 more]</div></div></div>
+        <div class="trace-step" id="t1s2"><div class="trace-num">3</div><div class="trace-content"><strong>embed("FastAPI builds APIs")</strong><div class="trace-var">→ API call: POST /embeddings  {model: "voyage-3", input: "FastAPI builds APIs"}</div></div></div>
+        <div class="trace-step" id="t1s3"><div class="trace-num">4</div><div class="trace-content"><strong>API returns 1536-dim vector</strong><div class="trace-var">v2 = [0.21, -0.39, 0.85, 0.14, -0.63, 0.51, ...1530 more]</div></div></div>
+        <div class="trace-step" id="t1s4"><div class="trace-num">5</div><div class="trace-content"><strong>cosine_similarity(v1, v2)</strong><div class="trace-var">dot(v1,v2) / (|v1| × |v2|) = 0.89  ✓ HIGH similarity</div></div></div>
+        <div class="trace-step" id="t1s5"><div class="trace-num">6</div><div class="trace-content"><strong>cosine_similarity(embed("Python"), embed("Paris"))</strong><div class="trace-var">= 0.12  ✗ LOW similarity — semantically unrelated</div></div></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-purple" onclick="runTrace(1)">Run Trace</button>
+        <button class="btn btn-outline" onclick="resetTrace(1)">Reset</button>
+      </div>
+
+      <!-- TASK -->
+      <div class="task-box">
+        <h4>Your Task — Build EmbeddingCache</h4>
+        <ul>
+          <li>embed(text) — returns embedding vector, caches result by sha256(text)</li>
+          <li>similarity(text1, text2) — cosine similarity between two texts (uses cache)</li>
+          <li>find_most_similar(query, candidates) — returns top-3 most similar from list</li>
+          <li>cache_stats property — returns {hits: int, misses: int, size: int}</li>
+        </ul>
+      </div>
+
+      <div class="section-label" style="margin-top:16px;">Starter Code</div>
+      <div class="code-block"><span class="kw">import</span> hashlib
+<span class="kw">import</span> numpy <span class="kw">as</span> np
+<span class="kw">from</span> typing <span class="kw">import</span> <span class="cls">Optional</span>
+
+<span class="kw">class</span> <span class="cls">EmbeddingCache</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, model: str = <span class="str">"voyage-3"</span>):
+        self.model = model
+        self._cache: dict[str, list[float]] = {}
+        self._hits = <span class="num">0</span>
+        self._misses = <span class="num">0</span>
+
+    <span class="kw">def</span> <span class="fn">_hash</span>(self, text: str) -> str:
+        <span class="cm"># TODO: return sha256 hex of text</span>
+        ...
+
+    <span class="kw">def</span> <span class="fn">embed</span>(self, text: str) -> list[float]:
+        <span class="cm"># TODO: check cache → if miss, call API → store → return</span>
+        ...
+
+    <span class="kw">def</span> <span class="fn">similarity</span>(self, text1: str, text2: str) -> float:
+        <span class="cm"># TODO: cosine_similarity(embed(text1), embed(text2))</span>
+        ...
+
+    <span class="kw">def</span> <span class="fn">find_most_similar</span>(self, query: str, candidates: list[str]) -> list[tuple[str, float]]:
+        <span class="cm"># TODO: return top-3 (text, score) sorted by score desc</span>
+        ...
+
+    <span class="kw">@property</span>
+    <span class="kw">def</span> <span class="fn">cache_stats</span>(self) -> dict:
+        <span class="kw">return</span> {<span class="str">"hits"</span>: self._hits, <span class="str">"misses"</span>: self._misses, <span class="str">"size"</span>: len(self._cache)}</div>
+
+      <!-- TEST CASES -->
+      <div class="test-box">
+        <h4>Test Cases</h4>
+        <div class="code-block" style="margin-top:8px;background:transparent;border:none;padding:0;">cache = EmbeddingCache()
+
+<span class="cm"># Similar texts → high similarity</span>
+assert cache.similarity(<span class="str">"Python web framework"</span>, <span class="str">"FastAPI builds APIs"</span>) > <span class="num">0.7</span>
+
+<span class="cm"># Different texts → low similarity</span>
+assert cache.similarity(<span class="str">"Python"</span>, <span class="str">"Paris"</span>) < <span class="num">0.5</span>
+
+<span class="cm"># Cache hit on second call</span>
+cache.embed(<span class="str">"test"</span>); cache.embed(<span class="str">"test"</span>)
+assert cache.cache_stats[<span class="str">"hits"</span>] == <span class="num">1</span>
+
+<span class="cm"># Top-3 most similar</span>
+results = cache.find_most_similar(<span class="str">"API framework"</span>, [<span class="str">"FastAPI"</span>, <span class="str">"Django"</span>, <span class="str">"Paris"</span>, <span class="str">"Flask"</span>])
+assert len(results) == <span class="num">3</span>
+assert results[<span class="num">0</span>][<span class="num">1</span>] > results[<span class="num">1</span>][<span class="num">1</span>]  <span class="cm"># sorted descending</span></div>
+      </div>
+
+      <div class="hints-wrap">
+        <button class="hint-toggle" onclick="toggleHints('h1')">Show Hints</button>
+        <ul class="hints-list" id="h1">
+          <li><strong>cosine_similarity:</strong> np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))</li>
+          <li><strong>hashing:</strong> hashlib.sha256(text.encode()).hexdigest()</li>
+          <li><strong>top-3:</strong> sorted(scores, key=lambda x: x[1], reverse=True)[:3]</li>
+          <li><strong>API mock:</strong> Use a deterministic fake embedding for tests: np.random.default_rng(seed=hash(text)).random(1536)</li>
+        </ul>
+      </div>
+
+      <div style="margin-top:20px;">
+        <button class="complete-btn" id="cbtn-ex1" onclick="markDone('ex1')">
+          <div class="check-icon">✓</div> Mark Complete
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ EXERCISE 2 -->
+  <div class="exercise" id="ex2">
+    <div class="exercise-header" onclick="toggleEx('ex2')">
+      <div class="exercise-num" style="background:var(--teal);">2</div>
+      <h2>Chunking Strategies</h2>
+      <span class="ex-badge" id="badge-ex2" style="display:none"></span>
+      <span class="chevron" id="chev-ex2">▼</span>
+    </div>
+    <div class="exercise-body" id="body-ex2">
+
+      <div class="section-label">Visual Explainer</div>
+      <div class="visual-area">
+        <h3>Same text, 3 different chunking strategies</h3>
+        <div class="tabs">
+          <button class="tab active" onclick="showChunk('fixed',this)">Fixed-Size</button>
+          <button class="tab" onclick="showChunk('sentence',this)">Sentence-Based</button>
+          <button class="tab" onclick="showChunk('recursive',this)">Recursive</button>
+        </div>
+        <div id="chunkVis"></div>
+        <div class="btn-row">
+          <button class="btn btn-purple" onclick="animateChunks()">Animate Split</button>
+          <button class="btn btn-outline" onclick="initChunkVis()">Reset</button>
+        </div>
+      </div>
+
+      <!-- ANATOMY DECISION TREE -->
+      <div class="section-label" style="margin-top:20px;">Recursive Chunker — Decision Tree</div>
+      <div class="dtree"><span style="color:var(--teal-light)">text (2000 chars)</span>
+    <span style="color:var(--muted)">│</span>
+    <span style="color:var(--muted)">├──</span> <span style="color:var(--yellow)">len(text) &lt; chunk_size?</span> <span style="color:var(--green)">→ return [text]  ✓ base case</span>
+    <span style="color:var(--muted)">│</span>
+    <span style="color:var(--muted)">└──</span> <span style="color:var(--yellow)">Find best split point (priority order):</span>
+        <span style="color:var(--purple-light)">1. "\n\n"</span>  paragraph break  ← preferred  <span style="color:var(--green)">⭐</span>
+        <span style="color:var(--purple-light)">2. "\n"  </span>  line break
+        <span style="color:var(--purple-light)">3. ". "  </span>  sentence boundary
+        <span style="color:var(--purple-light)">4. " "   </span>  word boundary
+        <span style="color:var(--purple-light)">5. [idx] </span>  hard split at chunk_size  ← last resort  <span style="color:var(--red)">⚠️</span>
+        <span style="color:var(--muted)">│</span>
+        <span style="color:var(--muted)">├──</span> left  = text[:split_idx]
+        <span style="color:var(--muted)">├──</span> right = text[split_idx - overlap:]   <span style="color:var(--yellow)">← 10% overlap added</span>
+        <span style="color:var(--muted)">└──</span> return [left] + <span style="color:var(--teal-light)">recurse(right)</span></div>
+
+      <!-- TASK -->
+      <div class="task-box">
+        <h4>Your Task — Implement 3 Chunking Functions</h4>
+        <ul>
+          <li>chunk_fixed(text, size=200) — split at exact character count (ignores words)</li>
+          <li>chunk_sentences(text) — split on . ? ! boundaries, keep sentences whole</li>
+          <li>chunk_recursive(text, size=512, overlap=0.1) — production-grade recursive splitter</li>
+          <li>evaluate(text) — compare all 3: chunk_count, avg_size, has_split_words</li>
+        </ul>
+      </div>
+
+      <div class="section-label" style="margin-top:16px;">Starter Code</div>
+      <div class="code-block"><span class="kw">import</span> re
+
+<span class="kw">def</span> <span class="fn">chunk_fixed</span>(text: str, size: int = <span class="num">200</span>) -> list[str]:
+    <span class="cm">"""Split text into fixed character-size chunks. May break mid-word."""</span>
+    <span class="cm"># TODO: return [text[i:i+size] for i in range(0, len(text), size)]</span>
+    ...
+
+<span class="kw">def</span> <span class="fn">chunk_sentences</span>(text: str) -> list[str]:
+    <span class="cm">"""Split on sentence boundaries (. ? !). Group into ~200-char windows."""</span>
+    <span class="cm"># Hint: re.split(r'(?&lt;=[.?!])\s+', text)</span>
+    ...
+
+<span class="kw">def</span> <span class="fn">chunk_recursive</span>(text: str, size: int = <span class="num">512</span>, overlap: float = <span class="num">0.1</span>) -> list[str]:
+    <span class="cm">"""Recursive character splitter — tries separators in priority order."""</span>
+    separators = [<span class="str">"\n\n"</span>, <span class="str">"\n"</span>, <span class="str">". "</span>, <span class="str">" "</span>]
+
+    <span class="kw">if</span> len(text) &lt;= size:
+        <span class="kw">return</span> [text]
+
+    overlap_chars = int(size * overlap)
+
+    <span class="cm"># TODO: try each separator, find split point near middle</span>
+    <span class="cm"># TODO: split into left + right (with overlap), recurse on right</span>
+    ...
+
+<span class="kw">def</span> <span class="fn">evaluate</span>(text: str) -> dict:
+    <span class="cm">"""Compare all 3 strategies on the same text."""</span>
+    results = {}
+    <span class="kw">for</span> name, fn <span class="kw">in</span> [(<span class="str">"fixed"</span>, chunk_fixed), (<span class="str">"sentence"</span>, chunk_sentences), (<span class="str">"recursive"</span>, chunk_recursive)]:
+        chunks = fn(text)
+        results[name] = {
+            <span class="str">"count"</span>: len(chunks),
+            <span class="str">"avg_size"</span>: sum(len(c) <span class="kw">for</span> c <span class="kw">in</span> chunks) // max(<span class="num">1</span>, len(chunks)),
+            <span class="str">"split_words"</span>: sum(<span class="num">1</span> <span class="kw">for</span> c <span class="kw">in</span> chunks <span class="kw">if</span> c[-<span class="num">1</span>:].isalpha() <span class="kw">and</span> len(c) == <span class="num">200</span>)
+        }
+    <span class="kw">return</span> results</div>
+
+      <div class="test-box">
+        <h4>Test Cases</h4>
+        <div class="code-block" style="background:transparent;border:none;padding:0;">text = <span class="str">"..." * 1000</span>  <span class="cm"># 1000-word document</span>
+
+fixed = chunk_fixed(text)
+assert all(len(c) == <span class="num">200</span> <span class="kw">for</span> c <span class="kw">in</span> fixed[:-<span class="num">1</span>])   <span class="cm"># all chunks exactly 200 chars</span>
+
+sentences = chunk_sentences(text)
+assert all(c.endswith((<span class="str">'.'</span>, <span class="str">'!'</span>, <span class="str">'?'</span>)) <span class="kw">for</span> c <span class="kw">in</span> sentences)  <span class="cm"># clean boundaries</span>
+
+recursive = chunk_recursive(text)
+assert all(len(c) &lt;= <span class="num">512</span> <span class="kw">for</span> c <span class="kw">in</span> recursive)       <span class="cm"># respects size limit</span>
+<span class="cm"># overlap: consecutive chunks share ~10% of content</span>
+assert recursive[<span class="num">0</span>][-<span class="num">50</span>:] <span class="kw">in</span> recursive[<span class="num">1</span>]</div>
+      </div>
+
+      <div class="hints-wrap">
+        <button class="hint-toggle" onclick="toggleHints('h2')">Show Hints</button>
+        <ul class="hints-list" id="h2">
+          <li><strong>Sentence regex:</strong> re.split(r'(?&lt;=[.?!])\s+', text) uses lookbehind — keeps punctuation with sentence</li>
+          <li><strong>Overlap:</strong> right = text[split_idx - overlap_chars:] — starts slightly before the split</li>
+          <li><strong>Finding best split:</strong> use sep.join(parts[:mid]) where parts = text.split(sep)</li>
+          <li><strong>Edge case:</strong> if no separator found, hard-split at size index</li>
+        </ul>
+      </div>
+
+      <div style="margin-top:20px;">
+        <button class="complete-btn" id="cbtn-ex2" onclick="markDone('ex2')">
+          <div class="check-icon">✓</div> Mark Complete
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ EXERCISE 3 -->
+  <div class="exercise" id="ex3">
+    <div class="exercise-header" onclick="toggleEx('ex3')">
+      <div class="exercise-num" style="background:var(--green);">3</div>
+      <h2>RAG Pipeline</h2>
+      <span class="ex-badge" id="badge-ex3" style="display:none"></span>
+      <span class="chevron" id="chev-ex3">▼</span>
+    </div>
+    <div class="exercise-body" id="body-ex3">
+
+      <div class="section-label">Visual Explainer — Full RAG Flow</div>
+      <div class="visual-area">
+        <h3>Phase 1: Ingestion (runs once)</h3>
+        <div class="rag-flow" id="ragFlow1">
+          <div class="rag-node" id="rn0">PDF/Text</div>
+          <div class="rag-arrow">→</div>
+          <div class="rag-node" id="rn1">Parser</div>
+          <div class="rag-arrow">→</div>
+          <div class="rag-node" id="rn2">Chunker</div>
+          <div class="rag-arrow">→</div>
+          <div class="rag-node" id="rn3">Embedder</div>
+          <div class="rag-arrow">→</div>
+          <div class="rag-node" id="rn4">pgvector</div>
+        </div>
+        <h3 style="margin-top:20px;">Phase 2: Query (every request)</h3>
+        <div class="rag-flow" id="ragFlow2">
+          <div class="rag-node" id="rn5">User Question</div>
+          <div class="rag-arrow">→</div>
+          <div class="rag-node" id="rn6">Embed Query</div>
+          <div class="rag-arrow">→</div>
+          <div class="rag-node" id="rn7">Search pgvector</div>
+          <div class="rag-arrow">→</div>
+          <div class="rag-node" id="rn8">Top 3 Chunks</div>
+          <div class="rag-arrow">→</div>
+          <div class="rag-node" id="rn9">LLM</div>
+          <div class="rag-arrow">→</div>
+          <div class="rag-node" id="rn10">Answer</div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-teal" onclick="animateRAG()">Animate Query Flow</button>
+          <button class="btn btn-outline" onclick="resetRAG()">Reset</button>
+        </div>
+        <div id="ragExample" style="display:none;margin-top:16px;">
+          <div style="font-size:0.78rem;color:var(--muted);margin-bottom:8px;">Live example — Document ingested:</div>
+          <div class="code-block" style="font-size:0.75rem;">"FastAPI uses Pydantic for data validation. It's built on Starlette."</div>
+          <div style="font-size:0.78rem;color:var(--muted);margin:8px 0;">Query: "How does FastAPI handle data validation?"</div>
+          <div style="display:flex;align-items:center;gap:12px;padding:8px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:8px;">
+            <span style="font-size:0.75rem;color:var(--green)">Retrieved chunk (score: 0.94):</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;">"FastAPI uses Pydantic for data validation."</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROMPT ANATOMY -->
+      <div class="section-label" style="margin-top:20px;">Prompt After RAG Injection</div>
+      <div class="prompt-box"><span class="border-line">┌─ Prompt sent to Claude ──────────────────────────────────────────┐</span>
+<span class="sys">│  SYSTEM: Answer using ONLY the provided context.                │</span>
+<span class="sys">│          If the answer is not in context, say "I don't know."  │</span>
+<span class="border-line">│                                                                  │</span>
+<span class="ctx">│  CONTEXT:                                                        │</span>
+<span class="ctx">│  [1] (score: 0.94) "FastAPI uses Pydantic for data             │</span>
+<span class="ctx">│       validation. It validates request bodies automatically."   │</span>
+<span class="ctx">│  [2] (score: 0.87) "It's built on Starlette and Uvicorn,       │</span>
+<span class="ctx">│       giving it excellent async performance."                   │</span>
+<span class="ctx">│  [3] (score: 0.81) "FastAPI supports async/await natively."    │</span>
+<span class="border-line">│                                                                  │</span>
+<span class="usr">│  USER: How does FastAPI handle data validation?                 │</span>
+<span class="border-line">└──────────────────────────────────────────────────────────────────┘</span></div>
+
+      <!-- TASK -->
+      <div class="task-box">
+        <h4>Your Task — Build RAGPipeline</h4>
+        <ul>
+          <li>ingest(texts: list[str]) — chunk each text, embed chunks, store in-memory vector store</li>
+          <li>query(question: str, k=3) -> str — embed question, retrieve top-k chunks, build prompt, call LLM</li>
+          <li>add_document(text: str) — add single document (calls ingest internally)</li>
+          <li>stats() -> dict — return {total_chunks, total_embeddings, documents_ingested}</li>
+        </ul>
+      </div>
+
+      <div class="section-label" style="margin-top:16px;">Starter Code</div>
+      <div class="code-block"><span class="kw">from</span> dataclasses <span class="kw">import</span> dataclass
+<span class="kw">import</span> numpy <span class="kw">as</span> np
+<span class="kw">import</span> anthropic
+
+@dataclass
+<span class="kw">class</span> <span class="cls">Chunk</span>:
+    text: str
+    embedding: list[float]
+    doc_id: int
+
+<span class="kw">class</span> <span class="cls">RAGPipeline</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(self):
+        self.client = anthropic.Anthropic()
+        self.chunks: list[Chunk] = []
+        self._doc_count = <span class="num">0</span>
+        self.cache = EmbeddingCache()  <span class="cm"># from Exercise 1</span>
+
+    <span class="kw">def</span> <span class="fn">ingest</span>(self, texts: list[str]) -> <span class="cls">None</span>:
+        <span class="kw">for</span> text <span class="kw">in</span> texts:
+            chunks = chunk_recursive(text)  <span class="cm"># from Exercise 2</span>
+            <span class="kw">for</span> c <span class="kw">in</span> chunks:
+                embedding = self.cache.embed(c)
+                self.chunks.append(Chunk(c, embedding, self._doc_count))
+            self._doc_count += <span class="num">1</span>
+
+    <span class="kw">def</span> <span class="fn">_retrieve</span>(self, query: str, k: int) -> list[Chunk]:
+        <span class="cm"># TODO: embed query, compute cosine sim with all chunks, return top-k</span>
+        ...
+
+    <span class="kw">def</span> <span class="fn">query</span>(self, question: str, k: int = <span class="num">3</span>) -> str:
+        chunks = self._retrieve(question, k)
+        context = <span class="str">"\n"</span>.join(f<span class="str">"[{i+1}] {c.text}"</span> <span class="kw">for</span> i, c <span class="kw">in</span> enumerate(chunks))
+        prompt = f<span class="str">"""CONTEXT:\n{context}\n\nQUESTION: {question}"""</span>
+        <span class="cm"># TODO: call self.client.messages.create()</span>
+        ...
+
+    <span class="kw">def</span> <span class="fn">add_document</span>(self, text: str) -> <span class="cls">None</span>:
+        self.ingest([text])
+
+    <span class="kw">def</span> <span class="fn">stats</span>(self) -> dict:
+        <span class="kw">return</span> {
+            <span class="str">"total_chunks"</span>: len(self.chunks),
+            <span class="str">"total_embeddings"</span>: len(self.chunks),
+            <span class="str">"documents_ingested"</span>: self._doc_count
+        }</div>
+
+      <div class="test-box">
+        <h4>Test Cases</h4>
+        <div class="code-block" style="background:transparent;border:none;padding:0;">rag = RAGPipeline()
+rag.ingest([
+    <span class="str">"FastAPI uses Pydantic for data validation."</span>,
+    <span class="str">"Django uses forms for validation."</span>,
+    <span class="str">"Flask has no built-in validation."</span>
+])
+
+assert rag.stats()[<span class="str">"documents_ingested"</span>] == <span class="num">3</span>
+answer = rag.query(<span class="str">"How does FastAPI validate data?"</span>)
+assert <span class="str">"Pydantic"</span> <span class="kw">in</span> answer  <span class="cm"># LLM uses retrieved context</span></div>
+      </div>
+
+      <div class="hints-wrap">
+        <button class="hint-toggle" onclick="toggleHints('h3')">Show Hints</button>
+        <ul class="hints-list" id="h3">
+          <li><strong>Retrieval:</strong> query_vec = embed(question); scores = [cosine(query_vec, c.embedding) for c in chunks]; return sorted by score desc [:k]</li>
+          <li><strong>Prompt:</strong> Use system="Answer using only the provided context." + context + question</li>
+          <li><strong>API call:</strong> messages.create(model="claude-opus-4-5", max_tokens=512, system=system, messages=[{"role":"user","content":prompt}])</li>
+        </ul>
+      </div>
+
+      <div style="margin-top:20px;">
+        <button class="complete-btn" id="cbtn-ex3" onclick="markDone('ex3')">
+          <div class="check-icon">✓</div> Mark Complete
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ EXERCISE 4 -->
+  <div class="exercise" id="ex4">
+    <div class="exercise-header" onclick="toggleEx('ex4')">
+      <div class="exercise-num" style="background:var(--yellow);color:#000;">4</div>
+      <h2>Conversation Memory Agent <span class="ex-badge badge-boss" style="display:inline-flex;">BOSS</span></h2>
+      <span class="ex-badge" id="badge-ex4" style="display:none"></span>
+      <span class="chevron" id="chev-ex4">▼</span>
+    </div>
+    <div class="exercise-body" id="body-ex4">
+
+      <div class="section-label">Visual Explainer — Memory Tiers (like CPU cache hierarchy)</div>
+      <div class="visual-area">
+        <div class="memory-stack">
+          <div class="memory-tier" id="mt0" style="background:rgba(16,185,129,0.06);">
+            <div class="tier-label">
+              <strong style="color:var(--green);">L1: Active Context</strong>
+              <span>Last 5 messages · Always included</span>
+            </div>
+            <div class="tier-bar-wrap"><div class="tier-bar" id="tb0" style="background:var(--green);width:0%"></div></div>
+            <div class="tier-tokens" id="tt0">0 / 2000 tokens</div>
+            <div class="tier-status" id="ts0" style="background:rgba(16,185,129,0.1);color:var(--green);">empty</div>
+          </div>
+          <div class="memory-tier" id="mt1" style="background:rgba(245,158,11,0.04);">
+            <div class="tier-label">
+              <strong style="color:var(--yellow);">L2: Episode Summary</strong>
+              <span>Turns 6-20 summarized · ~500 tokens</span>
+            </div>
+            <div class="tier-bar-wrap"><div class="tier-bar" id="tb1" style="background:var(--yellow);width:0%"></div></div>
+            <div class="tier-tokens" id="tt1">0 / 500 tokens</div>
+            <div class="tier-status" id="ts1" style="background:rgba(245,158,11,0.1);color:var(--yellow);">empty</div>
+          </div>
+          <div class="memory-tier" id="mt2" style="background:rgba(124,58,237,0.04);">
+            <div class="tier-label">
+              <strong style="color:var(--purple-light);">L3: Vector Memory</strong>
+              <span>All past turns embedded · unlimited</span>
+            </div>
+            <div class="tier-bar-wrap"><div class="tier-bar" id="tb2" style="background:var(--purple);width:0%"></div></div>
+            <div class="tier-tokens" id="tt2">0 turns stored</div>
+            <div class="tier-status" id="ts2" style="background:rgba(124,58,237,0.1);color:var(--purple-light);">empty</div>
+          </div>
+        </div>
+
+        <div style="margin-top:20px;">
+          <div style="font-size:0.8rem;color:var(--muted);margin-bottom:8px;">Simulate a 20-turn conversation:</div>
+          <div class="turns-grid" id="turnsGrid"></div>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-purple" onclick="simulateMemory()">Simulate 20 Turns</button>
+          <button class="btn btn-teal" onclick="retrieveMemory()">Retrieve Turn 3</button>
+          <button class="btn btn-outline" onclick="resetMemory()">Reset</button>
+        </div>
+        <div id="memLog" style="margin-top:12px;font-size:0.78rem;color:var(--muted);min-height:40px;"></div>
+      </div>
+
+      <!-- TASK -->
+      <div class="task-box">
+        <h4>Your Task — Build MemoryAgent (all 3 tiers)</h4>
+        <ul>
+          <li>chat(user_msg) — process message, maintain memory, return response</li>
+          <li>L1: keep last 5 turns in messages[] (always in context)</li>
+          <li>L2: when L1 overflows, summarize old turns with Claude → store as episode_summary</li>
+          <li>L3: embed every turn, store in vector_memory[] — retrieval by similarity</li>
+          <li>memory_status() — return current token counts for all 3 tiers</li>
+        </ul>
+      </div>
+
+      <div class="section-label" style="margin-top:16px;">Starter Code</div>
+      <div class="code-block"><span class="kw">from</span> dataclasses <span class="kw">import</span> dataclass, field
+<span class="kw">from</span> typing <span class="kw">import</span> <span class="cls">Optional</span>
+<span class="kw">import</span> anthropic
+
+@dataclass
+<span class="kw">class</span> <span class="cls">Turn</span>:
+    role: str      <span class="cm"># "user" | "assistant"</span>
+    content: str
+    turn_num: int
+    embedding: <span class="cls">Optional</span>[list[float]] = <span class="cls">None</span>
+
+<span class="kw">class</span> <span class="cls">MemoryAgent</span>:
+    L1_MAX_TURNS = <span class="num">5</span>
+
+    <span class="kw">def</span> <span class="fn">__init__</span>(self):
+        self.client = anthropic.Anthropic()
+        self.cache = EmbeddingCache()
+
+        <span class="cm"># L1: Active context (recent turns)</span>
+        self.active: list[Turn] = []
+
+        <span class="cm"># L2: Episode summary (compressed older turns)</span>
+        self.episode_summary: str = <span class="str">""</span>
+
+        <span class="cm"># L3: Vector memory (all turns ever)</span>
+        self.vector_memory: list[Turn] = []
+
+        self._turn_count = <span class="num">0</span>
+
+    <span class="kw">def</span> <span class="fn">_compress_to_l2</span>(self) -> <span class="cls">None</span>:
+        <span class="cm">"""When L1 is full: summarize oldest turns → episode_summary."""</span>
+        old_turns = self.active[:self.L1_MAX_TURNS // <span class="num">2</span>]
+        self.active = self.active[self.L1_MAX_TURNS // <span class="num">2</span>:]
+
+        turns_text = <span class="str">"\n"</span>.join(f<span class="str">"{t.role}: {t.content}"</span> <span class="kw">for</span> t <span class="kw">in</span> old_turns)
+        <span class="cm"># TODO: call Claude to summarize old_turns, append to self.episode_summary</span>
+        ...
+
+    <span class="kw">def</span> <span class="fn">_retrieve_from_l3</span>(self, query: str, k: int = <span class="num">3</span>) -> list[Turn]:
+        <span class="cm">"""Find most relevant past turns by cosine similarity."""</span>
+        <span class="cm"># TODO: embed query, score all vector_memory turns, return top-k</span>
+        ...
+
+    <span class="kw">def</span> <span class="fn">_build_context</span>(self, user_msg: str) -> list[dict]:
+        <span class="cm">"""Assemble full context: L3 retrieved + L2 summary + L1 active."""</span>
+        messages = []
+
+        <span class="cm"># Retrieve relevant past context (L3)</span>
+        relevant = self._retrieve_from_l3(user_msg)
+        <span class="kw">if</span> relevant:
+            mem_text = <span class="str">"Relevant past context:\n"</span> + <span class="str">"\n"</span>.join(
+                f<span class="str">"[Turn {t.turn_num}] {t.role}: {t.content}"</span> <span class="kw">for</span> t <span class="kw">in</span> relevant
+            )
+            messages.append({<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: mem_text})
+            messages.append({<span class="str">"role"</span>: <span class="str">"assistant"</span>, <span class="str">"content"</span>: <span class="str">"Understood."</span>})
+
+        <span class="cm"># Add L2 summary if exists</span>
+        <span class="kw">if</span> self.episode_summary:
+            messages.append({<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: f<span class="str">"Summary: {self.episode_summary}"</span>})
+            messages.append({<span class="str">"role"</span>: <span class="str">"assistant"</span>, <span class="str">"content"</span>: <span class="str">"Understood."</span>})
+
+        <span class="cm"># Add L1 active turns</span>
+        <span class="kw">for</span> t <span class="kw">in</span> self.active:
+            messages.append({<span class="str">"role"</span>: t.role, <span class="str">"content"</span>: t.content})
+
+        <span class="kw">return</span> messages
+
+    <span class="kw">def</span> <span class="fn">chat</span>(self, user_msg: str) -> str:
+        self._turn_count += <span class="num">1</span>
+        <span class="cm"># 1. Check if L1 compression needed</span>
+        <span class="kw">if</span> len(self.active) >= self.L1_MAX_TURNS * <span class="num">2</span>:
+            self._compress_to_l2()
+
+        <span class="cm"># 2. Build context and call Claude</span>
+        messages = self._build_context(user_msg)
+        messages.append({<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: user_msg})
+
+        response = self.client.messages.create(
+            model=<span class="str">"claude-opus-4-5"</span>,
+            max_tokens=<span class="num">512</span>,
+            system=<span class="str">"You are a helpful assistant with long-term memory."</span>,
+            messages=messages
+        )
+        assistant_msg = response.content[<span class="num">0</span>].text
+
+        <span class="cm"># 3. Store in L1 and L3</span>
+        user_turn = Turn(<span class="str">"user"</span>, user_msg, self._turn_count)
+        asst_turn = Turn(<span class="str">"assistant"</span>, assistant_msg, self._turn_count)
+
+        self.active.extend([user_turn, asst_turn])
+
+        <span class="cm"># Embed and store in L3</span>
+        user_turn.embedding = self.cache.embed(user_msg)
+        self.vector_memory.append(user_turn)
+
+        <span class="kw">return</span> assistant_msg</div>
+
+      <div class="test-box">
+        <h4>Test Cases</h4>
+        <div class="code-block" style="background:transparent;border:none;padding:0;">agent = MemoryAgent()
+agent.chat(<span class="str">"My name is Sharjeel"</span>)
+<span class="kw">for</span> _ <span class="kw">in</span> range(<span class="num">8</span>): agent.chat(<span class="str">"Tell me about Python"</span>)
+<span class="cm"># After 10 turns, L1 should be compressed to L2</span>
+assert agent.episode_summary != <span class="str">""</span>
+assert len(agent.active) &lt; agent.L1_MAX_TURNS * <span class="num">2</span>
+assert len(agent.vector_memory) >= <span class="num">9</span>
+
+<span class="cm"># L3 retrieval should find the name</span>
+reply = agent.chat(<span class="str">"What's my name?"</span>)
+assert <span class="str">"Sharjeel"</span> <span class="kw">in</span> reply</div>
+      </div>
+
+      <div class="hints-wrap">
+        <button class="hint-toggle" onclick="toggleHints('h4')">Show Hints</button>
+        <ul class="hints-list" id="h4">
+          <li><strong>L2 compression prompt:</strong> "Summarize these conversation turns in 2-3 sentences, preserving key facts: {turns_text}"</li>
+          <li><strong>L3 retrieval:</strong> reuse cache.find_most_similar(query, [t.content for t in vector_memory])</li>
+          <li><strong>Token counting:</strong> rough estimate: len(text.split()) * 1.3</li>
+          <li><strong>Alternate approach:</strong> Use tiktoken for precise token counting</li>
+        </ul>
+      </div>
+
+      <div style="margin-top:20px;">
+        <button class="complete-btn" id="cbtn-ex4" onclick="markDone('ex4')">
+          <div class="check-icon">✓</div> Mark Complete
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+// ─── PROGRESS ─────────────────────────────────────────────────────
+const STORAGE_KEY = 'day3_progress';
+let done = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+
+function updateProgress() {
+  const total = 4;
+  const count = Object.values(done).filter(Boolean).length;
+  document.getElementById('progressFill').style.width = (count / total * 100) + '%';
+  document.getElementById('progressText').textContent = count + ' / ' + total + ' done';
+}
+
+function markDone(id) {
+  done[id] = !done[id];
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(done));
+  const btn = document.getElementById('cbtn-' + id);
+  const badge = document.getElementById('badge-' + id);
+  if (done[id]) {
+    btn.classList.add('done');
+    badge.textContent = 'Done';
+    badge.className = 'ex-badge badge-done';
+    badge.style.display = 'inline-flex';
+  } else {
+    btn.classList.remove('done');
+    badge.style.display = 'none';
+  }
+  updateProgress();
+}
+
+function restoreProgress() {
+  Object.keys(done).forEach(id => { if (done[id]) markDone(id); markDone(id); });
+  updateProgress();
+}
+
+// ─── ACCORDION ────────────────────────────────────────────────────
+function toggleEx(id) {
+  const body = document.getElementById('body-' + id);
+  const chev = document.getElementById('chev-' + id);
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  chev.classList.toggle('open', !isOpen);
+}
+
+// ─── HINTS ────────────────────────────────────────────────────────
+function toggleHints(id) {
+  const el = document.getElementById(id);
+  el.classList.toggle('open');
+}
+
+// ─── PIPELINE ANIMATION ───────────────────────────────────────────
+let pipeAnim = null;
+function runPipeline() {
+  if (pipeAnim) return;
+  const boxes = ['pbox0','pbox1','pbox2','pbox3'];
+  let i = 0;
+  boxes.forEach(id => document.getElementById(id).classList.remove('active','done'));
+  pipeAnim = setInterval(() => {
+    if (i > 0) {
+      document.getElementById(boxes[i-1]).classList.remove('active');
+      document.getElementById(boxes[i-1]).classList.add('done');
+    }
+    if (i < boxes.length) {
+      document.getElementById(boxes[i]).classList.add('active');
+      // Animate model dots
+      if (i === 1) {
+        const dots = document.querySelectorAll('.model-dot');
+        let d = 0;
+        const di = setInterval(() => {
+          dots.forEach((dot, idx) => dot.style.background = idx === d % 3 ? 'var(--purple)' : 'var(--border)');
+          d++;
+          if (d > 9) { clearInterval(di); dots.forEach(dot => dot.style.background = 'var(--green)'); }
+        }, 150);
+      }
+      i++;
+    } else {
+      clearInterval(pipeAnim);
+      pipeAnim = null;
+    }
+  }, 900);
+}
+function resetPipeline() {
+  if (pipeAnim) { clearInterval(pipeAnim); pipeAnim = null; }
+  ['pbox0','pbox1','pbox2','pbox3'].forEach(id => {
+    document.getElementById(id).classList.remove('active','done');
+  });
+  document.querySelectorAll('.model-dot').forEach(d => d.style.background = 'var(--border)');
+}
+
+// ─── VECTOR CANVAS ────────────────────────────────────────────────
+const VECTORS = [
+  { label: 'FastAPI docs', x: 220, y: 100, text: 'FastAPI docs' },
+  { label: 'Pydantic guide', x: 260, y: 140, text: 'Pydantic guide' },
+  { label: 'Python web', x: 200, y: 160, text: 'Python web' },
+  { label: 'Paris travel', x: 420, y: 80, text: 'Paris travel' },
+  { label: 'French cuisine', x: 450, y: 130, text: 'French cuisine' },
+];
+const QUERY = { label: 'Query: API framework', x: 240, y: 120 };
+let canvasState = 'idle'; // idle | searching | done
+
+function drawVectorCanvas(highlight, queryVisible, scores) {
+  const canvas = document.getElementById('vectorCanvas');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Grid lines
+  ctx.strokeStyle = '#1a1a2e';
+  ctx.lineWidth = 1;
+  for (let x = 0; x < canvas.width; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke(); }
+  for (let y = 0; y < canvas.height; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
+
+  // Axis labels
+  ctx.fillStyle = '#2a2a45';
+  ctx.font = '10px Inter';
+  ctx.fillText('dim-1 (PCA)', 10, 20);
+  ctx.save(); ctx.translate(14, canvas.height - 10); ctx.rotate(-Math.PI/2); ctx.fillText('dim-2 (PCA)', 0, 0); ctx.restore();
+
+  // Draw stored vectors
+  VECTORS.forEach((v, i) => {
+    const isHighlighted = highlight && highlight.includes(i);
+    const isDimmed = highlight && !highlight.includes(i);
+
+    // Line from query if visible
+    if (queryVisible && highlight && highlight.includes(i)) {
+      ctx.beginPath();
+      ctx.moveTo(QUERY.x, QUERY.y);
+      ctx.lineTo(v.x, v.y);
+      ctx.strokeStyle = 'rgba(16,185,129,0.4)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    const radius = 8;
+    ctx.beginPath();
+    ctx.arc(v.x, v.y, radius, 0, Math.PI * 2);
+    if (isHighlighted) {
+      ctx.fillStyle = 'var(--green)';
+      ctx.shadowColor = 'var(--green)';
+      ctx.shadowBlur = 14;
+    } else if (isDimmed) {
+      ctx.fillStyle = '#2a2a45';
+      ctx.shadowBlur = 0;
+    } else {
+      ctx.fillStyle = '#0d9488';
+      ctx.shadowBlur = 0;
+    }
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Label
+    ctx.fillStyle = isDimmed ? '#2a2a45' : '#e2e8f0';
+    ctx.font = '11px Inter';
+    ctx.fillText(v.text, v.x + 12, v.y + 4);
+
+    // Score
+    if (scores && scores[i] !== undefined) {
+      ctx.fillStyle = isHighlighted ? 'var(--green)' : 'var(--muted)';
+      ctx.font = 'bold 11px JetBrains Mono';
+      ctx.fillText(scores[i].toFixed(2), v.x + 12, v.y + 17);
+    }
+  });
+
+  // Query vector (star)
+  if (queryVisible) {
+    drawStar(ctx, QUERY.x, QUERY.y, 10, 5, 0.5);
+    ctx.fillStyle = 'var(--yellow)';
+    ctx.fill();
+    ctx.shadowColor = 'var(--yellow)';
+    ctx.shadowBlur = 12;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#fff';
+    ctx.font = '11px Inter';
+    ctx.fillText(QUERY.label, QUERY.x + 14, QUERY.y + 4);
+  }
+}
+
+function drawStar(ctx, cx, cy, outerR, innerR, startAngle) {
+  ctx.beginPath();
+  for (let i = 0; i < 10; i++) {
+    const r = i % 2 === 0 ? outerR : innerR;
+    const angle = (Math.PI / 5) * i + startAngle;
+    const x = cx + r * Math.cos(angle);
+    const y = cy + r * Math.sin(angle);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+}
+
+const SCORES = [0.94, 0.89, 0.81, 0.23, 0.18];
+let searchAnim = null;
+
+function runVectorSearch() {
+  if (searchAnim) return;
+  drawVectorCanvas(null, false, null);
+  let step = 0;
+  searchAnim = setInterval(() => {
+    if (step === 0) { drawVectorCanvas(null, true, null); }
+    else if (step === 1) { drawVectorCanvas(null, true, SCORES); }
+    else if (step >= 2) {
+      drawVectorCanvas([0, 1], true, SCORES);
+      // Show score panel
+      const sc = document.getElementById('simScores');
+      sc.innerHTML = VECTORS.map((v, i) => {
+        const score = SCORES[i];
+        const hl = i < 2;
+        return `<div class="sim-pair">
+          <div class="sim-texts"><span class="${hl ? 't1' : ''}">${v.text}</span></div>
+          <div class="sim-bar"><div class="sim-fill" style="width:${score*100}%;background:${hl?'var(--green)':'var(--muted)'}"></div></div>
+          <div class="sim-score" style="color:${hl?'var(--green)':'var(--muted)'}">${score.toFixed(2)}</div>
+        </div>`;
+      }).join('');
+      clearInterval(searchAnim); searchAnim = null;
+    }
+    step++;
+  }, 800);
+}
+
+function resetVectorSearch() {
+  if (searchAnim) { clearInterval(searchAnim); searchAnim = null; }
+  document.getElementById('simScores').innerHTML = '';
+  drawVectorCanvas(null, false, null);
+}
+
+// Init canvas
+drawVectorCanvas(null, false, null);
+
+// ─── TRACE RUNNER ─────────────────────────────────────────────────
+let traceTimers = {};
+function runTrace(n) {
+  const steps = document.querySelectorAll('#trace' + n + ' .trace-step');
+  steps.forEach(s => { s.classList.remove('active','done'); });
+  let i = 0;
+  traceTimers[n] = setInterval(() => {
+    if (i > 0) { steps[i-1].classList.remove('active'); steps[i-1].classList.add('done'); }
+    if (i < steps.length) { steps[i].classList.add('active'); i++; }
+    else { clearInterval(traceTimers[n]); }
+  }, 800);
+}
+function resetTrace(n) {
+  if (traceTimers[n]) clearInterval(traceTimers[n]);
+  document.querySelectorAll('#trace' + n + ' .trace-step').forEach(s => s.classList.remove('active','done'));
+}
+
+// ─── CHUNKING VIS ─────────────────────────────────────────────────
+const SAMPLE = `Distributed systems are computer systems where components run on networked computers and coordinate their actions by passing messages. They present unique challenges. The components interact with one another in order to achieve a common goal. Three significant characteristics are concurrency, no global clock, and independent failures. Concurrency means multiple processes execute simultaneously. Systems must handle partial failures gracefully. Consistency, availability, and partition tolerance form the CAP theorem. A system can guarantee at most two of the three. Engineers must make trade-offs when building distributed services.`;
+
+let currentChunkMode = 'fixed';
+let chunkAnimTimer = null;
+
+function chunkFixed(text, size=200) {
+  const chunks = [];
+  for (let i = 0; i < text.length; i += size) chunks.push(text.slice(i, i+size));
+  return chunks;
+}
+
+function chunkSentences(text) {
+  const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+  const chunks = [];
+  let current = '';
+  sentences.forEach(s => {
+    if ((current + s).length > 200 && current) { chunks.push(current.trim()); current = s; }
+    else current += s;
+  });
+  if (current.trim()) chunks.push(current.trim());
+  return chunks;
+}
+
+function chunkRecursive(text, size=512, overlap=0.1) {
+  if (text.length <= size) return [text];
+  const overlapChars = Math.floor(size * overlap);
+  const seps = ['\n\n', '\n', '. ', ' '];
+  for (const sep of seps) {
+    const idx = text.lastIndexOf(sep, size);
+    if (idx > size * 0.3) {
+      const left = text.slice(0, idx + sep.length);
+      const right = text.slice(Math.max(0, idx - overlapChars));
+      return [left, ...chunkRecursive(right, size, overlap)];
+    }
+  }
+  return [text.slice(0, size), ...chunkRecursive(text.slice(size - overlapChars), size, overlap)];
+}
+
+function initChunkVis() {
+  renderChunkVis(currentChunkMode, false);
+}
+
+function showChunk(mode, btn) {
+  currentChunkMode = mode;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  renderChunkVis(mode, false);
+}
+
+function renderChunkVis(mode, animated) {
+  const el = document.getElementById('chunkVis');
+  let chunks, colorClass, label, info;
+  if (mode === 'fixed') {
+    chunks = chunkFixed(SAMPLE);
+    colorClass = 'chunk-fixed';
+    label = 'Fixed-Size (200 chars)';
+    info = 'Splits every 200 chars — may break mid-word';
+  } else if (mode === 'sentence') {
+    chunks = chunkSentences(SAMPLE);
+    colorClass = 'chunk-sentence';
+    label = 'Sentence-Based';
+    info = 'Splits on . ? ! — clean semantic boundaries';
+  } else {
+    chunks = chunkRecursive(SAMPLE, 250, 0.1);
+    colorClass = 'chunk-recursive';
+    label = 'Recursive (512 tokens, 10% overlap)';
+    info = 'Production-grade — semantic splits + overlap zones';
+  }
+
+  const avgSize = Math.round(chunks.reduce((s, c) => s + c.length, 0) / chunks.length);
+  const hasSplit = mode === 'fixed' ? chunks.filter(c => /\w$/.test(c.slice(-1)) && c.length === 200).length : 0;
+
+  let html = `<div class="chunk-strategy">
+    <div class="chunk-label" style="color:${mode==='fixed'?'var(--red)':mode==='sentence'?'#60a5fa':'var(--green)'}">${label}</div>
+    <div style="font-size:0.73rem;color:var(--muted);margin-bottom:8px;">${info}</div>
+    <div class="chunk-text-wrap">`;
+
+  chunks.forEach((chunk, i) => {
+    let cls = colorClass;
+    const words = chunk.replace(/(.{40})/g, '$1\n');
+    html += `<div class="chunk-piece ${cls}" style="opacity:${animated?1:0.85};transition:opacity 0.3s ${i*0.1}s;">${escapeHtml(words)}</div>`;
+    if (i < chunks.length - 1) {
+      html += `<div style="width:100%;height:3px;background:transparent;display:flex;align-items:center;justify-content:center;font-size:0.65rem;color:${mode==='fixed'?'var(--red)':'#60a5fa'};">── chunk boundary ──</div>`;
+    }
+  });
+
+  html += `</div>
+    <div class="chunk-stats">
+      <div class="chunk-stat">Chunks: <span>${chunks.length}</span></div>
+      <div class="chunk-stat">Avg size: <span>${avgSize} chars</span></div>
+      ${hasSplit > 0 ? `<div class="chunk-stat" style="color:var(--red)">⚠️ Split words: <span>${hasSplit}</span></div>` : ''}
+      <div class="chunk-stat">Info loss: <span style="color:${mode==='fixed'?'var(--red)':mode==='sentence'?'var(--yellow)':'var(--green)'}">${mode==='fixed'?'HIGH':mode==='sentence'?'LOW':'MINIMAL'}</span></div>
+    </div>
+  </div>`;
+
+  el.innerHTML = html;
+}
+
+function animateChunks() {
+  renderChunkVis(currentChunkMode, true);
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ─── RAG ANIMATION ────────────────────────────────────────────────
+let ragAnim = null;
+function animateRAG() {
+  if (ragAnim) return;
+  const nodes1 = ['rn0','rn1','rn2','rn3','rn4'];
+  const nodes2 = ['rn5','rn6','rn7','rn8','rn9','rn10'];
+  const all = [...nodes1, ...nodes2];
+  all.forEach(id => document.getElementById(id).classList.remove('lit'));
+  let i = 0;
+  ragAnim = setInterval(() => {
+    if (i > 0 && all[i-1]) document.getElementById(all[i-1]).classList.remove('lit');
+    if (i < all.length) {
+      document.getElementById(all[i]).classList.add('lit');
+      // Show example at step 7 (rn7)
+      if (all[i] === 'rn7') document.getElementById('ragExample').style.display = 'block';
+      i++;
+    } else {
+      clearInterval(ragAnim); ragAnim = null;
+    }
+  }, 600);
+}
+
+function resetRAG() {
+  if (ragAnim) { clearInterval(ragAnim); ragAnim = null; }
+  ['rn0','rn1','rn2','rn3','rn4','rn5','rn6','rn7','rn8','rn9','rn10'].forEach(id => {
+    document.getElementById(id).classList.remove('lit');
+  });
+  document.getElementById('ragExample').style.display = 'none';
+}
+
+// ─── MEMORY SIMULATION ────────────────────────────────────────────
+let memAnim = null;
+let memTurn = 0;
+
+function buildTurnsGrid() {
+  const grid = document.getElementById('turnsGrid');
+  grid.innerHTML = '';
+  for (let i = 1; i <= 20; i++) {
+    const card = document.createElement('div');
+    card.className = 'turn-card';
+    card.id = 'tc' + i;
+    card.textContent = 'T' + i;
+    grid.appendChild(card);
+  }
+}
+
+function simulateMemory() {
+  if (memAnim) return;
+  buildTurnsGrid();
+  memTurn = 0;
+  resetMemoryBars();
+  const log = document.getElementById('memLog');
+
+  memAnim = setInterval(() => {
+    memTurn++;
+    if (memTurn > 20) { clearInterval(memAnim); memAnim = null; return; }
+
+    const card = document.getElementById('tc' + memTurn);
+
+    if (memTurn <= 5) {
+      // Fill L1
+      card.className = 'turn-card l1';
+      updateBar(0, memTurn, 5, memTurn * 400, 2000, 'active');
+      log.textContent = `Turn ${memTurn}: Stored in L1 (active context)`;
+    } else if (memTurn === 6) {
+      // Compress turns 1-3 to L2
+      [1,2,3].forEach(n => { document.getElementById('tc' + n).className = 'turn-card l2'; });
+      updateBar(1, 1, 1, 350, 500, 'compressing');
+      log.textContent = `Turn 6: L1 overflow → compressing turns 1-3 to L2 episode summary`;
+      card.className = 'turn-card l1';
+    } else if (memTurn <= 10) {
+      card.className = 'turn-card l1';
+      updateBar(0, memTurn - 5, 5, (memTurn-5)*400, 2000, 'active');
+      log.textContent = `Turn ${memTurn}: Stored in L1`;
+    } else if (memTurn === 11) {
+      [4,5,6,7,8].forEach(n => { document.getElementById('tc' + n).className = 'turn-card l2'; });
+      updateBar(1, 1, 1, 480, 500, 'compressing');
+      log.textContent = 'Turn 11: Second compression → turns 4-8 to L2 summary';
+      card.className = 'turn-card l1';
+    } else if (memTurn <= 15) {
+      card.className = 'turn-card l1';
+      updateBar(0, memTurn - 10, 5, (memTurn-10)*400, 2000, 'active');
+      log.textContent = `Turn ${memTurn}: Stored in L1`;
+    } else {
+      card.className = 'turn-card l3';
+      const l3count = memTurn - 14;
+      updateBar(2, l3count, 10, l3count, 20, 'stored');
+      log.textContent = `Turn ${memTurn}: Also embedded → L3 vector memory (${l3count} turns)`;
+    }
+
+    // L3 always growing
+    const l3card = document.getElementById('tc' + memTurn);
+    if (memTurn > 15) {
+      // already set
+    }
+    // Show L3 count
+    document.getElementById('tt2').textContent = Math.min(memTurn, 20) + ' turns stored';
+    document.getElementById('tb2').style.width = (Math.min(memTurn, 20) / 20 * 100) + '%';
+
+  }, 600);
+}
+
+function updateBar(tier, fill, max, tokens, maxTokens, status) {
+  document.getElementById('tb' + tier).style.width = Math.min(100, fill/max*100) + '%';
+  document.getElementById('tt' + tier).textContent = tokens + ' / ' + maxTokens + (tier===2?' turns':' tokens');
+  document.getElementById('ts' + tier).textContent = status;
+}
+
+function resetMemoryBars() {
+  [0,1,2].forEach(i => {
+    document.getElementById('tb' + i).style.width = '0%';
+    document.getElementById('tt' + i).textContent = i===2?'0 turns stored':'0 / '+(i===0?2000:500)+' tokens';
+    document.getElementById('ts' + i).textContent = 'empty';
+  });
+}
+
+function retrieveMemory() {
+  if (memTurn < 10) { document.getElementById('memLog').textContent = 'Run simulation first (at least 10 turns)'; return; }
+  const card = document.getElementById('tc3');
+  if (card) {
+    card.classList.add('retrieved');
+    document.getElementById('memLog').textContent = 'Query "What did we talk about at the start?" → L3 retrieves Turn 3 (sim: 0.87)';
+    setTimeout(() => card.classList.remove('retrieved'), 3000);
+  }
+}
+
+function resetMemory() {
+  if (memAnim) { clearInterval(memAnim); memAnim = null; }
+  memTurn = 0;
+  buildTurnsGrid();
+  resetMemoryBars();
+  document.getElementById('memLog').textContent = '';
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────
+initChunkVis();
+buildTurnsGrid();
+
+// Restore progress
+const savedDone = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+if (Object.keys(savedDone).length) {
+  Object.keys(savedDone).forEach(id => {
+    if (savedDone[id]) {
+      const btn = document.getElementById('cbtn-' + id);
+      const badge = document.getElementById('badge-' + id);
+      if (btn) btn.classList.add('done');
+      if (badge) { badge.textContent = 'Done'; badge.className = 'ex-badge badge-done'; badge.style.display = 'inline-flex'; }
+    }
+  });
+  done = savedDone;
+  updateProgress();
+}
+</script>
+<script src="../bg-animation.js"></script>
+</body>
+</html>

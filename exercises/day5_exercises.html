@@ -1,0 +1,2032 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 5 Exercises — Multi-Agent Systems</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --card: #141420;
+    --surface2: #1a1a2e;
+    --border: #2a2a45;
+    --purple: #7c3aed;
+    --purple-light: #a855f7;
+    --teal: #0d9488;
+    --green: #10b981;
+    --yellow: #f59e0b;
+    --red: #ef4444;
+    --text: #e2e8f0;
+    --muted: #64748b;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* NAV */
+  nav {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  nav a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    transition: all 0.2s;
+  }
+  nav a:hover { color: var(--text); border-color: var(--purple); background: rgba(124,58,237,0.1); }
+  nav .nav-title {
+    color: var(--text);
+    font-weight: 700;
+    font-size: 15px;
+    border: none;
+    background: none;
+  }
+  nav .nav-title:hover { background: none; border: none; color: var(--purple-light); }
+
+  /* HERO */
+  .hero {
+    text-align: center;
+    padding: 64px 32px 48px;
+    background: linear-gradient(180deg, rgba(124,58,237,0.08) 0%, transparent 100%);
+  }
+  .hero-badge {
+    display: inline-block;
+    background: rgba(124,58,237,0.2);
+    border: 1px solid rgba(124,58,237,0.4);
+    color: var(--purple-light);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 14px;
+    border-radius: 20px;
+    margin-bottom: 20px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .hero h1 {
+    font-size: 42px;
+    font-weight: 800;
+    margin-bottom: 14px;
+    background: linear-gradient(135deg, #e2e8f0 0%, var(--purple-light) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero p {
+    color: var(--muted);
+    font-size: 17px;
+    max-width: 620px;
+    margin: 0 auto 32px;
+  }
+  .progress-bar-wrap {
+    max-width: 420px;
+    margin: 0 auto;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+  }
+  .progress-label { font-size: 13px; color: var(--muted); margin-bottom: 10px; display: flex; justify-content: space-between; }
+  .progress-track { background: var(--border); border-radius: 6px; height: 8px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--purple), var(--teal)); border-radius: 6px; transition: width 0.6s ease; }
+
+  /* MAIN LAYOUT */
+  main { max-width: 1100px; margin: 0 auto; padding: 40px 24px 80px; }
+
+  /* EXERCISE CARD */
+  .exercise-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    margin-bottom: 40px;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+  .exercise-card.completed { border-color: var(--green); }
+
+  .exercise-header {
+    padding: 24px 28px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .ex-num {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    background: rgba(124,58,237,0.2);
+    border: 2px solid var(--purple);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 16px; color: var(--purple-light);
+    flex-shrink: 0;
+  }
+  .exercise-card.completed .ex-num { background: rgba(16,185,129,0.2); border-color: var(--green); color: var(--green); }
+  .ex-meta { flex: 1; }
+  .ex-meta h2 { font-size: 21px; font-weight: 700; margin-bottom: 4px; }
+  .ex-meta .ex-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+  .tag {
+    font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px;
+    text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .tag-purple { background: rgba(124,58,237,0.2); color: var(--purple-light); border: 1px solid rgba(124,58,237,0.3); }
+  .tag-teal { background: rgba(13,148,136,0.2); color: #2dd4bf; border: 1px solid rgba(13,148,136,0.3); }
+  .tag-yellow { background: rgba(245,158,11,0.2); color: var(--yellow); border: 1px solid rgba(245,158,11,0.3); }
+  .tag-green { background: rgba(16,185,129,0.2); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+  .complete-btn {
+    padding: 9px 20px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.2s;
+  }
+  .complete-btn:hover { border-color: var(--green); color: var(--green); }
+  .exercise-card.completed .complete-btn { background: rgba(16,185,129,0.15); border-color: var(--green); color: var(--green); }
+
+  /* TABS */
+  .tab-bar {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+    overflow-x: auto;
+  }
+  .tab-btn {
+    padding: 13px 22px;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--purple-light); border-bottom-color: var(--purple); }
+
+  .tab-content { display: none; padding: 28px; }
+  .tab-content.active { display: block; }
+
+  /* SECTION LABELS */
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* CODE BLOCKS */
+  .code-block {
+    background: #0d0d18;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 14px 0;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .code-header {
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    padding: 9px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'Inter', sans-serif;
+  }
+  .code-header .lang { color: var(--purple-light); font-weight: 600; }
+  .code-body {
+    padding: 18px;
+    font-size: 13.5px;
+    line-height: 1.7;
+    overflow-x: auto;
+    white-space: pre;
+    color: #cdd6f4;
+  }
+
+  /* Syntax colors */
+  .kw { color: #cba6f7; }
+  .fn { color: #89b4fa; }
+  .st { color: #a6e3a1; }
+  .cm { color: #585b70; font-style: italic; }
+  .nm { color: #fab387; }
+  .op { color: #89dceb; }
+  .py-type { color: #89dceb; }
+  .num { color: #f9e2af; }
+
+  /* Line numbers */
+  .lined { counter-reset: line; }
+  .lined .ln { counter-increment: line; }
+  .lined .ln::before {
+    content: counter(line);
+    display: inline-block;
+    width: 32px;
+    color: #3a3a5c;
+    text-align: right;
+    margin-right: 16px;
+    user-select: none;
+    font-size: 12px;
+  }
+
+  /* VISUAL EXPLAINER AREAS */
+  .visual-area {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 16px 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .visual-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--purple-light);
+    margin-bottom: 16px;
+  }
+
+  /* ── EXERCISE 1: ORCHESTRATOR NETWORK DIAGRAM ── */
+  #orch-svg { width: 100%; max-width: 600px; display: block; margin: 0 auto; }
+
+  .routing-demo {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 16px;
+  }
+  @media (max-width: 680px) { .routing-demo { grid-template-columns: 1fr; } }
+  .routing-box {
+    background: #0d0d18;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .routing-box h4 { font-size: 13px; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .bad-label { color: var(--red); }
+  .good-label { color: var(--green); }
+
+  /* anatomy tree */
+  .anatomy-tree {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 1.9;
+    white-space: pre;
+    padding: 16px;
+    background: #0d0d18;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: #cdd6f4;
+    overflow-x: auto;
+  }
+
+  /* flowchart */
+  #flowchart-svg { width: 100%; max-width: 480px; display: block; margin: 0 auto; }
+
+  /* ── EXERCISE 2: TIMING DIAGRAM ── */
+  .timing-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 680px) { .timing-container { grid-template-columns: 1fr; } }
+  .timing-panel {
+    background: #0d0d18;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .timing-panel h4 { font-size: 13px; font-weight: 700; margin-bottom: 14px; }
+  .timing-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .timing-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .timing-name { font-size: 12px; font-family: 'JetBrains Mono', monospace; width: 100px; flex-shrink: 0; color: var(--muted); }
+  .timing-track { flex: 1; height: 22px; background: var(--surface2); border-radius: 4px; overflow: hidden; position: relative; }
+  .timing-bar {
+    height: 100%;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: white;
+    font-family: 'JetBrains Mono', monospace;
+    transition: width 0.05s;
+  }
+  .bar-seq { background: linear-gradient(90deg, var(--red), #f97316); }
+  .bar-par { background: linear-gradient(90deg, var(--green), var(--teal)); }
+  .timer-display {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    font-weight: 700;
+    text-align: center;
+    margin-top: 12px;
+    padding: 10px;
+    background: var(--surface2);
+    border-radius: 8px;
+  }
+  .timer-seq { color: var(--red); }
+  .timer-par { color: var(--green); }
+  .timing-run-btn {
+    display: block;
+    width: 100%;
+    margin-top: 16px;
+    padding: 10px;
+    background: rgba(124,58,237,0.2);
+    border: 1px solid var(--purple);
+    border-radius: 8px;
+    color: var(--purple-light);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .timing-run-btn:hover { background: rgba(124,58,237,0.35); }
+  .timing-run-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── EXERCISE 3: HANDOFF ENVELOPE ── */
+  .envelope-wrap { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+  .envelope {
+    background: #0d0d18;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 0;
+    flex: 1;
+    min-width: 280px;
+    overflow: hidden;
+    transition: border-color 0.3s, transform 0.3s;
+  }
+  .envelope.good-env { border-color: var(--green); }
+  .envelope.bad-env { border-color: var(--red); }
+  .env-header {
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.8;
+  }
+  .env-body { padding: 14px 18px; font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.8; }
+  .env-field { color: var(--muted); }
+  .env-value { color: var(--text); }
+  .env-section { color: var(--yellow); font-weight: 700; margin-top: 8px; }
+  .env-addr { color: var(--teal); font-weight: 600; }
+
+  .quality-bars { margin-top: 16px; }
+  .qbar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .qbar-label { font-size: 12px; width: 100px; flex-shrink: 0; }
+  .qbar-track { flex: 1; height: 14px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+  .qbar-fill { height: 100%; border-radius: 4px; transition: width 1.2s ease; }
+  .qbar-bad { background: linear-gradient(90deg, var(--red), #f97316); }
+  .qbar-good { background: linear-gradient(90deg, var(--green), var(--teal)); }
+  .qbar-pct { font-size: 12px; font-family: 'JetBrains Mono', monospace; width: 34px; text-align: right; flex-shrink: 0; }
+
+  /* ── EXERCISE 4: PIPELINE STATE ── */
+  .pipeline-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 680px) { .pipeline-grid { grid-template-columns: 1fr; } }
+  .pipeline-diagram { display: flex; flex-direction: column; gap: 0; }
+  .pipe-node {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 6px;
+    transition: all 0.4s;
+  }
+  .pipe-node.active-node { border-color: var(--yellow); background: rgba(245,158,11,0.08); }
+  .pipe-node.done-node { border-color: var(--green); background: rgba(16,185,129,0.06); }
+  .pipe-icon {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    background: var(--border);
+    flex-shrink: 0;
+    transition: background 0.4s;
+  }
+  .pipe-node.active-node .pipe-icon { background: rgba(245,158,11,0.25); }
+  .pipe-node.done-node .pipe-icon { background: rgba(16,185,129,0.2); }
+  .pipe-name { font-size: 13px; font-weight: 600; }
+  .pipe-status { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .pipe-connector { width: 2px; height: 14px; background: var(--border); margin-left: 29px; transition: background 0.4s; }
+  .pipe-connector.done-conn { background: var(--green); }
+
+  .state-panel {
+    background: #0d0d18;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .state-panel-head {
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  #state-json {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    padding: 16px;
+    line-height: 1.7;
+    color: #cdd6f4;
+    min-height: 220px;
+    white-space: pre;
+  }
+  .json-key { color: #89b4fa; }
+  .json-str { color: #a6e3a1; }
+  .json-num { color: #fab387; }
+  .json-null { color: var(--muted); }
+
+  .pipeline-run-btn {
+    display: block;
+    width: 100%;
+    margin-top: 14px;
+    padding: 10px;
+    background: rgba(13,148,136,0.2);
+    border: 1px solid var(--teal);
+    border-radius: 8px;
+    color: #2dd4bf;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .pipeline-run-btn:hover { background: rgba(13,148,136,0.35); }
+  .pipeline-run-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* HINTS */
+  .hints-list { list-style: none; }
+  .hints-list li {
+    display: flex;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+  }
+  .hints-list li:last-child { border-bottom: none; }
+  .hint-num {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: rgba(124,58,237,0.2);
+    border: 1px solid var(--purple);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--purple-light);
+    flex-shrink: 0;
+  }
+
+  /* TEST CASES */
+  .test-case {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin: 10px 0;
+    font-size: 13px;
+  }
+  .test-case h5 {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--yellow);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* CALLOUT */
+  .callout {
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin: 14px 0;
+    font-size: 14px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .callout-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+  .callout-info { background: rgba(13,148,136,0.1); border: 1px solid rgba(13,148,136,0.3); }
+  .callout-warn { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); }
+  .callout-tip { background: rgba(124,58,237,0.1); border: 1px solid rgba(124,58,237,0.3); }
+
+  /* ANIM */
+  @keyframes pulse-glow {
+    0%, 100% { filter: drop-shadow(0 0 6px rgba(124,58,237,0.6)); }
+    50% { filter: drop-shadow(0 0 14px rgba(124,58,237,1)); }
+  }
+  @keyframes packet-flow {
+    0% { opacity: 0; transform: scale(0.5); }
+    20% { opacity: 1; transform: scale(1); }
+    80% { opacity: 1; }
+    100% { opacity: 0; transform: scale(0.5); }
+  }
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  .spinner { animation: spin 1s linear infinite; display: inline-block; }
+
+  .packet-dot {
+    position: absolute;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--yellow);
+    animation: packet-flow 2s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  /* ORCH ANIMATION */
+  #orch-canvas-wrap { position: relative; width: 100%; max-width: 600px; margin: 0 auto; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="day4_exercises.html">← Day 4 Exercises</a>
+  <a href="../index.html" class="nav-title">🤖 Agentic AI</a>
+  <a href="day6_exercises.html">Day 6 Exercises →</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-badge">Day 5 — Multi-Agent Systems</div>
+  <h1>Multi-Agent Systems</h1>
+  <p>Orchestrators, parallel execution, handoff protocols — how agents collaborate to solve complex problems.</p>
+  <div class="progress-bar-wrap">
+    <div class="progress-label">
+      <span>Exercises Completed</span>
+      <span id="prog-text">0 / 4</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="prog-fill" style="width:0%"></div>
+    </div>
+  </div>
+</div>
+
+<main>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- EXERCISE 1: BUILD AN ORCHESTRATOR              -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="exercise-card" id="ex1">
+  <div class="exercise-header">
+    <div class="ex-num">1</div>
+    <div class="ex-meta">
+      <h2>Build an Orchestrator</h2>
+      <div class="ex-tags">
+        <span class="tag tag-purple">Routing</span>
+        <span class="tag tag-teal">Pydantic</span>
+        <span class="tag tag-yellow">Structured Output</span>
+      </div>
+    </div>
+    <button class="complete-btn" onclick="toggleComplete('ex1', 1)">Mark Complete</button>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('ex1','visual')">Visual Explainer</button>
+    <button class="tab-btn" onclick="switchTab('ex1','anatomy')">Code Anatomy</button>
+    <button class="tab-btn" onclick="switchTab('ex1','task')">Task</button>
+    <button class="tab-btn" onclick="switchTab('ex1','hints')">Hints</button>
+  </div>
+
+  <!-- VISUAL TAB -->
+  <div class="tab-content active" id="ex1-visual">
+    <div class="section-label">Orchestrator Network</div>
+    <div class="visual-area">
+      <div class="visual-title">Animated Agent Network — Orchestrator Routes Work to Specialized Workers</div>
+      <div id="orch-canvas-wrap">
+        <svg id="orch-svg" viewBox="0 0 600 340" xmlns="http://www.w3.org/2000/svg">
+          <!-- Connection lines -->
+          <line x1="300" y1="120" x2="120" y2="240" stroke="#2a2a45" stroke-width="2" stroke-dasharray="6,4"/>
+          <line x1="300" y1="120" x2="300" y2="240" stroke="#2a2a45" stroke-width="2" stroke-dasharray="6,4"/>
+          <line x1="300" y1="120" x2="480" y2="240" stroke="#2a2a45" stroke-width="2" stroke-dasharray="6,4"/>
+
+          <!-- Animated packets -->
+          <circle id="pkt1" cx="300" cy="120" r="5" fill="#f59e0b" opacity="0">
+            <animate attributeName="cx" values="300;120" dur="1.2s" begin="0s" repeatCount="indefinite"/>
+            <animate attributeName="cy" values="120;240" dur="1.2s" begin="0s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0;1;1;0" dur="1.2s" begin="0s" repeatCount="indefinite"/>
+          </circle>
+          <circle id="pkt2" cx="300" cy="120" r="5" fill="#10b981" opacity="0">
+            <animate attributeName="cx" values="300;300" dur="1.2s" begin="0.4s" repeatCount="indefinite"/>
+            <animate attributeName="cy" values="120;240" dur="1.2s" begin="0.4s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0;1;1;0" dur="1.2s" begin="0.4s" repeatCount="indefinite"/>
+          </circle>
+          <circle id="pkt3" cx="300" cy="120" r="5" fill="#89b4fa" opacity="0">
+            <animate attributeName="cx" values="300;480" dur="1.2s" begin="0.8s" repeatCount="indefinite"/>
+            <animate attributeName="cy" values="120;240" dur="1.2s" begin="0.8s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0;1;1;0" dur="1.2s" begin="0.8s" repeatCount="indefinite"/>
+          </circle>
+          <!-- Return packets -->
+          <circle r="4" fill="#7c3aed" opacity="0">
+            <animate attributeName="cx" values="120;300" dur="1s" begin="1.5s" repeatCount="indefinite"/>
+            <animate attributeName="cy" values="240;120" dur="1s" begin="1.5s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0;1;1;0" dur="1s" begin="1.5s" repeatCount="indefinite"/>
+          </circle>
+          <circle r="4" fill="#7c3aed" opacity="0">
+            <animate attributeName="cx" values="300;300" dur="1s" begin="2.2s" repeatCount="indefinite"/>
+            <animate attributeName="cy" values="240;120" dur="1s" begin="2.2s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0;1;1;0" dur="1s" begin="2.2s" repeatCount="indefinite"/>
+          </circle>
+          <circle r="4" fill="#7c3aed" opacity="0">
+            <animate attributeName="cx" values="480;300" dur="1s" begin="2.9s" repeatCount="indefinite"/>
+            <animate attributeName="cy" values="240;120" dur="1s" begin="2.9s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0;1;1;0" dur="1s" begin="2.9s" repeatCount="indefinite"/>
+          </circle>
+
+          <!-- Orchestrator node (center) -->
+          <circle cx="300" cy="110" r="44" fill="#1a1a2e" stroke="#7c3aed" stroke-width="2">
+            <animate attributeName="stroke-width" values="2;3;2" dur="2s" repeatCount="indefinite"/>
+            <animate attributeName="stroke" values="#7c3aed;#a855f7;#7c3aed" dur="2s" repeatCount="indefinite"/>
+          </circle>
+          <text x="300" y="106" text-anchor="middle" fill="#a855f7" font-family="Inter,sans-serif" font-size="11" font-weight="700">ORCHESTRATOR</text>
+          <text x="300" y="122" text-anchor="middle" fill="#64748b" font-family="Inter,sans-serif" font-size="10">LLM Router</text>
+
+          <!-- Worker: Research -->
+          <rect x="74" y="218" width="92" height="54" rx="10" fill="#141420" stroke="#0d9488" stroke-width="1.5"/>
+          <text x="120" y="239" text-anchor="middle" fill="#2dd4bf" font-family="Inter,sans-serif" font-size="11" font-weight="700">🔍 Research</text>
+          <text x="120" y="255" text-anchor="middle" fill="#64748b" font-family="Inter,sans-serif" font-size="10">web_search</text>
+          <text x="120" y="267" text-anchor="middle" fill="#64748b" font-family="Inter,sans-serif" font-size="10">fetch_docs</text>
+
+          <!-- Worker: Writer -->
+          <rect x="254" y="218" width="92" height="54" rx="10" fill="#141420" stroke="#10b981" stroke-width="1.5"/>
+          <text x="300" y="239" text-anchor="middle" fill="#10b981" font-family="Inter,sans-serif" font-size="11" font-weight="700">✍️ Writer</text>
+          <text x="300" y="255" text-anchor="middle" fill="#64748b" font-family="Inter,sans-serif" font-size="10">draft_content</text>
+          <text x="300" y="267" text-anchor="middle" fill="#64748b" font-family="Inter,sans-serif" font-size="10">format_output</text>
+
+          <!-- Worker: Critic -->
+          <rect x="434" y="218" width="92" height="54" rx="10" fill="#141420" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="480" y="239" text-anchor="middle" fill="#f59e0b" font-family="Inter,sans-serif" font-size="11" font-weight="700">🧐 Critic</text>
+          <text x="480" y="255" text-anchor="middle" fill="#64748b" font-family="Inter,sans-serif" font-size="10">review_quality</text>
+          <text x="480" y="267" text-anchor="middle" fill="#64748b" font-family="Inter,sans-serif" font-size="10">score_output</text>
+
+          <!-- Legend -->
+          <circle cx="30" cy="310" r="5" fill="#f59e0b"/>
+          <text x="42" y="314" fill="#64748b" font-family="Inter,sans-serif" font-size="10">Task dispatch</text>
+          <circle cx="130" cy="310" r="5" fill="#7c3aed"/>
+          <text x="142" y="314" fill="#64748b" font-family="Inter,sans-serif" font-size="10">Result return</text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="section-label">Bad vs Good Routing</div>
+    <div class="routing-demo">
+      <div class="routing-box">
+        <h4><span class="bad-label">✗ BAD:</span> Hardcoded Routing</h4>
+        <div class="code-body" style="font-size:12px; padding:12px; background:#0d0d18; border-radius:8px; white-space:pre; font-family:'JetBrains Mono',monospace; color:#cdd6f4; overflow-x:auto;"><span class="cm"># Fragile, brittle, unmaintainable</span>
+<span class="kw">def</span> <span class="fn">route_task</span>(task: str):
+    <span class="kw">if</span> <span class="st">"research"</span> <span class="kw">in</span> task:
+        <span class="fn">call_research</span>(task)
+    <span class="kw">elif</span> <span class="st">"write"</span> <span class="kw">in</span> task:
+        <span class="fn">call_writer</span>(task)
+    <span class="kw">else</span>:
+        <span class="kw">raise</span> ValueError(<span class="st">"???"</span>)
+<span class="cm"># ❌ Breaks on: "Find and write about X"</span>
+<span class="cm"># ❌ No reasoning, no context</span>
+<span class="cm"># ❌ Keyword collision bugs</span></div>
+      </div>
+      <div class="routing-box">
+        <h4><span class="good-label">✓ GOOD:</span> LLM-Powered Routing</h4>
+        <div class="code-body" style="font-size:12px; padding:12px; background:#0d0d18; border-radius:8px; white-space:pre; font-family:'JetBrains Mono',monospace; color:#cdd6f4; overflow-x:auto;"><span class="cm"># LLM decides based on context</span>
+<span class="kw">async def</span> <span class="fn">route_task</span>(state: State):
+    response = <span class="kw">await</span> llm.structured(
+        schema=SupervisorResponse,
+        prompt=SUPERVISOR_PROMPT,
+        context=state
+    )
+    <span class="cm"># ✓ Understands nuance</span>
+    <span class="cm"># ✓ Explains its reasoning</span>
+    <span class="cm"># ✓ Handles multi-step tasks</span>
+    <span class="kw">return</span> response.next_worker</div>
+      </div>
+    </div>
+
+    <div class="section-label">Routing Decision Flowchart</div>
+    <div class="visual-area">
+      <svg id="flowchart-svg" viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg">
+        <!-- Boxes -->
+        <rect x="164" y="10" width="152" height="44" rx="8" fill="#1a1a2e" stroke="#7c3aed" stroke-width="1.5"/>
+        <text x="240" y="28" text-anchor="middle" fill="#a855f7" font-family="Inter,sans-serif" font-size="11" font-weight="700">TASK ARRIVES</text>
+        <text x="240" y="44" text-anchor="middle" fill="#64748b" font-family="Inter,sans-serif" font-size="10">"Write about Python async"</text>
+
+        <line x1="240" y1="54" x2="240" y2="76" stroke="#2a2a45" stroke-width="2"/>
+
+        <rect x="164" y="76" width="152" height="44" rx="8" fill="#1a1a2e" stroke="#2a2a45" stroke-width="1.5"/>
+        <text x="240" y="94" text-anchor="middle" fill="#e2e8f0" font-family="Inter,sans-serif" font-size="11" font-weight="700">Orchestrator LLM</text>
+        <text x="240" y="110" text-anchor="middle" fill="#64748b" font-family="Inter,sans-serif" font-size="10">Reads task + history</text>
+
+        <line x1="240" y1="120" x2="240" y2="142" stroke="#2a2a45" stroke-width="2"/>
+
+        <!-- Diamond decision -->
+        <polygon points="240,142 310,176 240,210 170,176" fill="#1a1a2e" stroke="#f59e0b" stroke-width="1.5"/>
+        <text x="240" y="171" text-anchor="middle" fill="#f59e0b" font-family="Inter,sans-serif" font-size="10" font-weight="700">SupervisorResponse</text>
+        <text x="240" y="185" text-anchor="middle" fill="#64748b" font-family="Inter,sans-serif" font-size="9">next_worker?</text>
+
+        <!-- Branches -->
+        <line x1="170" y1="176" x2="80" y2="230" stroke="#2a2a45" stroke-width="1.5"/>
+        <line x1="240" y1="210" x2="240" y2="250" stroke="#2a2a45" stroke-width="1.5"/>
+        <line x1="310" y1="176" x2="400" y2="230" stroke="#2a2a45" stroke-width="1.5"/>
+
+        <rect x="30" y="230" width="100" height="36" rx="8" fill="#141420" stroke="#0d9488" stroke-width="1.5"/>
+        <text x="80" y="252" text-anchor="middle" fill="#2dd4bf" font-family="Inter,sans-serif" font-size="10" font-weight="700">Research Agent</text>
+
+        <rect x="190" y="250" width="100" height="36" rx="8" fill="#141420" stroke="#10b981" stroke-width="1.5"/>
+        <text x="240" y="272" text-anchor="middle" fill="#10b981" font-family="Inter,sans-serif" font-size="10" font-weight="700">Writer Agent</text>
+
+        <rect x="350" y="230" width="100" height="36" rx="8" fill="#141420" stroke="#f59e0b" stroke-width="1.5"/>
+        <text x="400" y="252" text-anchor="middle" fill="#f59e0b" font-family="Inter,sans-serif" font-size="10" font-weight="700">Critic Agent</text>
+
+        <!-- Labels on branches -->
+        <text x="108" y="220" fill="#64748b" font-family="Inter,sans-serif" font-size="9">"research"</text>
+        <text x="218" y="245" fill="#64748b" font-family="Inter,sans-serif" font-size="9">"writer"</text>
+        <text x="348" y="220" fill="#64748b" font-family="Inter,sans-serif" font-size="9">"critic"</text>
+
+        <!-- DONE path from critic -->
+        <text x="380" y="305" fill="#64748b" font-family="Inter,sans-serif" font-size="9">"DONE" → return final</text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ANATOMY TAB -->
+  <div class="tab-content" id="ex1-anatomy">
+    <div class="section-label">Pydantic Schema — Supervisor Response</div>
+    <div class="anatomy-tree"><span class="py-type">SupervisorResponse</span> (Pydantic BaseModel)
+<span class="muted">├──</span> <span class="nm">next_worker</span>: <span class="py-type">Literal</span>[<span class="st">"research"</span>, <span class="st">"writer"</span>, <span class="st">"critic"</span>, <span class="st">"DONE"</span>]
+<span class="muted">│     └──</span> The name of the agent to call next.
+<span class="muted">│          "DONE" signals pipeline completion.</span>
+<span class="muted">└──</span> <span class="nm">reasoning</span>: <span class="py-type">str</span>
+      <span class="muted">└──</span> WHY this worker was chosen.
+           <span class="muted">Used for debugging + observability.</span></div>
+
+    <div class="section-label">Supervisor Prompt Pattern</div>
+    <div class="code-block">
+      <div class="code-header"><span class="lang">Python</span><span>supervisor_prompt.py</span></div>
+      <div class="code-body lined"><span class="ln"><span class="kw">from</span> pydantic <span class="kw">import</span> BaseModel
+</span><span class="ln"><span class="kw">from</span> typing <span class="kw">import</span> Literal
+</span><span class="ln">
+</span><span class="ln"><span class="kw">class</span> <span class="fn">SupervisorResponse</span>(BaseModel):
+</span><span class="ln">    next_worker: Literal[<span class="st">"research"</span>, <span class="st">"writer"</span>, <span class="st">"critic"</span>, <span class="st">"DONE"</span>]
+</span><span class="ln">    reasoning: <span class="py-type">str</span>
+</span><span class="ln">
+</span><span class="ln">SUPERVISOR_PROMPT = <span class="st">"""
+</span></span><span class="ln"><span class="st">You are orchestrating a team of agents.
+</span></span><span class="ln"><span class="st">
+</span></span><span class="ln"><span class="st">Available workers:
+</span></span><span class="ln"><span class="st">  - research: finds information, calls web_search and fetch_docs
+</span></span><span class="ln"><span class="st">  - writer:   creates content from research results
+</span></span><span class="ln"><span class="st">  - critic:   reviews quality, suggests improvements
+</span></span><span class="ln"><span class="st">
+</span></span><span class="ln"><span class="st">Current task: {task}
+</span></span><span class="ln"><span class="st">Progress so far: {progress_summary}
+</span></span><span class="ln"><span class="st">
+</span></span><span class="ln"><span class="st">Choose the NEXT worker and explain WHY.
+</span></span><span class="ln"><span class="st">Return DONE when the task is fully complete.
+</span></span><span class="ln"><span class="st">"""</span>
+</span><span class="ln">
+</span><span class="ln"><span class="kw">async def</span> <span class="fn">orchestrate</span>(task: <span class="py-type">str</span>, state: <span class="py-type">dict</span>):
+</span><span class="ln">    <span class="kw">while</span> <span class="nm">True</span>:
+</span><span class="ln">        decision = <span class="kw">await</span> llm.structured_output(
+</span><span class="ln">            schema=SupervisorResponse,
+</span><span class="ln">            messages=[{
+</span><span class="ln">                <span class="st">"role"</span>: <span class="st">"user"</span>,
+</span><span class="ln">                <span class="st">"content"</span>: SUPERVISOR_PROMPT.<span class="fn">format</span>(
+</span><span class="ln">                    task=task,
+</span><span class="ln">                    progress_summary=<span class="fn">summarize</span>(state)
+</span><span class="ln">                )
+</span><span class="ln">            }]
+</span><span class="ln">        )
+</span><span class="ln">        <span class="cm"># decision.reasoning is logged for observability</span>
+</span><span class="ln">        logger.<span class="fn">info</span>(<span class="st">f"Routing to {decision.next_worker}: {decision.reasoning}"</span>)
+</span><span class="ln">
+</span><span class="ln">        <span class="kw">if</span> decision.next_worker == <span class="st">"DONE"</span>:
+</span><span class="ln">            <span class="kw">break</span>
+</span><span class="ln">
+</span><span class="ln">        <span class="cm"># Dispatch to the selected worker</span>
+</span><span class="ln">        worker = WORKERS[decision.next_worker]
+</span><span class="ln">        result = <span class="kw">await</span> <span class="fn">worker</span>(state)
+</span><span class="ln">        state[decision.next_worker + <span class="st">"_result"</span>] = result
+</span><span class="ln">
+</span><span class="ln">    <span class="kw">return</span> state</span></div>
+    </div>
+
+    <div class="callout callout-info">
+      <span class="callout-icon">💡</span>
+      <div><strong>Why structured output matters:</strong> Without Pydantic, the LLM might return "I think the research agent should go next" — impossible to parse reliably. With <code>SupervisorResponse</code>, you always get a valid enum value and the reasoning string.</div>
+    </div>
+
+    <div class="section-label">Mock Worker Implementations</div>
+    <div class="code-block">
+      <div class="code-header"><span class="lang">Python</span><span>workers.py</span></div>
+      <div class="code-body lined"><span class="ln"><span class="kw">async def</span> <span class="fn">research_agent</span>(state: <span class="py-type">dict</span>) -> <span class="py-type">dict</span>:
+</span><span class="ln">    <span class="cm">"""Uses web_search to gather information."""</span>
+</span><span class="ln">    query = state[<span class="st">"task"</span>]
+</span><span class="ln">    results = <span class="kw">await</span> <span class="fn">web_search</span>(query)       <span class="cm"># mock tool</span>
+</span><span class="ln">    <span class="kw">return</span> {
+</span><span class="ln">        <span class="st">"sources"</span>: results,
+</span><span class="ln">        <span class="st">"summary"</span>: <span class="kw">await</span> llm.<span class="fn">summarize</span>(results),
+</span><span class="ln">        <span class="st">"agent"</span>: <span class="st">"research"</span>
+</span><span class="ln">    }
+</span><span class="ln">
+</span><span class="ln"><span class="kw">async def</span> <span class="fn">writer_agent</span>(state: <span class="py-type">dict</span>) -> <span class="py-type">dict</span>:
+</span><span class="ln">    <span class="cm">"""Takes research, produces a draft."""</span>
+</span><span class="ln">    research = state.get(<span class="st">"research_result"</span>, {})
+</span><span class="ln">    draft = <span class="kw">await</span> llm.<span class="fn">complete</span>(
+</span><span class="ln">        f<span class="st">"Using this research: {research['summary']}\n"</span>
+</span><span class="ln">        f<span class="st">"Write: {state['task']}"</span>
+</span><span class="ln">    )
+</span><span class="ln">    <span class="kw">return</span> {<span class="st">"draft"</span>: draft, <span class="st">"agent"</span>: <span class="st">"writer"</span>}
+</span><span class="ln">
+</span><span class="ln">WORKERS = {
+</span><span class="ln">    <span class="st">"research"</span>: research_agent,
+</span><span class="ln">    <span class="st">"writer"</span>:   writer_agent,
+</span><span class="ln">    <span class="st">"critic"</span>:   critic_agent,
+</span><span class="ln">}</span></div>
+    </div>
+  </div>
+
+  <!-- TASK TAB -->
+  <div class="tab-content" id="ex1-task">
+    <div class="callout callout-tip">
+      <span class="callout-icon">🎯</span>
+      <div><strong>Your Task:</strong> Build a 3-agent orchestrator that routes a task through Research → Writer → Critic using LLM-powered structured output routing. The orchestrator must use <code>SupervisorResponse</code> Pydantic model, not keyword matching.</div>
+    </div>
+
+    <div class="section-label">Starter Code</div>
+    <div class="code-block">
+      <div class="code-header"><span class="lang">Python</span><span>exercise_1_starter.py</span></div>
+      <div class="code-body lined"><span class="ln"><span class="kw">import</span> asyncio
+</span><span class="ln"><span class="kw">from</span> pydantic <span class="kw">import</span> BaseModel
+</span><span class="ln"><span class="kw">from</span> typing <span class="kw">import</span> Literal
+</span><span class="ln"><span class="kw">from</span> anthropic <span class="kw">import</span> AsyncAnthropic
+</span><span class="ln">
+</span><span class="ln">client = AsyncAnthropic()
+</span><span class="ln">
+</span><span class="ln"><span class="cm"># TODO 1: Define SupervisorResponse Pydantic model</span>
+</span><span class="ln"><span class="cm"># Fields: next_worker (Literal enum), reasoning (str)</span>
+</span><span class="ln">
+</span><span class="ln">
+</span><span class="ln"><span class="cm"># TODO 2: Write the supervisor prompt</span>
+</span><span class="ln">SUPERVISOR_PROMPT = <span class="st">"""..."""</span>
+</span><span class="ln">
+</span><span class="ln">
+</span><span class="ln"><span class="cm"># TODO 3: Implement research_agent</span>
+</span><span class="ln"><span class="kw">async def</span> <span class="fn">research_agent</span>(state: <span class="py-type">dict</span>) -> <span class="py-type">dict</span>:
+</span><span class="ln">    <span class="cm"># Mock web_search: return hardcoded research results</span>
+</span><span class="ln">    <span class="kw">pass</span>
+</span><span class="ln">
+</span><span class="ln">
+</span><span class="ln"><span class="cm"># TODO 4: Implement writer_agent</span>
+</span><span class="ln"><span class="kw">async def</span> <span class="fn">writer_agent</span>(state: <span class="py-type">dict</span>) -> <span class="py-type">dict</span>:
+</span><span class="ln">    <span class="cm"># Takes research_result, produces a draft</span>
+</span><span class="ln">    <span class="kw">pass</span>
+</span><span class="ln">
+</span><span class="ln">
+</span><span class="ln"><span class="cm"># TODO 5: Implement critic_agent</span>
+</span><span class="ln"><span class="kw">async def</span> <span class="fn">critic_agent</span>(state: <span class="py-type">dict</span>) -> <span class="py-type">dict</span>:
+</span><span class="ln">    <span class="cm"># Reviews the draft, returns score + suggestions</span>
+</span><span class="ln">    <span class="kw">pass</span>
+</span><span class="ln">
+</span><span class="ln">
+</span><span class="ln"><span class="cm"># TODO 6: Implement the orchestrate() loop</span>
+</span><span class="ln"><span class="kw">async def</span> <span class="fn">orchestrate</span>(task: <span class="py-type">str</span>):
+</span><span class="ln">    state = {<span class="st">"task"</span>: task}
+</span><span class="ln">    <span class="cm"># Loop until "DONE" returned</span>
+</span><span class="ln">    <span class="kw">pass</span>
+</span><span class="ln">
+</span><span class="ln">
+</span><span class="ln"><span class="kw">if</span> __name__ == <span class="st">"__main__"</span>:
+</span><span class="ln">    result = asyncio.<span class="fn">run</span>(
+</span><span class="ln">        <span class="fn">orchestrate</span>(<span class="st">"Write a summary of Python async programming"</span>)
+</span><span class="ln">    )
+</span><span class="ln">    <span class="fn">print</span>(result)</span></div>
+    </div>
+
+    <div class="section-label">Test Cases</div>
+    <div class="test-case">
+      <h5>Test 1: Task flows through all 3 workers</h5>
+      Assert that after running, state contains keys: <code>research_result</code>, <code>writer_result</code>, <code>critic_result</code>. Each should be a non-empty dict.
+    </div>
+    <div class="test-case">
+      <h5>Test 2: Orchestrator produces reasoning</h5>
+      Each routing decision must include a non-empty <code>reasoning</code> string. Log and assert it is not blank.
+    </div>
+    <div class="test-case">
+      <h5>Test 3: Pipeline terminates</h5>
+      The orchestrator loop must eventually return "DONE". Set a max_iterations=10 safety limit to prevent infinite loops.
+    </div>
+  </div>
+
+  <!-- HINTS TAB -->
+  <div class="tab-content" id="ex1-hints">
+    <ul class="hints-list">
+      <li>
+        <div class="hint-num">1</div>
+        <div>Use <code>model.model_json_schema()</code> to extract the Pydantic schema and pass it as a <code>tool</code> to the Anthropic API. The model will call it like a function call — this is how structured output works.</div>
+      </li>
+      <li>
+        <div class="hint-num">2</div>
+        <div>Your supervisor prompt must include the current state summary. If the writer already ran, the next call to the supervisor should see that — otherwise it will route to the writer again.</div>
+      </li>
+      <li>
+        <div class="hint-num">3</div>
+        <div>For mocking: <code>web_search</code> can just return a hardcoded dict with keys <code>title</code>, <code>content</code>, <code>url</code>. The point is the orchestration logic, not the actual search.</div>
+      </li>
+      <li>
+        <div class="hint-num">4</div>
+        <div>Add a max_steps guard: <code>if steps > 10: break</code> — LLMs can occasionally loop. In production, you'd also log an alert here.</div>
+      </li>
+      <li>
+        <div class="hint-num">5</div>
+        <div>Print the routing decision at each step: <code>print(f"Step {step}: → {decision.next_worker} | {decision.reasoning}")</code> — this is your execution trace.</div>
+      </li>
+    </ul>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- EXERCISE 2: PARALLEL EXECUTION                 -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="exercise-card" id="ex2">
+  <div class="exercise-header">
+    <div class="ex-num">2</div>
+    <div class="ex-meta">
+      <h2>Parallel Agent Execution</h2>
+      <div class="ex-tags">
+        <span class="tag tag-purple">asyncio.gather</span>
+        <span class="tag tag-teal">Concurrency</span>
+        <span class="tag tag-green">Performance</span>
+      </div>
+    </div>
+    <button class="complete-btn" onclick="toggleComplete('ex2', 2)">Mark Complete</button>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('ex2','visual')">Visual Explainer</button>
+    <button class="tab-btn" onclick="switchTab('ex2','anatomy')">Code Anatomy</button>
+    <button class="tab-btn" onclick="switchTab('ex2','task')">Task</button>
+    <button class="tab-btn" onclick="switchTab('ex2','hints')">Hints</button>
+  </div>
+
+  <div class="tab-content active" id="ex2-visual">
+    <div class="section-label">Timing Diagram — Sequential vs Parallel</div>
+    <div class="visual-area">
+      <div class="visual-title">Click "Run Simulation" to animate the timing comparison</div>
+      <div class="timing-container">
+        <!-- Sequential -->
+        <div class="timing-panel">
+          <h4 style="color:var(--red)">Sequential (Slow)</h4>
+          <div style="margin-bottom:16px">
+            <div class="timing-row">
+              <div class="timing-name">Agent 1</div>
+              <div class="timing-track">
+                <div class="timing-bar bar-seq" id="seq-bar1" style="width:0%"></div>
+              </div>
+            </div>
+            <div class="timing-row">
+              <div class="timing-name">Agent 2</div>
+              <div class="timing-track">
+                <div class="timing-bar bar-seq" id="seq-bar2" style="width:0%"></div>
+              </div>
+            </div>
+            <div class="timing-row">
+              <div class="timing-name">Agent 3</div>
+              <div class="timing-track">
+                <div class="timing-bar bar-seq" id="seq-bar3" style="width:0%"></div>
+              </div>
+            </div>
+            <div class="timing-row">
+              <div class="timing-name">Agent 4</div>
+              <div class="timing-track">
+                <div class="timing-bar bar-seq" id="seq-bar4" style="width:0%"></div>
+              </div>
+            </div>
+          </div>
+          <div class="timer-display timer-seq" id="seq-timer">00.0s</div>
+          <div style="text-align:center;font-size:12px;color:var(--muted);margin-top:8px">Cost: 4× API calls = $0.08</div>
+        </div>
+        <!-- Parallel -->
+        <div class="timing-panel">
+          <h4 style="color:var(--green)">Parallel (Fast)</h4>
+          <div style="margin-bottom:16px">
+            <div class="timing-row">
+              <div class="timing-name">Agent 1</div>
+              <div class="timing-track">
+                <div class="timing-bar bar-par" id="par-bar1" style="width:0%"></div>
+              </div>
+            </div>
+            <div class="timing-row">
+              <div class="timing-name">Agent 2</div>
+              <div class="timing-track">
+                <div class="timing-bar bar-par" id="par-bar2" style="width:0%"></div>
+              </div>
+            </div>
+            <div class="timing-row">
+              <div class="timing-name">Agent 3</div>
+              <div class="timing-track">
+                <div class="timing-bar bar-par" id="par-bar3" style="width:0%"></div>
+              </div>
+            </div>
+            <div class="timing-row">
+              <div class="timing-name">Agent 4</div>
+              <div class="timing-track">
+                <div class="timing-bar bar-par" id="par-bar4" style="width:0%"></div>
+              </div>
+            </div>
+          </div>
+          <div class="timer-display timer-par" id="par-timer">00.0s</div>
+          <div style="text-align:center;font-size:12px;color:var(--muted);margin-top:8px">Cost: 4× API calls = $0.08 (same!)</div>
+        </div>
+      </div>
+      <button class="timing-run-btn" id="timing-run-btn" onclick="runTimingDemo()">▶ Run Simulation</button>
+      <div id="timing-result" style="text-align:center;margin-top:14px;font-size:14px;font-weight:600;color:var(--green);display:none"></div>
+    </div>
+
+    <div class="callout callout-warn">
+      <span class="callout-icon">⚠️</span>
+      <div><strong>Cost is the same, latency is 4× better.</strong> You still pay for all 4 LLM calls. Parallelism saves clock time, not money. Use it when agents' tasks are independent (no output of one feeds the next).</div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="ex2-anatomy">
+    <div class="section-label">asyncio.gather — The Key Pattern</div>
+    <div class="anatomy-tree"><span class="kw">await</span> asyncio.<span class="fn">gather</span>(
+    <span class="fn">research_agent</span>(<span class="st">"asyncio fundamentals"</span>),  <span class="cm">← starts simultaneously</span>
+    <span class="fn">research_agent</span>(<span class="st">"FastAPI integration"</span>),   <span class="cm">← starts simultaneously</span>
+    <span class="fn">research_agent</span>(<span class="st">"aiohttp patterns"</span>),      <span class="cm">← starts simultaneously</span>
+    <span class="fn">research_agent</span>(<span class="st">"async best practices"</span>),  <span class="cm">← starts simultaneously</span>
+)
+<span class="cm">─── waits until ALL complete ───</span>
+<span class="cm">→ returns [result1, result2, result3, result4]</span></div>
+
+    <div class="section-label">Sequential vs Parallel Code</div>
+    <div class="code-block">
+      <div class="code-header"><span class="lang">Python</span><span>comparison.py</span></div>
+      <div class="code-body lined"><span class="ln"><span class="kw">import</span> asyncio, time
+</span><span class="ln">
+</span><span class="ln"><span class="cm"># ─── SEQUENTIAL: 12 seconds total ─────────────────</span>
+</span><span class="ln"><span class="kw">async def</span> <span class="fn">run_sequential</span>():
+</span><span class="ln">    start = time.<span class="fn">time</span>()
+</span><span class="ln">    r1 = <span class="kw">await</span> <span class="fn">research_agent</span>(<span class="st">"topic 1"</span>)  <span class="cm"># waits 3s</span>
+</span><span class="ln">    r2 = <span class="kw">await</span> <span class="fn">research_agent</span>(<span class="st">"topic 2"</span>)  <span class="cm"># waits 3s more</span>
+</span><span class="ln">    r3 = <span class="kw">await</span> <span class="fn">research_agent</span>(<span class="st">"topic 3"</span>)  <span class="cm"># waits 3s more</span>
+</span><span class="ln">    r4 = <span class="kw">await</span> <span class="fn">research_agent</span>(<span class="st">"topic 4"</span>)  <span class="cm"># waits 3s more</span>
+</span><span class="ln">    <span class="fn">print</span>(f<span class="st">"Sequential: {time.time()-start:.1f}s"</span>)  <span class="cm"># ~12s</span>
+</span><span class="ln">    <span class="kw">return</span> [r1, r2, r3, r4]
+</span><span class="ln">
+</span><span class="ln"><span class="cm"># ─── PARALLEL: 3 seconds total ────────────────────</span>
+</span><span class="ln"><span class="kw">async def</span> <span class="fn">run_parallel</span>():
+</span><span class="ln">    start = time.<span class="fn">time</span>()
+</span><span class="ln">    results = <span class="kw">await</span> asyncio.<span class="fn">gather</span>(
+</span><span class="ln">        <span class="fn">research_agent</span>(<span class="st">"topic 1"</span>),   <span class="cm"># all start NOW</span>
+</span><span class="ln">        <span class="fn">research_agent</span>(<span class="st">"topic 2"</span>),   <span class="cm"># all start NOW</span>
+</span><span class="ln">        <span class="fn">research_agent</span>(<span class="st">"topic 3"</span>),   <span class="cm"># all start NOW</span>
+</span><span class="ln">        <span class="fn">research_agent</span>(<span class="st">"topic 4"</span>),   <span class="cm"># all start NOW</span>
+</span><span class="ln">    )
+</span><span class="ln">    <span class="fn">print</span>(f<span class="st">"Parallel: {time.time()-start:.1f}s"</span>)    <span class="cm"># ~3s</span>
+</span><span class="ln">    <span class="kw">return</span> results   <span class="cm"># [r1, r2, r3, r4]</span>
+</span><span class="ln">
+</span><span class="ln"><span class="cm"># ─── Error handling in parallel ───────────────────</span>
+</span><span class="ln"><span class="kw">async def</span> <span class="fn">run_parallel_safe</span>():
+</span><span class="ln">    <span class="cm"># return_exceptions=True: don't crash if one fails</span>
+</span><span class="ln">    results = <span class="kw">await</span> asyncio.<span class="fn">gather</span>(
+</span><span class="ln">        <span class="fn">research_agent</span>(<span class="st">"topic 1"</span>),
+</span><span class="ln">        <span class="fn">research_agent</span>(<span class="st">"topic 2"</span>),
+</span><span class="ln">        return_exceptions=<span class="nm">True</span>   <span class="cm"># ← critical for prod</span>
+</span><span class="ln">    )
+</span><span class="ln">    <span class="cm"># Filter out failures</span>
+</span><span class="ln">    good = [r <span class="kw">for</span> r <span class="kw">in</span> results
+</span><span class="ln">            <span class="kw">if not</span> <span class="fn">isinstance</span>(r, Exception)]
+</span><span class="ln">    <span class="kw">return</span> good</span></div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="ex2-task">
+    <div class="callout callout-tip">
+      <span class="callout-icon">🎯</span>
+      <div><strong>Your Task:</strong> Convert a sequential 4-agent pipeline to parallel. Use <code>asyncio.sleep()</code> to simulate 3-second agent latency. Measure and print actual wall-clock timing improvement. Handle partial failures gracefully.</div>
+    </div>
+    <div class="section-label">Starter Code</div>
+    <div class="code-block">
+      <div class="code-header"><span class="lang">Python</span><span>exercise_2_starter.py</span></div>
+      <div class="code-body lined"><span class="ln"><span class="kw">import</span> asyncio, time, random
+</span><span class="ln">
+</span><span class="ln"><span class="cm"># Mock agent: simulates 3s LLM call</span>
+</span><span class="ln"><span class="kw">async def</span> <span class="fn">research_agent</span>(topic: <span class="py-type">str</span>) -> <span class="py-type">dict</span>:
+</span><span class="ln">    <span class="kw">await</span> asyncio.<span class="fn">sleep</span>(<span class="num">3</span>)   <span class="cm"># simulates API latency</span>
+</span><span class="ln">    <span class="kw">return</span> {<span class="st">"topic"</span>: topic, <span class="st">"content"</span>: f<span class="st">"Research on {topic}"</span>}
+</span><span class="ln">
+</span><span class="ln">TOPICS = [<span class="st">"asyncio basics"</span>, <span class="st">"FastAPI"</span>, <span class="st">"aiohttp"</span>, <span class="st">"async testing"</span>]
+</span><span class="ln">
+</span><span class="ln"><span class="cm"># TODO 1: Implement run_sequential() — await each one</span>
+</span><span class="ln"><span class="kw">async def</span> <span class="fn">run_sequential</span>():
+</span><span class="ln">    <span class="kw">pass</span>
+</span><span class="ln">
+</span><span class="ln"><span class="cm"># TODO 2: Implement run_parallel() — use asyncio.gather</span>
+</span><span class="ln"><span class="kw">async def</span> <span class="fn">run_parallel</span>():
+</span><span class="ln">    <span class="kw">pass</span>
+</span><span class="ln">
+</span><span class="ln"><span class="cm"># TODO 3: Implement run_parallel_safe() with return_exceptions</span>
+</span><span class="ln"><span class="kw">async def</span> <span class="fn">run_parallel_safe</span>():
+</span><span class="ln">    <span class="kw">pass</span>
+</span><span class="ln">
+</span><span class="ln"><span class="kw">async def</span> <span class="fn">main</span>():
+</span><span class="ln">    <span class="cm"># TODO 4: Time both approaches and print comparison</span>
+</span><span class="ln">    <span class="kw">pass</span>
+</span><span class="ln">
+</span><span class="ln">asyncio.<span class="fn">run</span>(<span class="fn">main</span>())</span></div>
+    </div>
+
+    <div class="section-label">Test Cases</div>
+    <div class="test-case">
+      <h5>Test 1: Timing</h5>
+      Sequential time ≈ 12s. Parallel time ≈ 3s. Assert <code>parallel_time &lt; sequential_time / 3</code>.
+    </div>
+    <div class="test-case">
+      <h5>Test 2: Same results</h5>
+      Both return exactly 4 results. Order of results in gather() matches order of inputs.
+    </div>
+    <div class="test-case">
+      <h5>Test 3: Safe failure handling</h5>
+      Inject a failing agent (raises Exception). With <code>return_exceptions=True</code>, other agents still succeed. Verify good results count = 3.
+    </div>
+  </div>
+
+  <div class="tab-content" id="ex2-hints">
+    <ul class="hints-list">
+      <li>
+        <div class="hint-num">1</div>
+        <div><code>asyncio.gather(*[research_agent(t) for t in TOPICS])</code> — use list unpacking with <code>*</code> to pass a list to gather(). This is cleaner than listing each call manually.</div>
+      </li>
+      <li>
+        <div class="hint-num">2</div>
+        <div>Results from gather() preserve input order. If you passed [agent1, agent2, agent3], you get [result1, result2, result3] — even if agent2 finishes first.</div>
+      </li>
+      <li>
+        <div class="hint-num">3</div>
+        <div>For the safe version: <code>isinstance(r, Exception)</code> lets you identify failures. Log them but don't raise — the pipeline continues with partial results.</div>
+      </li>
+      <li>
+        <div class="hint-num">4</div>
+        <div>In FastAPI context: you'd use this pattern when a user request needs data from multiple independent APIs simultaneously. Each API call = one coroutine in gather().</div>
+      </li>
+    </ul>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- EXERCISE 3: HANDOFF PROTOCOL                   -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="exercise-card" id="ex3">
+  <div class="exercise-header">
+    <div class="ex-num">3</div>
+    <div class="ex-meta">
+      <h2>Agent Handoff Protocol</h2>
+      <div class="ex-tags">
+        <span class="tag tag-purple">Pydantic</span>
+        <span class="tag tag-teal">Context Passing</span>
+        <span class="tag tag-yellow">Quality</span>
+      </div>
+    </div>
+    <button class="complete-btn" onclick="toggleComplete('ex3', 3)">Mark Complete</button>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('ex3','visual')">Visual Explainer</button>
+    <button class="tab-btn" onclick="switchTab('ex3','anatomy')">Code Anatomy</button>
+    <button class="tab-btn" onclick="switchTab('ex3','task')">Task</button>
+    <button class="tab-btn" onclick="switchTab('ex3','hints')">Hints</button>
+  </div>
+
+  <div class="tab-content active" id="ex3-visual">
+    <div class="section-label">The Handoff Envelope</div>
+    <div class="envelope-wrap">
+      <div class="envelope bad-env">
+        <div class="env-header">
+          <div style="color:var(--red);font-weight:700;margin-bottom:6px">✗ BAD HANDOFF</div>
+          <div><span class="env-field">FROM: </span><span class="env-addr">Research Agent</span></div>
+          <div><span class="env-field">TO:   </span><span class="env-addr">Writer Agent</span></div>
+        </div>
+        <div class="env-body">
+          <div class="env-section">PAYLOAD:</div>
+          <div style="color:var(--red);margin-top:6px">{"query": "Python async"}</div>
+          <div style="color:var(--muted);margin-top:12px;font-size:11px">
+— No research results
+— No constraints
+— No output format
+— Writer is flying blind</div>
+        </div>
+      </div>
+
+      <div class="envelope good-env">
+        <div class="env-header">
+          <div style="color:var(--green);font-weight:700;margin-bottom:6px">✓ GOOD HANDOFF</div>
+          <div><span class="env-field">FROM: </span><span class="env-addr">Research Agent</span></div>
+          <div><span class="env-field">TO:   </span><span class="env-addr">Writer Agent</span></div>
+        </div>
+        <div class="env-body">
+          <div class="env-section">TASK:</div>
+          <div class="env-value">Write about Python async</div>
+          <div class="env-section">CONTEXT:</div>
+          <div class="env-value">- asyncio is Python's async lib
+- async/await since Python 3.5
+- Used in FastAPI, aiohttp</div>
+          <div class="env-section">CONSTRAINTS:</div>
+          <div class="env-value">- 500-800 words
+- Include code examples
+- Audience: senior engineers</div>
+          <div class="env-section">EXPECTED OUTPUT:</div>
+          <div style="color:var(--yellow)">{title:str, body:str, code:str}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">Output Quality Difference</div>
+    <div class="quality-bars">
+      <div class="qbar-row">
+        <div class="qbar-label" style="font-size:12px">Bad handoff</div>
+        <div class="qbar-track"><div class="qbar-fill qbar-bad" id="qbar-bad" style="width:0%"></div></div>
+        <div class="qbar-pct" id="qpct-bad" style="color:var(--red)">0%</div>
+      </div>
+      <div class="qbar-row">
+        <div class="qbar-label" style="font-size:12px">Good handoff</div>
+        <div class="qbar-track"><div class="qbar-fill qbar-good" id="qbar-good" style="width:0%"></div></div>
+        <div class="qbar-pct" id="qpct-good" style="color:var(--green)">0%</div>
+      </div>
+    </div>
+    <button class="timing-run-btn" onclick="animateQuality()" style="margin-top:12px;max-width:300px">▶ Show Quality Difference</button>
+  </div>
+
+  <div class="tab-content" id="ex3-anatomy">
+    <div class="section-label">Handoff Pydantic Model</div>
+    <div class="code-block">
+      <div class="code-header"><span class="lang">Python</span><span>handoff_protocol.py</span></div>
+      <div class="code-body lined"><span class="ln"><span class="kw">from</span> pydantic <span class="kw">import</span> BaseModel, Field
+</span><span class="ln"><span class="kw">from</span> typing <span class="kw">import</span> Optional, List
+</span><span class="ln">
+</span><span class="ln"><span class="kw">class</span> <span class="fn">ResearchHandoff</span>(BaseModel):
+</span><span class="ln">    <span class="cm">"""Handoff from Research → Writer."""</span>
+</span><span class="ln">    <span class="cm"># Required: core task</span>
+</span><span class="ln">    task: <span class="py-type">str</span> = Field(description=<span class="st">"Original user task"</span>)
+</span><span class="ln">
+</span><span class="ln">    <span class="cm"># Required: what was found</span>
+</span><span class="ln">    key_findings: <span class="py-type">List</span>[<span class="py-type">str</span>] = Field(
+</span><span class="ln">        description=<span class="st">"Bullet points from research"</span>
+</span><span class="ln">    )
+</span><span class="ln">    sources: <span class="py-type">List</span>[<span class="py-type">str</span>] = Field(
+</span><span class="ln">        description=<span class="st">"URLs or references used"</span>
+</span><span class="ln">    )
+</span><span class="ln">
+</span><span class="ln">    <span class="cm"># Required: constraints for writer</span>
+</span><span class="ln">    word_count_range: <span class="py-type">tuple</span>[<span class="py-type">int</span>, <span class="py-type">int</span>] = (<span class="num">500</span>, <span class="num">800</span>)
+</span><span class="ln">    audience: <span class="py-type">str</span> = <span class="st">"senior engineers"</span>
+</span><span class="ln">    include_code: <span class="py-type">bool</span> = <span class="nm">True</span>
+</span><span class="ln">
+</span><span class="ln">    <span class="cm"># Optional: style hints</span>
+</span><span class="ln">    tone: <span class="py-type">str</span> = <span class="st">"technical but accessible"</span>
+</span><span class="ln">
+</span><span class="ln">
+</span><span class="ln"><span class="kw">class</span> <span class="fn">WriterHandoff</span>(BaseModel):
+</span><span class="ln">    <span class="cm">"""Handoff from Writer → Critic."""</span>
+</span><span class="ln">    original_task: <span class="py-type">str</span>
+</span><span class="ln">    draft: <span class="py-type">str</span>
+</span><span class="ln">    target_audience: <span class="py-type">str</span>
+</span><span class="ln">    word_count: <span class="py-type">int</span>
+</span><span class="ln">    review_criteria: <span class="py-type">List</span>[<span class="py-type">str</span>] = Field(
+</span><span class="ln">        default=[<span class="st">"accuracy"</span>, <span class="st">"clarity"</span>, <span class="st">"completeness"</span>]
+</span><span class="ln">    )
+</span><span class="ln">
+</span><span class="ln">
+</span><span class="ln"><span class="cm"># Usage pattern</span>
+</span><span class="ln"><span class="kw">async def</span> <span class="fn">research_to_writer_pipeline</span>(task: <span class="py-type">str</span>):
+</span><span class="ln">    <span class="cm"># Research produces typed handoff</span>
+</span><span class="ln">    research_result = <span class="kw">await</span> <span class="fn">research_agent</span>(task)
+</span><span class="ln">    handoff = ResearchHandoff(
+</span><span class="ln">        task=task,
+</span><span class="ln">        key_findings=research_result[<span class="st">"findings"</span>],
+</span><span class="ln">        sources=research_result[<span class="st">"sources"</span>],
+</span><span class="ln">    )
+</span><span class="ln">
+</span><span class="ln">    <span class="cm"># Writer receives full context</span>
+</span><span class="ln">    draft = <span class="kw">await</span> <span class="fn">writer_agent</span>(handoff)
+</span><span class="ln">    <span class="kw">return</span> draft</span></div>
+    </div>
+
+    <div class="callout callout-info">
+      <span class="callout-icon">💡</span>
+      <div><strong>Why Pydantic for handoffs?</strong> If you forget to include <code>key_findings</code> the model raises <code>ValidationError</code> immediately — not a silent quality degradation discovered hours later. Pydantic makes missing fields a <em>crash</em> instead of a bug.</div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="ex3-task">
+    <div class="callout callout-tip">
+      <span class="callout-icon">🎯</span>
+      <div><strong>Your Task:</strong> Design handoff Pydantic models for 3 agent pairs. Run the pipeline twice — once with full handoff, once with minimal (bad) handoff. Compare output quality scores returned by the critic agent.</div>
+    </div>
+    <div class="section-label">Starter Code</div>
+    <div class="code-block">
+      <div class="code-header"><span class="lang">Python</span><span>exercise_3_starter.py</span></div>
+      <div class="code-body lined"><span class="ln"><span class="kw">from</span> pydantic <span class="kw">import</span> BaseModel, Field
+</span><span class="ln"><span class="kw">from</span> typing <span class="kw">import</span> List, Optional
+</span><span class="ln">
+</span><span class="ln"><span class="cm"># TODO 1: Define ResearchHandoff</span>
+</span><span class="ln"><span class="cm"># Fields: task, key_findings, sources,</span>
+</span><span class="ln"><span class="cm">#         word_count_range, audience, include_code</span>
+</span><span class="ln">
+</span><span class="ln">
+</span><span class="ln"><span class="cm"># TODO 2: Define WriterHandoff</span>
+</span><span class="ln"><span class="cm"># Fields: original_task, draft, target_audience,</span>
+</span><span class="ln"><span class="cm">#         word_count, review_criteria</span>
+</span><span class="ln">
+</span><span class="ln">
+</span><span class="ln"><span class="cm"># TODO 3: Define CriticOutput</span>
+</span><span class="ln"><span class="cm"># Fields: score (0-10), issues (List[str]),</span>
+</span><span class="ln"><span class="cm">#         approved (bool), final_version (str)</span>
+</span><span class="ln">
+</span><span class="ln">
+</span><span class="ln"><span class="kw">async def</span> <span class="fn">run_with_good_handoff</span>(task: <span class="py-type">str</span>):
+</span><span class="ln">    <span class="cm"># TODO 4: Full pipeline with complete handoff</span>
+</span><span class="ln">    <span class="kw">pass</span>
+</span><span class="ln">
+</span><span class="ln">
+</span><span class="ln"><span class="kw">async def</span> <span class="fn">run_with_bad_handoff</span>(task: <span class="py-type">str</span>):
+</span><span class="ln">    <span class="cm"># TODO 5: Minimal handoff (just task string, no context)</span>
+</span><span class="ln">    <span class="kw">pass</span>
+</span><span class="ln">
+</span><span class="ln">
+</span><span class="ln"><span class="kw">async def</span> <span class="fn">main</span>():
+</span><span class="ln">    task = <span class="st">"Write a technical guide on Python async"</span>
+</span><span class="ln">    good = <span class="kw">await</span> <span class="fn">run_with_good_handoff</span>(task)
+</span><span class="ln">    bad  = <span class="kw">await</span> <span class="fn">run_with_bad_handoff</span>(task)
+</span><span class="ln">    <span class="fn">print</span>(f<span class="st">"Good handoff score: {good.score}/10"</span>)
+</span><span class="ln">    <span class="fn">print</span>(f<span class="st">"Bad handoff score:  {bad.score}/10"</span>)
+</span><span class="ln">    <span class="fn">print</span>(f<span class="st">"Improvement: {good.score - bad.score} points"</span>)</span></div>
+    </div>
+
+    <div class="section-label">Test Cases</div>
+    <div class="test-case">
+      <h5>Test 1: Validation works</h5>
+      Attempt to create <code>ResearchHandoff</code> without <code>key_findings</code>. Verify <code>ValidationError</code> is raised with the field name in the error message.
+    </div>
+    <div class="test-case">
+      <h5>Test 2: Quality difference</h5>
+      Good handoff critic score should be ≥ 7/10. Bad handoff score should be ≤ 5/10. The gap proves context matters.
+    </div>
+    <div class="test-case">
+      <h5>Test 3: Serialization</h5>
+      <code>handoff.model_dump_json()</code> should produce valid JSON. Verify round-trip: parse it back and get identical object.
+    </div>
+  </div>
+
+  <div class="tab-content" id="ex3-hints">
+    <ul class="hints-list">
+      <li>
+        <div class="hint-num">1</div>
+        <div>Add <code>model_config = ConfigDict(frozen=True)</code> to your handoff models — handoffs shouldn't be mutated in flight. Frozen Pydantic models raise errors on attribute assignment.</div>
+      </li>
+      <li>
+        <div class="hint-num">2</div>
+        <div>For the bad handoff test: mock the writer to receive only <code>{"task": "..."}</code> as a dict. The writer prompt will be vague → LLM produces a generic, low-quality draft → critic gives low score.</div>
+      </li>
+      <li>
+        <div class="hint-num">3</div>
+        <div>Use <code>Field(description="..."))</code> on every field. These descriptions end up in the JSON schema, which gets passed to the LLM — so they function as inline documentation for the model.</div>
+      </li>
+    </ul>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- EXERCISE 4: FULL PIPELINE (BOSS)               -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="exercise-card" id="ex4">
+  <div class="exercise-header">
+    <div class="ex-num" style="background:rgba(245,158,11,0.2);border-color:var(--yellow);color:var(--yellow)">★</div>
+    <div class="ex-meta">
+      <h2>Full Multi-Agent Pipeline</h2>
+      <div class="ex-tags">
+        <span class="tag tag-yellow">Boss Exercise</span>
+        <span class="tag tag-purple">LangGraph</span>
+        <span class="tag tag-green">End-to-End</span>
+      </div>
+    </div>
+    <button class="complete-btn" onclick="toggleComplete('ex4', 4)">Mark Complete</button>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('ex4','visual')">Visual Explainer</button>
+    <button class="tab-btn" onclick="switchTab('ex4','anatomy')">Code Anatomy</button>
+    <button class="tab-btn" onclick="switchTab('ex4','task')">Task</button>
+    <button class="tab-btn" onclick="switchTab('ex4','hints')">Hints</button>
+  </div>
+
+  <div class="tab-content active" id="ex4-visual">
+    <div class="section-label">Pipeline Architecture</div>
+    <div class="pipeline-grid">
+      <div>
+        <div class="pipeline-diagram" id="pipeline-diag">
+          <div class="pipe-node" id="pnode-user">
+            <div class="pipe-icon">👤</div>
+            <div>
+              <div class="pipe-name">User Request</div>
+              <div class="pipe-status" id="pstatus-user">Waiting...</div>
+            </div>
+          </div>
+          <div class="pipe-connector" id="pconn1"></div>
+          <div class="pipe-node" id="pnode-orch">
+            <div class="pipe-icon">🎯</div>
+            <div>
+              <div class="pipe-name">Orchestrator</div>
+              <div class="pipe-status" id="pstatus-orch">Idle</div>
+            </div>
+          </div>
+          <div class="pipe-connector" id="pconn2"></div>
+          <div class="pipe-node" id="pnode-research">
+            <div class="pipe-icon">🔍</div>
+            <div>
+              <div class="pipe-name">Research Agent</div>
+              <div class="pipe-status" id="pstatus-research">Idle</div>
+            </div>
+          </div>
+          <div class="pipe-connector" id="pconn3"></div>
+          <div class="pipe-node" id="pnode-outline">
+            <div class="pipe-icon">📋</div>
+            <div>
+              <div class="pipe-name">Outline Agent</div>
+              <div class="pipe-status" id="pstatus-outline">Idle</div>
+            </div>
+          </div>
+          <div class="pipe-connector" id="pconn4"></div>
+          <div class="pipe-node" id="pnode-writer">
+            <div class="pipe-icon">✍️</div>
+            <div>
+              <div class="pipe-name">Writer Agent</div>
+              <div class="pipe-status" id="pstatus-writer">Idle</div>
+            </div>
+          </div>
+          <div class="pipe-connector" id="pconn5"></div>
+          <div class="pipe-node" id="pnode-critic">
+            <div class="pipe-icon">🧐</div>
+            <div>
+              <div class="pipe-name">Critic Agent</div>
+              <div class="pipe-status" id="pstatus-critic">Idle</div>
+            </div>
+          </div>
+          <div class="pipe-connector" id="pconn6"></div>
+          <div class="pipe-node" id="pnode-output">
+            <div class="pipe-icon">📄</div>
+            <div>
+              <div class="pipe-name">Final Output</div>
+              <div class="pipe-status" id="pstatus-output">Waiting</div>
+            </div>
+          </div>
+        </div>
+        <button class="pipeline-run-btn" id="pipeline-btn" onclick="runPipelineDemo()">▶ Simulate Pipeline</button>
+      </div>
+      <div>
+        <div class="state-panel">
+          <div class="state-panel-head">
+            <span>Pipeline State (JSON)</span>
+            <span id="state-badge" style="font-size:11px;color:var(--muted)">empty</span>
+          </div>
+          <div id="state-json"><span class="json-null">// State fills in as agents complete</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="ex4-anatomy">
+    <div class="section-label">LangGraph Pipeline Structure</div>
+    <div class="code-block">
+      <div class="code-header"><span class="lang">Python</span><span>langgraph_pipeline.py</span></div>
+      <div class="code-body lined"><span class="ln"><span class="kw">from</span> langgraph.graph <span class="kw">import</span> StateGraph, END
+</span><span class="ln"><span class="kw">from</span> pydantic <span class="kw">import</span> BaseModel
+</span><span class="ln"><span class="kw">from</span> typing <span class="kw">import</span> Optional, TypedDict
+</span><span class="ln">
+</span><span class="ln"><span class="kw">class</span> <span class="fn">PipelineState</span>(TypedDict):
+</span><span class="ln">    task: <span class="py-type">str</span>
+</span><span class="ln">    research: Optional[<span class="py-type">dict</span>]        <span class="cm"># fills after Research</span>
+</span><span class="ln">    outline: Optional[<span class="py-type">dict</span>]         <span class="cm"># fills after Outline</span>
+</span><span class="ln">    draft: Optional[<span class="py-type">str</span>]            <span class="cm"># fills after Writer</span>
+</span><span class="ln">    final_post: Optional[<span class="py-type">str</span>]       <span class="cm"># fills after Critic</span>
+</span><span class="ln">    total_tokens: <span class="py-type">int</span>               <span class="cm"># tracks across all agents</span>
+</span><span class="ln">    total_cost_usd: <span class="py-type">float</span>
+</span><span class="ln">
+</span><span class="ln"><span class="cm"># ─── Node implementations ─────────────────────────</span>
+</span><span class="ln"><span class="kw">async def</span> <span class="fn">research_node</span>(state: PipelineState) -> PipelineState:
+</span><span class="ln">    result = <span class="kw">await</span> <span class="fn">research_agent</span>(state[<span class="st">"task"</span>])
+</span><span class="ln">    <span class="kw">return</span> {
+</span><span class="ln">        **state,
+</span><span class="ln">        <span class="st">"research"</span>: result.content,
+</span><span class="ln">        <span class="st">"total_tokens"</span>: state[<span class="st">"total_tokens"</span>] + result.usage.total_tokens
+</span><span class="ln">    }
+</span><span class="ln">
+</span><span class="ln"><span class="kw">async def</span> <span class="fn">outline_node</span>(state: PipelineState) -> PipelineState:
+</span><span class="ln">    result = <span class="kw">await</span> <span class="fn">outline_agent</span>(state[<span class="st">"task"</span>], state[<span class="st">"research"</span>])
+</span><span class="ln">    <span class="kw">return</span> {**state, <span class="st">"outline"</span>: result.content, ...}
+</span><span class="ln">
+</span><span class="ln"><span class="cm"># ─── Build the graph ──────────────────────────────</span>
+</span><span class="ln">builder = <span class="fn">StateGraph</span>(PipelineState)
+</span><span class="ln">builder.<span class="fn">add_node</span>(<span class="st">"research"</span>, research_node)
+</span><span class="ln">builder.<span class="fn">add_node</span>(<span class="st">"outline"</span>,  outline_node)
+</span><span class="ln">builder.<span class="fn">add_node</span>(<span class="st">"writer"</span>,   writer_node)
+</span><span class="ln">builder.<span class="fn">add_node</span>(<span class="st">"critic"</span>,   critic_node)
+</span><span class="ln">
+</span><span class="ln">builder.<span class="fn">set_entry_point</span>(<span class="st">"research"</span>)
+</span><span class="ln">builder.<span class="fn">add_edge</span>(<span class="st">"research"</span>, <span class="st">"outline"</span>)
+</span><span class="ln">builder.<span class="fn">add_edge</span>(<span class="st">"outline"</span>,  <span class="st">"writer"</span>)
+</span><span class="ln">builder.<span class="fn">add_edge</span>(<span class="st">"writer"</span>,   <span class="st">"critic"</span>)
+</span><span class="ln">builder.<span class="fn">add_edge</span>(<span class="st">"critic"</span>,   END)
+</span><span class="ln">
+</span><span class="ln">graph = builder.<span class="fn">compile</span>()
+</span><span class="ln">
+</span><span class="ln"><span class="cm"># ─── Run it ───────────────────────────────────────</span>
+</span><span class="ln">result = <span class="kw">await</span> graph.<span class="fn">ainvoke</span>({
+</span><span class="ln">    <span class="st">"task"</span>: <span class="st">"Write about LangGraph for production"</span>,
+</span><span class="ln">    <span class="st">"research"</span>: <span class="nm">None</span>,
+</span><span class="ln">    <span class="st">"outline"</span>: <span class="nm">None</span>,
+</span><span class="ln">    <span class="st">"draft"</span>: <span class="nm">None</span>,
+</span><span class="ln">    <span class="st">"final_post"</span>: <span class="nm">None</span>,
+</span><span class="ln">    <span class="st">"total_tokens"</span>: <span class="num">0</span>,
+</span><span class="ln">    <span class="st">"total_cost_usd"</span>: <span class="num">0.0</span>,
+</span><span class="ln">})</span></div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="ex4-task">
+    <div class="callout callout-tip">
+      <span class="callout-icon">★</span>
+      <div><strong>Boss Exercise:</strong> Implement the full 4-agent blog post pipeline using LangGraph. Use mocked tools. Track cumulative tokens and cost across all agents. The final output must include the blog post + total cost report.</div>
+    </div>
+    <div class="section-label">Requirements</div>
+    <div class="test-case">
+      <h5>Requirement 1: LangGraph Graph</h5>
+      Build using <code>StateGraph</code> with <code>PipelineState</code> TypedDict. Each agent is a node. Edges: research → outline → writer → critic → END.
+    </div>
+    <div class="test-case">
+      <h5>Requirement 2: Token Tracking</h5>
+      Each node increments <code>total_tokens</code> and <code>total_cost_usd</code> in state. Final state shows cumulative totals across all 4 agents.
+    </div>
+    <div class="test-case">
+      <h5>Requirement 3: Mocked Tools</h5>
+      <code>web_search(query)</code> returns 3 hardcoded results. <code>fetch_docs(url)</code> returns a hardcoded string. No real API calls for tools — only LLM calls are real.
+    </div>
+    <div class="test-case">
+      <h5>Requirement 4: Critic Loop (stretch)</h5>
+      If critic score &lt; 7: send back to writer with critique. Loop max 2 times. Use a conditional edge in LangGraph: <code>add_conditional_edges</code>.
+    </div>
+  </div>
+
+  <div class="tab-content" id="ex4-hints">
+    <ul class="hints-list">
+      <li>
+        <div class="hint-num">1</div>
+        <div>LangGraph nodes are pure functions: <code>(state) → state</code>. They return a NEW state dict (or partial update). Never mutate the input state directly.</div>
+      </li>
+      <li>
+        <div class="hint-num">2</div>
+        <div>For token tracking: Anthropic's API returns <code>response.usage.input_tokens + response.usage.output_tokens</code>. Cost formula: <code>(input_tokens / 1M) * 3.0 + (output_tokens / 1M) * 15.0</code> for claude-3-5-sonnet.</div>
+      </li>
+      <li>
+        <div class="hint-num">3</div>
+        <div>For the conditional critic loop: <code>builder.add_conditional_edges("critic", route_after_critic, {"revise": "writer", "done": END})</code> where <code>route_after_critic</code> checks <code>state["critic_score"]</code>.</div>
+      </li>
+      <li>
+        <div class="hint-num">4</div>
+        <div>Add <code>revision_count: int = 0</code> to state. In the conditional router: if <code>revision_count >= 2</code>, go to END regardless of score — prevents infinite loops.</div>
+      </li>
+    </ul>
+  </div>
+</div>
+
+</main>
+
+<script>
+// ─── PROGRESS TRACKING ──────────────────────────────────────────────
+const STORAGE_KEY = 'day5_progress';
+
+function loadProgress() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+  } catch { return {}; }
+}
+
+function saveProgress(p) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(p));
+}
+
+function updateProgressBar() {
+  const p = loadProgress();
+  const count = Object.values(p).filter(Boolean).length;
+  document.getElementById('prog-text').textContent = count + ' / 4';
+  document.getElementById('prog-fill').style.width = (count / 4 * 100) + '%';
+}
+
+function toggleComplete(exId, num) {
+  const p = loadProgress();
+  p[num] = !p[num];
+  saveProgress(p);
+  const card = document.getElementById(exId);
+  card.classList.toggle('completed', !!p[num]);
+  const btn = card.querySelector('.complete-btn');
+  btn.textContent = p[num] ? '✓ Completed' : 'Mark Complete';
+  updateProgressBar();
+}
+
+function initProgress() {
+  const p = loadProgress();
+  [1,2,3,4].forEach(n => {
+    if (p[n]) {
+      const card = document.getElementById('ex' + n);
+      card.classList.add('completed');
+      card.querySelector('.complete-btn').textContent = '✓ Completed';
+    }
+  });
+  updateProgressBar();
+}
+
+// ─── TAB SWITCHING ──────────────────────────────────────────────────
+function switchTab(exId, tabName) {
+  const card = document.getElementById(exId);
+  card.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  card.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  const btn = [...card.querySelectorAll('.tab-btn')].find(b =>
+    b.getAttribute('onclick').includes("'"+tabName+"'")
+  );
+  if (btn) btn.classList.add('active');
+  const content = card.querySelector('#' + exId + '-' + tabName);
+  if (content) content.classList.add('active');
+}
+
+// ─── EXERCISE 2: TIMING SIMULATION ──────────────────────────────────
+let timingRunning = false;
+
+function runTimingDemo() {
+  if (timingRunning) return;
+  timingRunning = true;
+  const btn = document.getElementById('timing-run-btn');
+  btn.disabled = true;
+  btn.textContent = 'Running...';
+  document.getElementById('timing-result').style.display = 'none';
+
+  // Reset
+  ['seq-bar1','seq-bar2','seq-bar3','seq-bar4',
+   'par-bar1','par-bar2','par-bar3','par-bar4'].forEach(id => {
+    document.getElementById(id).style.width = '0%';
+    document.getElementById(id).textContent = '';
+  });
+  document.getElementById('seq-timer').textContent = '00.0s';
+  document.getElementById('par-timer').textContent = '00.0s';
+
+  const AGENT_DURATION = 3000; // ms per agent
+  const TOTAL_STEPS = 600; // animation frames for 12s sequential
+
+  let seqStart = Date.now();
+  let parStart = Date.now();
+  let seqDone = false;
+  let parDone = false;
+
+  // Sequential: 4 agents × 3s = 12s
+  const seqBars = ['seq-bar1','seq-bar2','seq-bar3','seq-bar4'];
+  let seqInterval = setInterval(() => {
+    const elapsed = Date.now() - seqStart;
+    const totalDuration = AGENT_DURATION * 4;
+    const agentIndex = Math.min(3, Math.floor(elapsed / AGENT_DURATION));
+    const agentElapsed = elapsed - agentIndex * AGENT_DURATION;
+    const pct = Math.min(100, (agentElapsed / AGENT_DURATION) * 100);
+
+    // Fill current bar
+    for (let i = 0; i < 4; i++) {
+      const bar = document.getElementById(seqBars[i]);
+      if (i < agentIndex) {
+        bar.style.width = '100%';
+        bar.textContent = '3.0s';
+      } else if (i === agentIndex) {
+        bar.style.width = pct + '%';
+        bar.textContent = (agentElapsed / 1000).toFixed(1) + 's';
+      } else {
+        bar.style.width = '0%';
+        bar.textContent = '';
+      }
+    }
+
+    document.getElementById('seq-timer').textContent =
+      (elapsed / 1000).toFixed(1) + 's';
+
+    if (elapsed >= totalDuration) {
+      clearInterval(seqInterval);
+      seqBars.forEach(id => {
+        document.getElementById(id).style.width = '100%';
+        document.getElementById(id).textContent = '3.0s';
+      });
+      document.getElementById('seq-timer').textContent = '12.0s';
+      seqDone = true;
+      checkBothDone();
+    }
+  }, 50);
+
+  // Parallel: all 4 agents × 3s = 3s
+  const parBars = ['par-bar1','par-bar2','par-bar3','par-bar4'];
+  let parInterval = setInterval(() => {
+    const elapsed = Date.now() - parStart;
+    const pct = Math.min(100, (elapsed / AGENT_DURATION) * 100);
+    const label = Math.min(3.0, elapsed/1000).toFixed(1) + 's';
+
+    parBars.forEach(id => {
+      document.getElementById(id).style.width = pct + '%';
+      document.getElementById(id).textContent = label;
+    });
+
+    document.getElementById('par-timer').textContent =
+      (elapsed / 1000).toFixed(1) + 's';
+
+    if (elapsed >= AGENT_DURATION) {
+      clearInterval(parInterval);
+      parBars.forEach(id => {
+        document.getElementById(id).style.width = '100%';
+        document.getElementById(id).textContent = '3.0s';
+      });
+      document.getElementById('par-timer').textContent = '3.0s';
+      parDone = true;
+      checkBothDone();
+    }
+  }, 50);
+
+  function checkBothDone() {
+    if (seqDone && parDone) {
+      const result = document.getElementById('timing-result');
+      result.style.display = 'block';
+      result.textContent = '4× speedup achieved! Same cost, 75% less wall-clock time.';
+      btn.disabled = false;
+      btn.textContent = '▶ Run Again';
+      timingRunning = false;
+    }
+  }
+}
+
+// ─── EXERCISE 3: QUALITY BARS ────────────────────────────────────────
+function animateQuality() {
+  const badBar = document.getElementById('qbar-bad');
+  const goodBar = document.getElementById('qbar-good');
+  const badPct = document.getElementById('qpct-bad');
+  const goodPct = document.getElementById('qpct-good');
+
+  badBar.style.width = '0%';
+  goodBar.style.width = '0%';
+  badPct.textContent = '0%';
+  goodPct.textContent = '0%';
+
+  setTimeout(() => {
+    badBar.style.width = '32%';
+    goodBar.style.width = '87%';
+    animateNumber(badPct, 0, 32, 1200, '%');
+    animateNumber(goodPct, 0, 87, 1200, '%');
+  }, 100);
+}
+
+function animateNumber(el, from, to, duration, suffix) {
+  const start = Date.now();
+  const interval = setInterval(() => {
+    const elapsed = Date.now() - start;
+    const progress = Math.min(1, elapsed / duration);
+    const current = Math.round(from + (to - from) * progress);
+    el.textContent = current + suffix;
+    if (progress >= 1) clearInterval(interval);
+  }, 16);
+}
+
+// ─── EXERCISE 4: PIPELINE DEMO ───────────────────────────────────────
+let pipelineRunning = false;
+
+const pipelineSteps = [
+  {
+    nodeId: 'pnode-user',
+    statusId: 'pstatus-user',
+    connId: null,
+    status: 'Request received',
+    stateUpdate: {
+      task: '"Write about LangGraph for production"',
+      research: 'null',
+      outline: 'null',
+      draft: 'null',
+      final_post: 'null',
+      total_tokens: '0',
+      total_cost_usd: '0.0'
+    },
+    delay: 800
+  },
+  {
+    nodeId: 'pnode-orch',
+    statusId: 'pstatus-orch',
+    connId: 'pconn1',
+    status: 'Routing to Research...',
+    stateUpdate: {},
+    delay: 1200
+  },
+  {
+    nodeId: 'pnode-research',
+    statusId: 'pstatus-research',
+    connId: 'pconn2',
+    status: 'Fetching docs + web_search...',
+    stateUpdate: {
+      research: '{ findings: [...], sources: [...] }',
+      total_tokens: '1842',
+      total_cost_usd: '0.031'
+    },
+    delay: 2000
+  },
+  {
+    nodeId: 'pnode-outline',
+    statusId: 'pstatus-outline',
+    connId: 'pconn3',
+    status: 'Creating blog outline...',
+    stateUpdate: {
+      outline: '{ sections: [Intro, Core, Adv, Prod] }',
+      total_tokens: '2914',
+      total_cost_usd: '0.051'
+    },
+    delay: 1600
+  },
+  {
+    nodeId: 'pnode-writer',
+    statusId: 'pstatus-writer',
+    connId: 'pconn4',
+    status: 'Writing draft post...',
+    stateUpdate: {
+      draft: '"# LangGraph in Production\\n\\nLangGraph..."',
+      total_tokens: '5820',
+      total_cost_usd: '0.103'
+    },
+    delay: 2200
+  },
+  {
+    nodeId: 'pnode-critic',
+    statusId: 'pstatus-critic',
+    connId: 'pconn5',
+    status: 'Reviewing quality (score: 8/10)...',
+    stateUpdate: {
+      final_post: '"# LangGraph in Production (revised)..."',
+      critic_score: '8',
+      total_tokens: '7441',
+      total_cost_usd: '0.134'
+    },
+    delay: 1800
+  },
+  {
+    nodeId: 'pnode-output',
+    statusId: 'pstatus-output',
+    connId: 'pconn6',
+    status: 'Pipeline complete',
+    stateUpdate: {},
+    delay: 600
+  }
+];
+
+function renderStateJSON(state) {
+  const lines = [];
+  lines.push('{');
+  const entries = Object.entries(state);
+  entries.forEach(([k, v], i) => {
+    const isLast = i === entries.length - 1;
+    let val;
+    if (v === 'null') {
+      val = '<span class="json-null">null</span>';
+    } else if (!isNaN(v) && v !== '') {
+      val = '<span class="json-num">' + v + '</span>';
+    } else {
+      val = '<span class="json-str">' + v + '</span>';
+    }
+    lines.push('  <span class="json-key">"' + k + '"</span>: ' + val + (isLast ? '' : ','));
+  });
+  lines.push('}');
+  return lines.join('\n');
+}
+
+async function runPipelineDemo() {
+  if (pipelineRunning) return;
+  pipelineRunning = true;
+  const btn = document.getElementById('pipeline-btn');
+  btn.disabled = true;
+  btn.textContent = '⟳ Running...';
+
+  // Reset all nodes
+  document.querySelectorAll('.pipe-node').forEach(n => {
+    n.classList.remove('active-node', 'done-node');
+  });
+  document.querySelectorAll('.pipe-connector').forEach(c => {
+    c.classList.remove('done-conn');
+  });
+  ['pstatus-user','pstatus-orch','pstatus-research',
+   'pstatus-outline','pstatus-writer','pstatus-critic','pstatus-output'
+  ].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = 'Idle';
+  });
+  document.getElementById('state-json').innerHTML =
+    '<span class="json-null">// Pipeline starting...</span>';
+  document.getElementById('state-badge').textContent = 'empty';
+
+  let currentState = {};
+
+  for (let i = 0; i < pipelineSteps.length; i++) {
+    const step = pipelineSteps[i];
+
+    // Activate current node
+    const node = document.getElementById(step.nodeId);
+    node.classList.add('active-node');
+    document.getElementById(step.statusId).textContent = step.status;
+
+    // Activate connector
+    if (step.connId) {
+      document.getElementById(step.connId).classList.add('done-conn');
+    }
+
+    // Update state
+    currentState = { ...currentState, ...step.stateUpdate };
+    if (Object.keys(currentState).length > 0) {
+      document.getElementById('state-json').innerHTML =
+        renderStateJSON(currentState);
+      document.getElementById('state-badge').textContent =
+        Object.keys(currentState).length + ' fields';
+    }
+
+    await new Promise(r => setTimeout(r, step.delay));
+
+    // Mark done (except last)
+    if (i < pipelineSteps.length - 1) {
+      node.classList.remove('active-node');
+      node.classList.add('done-node');
+      document.getElementById(step.statusId).textContent = '✓ ' + step.status.replace('...','');
+    } else {
+      node.classList.remove('active-node');
+      node.classList.add('done-node');
+      document.getElementById(step.statusId).textContent = '✓ Done';
+    }
+  }
+
+  btn.disabled = false;
+  btn.textContent = '▶ Run Again';
+  pipelineRunning = false;
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  initProgress();
+  // Animate quality bars on page load with a delay
+  setTimeout(animateQuality, 1000);
+});
+</script>
+<script src="../bg-animation.js"></script>
+</body>
+</html>

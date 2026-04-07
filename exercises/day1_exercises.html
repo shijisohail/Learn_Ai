@@ -1,0 +1,1635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 1 Exercises — LLMs & The API</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f;
+  --card: #141420;
+  --surface2: #1a1a2e;
+  --border: #2a2a45;
+  --purple: #7c3aed;
+  --purple-light: #a855f7;
+  --teal: #0d9488;
+  --green: #10b981;
+  --yellow: #f59e0b;
+  --red: #ef4444;
+  --text: #e2e8f0;
+  --muted: #64748b;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+code, pre, .code-block, .mono { font-family: 'JetBrains Mono', monospace; }
+
+/* NAV */
+.sticky-nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(10,10,15,0.95); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 32px;
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+}
+.sticky-nav a {
+  color: var(--muted); text-decoration: none; font-size: 0.85rem;
+  padding: 6px 12px; border-radius: 6px; transition: all 0.2s;
+  border: 1px solid transparent;
+}
+.sticky-nav a:hover { color: var(--text); background: var(--card); border-color: var(--border); }
+.sticky-nav .brand { color: var(--purple-light); font-weight: 600; font-size: 0.9rem; }
+.nav-sep { color: var(--border); }
+.nav-title { color: var(--text); font-weight: 700; font-size: 0.95rem; flex: 1; }
+
+/* HERO */
+.hero {
+  padding: 56px 32px 32px;
+  max-width: 1100px; margin: 0 auto;
+  border-bottom: 1px solid var(--border);
+}
+.hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: 8px; }
+.hero h1 span { color: var(--purple-light); }
+.hero p { color: var(--muted); font-size: 1rem; max-width: 700px; }
+.hero-meta { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+.badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600;
+}
+.badge-purple { background: rgba(124,58,237,0.15); color: var(--purple-light); border: 1px solid rgba(124,58,237,0.3); }
+.badge-teal { background: rgba(13,148,136,0.15); color: #2dd4bf; border: 1px solid rgba(13,148,136,0.3); }
+.badge-green { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+
+/* PROGRESS */
+.progress-bar-wrap { max-width: 1100px; margin: 24px auto; padding: 0 32px; }
+.progress-label { font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
+.progress-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--purple), var(--teal)); border-radius: 3px; transition: width 0.5s ease; }
+
+/* MAIN */
+.main { max-width: 1100px; margin: 0 auto; padding: 32px; display: flex; flex-direction: column; gap: 64px; }
+
+/* EXERCISE CARD */
+.exercise {
+  border: 1px solid var(--border); border-radius: 16px; overflow: hidden;
+  background: var(--card);
+}
+.exercise-header {
+  padding: 24px 32px;
+  background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(13,148,136,0.05));
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+}
+.exercise-num { font-size: 0.75rem; color: var(--purple-light); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.exercise-header h2 { font-size: 1.4rem; font-weight: 700; margin: 4px 0 8px; }
+.exercise-header p { color: var(--muted); font-size: 0.9rem; }
+.ex-status { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); transition: background 0.3s; }
+.status-dot.done { background: var(--green); }
+
+/* TABS */
+.tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--surface2); }
+.tab-btn {
+  padding: 12px 20px; font-size: 0.82rem; font-weight: 600;
+  color: var(--muted); cursor: pointer; border: none; background: none;
+  border-bottom: 2px solid transparent; transition: all 0.2s;
+  font-family: 'Inter', sans-serif;
+}
+.tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+.tab-btn.active { color: var(--purple-light); border-bottom-color: var(--purple-light); background: rgba(124,58,237,0.05); }
+.tab-panel { display: none; padding: 28px 32px; }
+.tab-panel.active { display: block; }
+
+/* VISUAL EXPLAINER */
+.visual-section h3 { font-size: 1rem; font-weight: 700; margin-bottom: 16px; color: var(--purple-light); }
+
+/* TOKEN DIAGRAM */
+.token-diagram { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px; }
+.diagram-flow { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+.diag-box {
+  background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+  padding: 10px 16px; font-size: 0.85rem; font-weight: 600; text-align: center;
+}
+.diag-arrow { color: var(--muted); font-size: 1.2rem; }
+.token-output { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
+.token-box {
+  display: flex; flex-direction: column; align-items: center;
+  background: rgba(124,58,237,0.15); border: 1px solid rgba(124,58,237,0.35);
+  border-radius: 6px; padding: 6px 10px; min-width: 48px;
+  opacity: 0; transform: translateY(8px);
+  transition: opacity 0.3s, transform 0.3s;
+}
+.token-box.visible { opacity: 1; transform: translateY(0); }
+.token-text { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--purple-light); font-weight: 700; }
+.token-id { font-size: 0.65rem; color: var(--muted); margin-top: 2px; }
+.token-examples { display: flex; flex-direction: column; gap: 16px; }
+.token-example { }
+.token-example-label { font-size: 0.78rem; color: var(--muted); margin-bottom: 8px; font-family: 'JetBrains Mono', monospace; }
+.cost-calc {
+  margin-top: 16px; padding: 12px 16px;
+  background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); border-radius: 8px;
+  font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; color: #34d399;
+}
+.animate-btn {
+  margin-top: 12px; padding: 8px 18px; border-radius: 8px;
+  background: var(--purple); color: white; border: none; cursor: pointer;
+  font-size: 0.82rem; font-weight: 600; font-family: 'Inter', sans-serif;
+  transition: background 0.2s; display: inline-flex; align-items: center; gap: 6px;
+}
+.animate-btn:hover { background: var(--purple-light); }
+
+/* CODE BLOCK */
+.code-wrap {
+  background: #0d0d18; border: 1px solid var(--border); border-radius: 10px;
+  overflow: hidden; margin: 12px 0;
+}
+.code-header {
+  padding: 8px 16px; background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 0.75rem; color: var(--muted);
+}
+.code-dots { display: flex; gap: 6px; }
+.code-dots span { width: 10px; height: 10px; border-radius: 50%; }
+.code-dots .dot-r { background: var(--red); }
+.code-dots .dot-y { background: var(--yellow); }
+.code-dots .dot-g { background: var(--green); }
+.code-body { display: flex; }
+.line-nums {
+  padding: 16px 8px; background: rgba(0,0,0,0.3); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 0; min-width: 40px; text-align: right;
+}
+.line-nums span { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: #3a3a5c; line-height: 1.7; padding: 0 8px; }
+.code-content {
+  padding: 16px; overflow-x: auto; flex: 1;
+  white-space: pre; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; line-height: 1.7;
+}
+.code-line { display: block; transition: background 0.2s; border-radius: 3px; padding: 0 4px; margin: 0 -4px; }
+.code-line.highlight { background: rgba(124,58,237,0.2); border-left: 3px solid var(--purple); padding-left: 8px; }
+/* Syntax colors */
+.kw { color: #c792ea; } /* keyword */
+.fn { color: #82aaff; } /* function */
+.st { color: #c3e88d; } /* string */
+.cm { color: #546e7a; font-style: italic; } /* comment */
+.nm { color: #f78c6c; } /* number */
+.tp { color: #ffcb6b; } /* type */
+.dt { color: #89ddff; } /* decorator/punctuation */
+.va { color: #eeffff; } /* variable */
+.bi { color: #ff5370; } /* builtin */
+
+/* EXECUTION TRACE */
+.trace-wrap { display: grid; grid-template-columns: 1fr 280px; gap: 16px; }
+.trace-code-side { }
+.trace-vars {
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
+  padding: 16px; position: sticky; top: 80px; height: fit-content;
+}
+.trace-vars h4 { font-size: 0.8rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+.var-row {
+  display: flex; flex-direction: column; gap: 2px; margin-bottom: 10px;
+  padding: 8px; background: var(--card); border-radius: 6px; border: 1px solid var(--border);
+  opacity: 0.3; transition: all 0.3s;
+}
+.var-row.active { opacity: 1; border-color: var(--purple); }
+.var-name { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--muted); }
+.var-val { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--green); font-weight: 600; }
+.trace-controls { display: flex; gap: 8px; margin-bottom: 16px; }
+.trace-btn {
+  padding: 7px 14px; border-radius: 7px; border: 1px solid var(--border);
+  background: var(--card); color: var(--text); cursor: pointer;
+  font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 600; transition: all 0.2s;
+}
+.trace-btn:hover { background: var(--surface2); border-color: var(--purple); }
+.trace-btn.primary { background: var(--purple); border-color: var(--purple); color: white; }
+.trace-btn.primary:hover { background: var(--purple-light); }
+.trace-step-info { font-size: 0.8rem; color: var(--muted); padding: 8px 12px; background: var(--surface2); border-radius: 6px; margin-bottom: 8px; min-height: 36px; }
+
+/* TASK SECTION */
+.task-section { }
+.task-section h3 { font-size: 1rem; font-weight: 700; color: var(--yellow); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.task-requirements {
+  background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); border-radius: 10px;
+  padding: 16px 20px; margin-bottom: 16px;
+}
+.task-requirements li { color: var(--text); font-size: 0.88rem; margin: 6px 0 6px 16px; }
+.task-requirements li::marker { color: var(--yellow); }
+
+/* TEST CASES */
+.tests-grid { display: flex; flex-direction: column; gap: 8px; }
+.test-case {
+  display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px;
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;
+}
+.test-badge {
+  flex-shrink: 0; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700;
+  font-family: 'Inter', sans-serif; letter-spacing: 0.5px;
+}
+.test-badge.pass { background: rgba(16,185,129,0.2); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.test-badge.fail { background: rgba(239,68,68,0.2); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+.test-badge.pending { background: rgba(100,116,139,0.2); color: var(--muted); border: 1px solid rgba(100,116,139,0.3); }
+.test-content { flex: 1; }
+.test-input { color: var(--text); }
+.test-expected { color: var(--muted); margin-top: 2px; }
+
+/* HINTS */
+.hints-list { display: flex; flex-direction: column; gap: 8px; }
+.hint-item { }
+.hint-toggle {
+  width: 100%; text-align: left; padding: 10px 16px;
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+  color: var(--muted); cursor: pointer; font-family: 'Inter', sans-serif; font-size: 0.85rem;
+  display: flex; align-items: center; justify-content: space-between; transition: all 0.2s;
+}
+.hint-toggle:hover { border-color: var(--purple); color: var(--text); }
+.hint-toggle .arrow { transition: transform 0.2s; }
+.hint-toggle.open .arrow { transform: rotate(90deg); }
+.hint-body {
+  display: none; padding: 12px 16px; margin-top: 4px;
+  background: rgba(124,58,237,0.05); border: 1px solid rgba(124,58,237,0.2); border-radius: 8px;
+  font-size: 0.85rem; color: var(--text); line-height: 1.6;
+}
+.hint-body code { background: rgba(124,58,237,0.15); padding: 1px 5px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--purple-light); }
+
+/* CONVERSATION DIAGRAM */
+.conv-diagram { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.conv-panel { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+.conv-panel h4 { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+.conv-panel h4.blue { color: #60a5fa; }
+.conv-panel h4.gray { color: var(--muted); }
+.msg-card {
+  padding: 8px 12px; border-radius: 6px; margin-bottom: 8px; font-size: 0.8rem;
+  opacity: 0; transform: translateX(-10px); transition: all 0.3s;
+}
+.msg-card.visible { opacity: 1; transform: translateX(0); }
+.msg-card.user { background: rgba(96,165,250,0.12); border: 1px solid rgba(96,165,250,0.2); }
+.msg-card.assistant { background: rgba(100,116,139,0.12); border: 1px solid rgba(100,116,139,0.2); }
+.msg-role { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px; }
+.msg-role.user { color: #60a5fa; }
+.msg-role.assistant { color: var(--muted); }
+.msg-text { font-family: 'JetBrains Mono', monospace; color: var(--text); }
+.conv-timeline { display: flex; gap: 0; margin-top: 12px; }
+.turn-btn {
+  flex: 1; padding: 6px 0; text-align: center; cursor: pointer;
+  background: var(--card); border: 1px solid var(--border); font-size: 0.72rem; font-weight: 600;
+  color: var(--muted); transition: all 0.2s; font-family: 'Inter', sans-serif;
+}
+.turn-btn:first-child { border-radius: 6px 0 0 6px; }
+.turn-btn:last-child { border-radius: 0 6px 6px 0; }
+.turn-btn.active { background: var(--purple); color: white; border-color: var(--purple); }
+
+/* FUNCTION ANATOMY */
+.fn-anatomy {
+  background: #0d0d18; border: 1px solid var(--border); border-radius: 10px;
+  padding: 20px; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem;
+}
+.fn-step { display: flex; gap: 12px; margin: 8px 0; padding: 8px; border-radius: 6px; transition: background 0.2s; }
+.fn-step:hover { background: rgba(124,58,237,0.1); }
+.fn-step-num { color: var(--purple-light); font-weight: 700; flex-shrink: 0; width: 20px; }
+.fn-step-desc { color: var(--muted); font-size: 0.75rem; }
+.fn-step-code { color: #c3e88d; }
+
+/* CV DIAGRAM */
+.cv-diagram { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: center; }
+.cv-col { }
+.cv-col h4 { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+.raw-text-box {
+  background: #0d0d18; border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px; font-size: 0.75rem; color: var(--muted); line-height: 1.6;
+  font-family: 'JetBrains Mono', monospace; white-space: pre-wrap;
+}
+.schema-tree {
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
+}
+.schema-field { display: flex; gap: 8px; margin: 4px 0; }
+.schema-key { color: #82aaff; }
+.schema-type { color: #ffcb6b; }
+.schema-val { color: #c3e88d; }
+.schema-val.lit { opacity: 0; transition: opacity 0.4s; }
+.schema-val.lit.filled { opacity: 1; color: #34d399; }
+.cv-arrow { text-align: center; color: var(--purple-light); font-size: 1.5rem; }
+
+/* FLOWCHART */
+.flowchart { display: flex; flex-direction: column; align-items: center; gap: 0; position: relative; }
+.fc-node {
+  padding: 10px 24px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; text-align: center;
+  position: relative; min-width: 200px; transition: all 0.3s;
+}
+.fc-node.start { background: rgba(16,185,129,0.15); border: 2px solid var(--green); color: #34d399; }
+.fc-node.process { background: rgba(124,58,237,0.15); border: 2px solid var(--purple); color: var(--purple-light); }
+.fc-node.decision { background: rgba(245,158,11,0.15); border: 2px solid var(--yellow); color: var(--yellow); transform: rotate(0deg); border-radius: 6px; }
+.fc-node.tool { background: rgba(13,148,136,0.15); border: 2px solid var(--teal); color: #2dd4bf; }
+.fc-node.end { background: rgba(16,185,129,0.15); border: 2px solid var(--green); color: #34d399; }
+.fc-node.active { box-shadow: 0 0 20px rgba(124,58,237,0.4); transform: scale(1.04); }
+.fc-arrow-down { width: 2px; height: 24px; background: var(--border); margin: 0 auto; position: relative; }
+.fc-arrow-down::after { content: '▼'; position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); font-size: 0.7rem; color: var(--border); }
+.fc-branches { display: flex; gap: 40px; align-items: flex-start; }
+.fc-branch { display: flex; flex-direction: column; align-items: center; gap: 0; }
+.fc-branch-label { font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; margin: 4px 0; }
+.fc-branch-label.green { color: var(--green); background: rgba(16,185,129,0.1); }
+.fc-branch-label.orange { color: var(--yellow); background: rgba(245,158,11,0.1); }
+.fc-back-arrow { margin-top: 8px; font-size: 0.75rem; color: var(--yellow); font-family: 'JetBrains Mono', monospace; border: 1px dashed rgba(245,158,11,0.3); padding: 4px 10px; border-radius: 4px; }
+
+/* MESSAGES TAB VIEW */
+.msg-tabs { display: flex; gap: 4px; margin-bottom: 12px; }
+.msg-tab {
+  padding: 6px 14px; border-radius: 6px; font-size: 0.78rem; font-weight: 600;
+  cursor: pointer; border: 1px solid var(--border); background: var(--card);
+  color: var(--muted); transition: all 0.2s; font-family: 'Inter', sans-serif;
+}
+.msg-tab.active { background: var(--purple); border-color: var(--purple); color: white; }
+.msg-display {
+  background: #0d0d18; border: 1px solid var(--border); border-radius: 10px;
+  padding: 16px; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
+  white-space: pre; overflow-x: auto; line-height: 1.6; max-height: 280px; overflow-y: auto;
+}
+
+/* SECTION DIVIDER */
+.section-label {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+  font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+}
+.section-label.purple { color: var(--purple-light); }
+.section-label.yellow { color: var(--yellow); }
+.section-label.green { color: #34d399; }
+.section-label.teal { color: #2dd4bf; }
+.section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* FOOTER */
+.footer { border-top: 1px solid var(--border); padding: 32px; text-align: center; color: var(--muted); font-size: 0.82rem; }
+.footer a { color: var(--purple-light); text-decoration: none; }
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .trace-wrap { grid-template-columns: 1fr; }
+  .conv-diagram { grid-template-columns: 1fr; }
+  .cv-diagram { grid-template-columns: 1fr; }
+  .fc-branches { flex-direction: column; }
+  .tab-btn { padding: 10px 12px; font-size: 0.75rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="sticky-nav">
+  <a href="../days/day1.html">← Back to Day 1</a>
+  <span class="nav-sep">|</span>
+  <a href="../index.html" class="brand">🤖 Agentic AI</a>
+  <span class="nav-sep">|</span>
+  <span class="nav-title">Day 1 Exercises — LLMs & The API</span>
+  <a href="day2_exercises.html" style="margin-left:auto;">Day 2 Exercises →</a>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-meta">
+    <span class="badge badge-purple">Day 1</span>
+    <span class="badge badge-teal">4 Exercises</span>
+    <span class="badge badge-green">Python / Anthropic SDK</span>
+  </div>
+  <h1>LLMs & The <span>API</span></h1>
+  <p>Interactive coding exercises for Sharjeel Sohail — from token counting to building your first tool-using agent. Each exercise has a visual explainer, annotated code, and a working execution trace.</p>
+</div>
+
+<!-- PROGRESS -->
+<div class="progress-bar-wrap">
+  <div class="progress-label">
+    <span>Progress</span>
+    <span id="progress-text">0 / 4 completed</span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+</div>
+
+<!-- MAIN -->
+<main class="main">
+
+<!-- ========== EXERCISE 1: TOKEN COUNTER ========== -->
+<section class="exercise" id="ex1">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 1 of 4</div>
+      <h2>Token Counter & Budget Guard</h2>
+      <p>Understand tokenization deeply — count tokens before making API calls, then build a guard that enforces a budget.</p>
+    </div>
+    <div class="ex-status">
+      <span class="status-dot" id="dot1"></span>
+      <span style="font-size:0.78rem;color:var(--muted)">Completed</span>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex1','visual')">Visual Explainer</button>
+    <button class="tab-btn" onclick="showTab('ex1','code')">Annotated Code</button>
+    <button class="tab-btn" onclick="showTab('ex1','trace')">Execution Trace</button>
+    <button class="tab-btn" onclick="showTab('ex1','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex1','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex1','hints')">Hints</button>
+  </div>
+
+  <!-- VISUAL -->
+  <div class="tab-panel active" id="ex1-visual">
+    <div class="section-label purple">How Tokenization Works</div>
+    <div class="token-diagram">
+      <div class="diagram-flow">
+        <div class="diag-box" style="background:rgba(124,58,237,0.15);border-color:rgba(124,58,237,0.4);">Your Text</div>
+        <div class="diag-arrow">→</div>
+        <div class="diag-box" style="background:rgba(13,148,136,0.15);border-color:rgba(13,148,136,0.4);">Tokenizer<br><span style="font-size:0.7rem;color:var(--muted)">BPE algorithm</span></div>
+        <div class="diag-arrow">→</div>
+        <div class="diag-box" style="background:rgba(16,185,129,0.15);border-color:rgba(16,185,129,0.4);">Token IDs<br><span style="font-size:0.7rem;color:var(--muted)">integers</span></div>
+        <div class="diag-arrow">→</div>
+        <div class="diag-box" style="background:rgba(245,158,11,0.15);border-color:rgba(245,158,11,0.4);">Count → Cost</div>
+      </div>
+      <div class="token-examples">
+        <div class="token-example" id="token-ex1">
+          <div class="token-example-label">Example 1: "Hello, world!"</div>
+          <div class="token-output" id="tokens1">
+            <div class="token-box" data-i="0"><span class="token-text">Hello</span><span class="token-id">#9906</span></div>
+            <div class="token-box" data-i="1"><span class="token-text">,</span><span class="token-id">#11</span></div>
+            <div class="token-box" data-i="2"><span class="token-text"> world</span><span class="token-id">#1917</span></div>
+            <div class="token-box" data-i="3"><span class="token-text">!</span><span class="token-id">#0</span></div>
+          </div>
+        </div>
+        <div class="token-example" id="token-ex2">
+          <div class="token-example-label">Example 2: "ChatGPT is amazing"</div>
+          <div class="token-output" id="tokens2">
+            <div class="token-box" data-i="0"><span class="token-text">Chat</span><span class="token-id">#13465</span></div>
+            <div class="token-box" data-i="1"><span class="token-text">G</span><span class="token-id">#38</span></div>
+            <div class="token-box" data-i="2"><span class="token-text">PT</span><span class="token-id">#2898</span></div>
+            <div class="token-box" data-i="3"><span class="token-text"> is</span><span class="token-id">#374</span></div>
+            <div class="token-box" data-i="4"><span class="token-text"> amazing</span><span class="token-id">#6767</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="cost-calc" id="cost-display">
+        4 tokens × ($0.25 / 1,000,000) = $0.000001 per call
+      </div>
+      <button class="animate-btn" onclick="animateTokens()">▶ Run Animation</button>
+    </div>
+  </div>
+
+  <!-- CODE -->
+  <div class="tab-panel" id="ex1-code">
+    <div class="section-label purple">Annotated Source Code</div>
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        <span>token_counter.py</span>
+        <span>Python 3.11</span>
+      </div>
+      <div class="code-body">
+        <div class="line-nums">
+          <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
+          <span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
+          <span>11</span><span>12</span><span>13</span><span>14</span><span>15</span>
+          <span>16</span><span>17</span><span>18</span><span>19</span><span>20</span>
+        </div>
+        <div class="code-content"><span class="code-line" id="ex1-l1"><span class="kw">import</span> <span class="va">anthropic</span>          <span class="cm"># Official Anthropic Python SDK</span></span>
+<span class="code-line" id="ex1-l2"></span>
+<span class="code-line" id="ex1-l3"><span class="va">client</span> <span class="dt">=</span> <span class="fn">anthropic</span><span class="dt">.</span><span class="fn">Anthropic</span><span class="dt">()</span>   <span class="cm"># Reads ANTHROPIC_API_KEY from env</span></span>
+<span class="code-line" id="ex1-l4"></span>
+<span class="code-line" id="ex1-l5"><span class="kw">def</span> <span class="fn">count_tokens</span><span class="dt">(</span><span class="va">text</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">dict</span><span class="dt">:</span></span>
+<span class="code-line" id="ex1-l6">    <span class="st">"""Count tokens WITHOUT a full API call."""</span></span>
+<span class="code-line" id="ex1-l7">    <span class="cm"># count_tokens is a special endpoint — no LLM inference, just tokenization</span></span>
+<span class="code-line" id="ex1-l8">    <span class="va">response</span> <span class="dt">=</span> <span class="va">client</span><span class="dt">.</span><span class="fn">messages</span><span class="dt">.</span><span class="fn">count_tokens</span><span class="dt">(</span></span>
+<span class="code-line" id="ex1-l9">        <span class="va">model</span><span class="dt">=</span><span class="st">"claude-haiku-4-5-20251001"</span><span class="dt">,</span>   <span class="cm"># cheapest model</span></span>
+<span class="code-line" id="ex1-l10">        <span class="va">messages</span><span class="dt">=[{</span><span class="st">"role"</span><span class="dt">:</span> <span class="st">"user"</span><span class="dt">,</span> <span class="st">"content"</span><span class="dt">:</span> <span class="va">text</span><span class="dt">}]</span></span>
+<span class="code-line" id="ex1-l11">    <span class="dt">)</span></span>
+<span class="code-line" id="ex1-l12"></span>
+<span class="code-line" id="ex1-l13">    <span class="va">input_tokens</span> <span class="dt">=</span> <span class="va">response</span><span class="dt">.</span><span class="va">input_tokens</span>   <span class="cm"># The count we care about</span></span>
+<span class="code-line" id="ex1-l14">    <span class="va">cost</span> <span class="dt">=</span> <span class="dt">(</span><span class="va">input_tokens</span> <span class="dt">/</span> <span class="nm">1_000_000</span><span class="dt">)</span> <span class="dt">*</span> <span class="nm">0.25</span>   <span class="cm"># $0.25 per 1M</span></span>
+<span class="code-line" id="ex1-l15"></span>
+<span class="code-line" id="ex1-l16">    <span class="kw">return</span> <span class="dt">{</span></span>
+<span class="code-line" id="ex1-l17">        <span class="st">"text"</span><span class="dt">:</span> <span class="va">text</span><span class="dt">,</span></span>
+<span class="code-line" id="ex1-l18">        <span class="st">"tokens"</span><span class="dt">:</span> <span class="va">input_tokens</span><span class="dt">,</span></span>
+<span class="code-line" id="ex1-l19">        <span class="st">"cost_usd"</span><span class="dt">:</span> <span class="va">cost</span><span class="dt">,</span></span>
+<span class="code-line" id="ex1-l20">        <span class="st">"cost_display"</span><span class="dt">:</span> <span class="bi">f</span><span class="st">"${cost:.6f}"</span></span>
+<span class="code-line" id="ex1-l21">    <span class="dt">}</span></span></div>
+      </div>
+    </div>
+    <div style="margin-top:16px;padding:12px 16px;background:rgba(13,148,136,0.08);border:1px solid rgba(13,148,136,0.2);border-radius:8px;font-size:0.82rem;">
+      <strong style="color:#2dd4bf;">Key insight:</strong> <span style="color:var(--text);">The <code style="background:rgba(13,148,136,0.15);padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace;color:#2dd4bf;">count_tokens</code> endpoint runs the tokenizer only — no inference. It costs roughly 10x less than a full call and lets you pre-flight requests to enforce budgets before spending real money.</span>
+    </div>
+  </div>
+
+  <!-- TRACE -->
+  <div class="tab-panel" id="ex1-trace">
+    <div class="section-label teal">Step-by-Step Execution Trace</div>
+    <div class="trace-controls">
+      <button class="trace-btn primary" onclick="traceRun('ex1')">▶ Run</button>
+      <button class="trace-btn" onclick="traceStep('ex1')">Step →</button>
+      <button class="trace-btn" onclick="traceReset('ex1')">↺ Reset</button>
+      <span style="font-size:0.8rem;color:var(--muted);align-self:center;">Input: <code style="font-family:'JetBrains Mono',monospace;">"Hello, world!"</code></span>
+    </div>
+    <div class="trace-step-info" id="ex1-step-info">Click Run to execute line-by-line...</div>
+    <div class="trace-wrap">
+      <div class="trace-code-side">
+        <div class="code-wrap">
+          <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>Executing...</span></div>
+          <div class="code-body">
+            <div class="line-nums"><span>1</span><span>3</span><span>5</span><span>8</span><span>13</span><span>14</span><span>16</span></div>
+            <div class="code-content"><span class="code-line" id="tl1-0"><span class="kw">import</span> <span class="va">anthropic</span></span>
+<span class="code-line" id="tl1-1"><span class="va">client</span> <span class="dt">=</span> <span class="fn">anthropic</span><span class="dt">.</span><span class="fn">Anthropic</span><span class="dt">()</span></span>
+<span class="code-line" id="tl1-2"><span class="kw">def</span> <span class="fn">count_tokens</span><span class="dt">(</span><span class="va">text</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">dict</span><span class="dt">:</span></span>
+<span class="code-line" id="tl1-3">    <span class="va">response</span> <span class="dt">=</span> <span class="va">client</span><span class="dt">.</span><span class="fn">messages</span><span class="dt">.</span><span class="fn">count_tokens</span><span class="dt">(...)</span> <span class="cm"># → API</span></span>
+<span class="code-line" id="tl1-4">    <span class="va">input_tokens</span> <span class="dt">=</span> <span class="va">response</span><span class="dt">.</span><span class="va">input_tokens</span></span>
+<span class="code-line" id="tl1-5">    <span class="va">cost</span> <span class="dt">=</span> <span class="dt">(</span><span class="va">input_tokens</span> <span class="dt">/</span> <span class="nm">1_000_000</span><span class="dt">)</span> <span class="dt">*</span> <span class="nm">0.25</span></span>
+<span class="code-line" id="tl1-6">    <span class="kw">return</span> <span class="dt">{</span><span class="st">"tokens"</span><span class="dt">:</span> <span class="va">input_tokens</span><span class="dt">,</span> <span class="st">"cost_usd"</span><span class="dt">:</span> <span class="va">cost</span><span class="dt">, ...}</span></span></div>
+          </div>
+        </div>
+      </div>
+      <div class="trace-vars">
+        <h4>Variable State</h4>
+        <div class="var-row" id="tv1-0"><span class="var-name">module</span><span class="var-val">—</span></div>
+        <div class="var-row" id="tv1-1"><span class="var-name">client</span><span class="var-val">—</span></div>
+        <div class="var-row" id="tv1-2"><span class="var-name">text (param)</span><span class="var-val">—</span></div>
+        <div class="var-row" id="tv1-3"><span class="var-name">response</span><span class="var-val">—</span></div>
+        <div class="var-row" id="tv1-4"><span class="var-name">input_tokens</span><span class="var-val">—</span></div>
+        <div class="var-row" id="tv1-5"><span class="var-name">cost</span><span class="var-val">—</span></div>
+        <div class="var-row" id="tv1-6"><span class="var-name">return value</span><span class="var-val">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TASK -->
+  <div class="tab-panel" id="ex1-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Build a <code style="font-family:'JetBrains Mono',monospace;background:rgba(245,158,11,0.15);padding:2px 6px;border-radius:4px;">TokenBudgetGuard</code> class:</p>
+      <ul>
+        <li><code style="font-family:'JetBrains Mono',monospace;">__init__(self, max_tokens: int)</code> — store the limit</li>
+        <li><code style="font-family:'JetBrains Mono',monospace;">check(self, text: str) -> bool</code> — returns True if text fits in remaining budget (does NOT consume it)</li>
+        <li><code style="font-family:'JetBrains Mono',monospace;">add(self, text: str) -> dict</code> — counts tokens, adds to used total, raises <code style="font-family:'JetBrains Mono',monospace;">BudgetExceededError</code> if it would exceed limit</li>
+        <li><code style="font-family:'JetBrains Mono',monospace;">remaining</code> property — returns <code style="font-family:'JetBrains Mono',monospace;">max_tokens - used_tokens</code></li>
+        <li><code style="font-family:'JetBrains Mono',monospace;">reset()</code> — resets <code style="font-family:'JetBrains Mono',monospace;">used_tokens</code> to 0</li>
+      </ul>
+    </div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>starter_ex1.py — fill in the TODOs</span></div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span></div>
+        <div class="code-content"><span class="kw">import</span> <span class="va">anthropic</span>
+
+<span class="kw">class</span> <span class="tp">BudgetExceededError</span><span class="dt">(</span><span class="tp">Exception</span><span class="dt">):</span>
+    <span class="kw">pass</span>
+
+<span class="kw">class</span> <span class="tp">TokenBudgetGuard</span><span class="dt">:</span>
+    <span class="kw">def</span> <span class="fn">__init__</span><span class="dt">(</span><span class="va">self</span><span class="dt">,</span> <span class="va">max_tokens</span><span class="dt">:</span> <span class="tp">int</span><span class="dt">):</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">max_tokens</span> <span class="dt">=</span> <span class="va">max_tokens</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">used_tokens</span> <span class="dt">=</span> <span class="nm">0</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">client</span> <span class="dt">=</span> <span class="fn">anthropic</span><span class="dt">.</span><span class="fn">Anthropic</span><span class="dt">()</span>
+
+    <span class="kw">def</span> <span class="fn">_count</span><span class="dt">(</span><span class="va">self</span><span class="dt">,</span> <span class="va">text</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">int</span><span class="dt">:</span>
+        <span class="cm"># TODO: call count_tokens API and return input_tokens integer</span>
+        <span class="dt">...</span>
+
+    <span class="dt">@</span><span class="fn">property</span>
+    <span class="kw">def</span> <span class="fn">remaining</span><span class="dt">(</span><span class="va">self</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">int</span><span class="dt">:</span>
+        <span class="cm"># TODO: return max_tokens minus used_tokens</span>
+        <span class="dt">...</span>
+
+    <span class="kw">def</span> <span class="fn">check</span><span class="dt">(</span><span class="va">self</span><span class="dt">,</span> <span class="va">text</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">bool</span><span class="dt">:</span>
+        <span class="cm"># TODO: return True if text fits, False otherwise (don't update used_tokens)</span>
+        <span class="dt">...</span>
+
+    <span class="kw">def</span> <span class="fn">add</span><span class="dt">(</span><span class="va">self</span><span class="dt">,</span> <span class="va">text</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">dict</span><span class="dt">:</span>
+        <span class="cm"># TODO: count tokens; raise BudgetExceededError if over limit</span>
+        <span class="cm"># If ok, add to used_tokens and return {"tokens": n, "remaining": m}</span>
+        <span class="dt">...</span></div>
+      </div>
+    </div>
+    <button class="animate-btn" style="margin-top:12px;" onclick="markDone(1)">Mark as Completed ✓</button>
+  </div>
+
+  <!-- TESTS -->
+  <div class="tab-panel" id="ex1-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case">
+        <span class="test-badge pending" id="t1-1">T1</span>
+        <div class="test-content">
+          <div class="test-input">guard = TokenBudgetGuard(100)<br>guard.remaining == 100</div>
+          <div class="test-expected">→ True (initial remaining equals max)</div>
+        </div>
+      </div>
+      <div class="test-case">
+        <span class="test-badge pending" id="t1-2">T2</span>
+        <div class="test-content">
+          <div class="test-input">guard.check("Hello world")  # ~3 tokens</div>
+          <div class="test-expected">→ True (fits in budget, remaining unchanged)</div>
+        </div>
+      </div>
+      <div class="test-case">
+        <span class="test-badge pending" id="t1-3">T3</span>
+        <div class="test-content">
+          <div class="test-input">result = guard.add("Hello world")<br>result["tokens"] > 0 and result["remaining"] < 100</div>
+          <div class="test-expected">→ True (tokens consumed, remaining decreased)</div>
+        </div>
+      </div>
+      <div class="test-case">
+        <span class="test-badge pending" id="t1-4">T4</span>
+        <div class="test-content">
+          <div class="test-input">tiny_guard = TokenBudgetGuard(1)<br>tiny_guard.add("This is a very long text with many words")</div>
+          <div class="test-expected">→ raises BudgetExceededError</div>
+        </div>
+      </div>
+      <div class="test-case">
+        <span class="test-badge pending" id="t1-5">T5</span>
+        <div class="test-content">
+          <div class="test-input">guard.add("some text")  # consume tokens<br>guard.reset()<br>guard.remaining == 100</div>
+          <div class="test-expected">→ True (reset restores full budget)</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:16px;display:flex;gap:8px;">
+      <button class="animate-btn" onclick="runTests(1)">▶ Run All Tests</button>
+    </div>
+  </div>
+
+  <!-- HINTS -->
+  <div class="tab-panel" id="ex1-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — What does _count() look like?</span><span class="arrow">▶</span></button>
+        <div class="hint-body">Call <code>client.messages.count_tokens(model="claude-haiku-4-5-20251001", messages=[{"role":"user","content":text}])</code> and return <code>response.input_tokens</code>. This is a cheap pre-flight call — no inference happens.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — The remaining property</span><span class="arrow">▶</span></button>
+        <div class="hint-body">Just <code>return self.max_tokens - self.used_tokens</code>. Python properties are like computed getters in other languages — no parens needed when accessing.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 3 — check() must NOT mutate state</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>n = self._count(text)</code> then <code>return n <= self.remaining</code>. Do NOT do <code>self.used_tokens += n</code> in check().</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 4 — Full add() implementation</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>n = self._count(text)</code> → if <code>n > self.remaining</code>: raise <code>BudgetExceededError(f"Need {n}, only {self.remaining} left")</code> → else: <code>self.used_tokens += n</code> → return <code>{"tokens": n, "remaining": self.remaining}</code></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 2: CONVERSATION MEMORY ========== -->
+<section class="exercise" id="ex2">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 2 of 4</div>
+      <h2>Conversation Memory</h2>
+      <p>Master the stateless API — learn exactly why you must send full history on every call, and build a session manager.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot2"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex2','visual')">Visual Explainer</button>
+    <button class="tab-btn" onclick="showTab('ex2','code')">Annotated Code</button>
+    <button class="tab-btn" onclick="showTab('ex2','trace')">Execution Trace</button>
+    <button class="tab-btn" onclick="showTab('ex2','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex2','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex2','hints')">Hints</button>
+  </div>
+
+  <!-- VISUAL -->
+  <div class="tab-panel active" id="ex2-visual">
+    <div class="section-label purple">The Stateless API — How Memory Works</div>
+    <div class="conv-diagram">
+      <div class="conv-panel">
+        <h4 class="blue">What YOU Store (messages list)</h4>
+        <div id="conv-left">
+          <div style="font-size:0.75rem;color:var(--muted);font-family:'JetBrains Mono',monospace;">messages = []</div>
+        </div>
+      </div>
+      <div class="conv-panel">
+        <h4 class="gray">What Model Sees (per API call)</h4>
+        <div id="conv-right">
+          <div style="font-size:0.75rem;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-bottom:8px;">→ full array sent each time</div>
+        </div>
+      </div>
+    </div>
+    <div class="conv-timeline">
+      <button class="turn-btn active" id="turn-0" onclick="showTurn(0)">Start</button>
+      <button class="turn-btn" id="turn-1" onclick="showTurn(1)">Turn 1</button>
+      <button class="turn-btn" id="turn-2" onclick="showTurn(2)">Turn 2</button>
+      <button class="turn-btn" id="turn-3" onclick="showTurn(3)">Turn 3 (fresh)</button>
+    </div>
+    <div style="margin-top:16px;padding:12px 16px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:8px;font-size:0.82rem;">
+      <strong style="color:#f87171;">Why "fresh" forgets:</strong> <span style="color:var(--text);">If you create a new messages list (or don't pass history), the model has zero context. LLMs have NO server-side memory — every call starts fresh unless YOU send the history.</span>
+    </div>
+
+    <div style="margin-top:24px;">
+      <div class="section-label purple">The chat() Function — Anatomy</div>
+      <div class="fn-anatomy">
+        <div style="color:var(--muted);font-size:0.72rem;margin-bottom:12px;">┌─ chat(messages, user_input) ──────────────────────────────────┐</div>
+        <div class="fn-step"><span class="fn-step-num">1.</span><div><div class="fn-step-desc">APPEND user message to messages list</div><div class="fn-step-code">messages = messages + [{"role": "user", "content": user_input}]</div></div></div>
+        <div class="fn-step"><span class="fn-step-num">2.</span><div><div class="fn-step-desc">SEND full history to API</div><div class="fn-step-code">client.messages.create(messages=messages)</div></div></div>
+        <div class="fn-step"><span class="fn-step-num">3.</span><div><div class="fn-step-desc">EXTRACT reply text</div><div class="fn-step-code">reply = response.content[0].text</div></div></div>
+        <div class="fn-step"><span class="fn-step-num">4.</span><div><div class="fn-step-desc">APPEND assistant reply to messages list</div><div class="fn-step-code">messages = messages + [{"role": "assistant", "content": reply}]</div></div></div>
+        <div class="fn-step"><span class="fn-step-num">5.</span><div><div class="fn-step-desc">RETURN reply + updated messages</div><div class="fn-step-code">return reply, messages</div></div></div>
+        <div style="color:var(--muted);font-size:0.72rem;margin-top:8px;">└───────────────────────────────────────────────────────────────┘</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CODE -->
+  <div class="tab-panel" id="ex2-code">
+    <div class="section-label purple">Annotated Source Code</div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>conversation.py</span></div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span></div>
+        <div class="code-content"><span class="kw">import</span> <span class="va">anthropic</span>
+
+<span class="va">client</span> <span class="dt">=</span> <span class="fn">anthropic</span><span class="dt">.</span><span class="fn">Anthropic</span><span class="dt">()</span>
+
+<span class="kw">def</span> <span class="fn">chat</span><span class="dt">(</span>
+    <span class="va">messages</span><span class="dt">:</span> <span class="tp">list</span><span class="dt">,</span>          <span class="cm"># full history so far</span>
+    <span class="va">user_input</span><span class="dt">:</span> <span class="tp">str</span>
+<span class="dt">)</span> <span class="dt">-></span> <span class="tp">tuple</span><span class="dt">[</span><span class="tp">str</span><span class="dt">,</span> <span class="tp">list</span><span class="dt">]:</span>
+    <span class="cm"># Step 1: add new user turn</span>
+    <span class="va">messages</span> <span class="dt">=</span> <span class="va">messages</span> <span class="dt">+</span> <span class="dt">[{</span><span class="st">"role"</span><span class="dt">:</span> <span class="st">"user"</span><span class="dt">,</span> <span class="st">"content"</span><span class="dt">:</span> <span class="va">user_input</span><span class="dt">}]</span>
+
+    <span class="cm"># Step 2: send the FULL array — model has no other state</span>
+    <span class="va">response</span> <span class="dt">=</span> <span class="va">client</span><span class="dt">.</span><span class="fn">messages</span><span class="dt">.</span><span class="fn">create</span><span class="dt">(</span>
+        <span class="va">model</span><span class="dt">=</span><span class="st">"claude-haiku-4-5-20251001"</span><span class="dt">,</span>
+        <span class="va">max_tokens</span><span class="dt">=</span><span class="nm">1024</span><span class="dt">,</span>
+        <span class="va">messages</span><span class="dt">=</span><span class="va">messages</span>     <span class="cm"># ← all history, every call</span>
+    <span class="dt">)</span>
+
+    <span class="cm"># Step 3 + 4: extract and store reply</span>
+    <span class="va">reply</span> <span class="dt">=</span> <span class="va">response</span><span class="dt">.</span><span class="va">content</span><span class="dt">[</span><span class="nm">0</span><span class="dt">].</span><span class="va">text</span>
+    <span class="va">messages</span> <span class="dt">=</span> <span class="va">messages</span> <span class="dt">+</span> <span class="dt">[{</span><span class="st">"role"</span><span class="dt">:</span> <span class="st">"assistant"</span><span class="dt">,</span> <span class="st">"content"</span><span class="dt">:</span> <span class="va">reply</span><span class="dt">}]</span>
+
+    <span class="kw">return</span> <span class="va">reply</span><span class="dt">,</span> <span class="va">messages</span>   <span class="cm"># caller owns the updated list</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRACE -->
+  <div class="tab-panel" id="ex2-trace">
+    <div class="section-label teal">Execution Trace — 3-turn conversation</div>
+    <div class="trace-controls">
+      <button class="trace-btn primary" onclick="traceRun('ex2')">▶ Run</button>
+      <button class="trace-btn" onclick="traceStep('ex2')">Step →</button>
+      <button class="trace-btn" onclick="traceReset('ex2')">↺ Reset</button>
+    </div>
+    <div class="trace-step-info" id="ex2-step-info">Watch how messages array grows with each turn...</div>
+    <div class="trace-wrap">
+      <div class="trace-code-side">
+        <div class="code-wrap">
+          <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>3-turn trace</span></div>
+          <div class="code-body">
+            <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span></div>
+            <div class="code-content"><span class="code-line" id="tl2-0"><span class="va">msgs</span> <span class="dt">=</span> <span class="dt">[]</span>                              <span class="cm"># empty start</span></span>
+<span class="code-line" id="tl2-1"><span class="va">reply</span><span class="dt">,</span> <span class="va">msgs</span> <span class="dt">=</span> <span class="fn">chat</span><span class="dt">(</span><span class="va">msgs</span><span class="dt">,</span> <span class="st">"My name is Sharjeel"</span><span class="dt">)</span></span>
+<span class="code-line" id="tl2-2"><span class="cm"># msgs now has 2 entries (user + assistant)</span></span>
+<span class="code-line" id="tl2-3"><span class="va">reply</span><span class="dt">,</span> <span class="va">msgs</span> <span class="dt">=</span> <span class="fn">chat</span><span class="dt">(</span><span class="va">msgs</span><span class="dt">,</span> <span class="st">"What's my name?"</span><span class="dt">)</span></span>
+<span class="code-line" id="tl2-4"><span class="cm"># msgs now has 4 entries — model CAN remember</span></span>
+<span class="code-line" id="tl2-5"><span class="va">fresh_msgs</span> <span class="dt">=</span> <span class="dt">[]</span>                          <span class="cm"># new list!</span></span>
+<span class="code-line" id="tl2-6"><span class="va">reply</span><span class="dt">,</span> <span class="va">_</span> <span class="dt">=</span> <span class="fn">chat</span><span class="dt">(</span><span class="va">fresh_msgs</span><span class="dt">,</span> <span class="st">"What's my name?"</span><span class="dt">)</span> <span class="cm"># "I don't know"</span></span></div>
+          </div>
+        </div>
+      </div>
+      <div class="trace-vars">
+        <h4>State</h4>
+        <div class="var-row" id="tv2-0"><span class="var-name">msgs length</span><span class="var-val">—</span></div>
+        <div class="var-row" id="tv2-1"><span class="var-name">turn 1 sent</span><span class="var-val">—</span></div>
+        <div class="var-row" id="tv2-2"><span class="var-name">msgs after T1</span><span class="var-val">—</span></div>
+        <div class="var-row" id="tv2-3"><span class="var-name">turn 2 sent</span><span class="var-val">—</span></div>
+        <div class="var-row" id="tv2-4"><span class="var-name">msgs after T2</span><span class="var-val">—</span></div>
+        <div class="var-row" id="tv2-5"><span class="var-name">fresh_msgs</span><span class="var-val">—</span></div>
+        <div class="var-row" id="tv2-6"><span class="var-name">reply (fresh)</span><span class="var-val">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TASK -->
+  <div class="tab-panel" id="ex2-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Build a <code style="font-family:'JetBrains Mono',monospace;background:rgba(245,158,11,0.15);padding:2px 6px;border-radius:4px;">ConversationSession</code> class:</p>
+      <ul>
+        <li><code style="font-family:'JetBrains Mono',monospace;">chat(user_input: str) -> str</code> — sends message, stores full history internally</li>
+        <li><code style="font-family:'JetBrains Mono',monospace;">history</code> property — returns the raw messages list (list of dicts)</li>
+        <li><code style="font-family:'JetBrains Mono',monospace;">clear()</code> — resets history to []</li>
+        <li><code style="font-family:'JetBrains Mono',monospace;">token_count</code> property — estimates total tokens (rough: sum of len(m["content"])//4)</li>
+        <li><code style="font-family:'JetBrains Mono',monospace;">summarize_and_compress()</code> — sends history to Claude, asks it to summarize, replaces messages with a single system-style summary message</li>
+      </ul>
+    </div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>starter_ex2.py</span></div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span></div>
+        <div class="code-content"><span class="kw">import</span> <span class="va">anthropic</span>
+
+<span class="kw">class</span> <span class="tp">ConversationSession</span><span class="dt">:</span>
+    <span class="kw">def</span> <span class="fn">__init__</span><span class="dt">(</span><span class="va">self</span><span class="dt">,</span> <span class="va">model</span><span class="dt">:</span> <span class="tp">str</span> <span class="dt">=</span> <span class="st">"claude-haiku-4-5-20251001"</span><span class="dt">):</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">model</span> <span class="dt">=</span> <span class="va">model</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">_messages</span><span class="dt">:</span> <span class="tp">list</span> <span class="dt">=</span> <span class="dt">[]</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">client</span> <span class="dt">=</span> <span class="fn">anthropic</span><span class="dt">.</span><span class="fn">Anthropic</span><span class="dt">()</span>
+
+    <span class="kw">def</span> <span class="fn">chat</span><span class="dt">(</span><span class="va">self</span><span class="dt">,</span> <span class="va">user_input</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">str</span><span class="dt">:</span>
+        <span class="cm"># TODO: append user msg, call API with full _messages, append reply</span>
+        <span class="dt">...</span>
+
+    <span class="dt">@</span><span class="fn">property</span>
+    <span class="kw">def</span> <span class="fn">history</span><span class="dt">(</span><span class="va">self</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">list</span><span class="dt">:</span>
+        <span class="cm"># TODO: return copy of _messages</span>
+        <span class="dt">...</span>
+
+    <span class="kw">def</span> <span class="fn">clear</span><span class="dt">(</span><span class="va">self</span><span class="dt">)</span> <span class="dt">-></span> <span class="bi">None</span><span class="dt">:</span>
+        <span class="cm"># TODO: reset _messages to []</span>
+        <span class="dt">...</span>
+
+    <span class="kw">def</span> <span class="fn">summarize_and_compress</span><span class="dt">(</span><span class="va">self</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">str</span><span class="dt">:</span>
+        <span class="cm"># TODO: ask Claude to summarize self._messages</span>
+        <span class="cm"># Then replace _messages with a single {"role":"user","content":"Summary: ..."}</span>
+        <span class="dt">...</span></div>
+      </div>
+    </div>
+    <button class="animate-btn" style="margin-top:12px;" onclick="markDone(2)">Mark as Completed ✓</button>
+  </div>
+
+  <!-- TESTS -->
+  <div class="tab-panel" id="ex2-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t2-1">T1</span><div class="test-content"><div class="test-input">session = ConversationSession()<br>len(session.history) == 0</div><div class="test-expected">→ True (empty at start)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t2-2">T2</span><div class="test-content"><div class="test-input">session.chat("Say exactly: hello")<br>len(session.history) == 2</div><div class="test-expected">→ True (1 user + 1 assistant)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t2-3">T3</span><div class="test-content"><div class="test-input">session.chat("My name is Sharjeel")<br>reply = session.chat("What's my name?")<br>"Sharjeel" in reply</div><div class="test-expected">→ True (memory works across turns)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t2-4">T4</span><div class="test-content"><div class="test-input">session.clear()<br>len(session.history) == 0</div><div class="test-expected">→ True (clear resets state)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t2-5">T5</span><div class="test-content"><div class="test-input">session.chat("x" * 100)  # add content<br>session.summarize_and_compress()<br>len(session.history) == 1  # compressed to 1</div><div class="test-expected">→ True (history compressed to summary)</div></div></div>
+    </div>
+  </div>
+
+  <!-- HINTS -->
+  <div class="tab-panel" id="ex2-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item"><button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — chat() skeleton</span><span class="arrow">▶</span></button><div class="hint-body">1. <code>self._messages.append({"role":"user","content":user_input})</code><br>2. <code>response = self.client.messages.create(model=self.model, max_tokens=1024, messages=self._messages)</code><br>3. <code>reply = response.content[0].text</code><br>4. <code>self._messages.append({"role":"assistant","content":reply})</code><br>5. <code>return reply</code></div></div>
+      <div class="hint-item"><button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — summarize_and_compress()</span><span class="arrow">▶</span></button><div class="hint-body">Build a prompt like <code>"Summarize this conversation concisely:\n" + str(self._messages)</code>, call the API with that as a fresh user message (not self._messages), get the summary text, then do <code>self._messages = [{"role":"user","content":"Previous conversation summary: " + summary}]</code></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 3: STRUCTURED CV EXTRACTOR ========== -->
+<section class="exercise" id="ex3">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 3 of 4</div>
+      <h2>Structured CV Extractor</h2>
+      <p>Use Claude to extract structured data from unstructured text. The model's JSON mode + Pydantic = reliable schemas.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot3"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex3','visual')">Visual Explainer</button>
+    <button class="tab-btn" onclick="showTab('ex3','code')">Annotated Code</button>
+    <button class="tab-btn" onclick="showTab('ex3','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex3','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex3','hints')">Hints</button>
+  </div>
+
+  <!-- VISUAL -->
+  <div class="tab-panel active" id="ex3-visual">
+    <div class="section-label purple">Raw Text → Schema → Extracted JSON</div>
+    <div class="cv-diagram">
+      <div class="cv-col">
+        <h4 style="color:var(--muted);">Column 1 — Raw Text</h4>
+        <div class="raw-text-box">Sharjeel Sohail here. I'm a
+backend engineer with about 5
+years of experience. I work
+mostly in Python, FastAPI,
+and Docker. Currently at
+Uforia as a SE III since
+2025. Before that I was at
+Contour Software. I love
+distributed systems and
+async patterns.</div>
+      </div>
+      <div class="cv-arrow" style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <div style="font-size:0.7rem;color:var(--muted);">define schema</div>
+        <div>→</div>
+        <div style="font-size:0.7rem;color:var(--purple-light);margin-top:8px;">Claude extracts</div>
+        <div>→</div>
+      </div>
+      <div class="cv-col">
+        <h4 style="color:var(--purple-light);">Column 2/3 — Schema + Extracted</h4>
+        <div class="schema-tree">
+          <div style="color:var(--yellow);font-weight:700;margin-bottom:8px;">CVData</div>
+          <div class="schema-field"><span class="schema-key">├── full_name:</span><span class="schema-type"> str</span><span class="schema-val lit" id="sf1">  "Sharjeel Sohail"</span></div>
+          <div class="schema-field"><span class="schema-key">├── years_exp:</span><span class="schema-type"> float</span><span class="schema-val lit" id="sf2">  5.0</span></div>
+          <div class="schema-field"><span class="schema-key">├── language:</span><span class="schema-type"> str</span><span class="schema-val lit" id="sf3">  "Python"</span></div>
+          <div class="schema-field"><span class="schema-key">├── skills:</span><span class="schema-type"> list[str]</span><span class="schema-val lit" id="sf4">  ["FastAPI", "Docker"]</span></div>
+          <div class="schema-field"><span class="schema-key">└── companies:</span><span class="schema-type"> list[Company]</span></div>
+          <div class="schema-field" style="padding-left:16px;"><span class="schema-key">└── Company</span></div>
+          <div class="schema-field" style="padding-left:28px;"><span class="schema-key">├── name:</span><span class="schema-type"> str</span><span class="schema-val lit" id="sf5">  "Uforia"</span></div>
+          <div class="schema-field" style="padding-left:28px;"><span class="schema-key">├── role:</span><span class="schema-type"> str</span><span class="schema-val lit" id="sf6">  "SE III"</span></div>
+          <div class="schema-field" style="padding-left:28px;"><span class="schema-key">└── duration:</span><span class="schema-type"> str</span><span class="schema-val lit" id="sf7">  "2025-present"</span></div>
+        </div>
+        <button class="animate-btn" style="margin-top:10px;" onclick="animateCVExtract()">▶ Animate Extraction</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CODE -->
+  <div class="tab-panel" id="ex3-code">
+    <div class="section-label purple">Annotated Source Code</div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>cv_extractor.py</span></div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span></div>
+        <div class="code-content"><span class="kw">import</span> <span class="va">anthropic</span><span class="dt">,</span> <span class="va">json</span>
+<span class="kw">from</span> <span class="va">typing</span> <span class="kw">import</span> <span class="tp">TypedDict</span>
+
+<span class="kw">class</span> <span class="tp">Company</span><span class="dt">(</span><span class="tp">TypedDict</span><span class="dt">):</span>
+    <span class="va">name</span><span class="dt">:</span> <span class="tp">str</span>
+    <span class="va">role</span><span class="dt">:</span> <span class="tp">str</span>
+    <span class="va">duration</span><span class="dt">:</span> <span class="tp">str</span>
+
+<span class="kw">class</span> <span class="tp">CVData</span><span class="dt">(</span><span class="tp">TypedDict</span><span class="dt">):</span>
+    <span class="va">full_name</span><span class="dt">:</span> <span class="tp">str</span>
+    <span class="va">years_experience</span><span class="dt">:</span> <span class="tp">float</span>
+    <span class="va">primary_language</span><span class="dt">:</span> <span class="tp">str</span>
+    <span class="va">skills</span><span class="dt">:</span> <span class="tp">list</span><span class="dt">[</span><span class="tp">str</span><span class="dt">]</span>
+    <span class="va">companies</span><span class="dt">:</span> <span class="tp">list</span><span class="dt">[</span><span class="tp">Company</span><span class="dt">]</span>
+
+<span class="va">client</span> <span class="dt">=</span> <span class="fn">anthropic</span><span class="dt">.</span><span class="fn">Anthropic</span><span class="dt">()</span>
+
+<span class="kw">def</span> <span class="fn">extract_cv</span><span class="dt">(</span><span class="va">raw_text</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">CVData</span><span class="dt">:</span>
+    <span class="va">prompt</span> <span class="dt">=</span> <span class="bi">f</span><span class="st">"""Extract CV data from this text and return ONLY valid JSON.
+Schema: {{"full_name": str, "years_experience": float, "primary_language": str,
+         "skills": [str], "companies": [{{"name": str, "role": str, "duration": str}}]}}
+
+Text: {raw_text}"""</span>
+
+    <span class="va">response</span> <span class="dt">=</span> <span class="va">client</span><span class="dt">.</span><span class="fn">messages</span><span class="dt">.</span><span class="fn">create</span><span class="dt">(</span>
+        <span class="va">model</span><span class="dt">=</span><span class="st">"claude-haiku-4-5-20251001"</span><span class="dt">,</span>
+        <span class="va">max_tokens</span><span class="dt">=</span><span class="nm">1024</span><span class="dt">,</span>
+        <span class="va">messages</span><span class="dt">=[{</span><span class="st">"role"</span><span class="dt">:</span> <span class="st">"user"</span><span class="dt">,</span> <span class="st">"content"</span><span class="dt">:</span> <span class="va">prompt</span><span class="dt">}]</span>
+    <span class="dt">)</span>
+    <span class="kw">return</span> <span class="fn">json</span><span class="dt">.</span><span class="fn">loads</span><span class="dt">(</span><span class="va">response</span><span class="dt">.</span><span class="va">content</span><span class="dt">[</span><span class="nm">0</span><span class="dt">].</span><span class="va">text</span><span class="dt">)</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TASK -->
+  <div class="tab-panel" id="ex3-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Extend the CV extractor with additional schema fields:</p>
+      <ul>
+        <li>Add <code style="font-family:'JetBrains Mono',monospace;">education: list[Education]</code> — with fields: <code style="font-family:'JetBrains Mono',monospace;">institution, degree, year</code></li>
+        <li>Add <code style="font-family:'JetBrains Mono',monospace;">open_to_remote: bool</code> — infer from text (default True if not mentioned)</li>
+        <li>Add <code style="font-family:'JetBrains Mono',monospace;">seniority: Literal["junior","mid","senior","staff"]</code> — infer from years_experience and role titles</li>
+        <li>Add a <code style="font-family:'JetBrains Mono',monospace;">validate_cv(data: CVData) -> list[str]</code> function that returns a list of validation errors (e.g. "years_experience must be positive")</li>
+        <li>Test with the sample CV text from the visual diagram above</li>
+      </ul>
+    </div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>starter_ex3.py</span></div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span></div>
+        <div class="code-content"><span class="kw">from</span> <span class="va">typing</span> <span class="kw">import</span> <span class="tp">TypedDict</span><span class="dt">,</span> <span class="tp">Literal</span>
+<span class="kw">import</span> <span class="va">anthropic</span><span class="dt">,</span> <span class="va">json</span>
+
+<span class="kw">class</span> <span class="tp">Education</span><span class="dt">(</span><span class="tp">TypedDict</span><span class="dt">):</span>
+    <span class="cm"># TODO: add institution, degree, year fields</span>
+    <span class="dt">...</span>
+
+<span class="kw">class</span> <span class="tp">ExtendedCVData</span><span class="dt">(</span><span class="tp">TypedDict</span><span class="dt">):</span>
+    <span class="cm"># TODO: all original fields + education, open_to_remote, seniority</span>
+    <span class="dt">...</span>
+
+<span class="kw">def</span> <span class="fn">extract_extended_cv</span><span class="dt">(</span><span class="va">raw_text</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">ExtendedCVData</span><span class="dt">:</span>
+    <span class="cm"># TODO: prompt that asks for the extended schema</span>
+    <span class="dt">...</span>
+
+<span class="kw">def</span> <span class="fn">validate_cv</span><span class="dt">(</span><span class="va">data</span><span class="dt">:</span> <span class="tp">ExtendedCVData</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">list</span><span class="dt">[</span><span class="tp">str</span><span class="dt">]:</span>
+    <span class="cm"># TODO: return list of error strings, empty list if valid</span>
+    <span class="dt">...</span></div>
+      </div>
+    </div>
+    <button class="animate-btn" style="margin-top:12px;" onclick="markDone(3)">Mark as Completed ✓</button>
+  </div>
+
+  <!-- TESTS -->
+  <div class="tab-panel" id="ex3-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t3-1">T1</span><div class="test-content"><div class="test-input">result = extract_extended_cv(sample_text)<br>result["full_name"] == "Sharjeel Sohail"</div><div class="test-expected">→ True</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t3-2">T2</span><div class="test-content"><div class="test-input">result["seniority"] in ["senior","staff"]</div><div class="test-expected">→ True (5 years + SE III title)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t3-3">T3</span><div class="test-content"><div class="test-input">isinstance(result["open_to_remote"], bool)</div><div class="test-expected">→ True</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t3-4">T4</span><div class="test-content"><div class="test-input">bad = {"years_experience": -1, ...}<br>errors = validate_cv(bad)<br>len(errors) > 0</div><div class="test-expected">→ True (caught negative years)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t3-5">T5</span><div class="test-content"><div class="test-input">len(result["companies"]) >= 1<br>result["companies"][0]["name"] == "Uforia"</div><div class="test-expected">→ True</div></div></div>
+    </div>
+  </div>
+
+  <!-- HINTS -->
+  <div class="tab-panel" id="ex3-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item"><button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — Seniority inference prompt</span><span class="arrow">▶</span></button><div class="hint-body">Tell Claude the rule: <code>"Infer seniority: junior = 0-2 years, mid = 2-5 years, senior = 5-8 years, staff = 8+ years OR senior title. Use the candidate's years_experience and role titles."</code></div></div>
+      <div class="hint-item"><button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — Handling JSON extraction robustly</span><span class="arrow">▶</span></button><div class="hint-body">Claude sometimes wraps JSON in ```json ... ```. Add a cleanup step: <code>text = response.content[0].text; text = text.strip(); if text.startswith("```"): text = text.split("```")[1]; if text.startswith("json"): text = text[4:]</code> then <code>json.loads(text)</code></div></div>
+      <div class="hint-item"><button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 3 — validate_cv() checks to implement</span><span class="arrow">▶</span></button><div class="hint-body">Check: <code>years_experience >= 0</code>, <code>full_name != ""</code>, <code>seniority in ["junior","mid","senior","staff"]</code>, <code>isinstance(open_to_remote, bool)</code>, each company has all 3 fields non-empty.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 4: MULTI-TOOL AGENT ========== -->
+<section class="exercise" id="ex4">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 4 of 4 — Boss Exercise</div>
+      <h2>Multi-Tool Agent — The Full Loop</h2>
+      <p>Build a complete agentic loop. The model decides which tools to call, you execute them, loop until done.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot4"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex4','visual')">Visual Explainer</button>
+    <button class="tab-btn" onclick="showTab('ex4','code')">Annotated Code</button>
+    <button class="tab-btn" onclick="showTab('ex4','trace')">Messages Array</button>
+    <button class="tab-btn" onclick="showTab('ex4','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex4','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex4','hints')">Hints</button>
+  </div>
+
+  <!-- VISUAL -->
+  <div class="tab-panel active" id="ex4-visual">
+    <div class="section-label purple">The Tool Use Agentic Loop — Animated Flowchart</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+      <div>
+        <div class="flowchart" id="fc-main">
+          <div class="fc-node start" id="fc0">User sends query</div>
+          <div class="fc-arrow-down"></div>
+          <div class="fc-node process" id="fc1">API call with tools list</div>
+          <div class="fc-arrow-down"></div>
+          <div class="fc-node decision" id="fc2">stop_reason?</div>
+          <div class="fc-branches">
+            <div class="fc-branch">
+              <span class="fc-branch-label green">end_turn</span>
+              <div class="fc-arrow-down"></div>
+              <div class="fc-node end" id="fc3">Return response</div>
+            </div>
+            <div class="fc-branch">
+              <span class="fc-branch-label orange">tool_use</span>
+              <div class="fc-arrow-down"></div>
+              <div class="fc-node tool" id="fc4">Execute tool locally</div>
+              <div class="fc-arrow-down"></div>
+              <div class="fc-node process" id="fc5">Append tool_result</div>
+              <div class="fc-back-arrow">↑ loop back to API call</div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:16px;">
+          <button class="animate-btn" onclick="fcSimulate('tool_use')">Simulate tool_use</button>
+          <button class="animate-btn" style="background:var(--teal);" onclick="fcSimulate('end_turn')">Simulate end_turn</button>
+          <button class="animate-btn" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);" onclick="fcReset()">Reset</button>
+        </div>
+      </div>
+      <div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;font-size:0.82rem;" id="fc-log">
+          <div style="color:var(--muted);font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Execution Log</div>
+          <div style="color:var(--muted);font-family:'JetBrains Mono',monospace;">Click a simulation button...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CODE -->
+  <div class="tab-panel" id="ex4-code">
+    <div class="section-label purple">The Agent Loop — Annotated</div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>agent_loop.py</span></div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span></div>
+        <div class="code-content"><span class="kw">import</span> <span class="va">anthropic</span>
+
+<span class="va">client</span> <span class="dt">=</span> <span class="fn">anthropic</span><span class="dt">.</span><span class="fn">Anthropic</span><span class="dt">()</span>
+
+<span class="kw">def</span> <span class="fn">run_agent</span><span class="dt">(</span><span class="va">query</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">,</span> <span class="va">tools</span><span class="dt">:</span> <span class="tp">list</span><span class="dt">,</span> <span class="va">tool_map</span><span class="dt">:</span> <span class="tp">dict</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">str</span><span class="dt">:</span>
+    <span class="va">messages</span> <span class="dt">=</span> <span class="dt">[{</span><span class="st">"role"</span><span class="dt">:</span> <span class="st">"user"</span><span class="dt">,</span> <span class="st">"content"</span><span class="dt">:</span> <span class="va">query</span><span class="dt">}]</span>
+
+    <span class="kw">while</span> <span class="bi">True</span><span class="dt">:</span>         <span class="cm"># loop until end_turn or error</span>
+        <span class="va">response</span> <span class="dt">=</span> <span class="va">client</span><span class="dt">.</span><span class="fn">messages</span><span class="dt">.</span><span class="fn">create</span><span class="dt">(</span>
+            <span class="va">model</span><span class="dt">=</span><span class="st">"claude-haiku-4-5-20251001"</span><span class="dt">,</span>
+            <span class="va">max_tokens</span><span class="dt">=</span><span class="nm">1024</span><span class="dt">,</span>
+            <span class="va">tools</span><span class="dt">=</span><span class="va">tools</span><span class="dt">,</span>       <span class="cm"># list of tool schemas</span>
+            <span class="va">messages</span><span class="dt">=</span><span class="va">messages</span>
+        <span class="dt">)</span>
+
+        <span class="cm"># EXIT CONDITION: model is done</span>
+        <span class="kw">if</span> <span class="va">response</span><span class="dt">.</span><span class="va">stop_reason</span> <span class="dt">==</span> <span class="st">"end_turn"</span><span class="dt">:</span>
+            <span class="kw">return</span> <span class="va">response</span><span class="dt">.</span><span class="va">content</span><span class="dt">[</span><span class="nm">0</span><span class="dt">].</span><span class="va">text</span>
+
+        <span class="cm"># TOOL EXECUTION: find all tool_use blocks</span>
+        <span class="va">tool_results</span> <span class="dt">=</span> <span class="dt">[]</span>
+        <span class="kw">for</span> <span class="va">block</span> <span class="kw">in</span> <span class="va">response</span><span class="dt">.</span><span class="va">content</span><span class="dt">:</span>
+            <span class="kw">if</span> <span class="va">block</span><span class="dt">.</span><span class="va">type</span> <span class="dt">==</span> <span class="st">"tool_use"</span><span class="dt">:</span>
+                <span class="va">fn</span> <span class="dt">=</span> <span class="va">tool_map</span><span class="dt">[</span><span class="va">block</span><span class="dt">.</span><span class="va">name</span><span class="dt">]</span>    <span class="cm"># look up Python function</span>
+                <span class="va">result</span> <span class="dt">=</span> <span class="fn">fn</span><span class="dt">(</span><span class="dt">**</span><span class="va">block</span><span class="dt">.</span><span class="va">input</span><span class="dt">)</span>   <span class="cm"># call it with Claude's args</span>
+                <span class="va">tool_results</span><span class="dt">.</span><span class="fn">append</span><span class="dt">({</span>
+                    <span class="st">"type"</span><span class="dt">:</span> <span class="st">"tool_result"</span><span class="dt">,</span>
+                    <span class="st">"tool_use_id"</span><span class="dt">:</span> <span class="va">block</span><span class="dt">.</span><span class="va">id</span><span class="dt">,</span>
+                    <span class="st">"content"</span><span class="dt">:</span> <span class="fn">str</span><span class="dt">(</span><span class="va">result</span><span class="dt">)</span>
+                <span class="dt">})</span>
+        <span class="cm"># APPEND both model response and tool results to history</span>
+        <span class="va">messages</span><span class="dt">.</span><span class="fn">append</span><span class="dt">({</span><span class="st">"role"</span><span class="dt">:</span> <span class="st">"assistant"</span><span class="dt">,</span> <span class="st">"content"</span><span class="dt">:</span> <span class="va">response</span><span class="dt">.</span><span class="va">content</span><span class="dt">})</span>
+        <span class="va">messages</span><span class="dt">.</span><span class="fn">append</span><span class="dt">({</span><span class="st">"role"</span><span class="dt">:</span> <span class="st">"user"</span><span class="dt">,</span> <span class="st">"content"</span><span class="dt">:</span> <span class="va">tool_results</span><span class="dt">})</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRACE: messages array tabs -->
+  <div class="tab-panel" id="ex4-trace">
+    <div class="section-label teal">Messages Array Evolution</div>
+    <div class="msg-tabs">
+      <button class="msg-tab active" onclick="showMsgTab(0)">After user msg</button>
+      <button class="msg-tab" onclick="showMsgTab(1)">After tool_use response</button>
+      <button class="msg-tab" onclick="showMsgTab(2)">After tool_result</button>
+      <button class="msg-tab" onclick="showMsgTab(3)">Final state</button>
+    </div>
+    <div class="msg-display" id="msg-display">
+<span class="cm"># Tab 0: Initial messages array</span>
+<span class="va">messages</span> <span class="dt">=</span> <span class="dt">[</span>
+    <span class="dt">{</span>
+        <span class="st">"role"</span><span class="dt">:</span>    <span class="st">"user"</span><span class="dt">,</span>
+        <span class="st">"content"</span><span class="dt">:</span> <span class="st">"What is 25 * 4?"</span>
+    <span class="dt">}</span>
+<span class="dt">]</span>
+<span class="cm"># Length: 1</span>
+<span class="cm"># stop_reason: (not called yet)</span></div>
+  </div>
+
+  <!-- TASK -->
+  <div class="tab-panel" id="ex4-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Build a complete agent with 4 tools:</p>
+      <ul>
+        <li><code style="font-family:'JetBrains Mono',monospace;">calculator(expression: str) -> float</code> — safely eval math expressions (use <code>ast.literal_eval</code> pattern or implement carefully)</li>
+        <li><code style="font-family:'JetBrains Mono',monospace;">word_counter(text: str) -> dict</code> — return <code>{"words": n, "chars": n, "unique_words": n}</code></li>
+        <li><code style="font-family:'JetBrains Mono',monospace;">text_reverser(text: str) -> str</code> — reverse the string</li>
+        <li><code style="font-family:'JetBrains Mono',monospace;">palindrome_checker(text: str) -> bool</code> — ignore case and spaces</li>
+        <li>Write the tool schemas (JSON) for all 4 tools</li>
+        <li>Wire everything into <code>run_agent()</code> and pass all 5 test cases</li>
+      </ul>
+    </div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>starter_ex4.py</span></div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span><span>31</span><span>32</span><span>33</span><span>34</span><span>35</span></div>
+        <div class="code-content"><span class="kw">import</span> <span class="va">anthropic</span><span class="dt">,</span> <span class="va">ast</span><span class="dt">,</span> <span class="va">operator</span>
+
+<span class="cm"># ── Tool implementations ──────────────────────────────────</span>
+
+<span class="kw">def</span> <span class="fn">calculator</span><span class="dt">(</span><span class="va">expression</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">float</span><span class="dt">:</span>
+    <span class="cm"># TODO: safely evaluate math expression, return float</span>
+    <span class="cm"># Hint: use a restricted eval or parse with ast</span>
+    <span class="dt">...</span>
+
+<span class="kw">def</span> <span class="fn">word_counter</span><span class="dt">(</span><span class="va">text</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">dict</span><span class="dt">:</span>
+    <span class="cm"># TODO: return {"words": n, "chars": n, "unique_words": n}</span>
+    <span class="dt">...</span>
+
+<span class="kw">def</span> <span class="fn">text_reverser</span><span class="dt">(</span><span class="va">text</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">str</span><span class="dt">:</span>
+    <span class="cm"># TODO: reverse the string</span>
+    <span class="dt">...</span>
+
+<span class="kw">def</span> <span class="fn">palindrome_checker</span><span class="dt">(</span><span class="va">text</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">bool</span><span class="dt">:</span>
+    <span class="cm"># TODO: ignore case and spaces</span>
+    <span class="dt">...</span>
+
+<span class="cm"># ── Tool schemas ──────────────────────────────────────────</span>
+
+<span class="va">TOOLS</span> <span class="dt">=</span> <span class="dt">[</span>
+    <span class="dt">{</span>
+        <span class="st">"name"</span><span class="dt">:</span> <span class="st">"calculator"</span><span class="dt">,</span>
+        <span class="st">"description"</span><span class="dt">:</span> <span class="st">"TODO"</span><span class="dt">,</span>
+        <span class="st">"input_schema"</span><span class="dt">:</span> <span class="dt">{</span><span class="st">"type"</span><span class="dt">:</span> <span class="st">"object"</span><span class="dt">,</span> <span class="st">"properties"</span><span class="dt">:</span> <span class="dt">{},</span> <span class="st">"required"</span><span class="dt">:</span> <span class="dt">[]}</span>
+    <span class="dt">},</span>
+    <span class="cm"># TODO: add word_counter, text_reverser, palindrome_checker schemas</span>
+<span class="dt">]</span>
+
+<span class="va">TOOL_MAP</span> <span class="dt">=</span> <span class="dt">{</span>
+    <span class="st">"calculator"</span><span class="dt">:</span> <span class="va">calculator</span><span class="dt">,</span>
+    <span class="cm"># TODO: add others</span>
+<span class="dt">}</span>
+
+<span class="cm"># ── Wire up (from annotated code tab) ────────────────────</span>
+<span class="cm"># from agent_loop import run_agent</span>
+<span class="cm"># result = run_agent("What is 42 * 7?", TOOLS, TOOL_MAP)</span></div>
+      </div>
+    </div>
+    <button class="animate-btn" style="margin-top:12px;" onclick="markDone(4)">Mark as Completed ✓</button>
+  </div>
+
+  <!-- TESTS -->
+  <div class="tab-panel" id="ex4-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t4-1">T1</span><div class="test-content"><div class="test-input">run_agent("What is 42 * 7?", TOOLS, TOOL_MAP)</div><div class="test-expected">→ response contains "294"</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t4-2">T2</span><div class="test-content"><div class="test-input">run_agent("How many words in 'hello world foo'?", TOOLS, TOOL_MAP)</div><div class="test-expected">→ response contains "3"</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t4-3">T3</span><div class="test-content"><div class="test-input">run_agent("Reverse the text 'Python'", TOOLS, TOOL_MAP)</div><div class="test-expected">→ response contains "nohtyP"</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t4-4">T4</span><div class="test-content"><div class="test-input">run_agent("Is 'racecar' a palindrome?", TOOLS, TOOL_MAP)</div><div class="test-expected">→ response contains "yes" or "True"</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t4-5">T5</span><div class="test-content"><div class="test-input">run_agent("Calculate (10 + 5) * 2, reverse the result as text, and check if it's a palindrome", TOOLS, TOOL_MAP)</div><div class="test-expected">→ response uses multiple tools, mentions "03" and palindrome result</div></div></div>
+    </div>
+  </div>
+
+  <!-- HINTS -->
+  <div class="tab-panel" id="ex4-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item"><button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — Safe calculator implementation</span><span class="arrow">▶</span></button><div class="hint-body">Use a restricted eval: <code>SAFE_OPS = {ast.Add: operator.add, ast.Sub: operator.sub, ast.Mult: operator.mul, ast.Div: operator.truediv}</code> then walk the AST. Or simpler: <code>eval(expression, {"__builtins__": {}}, {})</code> — but this is not production-safe.</div></div>
+      <div class="hint-item"><button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — Palindrome ignore spaces/case</span><span class="arrow">▶</span></button><div class="hint-body"><code>clean = text.lower().replace(" ", ""); return clean == clean[::-1]</code></div></div>
+      <div class="hint-item"><button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 3 — Tool schema for calculator</span><span class="arrow">▶</span></button><div class="hint-body"><code>{"name":"calculator","description":"Evaluate a math expression like '2+2' or '10*5'. Returns a float.","input_schema":{"type":"object","properties":{"expression":{"type":"string","description":"The math expression to evaluate"}},"required":["expression"]}}</code></div></div>
+      <div class="hint-item"><button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 4 — The while loop exit condition</span><span class="arrow">▶</span></button><div class="hint-body">The loop exits when <code>response.stop_reason == "end_turn"</code>. Add a safety: <code>max_iterations = 10; iteration = 0</code>, increment each loop, break if exceeded. Production agents always have this guard.</div></div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <p>Day 1 Exercises — <a href="../index.html">Agentic AI Curriculum</a> · Student: Sharjeel Sohail · <a href="day2_exercises.html">Day 2 Exercises →</a></p>
+</footer>
+
+<script>
+// ── Progress tracking ──────────────────────────────────────────
+const STORAGE_KEY = 'day1_ex_progress';
+let progress = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+
+function markDone(n) {
+  progress[n] = true;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+  document.getElementById('dot' + n).classList.add('done');
+  updateProgress();
+}
+
+function updateProgress() {
+  const done = Object.values(progress).filter(Boolean).length;
+  document.getElementById('progress-text').textContent = done + ' / 4 completed';
+  document.getElementById('progress-fill').style.width = (done / 4 * 100) + '%';
+}
+
+// Restore on load
+Object.keys(progress).forEach(n => {
+  if (progress[n]) document.getElementById('dot' + n)?.classList.add('done');
+});
+updateProgress();
+
+// ── Tab switching ──────────────────────────────────────────────
+function showTab(exId, tabName) {
+  const panels = document.querySelectorAll('#' + exId + ' .tab-panel');
+  panels.forEach(p => p.classList.remove('active'));
+  const target = document.getElementById(exId + '-' + tabName);
+  if (target) target.classList.add('active');
+
+  const btns = document.querySelectorAll('#' + exId + ' .tab-btn');
+  btns.forEach(b => b.classList.remove('active'));
+  const tabOrder = ['visual','code','trace','task','tests','hints'];
+  const idx = tabOrder.indexOf(tabName);
+  if (btns[idx]) btns[idx].classList.add('active');
+}
+
+// ── Token animation ────────────────────────────────────────────
+function animateTokens() {
+  const allBoxes = document.querySelectorAll('.token-box');
+  allBoxes.forEach(b => b.classList.remove('visible'));
+
+  const boxes1 = document.querySelectorAll('#tokens1 .token-box');
+  const boxes2 = document.querySelectorAll('#tokens2 .token-box');
+
+  boxes1.forEach((b, i) => {
+    setTimeout(() => b.classList.add('visible'), i * 200);
+  });
+  setTimeout(() => {
+    document.getElementById('cost-display').textContent = '4 tokens × ($0.25 / 1,000,000) = $0.000001 per call';
+    boxes2.forEach((b, i) => {
+      setTimeout(() => b.classList.add('visible'), i * 200);
+    });
+    setTimeout(() => {
+      document.getElementById('cost-display').textContent = '5 tokens × ($0.25 / 1,000,000) = $0.00000125 per call';
+    }, boxes2.length * 200 + 200);
+  }, boxes1.length * 200 + 400);
+}
+// show tokens on load
+setTimeout(animateTokens, 500);
+
+// ── Execution trace ────────────────────────────────────────────
+const ex1Steps = [
+  { line: 0, info: 'Line 1: import anthropic — loads the SDK', var: 0, varName: 'module', varVal: 'anthropic (loaded)' },
+  { line: 1, info: 'Line 3: Anthropic() — reads ANTHROPIC_API_KEY from env, creates client', var: 1, varName: 'client', varVal: 'Anthropic(api_key=...)' },
+  { line: 2, info: 'Line 5: def count_tokens() — function defined (not called yet)', var: 2, varName: 'text (param)', varVal: '"Hello, world!"' },
+  { line: 3, info: 'Line 8: client.messages.count_tokens() — sends tokenization request to API', var: 3, varName: 'response', varVal: 'CountTokensResponse(...)' },
+  { line: 4, info: 'Line 13: response.input_tokens — reads the count from API response', var: 4, varName: 'input_tokens', varVal: '8' },
+  { line: 5, info: 'Line 14: cost calculation — (8 / 1_000_000) * 0.25 = 0.000002', var: 5, varName: 'cost', varVal: '0.000002' },
+  { line: 6, info: 'Line 16: return — sends back the dict with all values', var: 6, varName: 'return value', varVal: '{"tokens":8,"cost_usd":0.000002,...}' },
+];
+
+const ex2Steps = [
+  { line: 0, info: 'msgs = [] — start with empty message history', var: 0, varName: 'msgs length', varVal: '0' },
+  { line: 1, info: 'Turn 1: chat(msgs, "My name is Sharjeel") — appends user msg, calls API', var: 1, varName: 'turn 1 sent', varVal: '1 message' },
+  { line: 2, info: 'Reply received. msgs now has user + assistant = 2 messages', var: 2, varName: 'msgs after T1', varVal: '2 messages' },
+  { line: 3, info: 'Turn 2: chat(msgs, "What\'s my name?") — sends ALL 2 previous + new = 3 messages', var: 3, varName: 'turn 2 sent', varVal: '3 messages total' },
+  { line: 4, info: 'Model knows the name! msgs now has 4 entries', var: 4, varName: 'msgs after T2', varVal: '4 messages' },
+  { line: 5, info: 'fresh_msgs = [] — NEW list, no history whatsoever', var: 5, varName: 'fresh_msgs', varVal: '[] (empty!)' },
+  { line: 6, info: 'Model says "I don\'t know your name" — no history was sent', var: 6, varName: 'reply (fresh)', varVal: '"I don\'t have that info"' },
+];
+
+const traceState = { ex1: { step: -1, running: false }, ex2: { step: -1, running: false } };
+
+function highlightLine(exNum, lineIdx) {
+  for (let i = 0; i <= 6; i++) {
+    const el = document.getElementById(`tl${exNum}-${i}`);
+    if (el) el.classList.remove('highlight');
+  }
+  const el = document.getElementById(`tl${exNum}-${lineIdx}`);
+  if (el) el.classList.add('highlight');
+}
+
+function activateVar(exNum, varIdx, name, val) {
+  for (let i = 0; i <= 6; i++) {
+    const el = document.getElementById(`tv${exNum}-${i}`);
+    if (el) el.classList.remove('active');
+  }
+  const el = document.getElementById(`tv${exNum}-${varIdx}`);
+  if (el) {
+    el.classList.add('active');
+    el.querySelector('.var-name').textContent = name;
+    el.querySelector('.var-val').textContent = val;
+  }
+}
+
+function doStep(exNum) {
+  const steps = exNum === 'ex1' ? ex1Steps : ex2Steps;
+  const numStr = exNum === 'ex1' ? '1' : '2';
+  traceState[exNum].step++;
+  if (traceState[exNum].step >= steps.length) {
+    document.getElementById(exNum + '-step-info').textContent = 'Execution complete! ✓';
+    traceState[exNum].step = steps.length - 1;
+    return;
+  }
+  const s = steps[traceState[exNum].step];
+  highlightLine(numStr, s.line);
+  activateVar(numStr, s.var, s.varName, s.varVal);
+  document.getElementById(exNum + '-step-info').textContent = s.info;
+}
+
+function traceStep(exNum) { doStep(exNum); }
+
+function traceRun(exNum) {
+  const steps = exNum === 'ex1' ? ex1Steps : ex2Steps;
+  if (traceState[exNum].running) return;
+  traceState[exNum].running = true;
+  traceState[exNum].step = -1;
+  const interval = setInterval(() => {
+    if (traceState[exNum].step >= steps.length - 1) {
+      clearInterval(interval);
+      traceState[exNum].running = false;
+      return;
+    }
+    doStep(exNum);
+  }, 800);
+}
+
+function traceReset(exNum) {
+  traceState[exNum].step = -1;
+  traceState[exNum].running = false;
+  const numStr = exNum === 'ex1' ? '1' : '2';
+  for (let i = 0; i <= 6; i++) {
+    const l = document.getElementById(`tl${numStr}-${i}`);
+    if (l) l.classList.remove('highlight');
+    const v = document.getElementById(`tv${numStr}-${i}`);
+    if (v) { v.classList.remove('active'); v.querySelector('.var-val').textContent = '—'; }
+  }
+  document.getElementById(exNum + '-step-info').textContent = exNum === 'ex1' ? 'Click Run to execute line-by-line...' : 'Watch how messages array grows with each turn...';
+}
+
+// ── Conversation diagram ──────────────────────────────────────
+const turnData = [
+  { left: 'messages = []', right: 'No API call yet' },
+  {
+    left: [
+      { role: 'user', text: 'My name is Sharjeel' },
+      { role: 'assistant', text: 'Nice to meet you, Sharjeel!' }
+    ],
+    right: [{ role: 'user', text: 'My name is Sharjeel' }]
+  },
+  {
+    left: [
+      { role: 'user', text: 'My name is Sharjeel' },
+      { role: 'assistant', text: 'Nice to meet you, Sharjeel!' },
+      { role: 'user', text: "What's my name?" },
+      { role: 'assistant', text: 'Your name is Sharjeel.' }
+    ],
+    right: [
+      { role: 'user', text: 'My name is Sharjeel' },
+      { role: 'assistant', text: 'Nice to meet you!' },
+      { role: 'user', text: "What's my name?" }
+    ]
+  },
+  {
+    left: [{ role: 'user', text: "(fresh list = [])" }],
+    right: [{ role: 'user', text: "What's my name?" }],
+    note: '← Fresh list sent! Model replies: "I don\'t know"'
+  }
+];
+
+function renderMsgCards(container, msgs) {
+  if (typeof msgs === 'string') {
+    container.innerHTML = `<div style="font-size:0.75rem;color:var(--muted);font-family:'JetBrains Mono',monospace;">${msgs}</div>`;
+    return;
+  }
+  container.innerHTML = '';
+  msgs.forEach((m, i) => {
+    const div = document.createElement('div');
+    div.className = `msg-card ${m.role}`;
+    div.innerHTML = `<div class="msg-role ${m.role}">${m.role.toUpperCase()}</div><div class="msg-text">${m.text}</div>`;
+    container.appendChild(div);
+    setTimeout(() => div.classList.add('visible'), i * 120);
+  });
+}
+
+function showTurn(n) {
+  document.querySelectorAll('.turn-btn').forEach((b, i) => b.classList.toggle('active', i === n));
+  const data = turnData[n];
+  const left = document.getElementById('conv-left');
+  const right = document.getElementById('conv-right');
+  if (typeof data.left === 'string') {
+    left.innerHTML = `<div style="font-size:0.75rem;color:var(--muted);font-family:'JetBrains Mono',monospace;">${data.left}</div>`;
+  } else {
+    renderMsgCards(left, data.left);
+  }
+  if (typeof data.right === 'string') {
+    right.innerHTML = `<div style="font-size:0.75rem;color:var(--muted);font-family:'JetBrains Mono',monospace;">${data.right}</div>`;
+  } else {
+    right.innerHTML = `<div style="font-size:0.72rem;color:var(--muted);margin-bottom:6px;font-family:'JetBrains Mono',monospace;">→ full array sent:</div>`;
+    const wrap = document.createElement('div');
+    right.appendChild(wrap);
+    renderMsgCards(wrap, data.right);
+    if (data.note) {
+      const note = document.createElement('div');
+      note.style.cssText = 'margin-top:8px;padding:8px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:6px;font-size:0.75rem;color:#f87171;';
+      note.textContent = data.note;
+      right.appendChild(note);
+    }
+  }
+}
+
+// ── CV extraction animation ──────────────────────────────────
+function animateCVExtract() {
+  const fields = ['sf1','sf2','sf3','sf4','sf5','sf6','sf7'];
+  fields.forEach(id => document.getElementById(id)?.classList.remove('filled'));
+  fields.forEach((id, i) => {
+    setTimeout(() => document.getElementById(id)?.classList.add('filled'), (i + 1) * 350);
+  });
+}
+
+// ── Flowchart simulation ─────────────────────────────────────
+const fcNodes = { 0: 'fc0', 1: 'fc1', 2: 'fc2', 3: 'fc3', 4: 'fc4', 5: 'fc5' };
+let fcRunning = false;
+
+function fcClearAll() {
+  Object.values(fcNodes).forEach(id => document.getElementById(id)?.classList.remove('active'));
+}
+
+function fcActivate(id, delay) {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      fcClearAll();
+      document.getElementById(id)?.classList.add('active');
+      resolve();
+    }, delay);
+  });
+}
+
+function addFcLog(msg, color) {
+  const log = document.getElementById('fc-log');
+  const line = document.createElement('div');
+  line.style.cssText = `color:${color};font-family:'JetBrains Mono',monospace;font-size:0.78rem;margin:3px 0;`;
+  line.textContent = '→ ' + msg;
+  if (log.children.length === 1 && log.children[0].style.color === '') log.innerHTML = '<div style="color:var(--muted);font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Execution Log</div>';
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
+
+async function fcSimulate(type) {
+  if (fcRunning) return;
+  fcRunning = true;
+  document.getElementById('fc-log').innerHTML = '<div style="color:var(--muted);font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Execution Log</div>';
+
+  await fcActivate('fc0', 0); addFcLog('User: "What is 25 * 4?"', '#60a5fa');
+  await fcActivate('fc1', 600); addFcLog('API call with tools=[calculator, ...]', '#a855f7');
+  await fcActivate('fc2', 1200); addFcLog('stop_reason = "' + type + '"', type === 'tool_use' ? '#f59e0b' : '#10b981');
+
+  if (type === 'tool_use') {
+    await fcActivate('fc4', 1800); addFcLog('Tool: calculator("25 * 4")', '#2dd4bf');
+    await fcActivate('fc5', 2400); addFcLog('Result: 100 → appended as tool_result', '#2dd4bf');
+    await fcActivate('fc1', 3000); addFcLog('Loop: API call again with tool_result', '#a855f7');
+    await fcActivate('fc2', 3600); addFcLog('stop_reason = "end_turn"', '#10b981');
+    await fcActivate('fc3', 4200); addFcLog('Response: "25 × 4 = 100" ✓', '#10b981');
+  } else {
+    await fcActivate('fc3', 1800); addFcLog('Response: returned to user ✓', '#10b981');
+  }
+
+  fcRunning = false;
+}
+
+function fcReset() {
+  fcClearAll();
+  fcRunning = false;
+  document.getElementById('fc-log').innerHTML = '<div style="color:var(--muted);font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Execution Log</div><div style="color:var(--muted);font-family:\'JetBrains Mono\',monospace;">Click a simulation button...</div>';
+}
+
+// ── Messages array tabs ──────────────────────────────────────
+const msgTabData = [
+`<span class="cm"># After initial user message — 1 entry</span>
+<span class="va">messages</span> <span class="dt">=</span> <span class="dt">[</span>
+    <span class="dt">{</span>
+        <span class="st">"role"</span><span class="dt">:</span>    <span class="st">"user"</span><span class="dt">,</span>
+        <span class="st">"content"</span><span class="dt">:</span> <span class="st">"What is 25 * 4?"</span>
+    <span class="dt">}</span>
+<span class="dt">]</span>
+<span class="cm"># len(messages) == 1</span>`,
+
+`<span class="cm"># After model responds with tool_use — 2 entries</span>
+<span class="va">messages</span> <span class="dt">=</span> <span class="dt">[</span>
+    <span class="dt">{</span><span class="st">"role"</span><span class="dt">:</span> <span class="st">"user"</span><span class="dt">,</span> <span class="st">"content"</span><span class="dt">:</span> <span class="st">"What is 25 * 4?"</span><span class="dt">},</span>
+    <span class="dt">{</span>
+        <span class="st">"role"</span><span class="dt">:</span>    <span class="st">"assistant"</span><span class="dt">,</span>
+        <span class="st">"content"</span><span class="dt">:</span> <span class="dt">[{</span>
+            <span class="st">"type"</span><span class="dt">:</span>  <span class="st">"tool_use"</span><span class="dt">,</span>
+            <span class="st">"id"</span><span class="dt">:</span>    <span class="st">"toolu_01abc"</span><span class="dt">,</span>
+            <span class="st">"name"</span><span class="dt">:</span>  <span class="st">"calculator"</span><span class="dt">,</span>
+            <span class="st">"input"</span><span class="dt">:</span> <span class="dt">{</span><span class="st">"expression"</span><span class="dt">:</span> <span class="st">"25 * 4"</span><span class="dt">}</span>
+        <span class="dt">}]</span>
+    <span class="dt">}</span>
+<span class="dt">]</span>
+<span class="cm"># stop_reason was "tool_use" → we must execute</span>`,
+
+`<span class="cm"># After we append tool_result — 3 entries</span>
+<span class="va">messages</span> <span class="dt">=</span> <span class="dt">[</span>
+    <span class="dt">{</span><span class="st">"role"</span><span class="dt">:</span> <span class="st">"user"</span><span class="dt">,</span> <span class="st">"content"</span><span class="dt">:</span> <span class="st">"What is 25 * 4?"</span><span class="dt">},</span>
+    <span class="dt">{</span><span class="st">"role"</span><span class="dt">:</span> <span class="st">"assistant"</span><span class="dt">,</span> <span class="st">"content"</span><span class="dt">:</span> <span class="dt">[{</span><span class="st">"type"</span><span class="dt">:</span> <span class="st">"tool_use"</span><span class="dt">, ...}]},</span>
+    <span class="dt">{</span>
+        <span class="st">"role"</span><span class="dt">:</span>    <span class="st">"user"</span><span class="dt">,</span>          <span class="cm"># ← tool results use "user" role</span>
+        <span class="st">"content"</span><span class="dt">:</span> <span class="dt">[{</span>
+            <span class="st">"type"</span><span class="dt">:</span>        <span class="st">"tool_result"</span><span class="dt">,</span>
+            <span class="st">"tool_use_id"</span><span class="dt">:</span> <span class="st">"toolu_01abc"</span><span class="dt">,</span>  <span class="cm"># must match!</span>
+            <span class="st">"content"</span><span class="dt">:</span>     <span class="st">"100"</span>
+        <span class="dt">}]</span>
+    <span class="dt">}</span>
+<span class="dt">]</span>
+<span class="cm"># Now loop back → make another API call</span>`,
+
+`<span class="cm"># Final state — 4 entries, model gives text answer</span>
+<span class="va">messages</span> <span class="dt">=</span> <span class="dt">[</span>
+    <span class="dt">{</span><span class="st">"role"</span><span class="dt">:</span> <span class="st">"user"</span><span class="dt">,</span> <span class="st">"content"</span><span class="dt">:</span> <span class="st">"What is 25 * 4?"</span><span class="dt">},</span>
+    <span class="dt">{</span><span class="st">"role"</span><span class="dt">:</span> <span class="st">"assistant"</span><span class="dt">,</span> <span class="st">"content"</span><span class="dt">:</span> <span class="dt">[{</span><span class="st">"type"</span><span class="dt">:</span> <span class="st">"tool_use"</span><span class="dt">, ...}]},</span>
+    <span class="dt">{</span><span class="st">"role"</span><span class="dt">:</span> <span class="st">"user"</span><span class="dt">,</span>      <span class="st">"content"</span><span class="dt">:</span> <span class="dt">[{</span><span class="st">"type"</span><span class="dt">:</span> <span class="st">"tool_result"</span><span class="dt">, ...}]},</span>
+    <span class="dt">{</span>
+        <span class="st">"role"</span><span class="dt">:</span>    <span class="st">"assistant"</span><span class="dt">,</span>
+        <span class="st">"content"</span><span class="dt">:</span> <span class="dt">[{</span>
+            <span class="st">"type"</span><span class="dt">:</span> <span class="st">"text"</span><span class="dt">,</span>
+            <span class="st">"text"</span><span class="dt">:</span> <span class="st">"25 × 4 = 100"</span>
+        <span class="dt">}]</span>
+    <span class="dt">}</span>
+<span class="dt">]</span>
+<span class="cm"># stop_reason == "end_turn" → return text → done!</span>`
+];
+
+function showMsgTab(n) {
+  document.querySelectorAll('.msg-tab').forEach((b, i) => b.classList.toggle('active', i === n));
+  document.getElementById('msg-display').innerHTML = msgTabData[n];
+}
+
+// ── Hints toggle ──────────────────────────────────────────────
+function toggleHint(btn) {
+  btn.classList.toggle('open');
+  const body = btn.nextElementSibling;
+  body.style.display = body.style.display === 'block' ? 'none' : 'block';
+}
+
+// ── Test runner (visual only — no actual execution) ───────────
+function runTests(exNum) {
+  const tests = document.querySelectorAll(`#ex${exNum}-tests .test-badge`);
+  tests.forEach((badge, i) => {
+    setTimeout(() => {
+      badge.className = 'test-badge pass';
+      badge.textContent = '✓ T' + (i + 1);
+    }, i * 300);
+  });
+}
+
+// Init conversation diagram
+showTurn(0);
+</script>
+<script src="../bg-animation.js"></script>
+</body>
+</html>
