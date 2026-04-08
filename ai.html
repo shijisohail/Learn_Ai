@@ -718,7 +718,7 @@ details[open].ideal-answer summary::before { content: '▼ '; }
   <!-- Hero -->
   <div class="hero">
     <h1>AI Learning Coach</h1>
-    <p class="hero-sub">Interview prep, Q&amp;A tutoring, and code review — all powered by Claude.</p>
+    <p class="hero-sub">Interview prep, Q&amp;A tutoring, and code review — powered by OpenRouter.</p>
   </div>
 
   <!-- Connection Banner (shown when server offline) -->
@@ -726,13 +726,15 @@ details[open].ideal-answer summary::before { content: '▼ '; }
     <div class="banner-title">
       <span>🔌</span> Local server not running
     </div>
-    <p class="banner-desc">The AI Coach needs a local proxy server to call the Anthropic API. Start it with:</p>
+    <p class="banner-desc">The AI Coach needs a local proxy server. Add your OpenRouter API key to <code style="font-family:var(--mono);font-size:12px;color:#a78bfa">.env</code> and start it:</p>
 
     <div class="code-block">
       <span class="comment"># Install dependencies (first time only)</span><br>
-      pip install fastapi uvicorn anthropic<br><br>
+      pip install fastapi uvicorn httpx python-dotenv<br><br>
+      <span class="comment"># Add your key to .env</span><br>
+      OPENROUTER_API_KEY=sk-or-<span style="color:#6ee7b7">…</span><br><br>
       <span class="comment"># Start the server</span><br>
-      ANTHROPIC_API_KEY=sk-ant-<span style="color:#6ee7b7">…</span> python server.py
+      python server.py
     </div>
 
     <p class="banner-desc" style="margin-top:8px">The server runs at <code style="font-family:var(--mono);font-size:12px;color:#a78bfa">http://localhost:8000</code> and streams responses directly to this page — your API key never leaves your machine.</p>
@@ -978,7 +980,7 @@ async function streamChat(messages, system, onChunk, onDone) {
     body: JSON.stringify({
       messages,
       system,
-      model: 'claude-haiku-4-5-20251001',
+      model: 'google/gemma-3-27b-it:free', // server auto-fallbacks if rate-limited
       max_tokens: 1800
     })
   });
