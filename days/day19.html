@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 19: MLOps Pipelines — Kubeflow, SageMaker, Vertex AI & BentoML</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f; --card: #141420; --surface2: #1a1a2e; --border: #2a2a45;
+  --purple: #7c3aed; --purple-light: #a855f7; --teal: #0d9488; --green: #10b981;
+  --red: #ef4444; --yellow: #f59e0b; --text: #e2e8f0; --muted: #64748b;
+  --font: 'Inter', sans-serif; --mono: 'JetBrains Mono', monospace;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; overflow-x: hidden; }
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(124,58,237,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 90% 80%, rgba(13,148,136,0.05) 0%, transparent 60%);
+  pointer-events: none; z-index: 0;
+}
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+nav { border-bottom: 1px solid var(--border); padding: 0; background: rgba(10,10,15,0.85); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; }
+.nav-inner { max-width: 1100px; margin: 0 auto; padding: 0 24px; height: 52px; display: flex; align-items: center; justify-content: space-between; }
+.nav-btn {
+  padding: 7px 18px; border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface2); color: var(--muted);
+  font-size: 13px; font-weight: 600;
+  text-decoration: none; transition: all 0.2s;
+  font-family: inherit; cursor: pointer;
+}
+.nav-btn:hover { border-color: var(--purple); color: var(--text); }
+.nav-btn.next { border-color: rgba(124,58,237,0.5); color: var(--purple-light); }
+.nav-btn.next:hover { background: var(--purple); color: white; border-color: var(--purple); }
+.nav-btn.complete { border-color: rgba(245,158,11,0.5); color: var(--yellow); }
+.nav-btn.complete:hover { background: var(--yellow); color: #0a0a0f; border-color: var(--yellow); }
+.nav-btn.done { background: rgba(16,185,129,0.15); border-color: var(--green); color: var(--green); }
+.nav-brand { font-size: 14px; font-weight: 700; color: var(--muted); text-decoration: none; letter-spacing: -0.2px; transition: color 0.2s; }
+.nav-brand:hover { color: var(--text); }
+
+.day-hero { padding: 56px 0 40px; }
+.day-num { font-size: 12px; font-weight: 700; color: var(--yellow); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+.day-hero h1 { font-size: clamp(32px, 5vw, 56px); font-weight: 900; letter-spacing: -2px; margin-bottom: 16px; }
+.day-hero p { font-size: 17px; color: var(--muted); max-width: 600px; line-height: 1.6; margin-bottom: 28px; }
+.topic-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+.topic-pill { padding: 5px 12px; border-radius: 20px; background: var(--surface2); border: 1px solid var(--border); font-size: 12px; color: var(--muted); font-weight: 500; }
+
+.section { padding: 56px 0; border-top: 1px solid var(--border); }
+.section-header { margin-bottom: 32px; }
+.section-num { font-size: 11px; font-weight: 700; color: var(--purple-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.section-header h2 { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 10px; }
+.section-header p { color: var(--muted); font-size: 15px; line-height: 1.6; max-width: 640px; }
+
+/* CODE BLOCKS — white-space: pre is REQUIRED */
+.code-block {
+  background: #0d1117; border: 1px solid #30363d; border-radius: 12px;
+  padding: 24px; font-family: var(--mono); font-size: 12.5px; line-height: 1.8;
+  overflow-x: auto; white-space: pre;
+}
+.code-wrap { position: relative; margin-top: 16px; }
+.code-label { position: absolute; top: -10px; left: 16px; background: var(--purple); color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.5px; }
+.c-cmt { color: #8b949e; }
+.c-kw { color: #ff7b72; }
+.c-fn { color: #d2a8ff; }
+.c-str { color: #a5d6ff; }
+.c-type { color: #ffa657; }
+.c-num { color: #f2cc60; }
+.c-bi { color: #79c0ff; }
+.c-dec { color: #ffa657; }
+
+/* DECISION TRIANGLE */
+.triangle-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 20px; }
+.tri-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+  padding: 20px; text-align: center; position: relative; overflow: hidden;
+  transition: all 0.2s;
+}
+.tri-card:hover { transform: translateY(-3px); }
+.tri-card.active-prompting { border-color: rgba(16,185,129,0.5); }
+.tri-card.active-rag { border-color: rgba(13,148,136,0.5); }
+.tri-card.active-finetune { border-color: rgba(168,85,247,0.5); }
+.tri-icon { font-size: 32px; margin-bottom: 10px; }
+.tri-title { font-size: 15px; font-weight: 800; margin-bottom: 8px; }
+.tri-when { font-size: 11px; color: var(--muted); line-height: 1.5; margin-bottom: 10px; }
+.tri-cost { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 20px; }
+.cost-low { background: rgba(16,185,129,0.15); color: var(--green); }
+.cost-mid { background: rgba(13,148,136,0.15); color: var(--teal); }
+.cost-high { background: rgba(168,85,247,0.15); color: var(--purple-light); }
+
+/* FLOW DIAGRAM */
+.flow-diagram { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; overflow-x: auto; }
+.flow-row { display: flex; align-items: center; gap: 0; justify-content: center; flex-wrap: wrap; gap: 4px; }
+.flow-box {
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
+  padding: 12px 16px; text-align: center; min-width: 100px;
+}
+.flow-box.highlight { border-color: var(--purple); background: rgba(124,58,237,0.1); }
+.flow-box.result { border-color: var(--green); background: rgba(16,185,129,0.08); }
+.flow-box-title { font-size: 12px; font-weight: 700; margin-bottom: 3px; }
+.flow-box-sub { font-size: 10px; color: var(--muted); }
+.flow-arrow { color: var(--muted); font-size: 18px; padding: 0 4px; }
+
+/* COMPARISON TABLE */
+.comp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.comp-table th { background: var(--surface2); padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); border-bottom: 1px solid var(--border); }
+.comp-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.comp-table tr:last-child td { border-bottom: none; }
+.comp-table tr:hover td { background: rgba(255,255,255,0.02); }
+.tick { color: var(--green); font-weight: 700; }
+.cross { color: var(--red); font-weight: 700; }
+.partial { color: var(--yellow); font-weight: 700; }
+
+/* USE CASES */
+.use-case-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.use-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+.use-card.good { border-color: rgba(16,185,129,0.3); }
+.use-card.bad { border-color: rgba(239,68,68,0.3); }
+.use-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.use-icon { font-size: 18px; }
+.use-title { font-size: 13px; font-weight: 700; }
+.use-items { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.use-items li { font-size: 12px; color: var(--muted); display: flex; align-items: flex-start; gap: 8px; }
+.use-items li::before { content: '•'; color: var(--green); flex-shrink: 0; }
+.use-card.bad .use-items li::before { color: var(--red); }
+
+/* CALLOUT */
+.callout { background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.25); border-radius: 12px; padding: 16px 20px; display: flex; gap: 12px; align-items: flex-start; margin: 20px 0; }
+.callout-icon { font-size: 18px; flex-shrink: 0; }
+.callout-text { font-size: 13px; color: var(--text); line-height: 1.6; }
+.callout-text strong { color: var(--yellow); }
+.callout.info { background: rgba(124,58,237,0.07); border-color: rgba(124,58,237,0.25); }
+.callout.info .callout-text strong { color: var(--purple-light); }
+
+/* CONCEPT GRID */
+.concept-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; margin-top: 20px; }
+.concept-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; transition: border-color 0.2s; }
+.concept-card:hover { border-color: var(--purple); }
+.concept-icon { font-size: 24px; margin-bottom: 10px; }
+.concept-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+.concept-desc { font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+/* WIDGET */
+.widget-box { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-top: 24px; }
+.widget-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.widget-subtitle { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+.sim-btn {
+  padding: 10px 24px; border-radius: 8px; background: var(--purple);
+  border: none; color: white; font-size: 14px; font-weight: 600;
+  font-family: var(--font); cursor: pointer; transition: background 0.2s;
+}
+.sim-btn:hover { background: var(--purple-light); }
+
+/* FOOTER */
+footer { padding: 40px 0; border-top: 1px solid var(--border); text-align: center; color: var(--muted); font-size: 13px; }
+
+@media(max-width:700px) {
+  .triangle-container { grid-template-columns: 1fr; }
+  .use-case-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body data-animation-density="high">
+
+<nav>
+  <div class="nav-inner">
+    <a href="day18.html" class="nav-btn">← Day 18</a>
+    <a href="../index.html" class="nav-brand">Agentic AI Mastery</a>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <a href="day20.html" class="nav-btn next">Day 20 →</a>
+      <button class="nav-btn complete" id="complete-btn" onclick="markComplete()">Mark Complete</button>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="day-hero">
+    <div class="day-num">Day 19 — Week 3</div>
+    <h1>MLOps<br>Pipelines</h1>
+    <p>Kubeflow, SageMaker, Vertex AI &amp; BentoML. Production ML is about repeatable pipelines, not one-off scripts. Learn how to orchestrate the full ML lifecycle — from data prep through serving — on managed and self-hosted infrastructure.</p>
+    <div class="topic-pills">
+      <span class="topic-pill">Kubeflow Pipelines</span>
+      <span class="topic-pill">SageMaker</span>
+      <span class="topic-pill">Vertex AI</span>
+      <span class="topic-pill">BentoML</span>
+      <span class="topic-pill">Canary Deployment</span>
+      <span class="topic-pill">Model Monitor</span>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 1 -->
+<div class="container">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">Section 01</div>
+      <h2>What is an ML Pipeline?</h2>
+      <p>An ML pipeline is a DAG of steps that takes raw data to a deployed model. Pipelines are not optional in production — they are how you reproduce training, schedule retraining, and recover from failures.</p>
+    </div>
+
+    <div class="flow-diagram" style="margin-bottom:24px;">
+      <div class="flow-row">
+        <div class="flow-box highlight">
+          <div class="flow-box-title">Data Ingestion</div>
+          <div class="flow-box-sub">S3 / GCS / BQ</div>
+        </div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">
+          <div class="flow-box-title">Preprocessing</div>
+          <div class="flow-box-sub">Format / Filter</div>
+        </div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box highlight">
+          <div class="flow-box-title">Training</div>
+          <div class="flow-box-sub">GPU Step</div>
+        </div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">
+          <div class="flow-box-title">Evaluation</div>
+          <div class="flow-box-sub">RAGAS / Loss</div>
+        </div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">
+          <div class="flow-box-title">Registration</div>
+          <div class="flow-box-sub">MLflow Registry</div>
+        </div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box result">
+          <div class="flow-box-title">Deployment</div>
+          <div class="flow-box-sub">BentoML / K8s</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="concept-grid" style="margin-bottom:24px;">
+      <div class="concept-card">
+        <div class="concept-icon">♻️</div>
+        <div class="concept-title">Reproducibility</div>
+        <div class="concept-desc">Any pipeline run can be exactly re-executed with the same data version, same code commit, and same hyperparameters. No "works on my machine."</div>
+      </div>
+      <div class="concept-card">
+        <div class="concept-icon">⏱️</div>
+        <div class="concept-title">Scheduling</div>
+        <div class="concept-desc">Trigger retraining on a cron schedule, on data drift detection, or after N new labels arrive. Pipelines handle the orchestration automatically.</div>
+      </div>
+      <div class="concept-card">
+        <div class="concept-icon">🔀</div>
+        <div class="concept-title">Parallelism</div>
+        <div class="concept-desc">Data prep and feature extraction run in parallel. Multiple training configurations fan out. The DAG engine coordinates dependencies.</div>
+      </div>
+      <div class="concept-card">
+        <div class="concept-icon">🔄</div>
+        <div class="concept-title">Failure Recovery</div>
+        <div class="concept-desc">If training fails, the pipeline retries from the last checkpoint. Completed steps are cached — no need to re-run data preprocessing from scratch.</div>
+      </div>
+    </div>
+
+    <table class="comp-table">
+      <thead>
+        <tr>
+          <th>Platform</th>
+          <th>Kubernetes-native</th>
+          <th>Managed</th>
+          <th>Cost Model</th>
+          <th>Best For</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Kubeflow Pipelines</strong></td>
+          <td><span class="tick">Yes</span></td>
+          <td>Self-hosted</td>
+          <td>Infra cost</td>
+          <td>Full control, on-prem, multi-cloud</td>
+        </tr>
+        <tr>
+          <td><strong>SageMaker Pipelines</strong></td>
+          <td><span class="cross">No</span></td>
+          <td>Fully managed</td>
+          <td>Per-step + instances</td>
+          <td>AWS-native MLOps, spot training</td>
+        </tr>
+        <tr>
+          <td><strong>Vertex AI Pipelines</strong></td>
+          <td><span class="cross">No</span></td>
+          <td>Fully managed</td>
+          <td>Per-compute minute</td>
+          <td>GCP-native MLOps, BigQuery integration</td>
+        </tr>
+        <tr>
+          <td><strong>Airflow + custom</strong></td>
+          <td><span class="tick">Yes</span></td>
+          <td>Self-hosted</td>
+          <td>Flexible</td>
+          <td>Complex DAGs, non-ML dependencies</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- SECTION 2 -->
+<div class="container">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">Section 02</div>
+      <h2>Kubeflow Pipelines</h2>
+      <p>KFP turns Python functions into containerized steps connected in a DAG. Each component is independently versioned, testable, and reusable across pipelines.</p>
+    </div>
+
+    <div class="callout info">
+      <span class="callout-icon">💡</span>
+      <div class="callout-text"><strong>KFP v2 Key Concepts:</strong> @dsl.component wraps a Python function into a reusable container step. Input/Output typed artifacts connect steps by passing data through the pipeline's artifact store — not through function returns.</div>
+    </div>
+
+    <div class="code-wrap" style="margin-top:20px;">
+      <span class="code-label">PYTHON — Kubeflow Pipeline Definition</span>
+      <div class="code-block"><span class="c-kw">from</span> <span class="c-bi">kfp</span> <span class="c-kw">import</span> dsl
+<span class="c-kw">from</span> <span class="c-bi">kfp.dsl</span> <span class="c-kw">import</span> <span class="c-type">Input</span>, <span class="c-type">Output</span>, <span class="c-type">Dataset</span>, <span class="c-type">Model</span>, <span class="c-type">Metrics</span>
+
+<span class="c-dec">@dsl.component</span>(base_image=<span class="c-str">"python:3.11"</span>, packages_to_install=[<span class="c-str">"datasets"</span>])
+<span class="c-kw">def</span> <span class="c-fn">prepare_dataset</span>(output_dataset: <span class="c-type">Output</span>[<span class="c-type">Dataset</span>]):
+    <span class="c-str">"""Download and preprocess training data"""</span>
+    <span class="c-kw">from</span> <span class="c-bi">datasets</span> <span class="c-kw">import</span> <span class="c-fn">load_dataset</span>
+    ds = <span class="c-fn">load_dataset</span>(<span class="c-str">"tatsu-lab/alpaca"</span>)
+    ds[<span class="c-str">"train"</span>].<span class="c-fn">to_json</span>(output_dataset.path)
+
+<span class="c-dec">@dsl.component</span>(base_image=<span class="c-str">"pytorch/pytorch:2.1.0-cuda11.8-cudnn8-runtime"</span>,
+               packages_to_install=[<span class="c-str">"peft"</span>, <span class="c-str">"trl"</span>, <span class="c-str">"transformers"</span>])
+<span class="c-kw">def</span> <span class="c-fn">train_lora</span>(
+    dataset: <span class="c-type">Input</span>[<span class="c-type">Dataset</span>],
+    model_output: <span class="c-type">Output</span>[<span class="c-type">Model</span>],
+    lora_rank: <span class="c-type">int</span> = <span class="c-num">16</span>,
+    learning_rate: <span class="c-type">float</span> = <span class="c-num">2e-4</span>
+):
+    <span class="c-str">"""Fine-tune model with LoRA"""</span>
+    <span class="c-cmt"># Training code here...</span>
+
+<span class="c-dec">@dsl.pipeline</span>(name=<span class="c-str">"llm-finetune-pipeline"</span>)
+<span class="c-kw">def</span> <span class="c-fn">finetune_pipeline</span>(lora_rank: <span class="c-type">int</span> = <span class="c-num">16</span>, learning_rate: <span class="c-type">float</span> = <span class="c-num">2e-4</span>):
+    prep_step = <span class="c-fn">prepare_dataset</span>()
+    train_step = <span class="c-fn">train_lora</span>(
+        dataset=prep_step.outputs[<span class="c-str">"output_dataset"</span>],
+        lora_rank=lora_rank,
+        learning_rate=learning_rate
+    )
+
+<span class="c-cmt"># Compile and submit</span>
+<span class="c-kw">from</span> <span class="c-bi">kfp</span> <span class="c-kw">import</span> compiler
+compiler.<span class="c-type">Compiler</span>().<span class="c-fn">compile</span>(finetune_pipeline, <span class="c-str">"pipeline.yaml"</span>)</div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 3 -->
+<div class="container">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">Section 03</div>
+      <h2>AWS SageMaker Pipelines</h2>
+      <p>SageMaker Pipelines is the AWS-native MLOps solution. Zero infrastructure management — AWS handles the container orchestration. Built-in spot instance support cuts GPU costs by up to 70%.</p>
+    </div>
+
+    <div class="use-case-grid" style="margin-bottom:24px;">
+      <div class="use-card good">
+        <div class="use-header"><span class="use-icon">✅</span><span class="use-title">SageMaker Strengths</span></div>
+        <ul class="use-items">
+          <li>Spot instances with automatic checkpointing</li>
+          <li>Built-in distributed training (data parallel, model parallel)</li>
+          <li>SageMaker Experiments integrates with pipeline runs</li>
+          <li>Model Monitor for production drift detection</li>
+          <li>Native integration with S3, ECR, IAM</li>
+        </ul>
+      </div>
+      <div class="use-card bad">
+        <div class="use-header"><span class="use-icon">⚠️</span><span class="use-title">SageMaker Watch-outs</span></div>
+        <ul class="use-items">
+          <li>AWS lock-in — hard to migrate away</li>
+          <li>Container startup latency (1-3 min per step)</li>
+          <li>Expensive if you forget to stop instances</li>
+          <li>Debug logging less ergonomic than local runs</li>
+          <li>IAM configuration is complex for new teams</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="code-wrap">
+      <span class="code-label">PYTHON — SageMaker Training Step</span>
+      <div class="code-block"><span class="c-kw">from</span> <span class="c-bi">sagemaker.workflow.pipeline</span> <span class="c-kw">import</span> <span class="c-type">Pipeline</span>
+<span class="c-kw">from</span> <span class="c-bi">sagemaker.workflow.steps</span> <span class="c-kw">import</span> <span class="c-type">TrainingStep</span>
+<span class="c-kw">from</span> <span class="c-bi">sagemaker.pytorch</span> <span class="c-kw">import</span> <span class="c-type">PyTorch</span>
+
+estimator = <span class="c-type">PyTorch</span>(
+    entry_point=<span class="c-str">"train.py"</span>,
+    role=<span class="c-str">"arn:aws:iam::account:role/SageMakerRole"</span>,
+    instance_type=<span class="c-str">"ml.g5.2xlarge"</span>,
+    instance_count=<span class="c-num">1</span>,
+    framework_version=<span class="c-str">"2.1.0"</span>,
+    py_version=<span class="c-str">"py311"</span>,
+    hyperparameters={<span class="c-str">"lora-rank"</span>: <span class="c-num">16</span>, <span class="c-str">"lr"</span>: <span class="c-num">2e-4</span>}
+)
+
+train_step = <span class="c-type">TrainingStep</span>(
+    name=<span class="c-str">"TrainLoRA"</span>,
+    estimator=estimator,
+    inputs={<span class="c-str">"train"</span>: <span class="c-type">TrainingInput</span>(s3_data=<span class="c-str">"s3://bucket/data/"</span>)}
+)
+
+pipeline = <span class="c-type">Pipeline</span>(
+    name=<span class="c-str">"LLMFinetunePipeline"</span>,
+    steps=[train_step],
+    sagemaker_session=session
+)
+pipeline.<span class="c-fn">upsert</span>(role_arn=role)
+pipeline.<span class="c-fn">start</span>()</div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 4 -->
+<div class="container">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">Section 04</div>
+      <h2>BentoML for Model Serving</h2>
+      <p>BentoML is the bridge between a trained model artifact and a production HTTP API. It handles GPU allocation, adaptive request batching, and Docker packaging in one framework.</p>
+    </div>
+
+    <div class="callout info">
+      <span class="callout-icon">💡</span>
+      <div class="callout-text"><strong>Adaptive Batching:</strong> The @bentoml.api(batchable=True) decorator automatically groups concurrent requests into a single GPU forward pass. Under load, this multiplies effective throughput without any application-level code changes.</div>
+    </div>
+
+    <div class="code-wrap" style="margin-top:20px;">
+      <span class="code-label">PYTHON — BentoML Service</span>
+      <div class="code-block"><span class="c-kw">import</span> <span class="c-bi">bentoml</span>
+<span class="c-kw">from</span> <span class="c-bi">transformers</span> <span class="c-kw">import</span> <span class="c-type">AutoModelForCausalLM</span>, <span class="c-type">AutoTokenizer</span>
+<span class="c-kw">import</span> <span class="c-bi">torch</span>
+
+<span class="c-dec">@bentoml.service</span>(
+    resources={<span class="c-str">"gpu"</span>: <span class="c-num">1</span>, <span class="c-str">"memory"</span>: <span class="c-str">"16Gi"</span>},
+    traffic={<span class="c-str">"timeout"</span>: <span class="c-num">60</span>}
+)
+<span class="c-kw">class</span> <span class="c-type">LLMService</span>:
+    <span class="c-kw">def</span> <span class="c-fn">__init__</span>(<span class="c-bi">self</span>):
+        <span class="c-bi">self</span>.model = <span class="c-type">AutoModelForCausalLM</span>.<span class="c-fn">from_pretrained</span>(
+            <span class="c-str">"./merged-llama3"</span>,
+            torch_dtype=<span class="c-bi">torch</span>.bfloat16,
+            device_map=<span class="c-str">"cuda"</span>
+        )
+        <span class="c-bi">self</span>.tokenizer = <span class="c-type">AutoTokenizer</span>.<span class="c-fn">from_pretrained</span>(<span class="c-str">"./merged-llama3"</span>)
+        <span class="c-bi">self</span>.model.<span class="c-fn">eval</span>()
+
+    <span class="c-dec">@bentoml.api</span>(batchable=<span class="c-kw">True</span>, max_batch_size=<span class="c-num">8</span>, max_latency_ms=<span class="c-num">500</span>)
+    <span class="c-kw">def</span> <span class="c-fn">generate</span>(<span class="c-bi">self</span>, prompts: <span class="c-type">list</span>[<span class="c-type">str</span>]) -> <span class="c-type">list</span>[<span class="c-type">str</span>]:
+        inputs = <span class="c-bi">self</span>.tokenizer(prompts, return_tensors=<span class="c-str">"pt"</span>, padding=<span class="c-kw">True</span>).<span class="c-fn">to</span>(<span class="c-str">"cuda"</span>)
+        <span class="c-kw">with</span> <span class="c-bi">torch</span>.no_grad():
+            outputs = <span class="c-bi">self</span>.model.<span class="c-fn">generate</span>(**inputs, max_new_tokens=<span class="c-num">200</span>)
+        <span class="c-kw">return</span> [<span class="c-bi">self</span>.tokenizer.<span class="c-fn">decode</span>(o, skip_special_tokens=<span class="c-kw">True</span>) <span class="c-kw">for</span> o <span class="c-kw">in</span> outputs]
+
+<span class="c-cmt"># CLI: bentoml serve llm_service:LLMService</span>
+<span class="c-cmt"># Build: bentoml build → creates bento artifact</span>
+<span class="c-cmt"># Containerize: bentoml containerize llm_service:latest</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 5 -->
+<div class="container">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">Section 05</div>
+      <h2>Model Packaging &amp; A/B Traffic Splitting</h2>
+      <p>Canary deployments are the safe path to production. Roll out to 5% of traffic, validate RAGAS scores, then progressively increase. Keep the old version registered for instant rollback.</p>
+    </div>
+
+    <div class="concept-grid" style="margin-bottom:24px;">
+      <div class="concept-card">
+        <div class="concept-icon">🐤</div>
+        <div class="concept-title">Canary Rollout</div>
+        <div class="concept-desc">5% → 20% → 50% → 100% traffic. Each stage waits for RAGAS score validation before proceeding. Automated via Kubernetes traffic weight annotations.</div>
+      </div>
+      <div class="concept-card">
+        <div class="concept-icon">🔬</div>
+        <div class="concept-title">Model Comparison</div>
+        <div class="concept-desc">Run both old and new model on the same traffic slice. Compare RAGAS faithfulness and user feedback score distributions before full cutover.</div>
+      </div>
+      <div class="concept-card">
+        <div class="concept-icon">⏪</div>
+        <div class="concept-title">Rollback Strategy</div>
+        <div class="concept-desc">Keep previous version in MLflow Registry at Staging. One API call to transition it back to Production. Target: &lt;2 minute MTTR for model rollbacks.</div>
+      </div>
+      <div class="concept-card">
+        <div class="concept-icon">📡</div>
+        <div class="concept-title">SageMaker Model Monitor</div>
+        <div class="concept-desc">Automated drift detection on input feature distributions and prediction distributions. Triggers alerts when production data diverges from training baseline.</div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <span class="callout-icon">🚦</span>
+      <div class="callout-text"><strong>Promotion Gate Checklist:</strong> Before each traffic increase — (1) RAGAS faithfulness &gt; 0.82, (2) P99 latency &lt; 4s, (3) error rate &lt; 1%, (4) no significant shift in user thumbs-down rate. Automate this gate in your CI/CD pipeline.</div>
+    </div>
+  </div>
+</div>
+
+<!-- INTERACTIVE WIDGET -->
+<div class="container">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">Interactive</div>
+      <h2>ML Pipeline Stage Selector</h2>
+      <p>Click each pipeline stage to learn what happens there, which platform handles it, and how long it typically takes.</p>
+    </div>
+
+    <div class="widget-box">
+      <div class="widget-title">LLM Fine-Tuning Pipeline</div>
+      <div class="widget-subtitle">Click any stage to see details</div>
+
+      <!-- Pipeline stages -->
+      <div style="display:flex;align-items:center;gap:0;flex-wrap:nowrap;overflow-x:auto;padding:8px 0;margin-bottom:24px;" id="pipeline-stages">
+        <div class="pipeline-stage" data-stage="0" onclick="selectStage(0)" style="min-width:110px;text-align:center;padding:16px 10px;background:var(--surface2);border:2px solid var(--border);border-radius:10px;cursor:pointer;transition:all 0.2s;flex-shrink:0;">
+          <div style="font-size:20px;margin-bottom:6px;">📂</div>
+          <div style="font-size:11px;font-weight:700;color:var(--text);">Data Prep</div>
+        </div>
+        <div style="color:var(--muted);padding:0 6px;font-size:16px;flex-shrink:0;">→</div>
+        <div class="pipeline-stage" data-stage="1" onclick="selectStage(1)" style="min-width:110px;text-align:center;padding:16px 10px;background:var(--surface2);border:2px solid var(--border);border-radius:10px;cursor:pointer;transition:all 0.2s;flex-shrink:0;">
+          <div style="font-size:20px;margin-bottom:6px;">🏋️</div>
+          <div style="font-size:11px;font-weight:700;color:var(--text);">Train</div>
+        </div>
+        <div style="color:var(--muted);padding:0 6px;font-size:16px;flex-shrink:0;">→</div>
+        <div class="pipeline-stage" data-stage="2" onclick="selectStage(2)" style="min-width:110px;text-align:center;padding:16px 10px;background:var(--surface2);border:2px solid var(--border);border-radius:10px;cursor:pointer;transition:all 0.2s;flex-shrink:0;">
+          <div style="font-size:20px;margin-bottom:6px;">🧪</div>
+          <div style="font-size:11px;font-weight:700;color:var(--text);">Evaluate</div>
+        </div>
+        <div style="color:var(--muted);padding:0 6px;font-size:16px;flex-shrink:0;">→</div>
+        <div class="pipeline-stage" data-stage="3" onclick="selectStage(3)" style="min-width:110px;text-align:center;padding:16px 10px;background:var(--surface2);border:2px solid var(--border);border-radius:10px;cursor:pointer;transition:all 0.2s;flex-shrink:0;">
+          <div style="font-size:20px;margin-bottom:6px;">🗄️</div>
+          <div style="font-size:11px;font-weight:700;color:var(--text);">Register</div>
+        </div>
+        <div style="color:var(--muted);padding:0 6px;font-size:16px;flex-shrink:0;">→</div>
+        <div class="pipeline-stage" data-stage="4" onclick="selectStage(4)" style="min-width:110px;text-align:center;padding:16px 10px;background:var(--surface2);border:2px solid var(--border);border-radius:10px;cursor:pointer;transition:all 0.2s;flex-shrink:0;">
+          <div style="font-size:20px;margin-bottom:6px;">🚀</div>
+          <div style="font-size:11px;font-weight:700;color:var(--text);">Deploy</div>
+        </div>
+        <div style="color:var(--muted);padding:0 6px;font-size:16px;flex-shrink:0;">→</div>
+        <div class="pipeline-stage" data-stage="5" onclick="selectStage(5)" style="min-width:110px;text-align:center;padding:16px 10px;background:var(--surface2);border:2px solid var(--border);border-radius:10px;cursor:pointer;transition:all 0.2s;flex-shrink:0;">
+          <div style="font-size:20px;margin-bottom:6px;">📡</div>
+          <div style="font-size:11px;font-weight:700;color:var(--text);">Monitor</div>
+        </div>
+      </div>
+
+      <!-- Progress bar -->
+      <div style="margin-bottom:20px;">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:6px;"><span>Pipeline Progress</span><span id="progress-pct">0%</span></div>
+        <div style="background:var(--bg);border-radius:99px;height:8px;overflow:hidden;">
+          <div id="progress-bar" style="width:0%;height:100%;background:linear-gradient(90deg,var(--purple),var(--teal));border-radius:99px;transition:width 0.4s ease;"></div>
+        </div>
+      </div>
+
+      <!-- Stage detail -->
+      <div id="stage-detail" style="padding:20px;background:var(--bg);border:1px solid var(--border);border-radius:10px;min-height:80px;">
+        <div style="font-size:13px;color:var(--muted);">Click a stage above to see details.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="container">
+    <p>Agentic AI Mastery — Day 19: MLOps Pipelines</p>
+  </div>
+</footer>
+
+<section style="max-width:900px;margin:2rem auto;padding:0 1.5rem 3rem;">
+  <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;">
+    <div style="font-size:0.75rem;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:1px;">Practice</div>
+    <h2 style="margin:0;font-size:1.4rem;font-weight:700;color:white;">Exercises</h2>
+  </div>
+  <p style="color:#9ca3af;margin-bottom:1.5rem;">Hands-on MLOps exercises — define a 3-step KFP pipeline, deploy a model with BentoML, and configure a canary rollout.</p>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;">
+    <a href="../exercises/day19_exercises.html" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.6rem 1.25rem;background:linear-gradient(135deg,#7c3aed,#0d9488);color:white;font-weight:700;font-size:0.9rem;border-radius:8px;text-decoration:none;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">Open Exercises →</a>
+    <a href="day20.html" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.6rem 1.25rem;background:var(--surface2);border:1px solid var(--border);color:var(--purple-light);font-weight:700;font-size:0.9rem;border-radius:8px;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.borderColor='#7c3aed'" onmouseout="this.style.borderColor='var(--border)'">Day 20: AI Observability →</a>
+  </div>
+</section>
+
+<script src="../bg-animation.js"></script>
+<script>
+// ── Mark Complete ─────────────────────────────────────────────────────────────
+function markComplete() {
+  try {
+    const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
+    p[19] = 'done';
+    localStorage.setItem('aai_progress', JSON.stringify(p));
+    const btn = document.getElementById('complete-btn');
+    btn.textContent = 'Completed!';
+    btn.classList.remove('complete');
+    btn.classList.add('done');
+  } catch(e) {}
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  try {
+    const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
+    if (!p[19] || p[19] === 'locked') {
+      p[19] = 'active';
+      localStorage.setItem('aai_progress', JSON.stringify(p));
+    }
+    if (p[19] === 'done') {
+      const btn = document.getElementById('complete-btn');
+      btn.textContent = 'Completed!';
+      btn.classList.remove('complete');
+      btn.classList.add('done');
+    }
+  } catch(e) {}
+});
+
+// ── Pipeline Stage Selector ────────────────────────────────────────────────────
+const stageData = [
+  {
+    name: 'Data Preparation',
+    icon: '📂',
+    platform: 'KFP: @dsl.component with datasets lib · SageMaker: ProcessingStep',
+    time: '5–30 minutes depending on dataset size',
+    desc: 'Download raw data, apply formatting (Alpaca / ShareGPT / custom), filter low-quality examples, tokenize, and split into train/eval sets. Output is a versioned Dataset artifact stored in S3/GCS.'
+  },
+  {
+    name: 'Training',
+    icon: '🏋️',
+    platform: 'KFP: GPU component · SageMaker: TrainingStep with ml.g5.2xlarge',
+    time: '1–8 hours for QLoRA on 3–8B model',
+    desc: 'QLoRA fine-tuning with SFTTrainer. Consumes Dataset artifact from previous step. Logs training loss, eval loss, and perplexity to MLflow at every step. Saves LoRA adapter as Model artifact.'
+  },
+  {
+    name: 'Evaluation',
+    icon: '🧪',
+    platform: 'KFP: CPU component · SageMaker: ProcessingStep (no GPU needed)',
+    time: '10–30 minutes on eval dataset',
+    desc: 'Run RAGAS metrics (faithfulness, answer_relevancy) on eval dataset using the trained model. Compare against baseline scores. Pipeline continues only if eval metrics pass defined thresholds.'
+  },
+  {
+    name: 'Registration',
+    icon: '🗄️',
+    platform: 'MLflow Model Registry (all platforms) · SageMaker Model Registry',
+    time: '< 2 minutes',
+    desc: 'Register the Model artifact in MLflow under a named model. Attach eval metrics as metadata. Set stage to "Staging" pending human approval. Tags: dataset_version, git_sha, pipeline_run_id.'
+  },
+  {
+    name: 'Deployment',
+    icon: '🚀',
+    platform: 'BentoML → Docker → Kubernetes · SageMaker Endpoint',
+    time: '5–15 minutes including container startup',
+    desc: 'Build a BentoML bento from the registered model. Containerize it. Deploy to Kubernetes with initial 5% canary traffic weight. Verify health endpoint before increasing traffic.'
+  },
+  {
+    name: 'Monitoring',
+    icon: '📡',
+    platform: 'Prometheus + Grafana · SageMaker Model Monitor · LangSmith tracing',
+    time: 'Continuous — runs 24/7',
+    desc: 'Track P99 latency, token throughput, GPU utilization, and RAGAS quality scores. Nightly evaluation job samples 5% of production traffic. Alerts if faithfulness drops below 0.80 threshold.'
+  }
+];
+
+function selectStage(idx) {
+  document.querySelectorAll('.pipeline-stage').forEach((el, i) => {
+    el.style.borderColor = i === idx ? 'var(--purple-light)' : 'var(--border)';
+    el.style.background = i === idx ? 'rgba(168,85,247,0.1)' : 'var(--surface2)';
+    el.style.boxShadow = i === idx ? '0 0 12px rgba(168,85,247,0.2)' : 'none';
+  });
+
+  const pct = Math.round(((idx + 1) / 6) * 100);
+  document.getElementById('progress-bar').style.width = pct + '%';
+  document.getElementById('progress-pct').textContent = pct + '%';
+
+  const d = stageData[idx];
+  document.getElementById('stage-detail').innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+      <span style="font-size:24px;">${d.icon}</span>
+      <div>
+        <div style="font-size:15px;font-weight:700;color:var(--text);">${d.name}</div>
+        <div style="font-size:11px;color:var(--yellow);">Est. time: ${d.time}</div>
+      </div>
+    </div>
+    <div style="font-size:13px;color:var(--text);line-height:1.6;margin-bottom:10px;">${d.desc}</div>
+    <div style="font-size:11px;color:var(--purple-light);background:rgba(124,58,237,0.07);border:1px solid rgba(124,58,237,0.2);border-radius:6px;padding:8px 12px;">
+      <strong>Platform:</strong> ${d.platform}
+    </div>`;
+}
+</script>
+</body>
+</html>

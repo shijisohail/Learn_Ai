@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 16: HuggingFace Transformers</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f; --card: #141420; --surface2: #1a1a2e; --border: #2a2a45;
+  --purple: #7c3aed; --purple-light: #a855f7; --teal: #0d9488; --green: #10b981;
+  --red: #ef4444; --yellow: #f59e0b; --text: #e2e8f0; --muted: #64748b;
+  --font: 'Inter', sans-serif; --mono: 'JetBrains Mono', monospace;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; overflow-x: hidden; }
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(124,58,237,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 90% 80%, rgba(13,148,136,0.05) 0%, transparent 60%);
+  pointer-events: none; z-index: 0;
+}
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  border-bottom: 1px solid var(--border);
+  background: rgba(10,10,15,0.9);
+  backdrop-filter: blur(12px);
+  padding: 0;
+}
+.nav-inner {
+  max-width: 1100px; margin: 0 auto; padding: 0 24px;
+  height: 52px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-btn {
+  padding: 7px 18px; border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface2); color: var(--muted);
+  font-size: 13px; font-weight: 600;
+  text-decoration: none; transition: all 0.2s;
+  font-family: inherit; cursor: pointer;
+}
+.nav-btn:hover { border-color: var(--purple); color: var(--text); }
+.nav-btn.next {
+  border-color: rgba(124,58,237,0.5);
+  color: var(--purple-light);
+}
+.nav-btn.next:hover {
+  background: var(--purple); color: white; border-color: var(--purple);
+}
+.nav-btn.complete {
+  border-color: rgba(245,158,11,0.5);
+  color: var(--yellow);
+}
+.nav-btn.complete:hover {
+  background: var(--yellow); color: #0a0a0f; border-color: var(--yellow);
+}
+.nav-btn.complete.done {
+  background: var(--yellow); color: #0a0a0f; border-color: var(--yellow);
+}
+.nav-brand {
+  font-size: 14px; font-weight: 700; color: var(--muted);
+  text-decoration: none; letter-spacing: -0.2px;
+  transition: color 0.2s;
+}
+.nav-brand:hover { color: var(--text); }
+
+.day-hero { padding: 56px 0 40px; }
+.day-num { font-size: 12px; font-weight: 700; color: var(--purple-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+.day-hero h1 { font-size: clamp(32px, 5vw, 56px); font-weight: 900; letter-spacing: -2px; margin-bottom: 16px; }
+.day-hero p { font-size: 17px; color: var(--muted); max-width: 600px; line-height: 1.6; margin-bottom: 28px; }
+.topic-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+.topic-pill { padding: 5px 12px; border-radius: 20px; background: var(--surface2); border: 1px solid var(--border); font-size: 12px; color: var(--muted); font-weight: 500; }
+
+.section { padding: 56px 0; border-top: 1px solid var(--border); }
+.section-header { margin-bottom: 32px; }
+.section-num { font-size: 11px; font-weight: 700; color: var(--purple-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.section-header h2 { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 10px; }
+.section-header p { color: var(--muted); font-size: 15px; line-height: 1.6; max-width: 640px; }
+
+/* CODE BLOCKS — white-space: pre is REQUIRED */
+.code-block {
+  background: #0d1117; border: 1px solid #30363d; border-radius: 12px;
+  padding: 24px; font-family: var(--mono); font-size: 12.5px; line-height: 1.8;
+  overflow-x: auto; white-space: pre;
+}
+.code-wrap { position: relative; margin-top: 16px; }
+.code-label { position: absolute; top: -10px; left: 16px; background: var(--purple); color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.5px; }
+.c-cmt { color: #8b949e; }
+.c-kw { color: #ff7b72; }
+.c-fn { color: #d2a8ff; }
+.c-str { color: #a5d6ff; }
+.c-type { color: #ffa657; }
+.c-num { color: #f2cc60; }
+.c-bi { color: #79c0ff; }
+.c-dec { color: #ffa657; }
+
+/* DECISION TRIANGLE */
+.triangle-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 20px; }
+.tri-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+  padding: 20px; text-align: center; position: relative; overflow: hidden;
+  transition: all 0.2s;
+}
+.tri-card:hover { transform: translateY(-3px); }
+.tri-card.active-prompting { border-color: rgba(16,185,129,0.5); }
+.tri-card.active-rag { border-color: rgba(13,148,136,0.5); }
+.tri-card.active-finetune { border-color: rgba(168,85,247,0.5); }
+.tri-icon { font-size: 32px; margin-bottom: 10px; }
+.tri-title { font-size: 15px; font-weight: 800; margin-bottom: 8px; }
+.tri-when { font-size: 11px; color: var(--muted); line-height: 1.5; margin-bottom: 10px; }
+.tri-cost { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 20px; }
+.cost-low { background: rgba(16,185,129,0.15); color: var(--green); }
+.cost-mid { background: rgba(13,148,136,0.15); color: var(--teal); }
+.cost-high { background: rgba(168,85,247,0.15); color: var(--purple-light); }
+
+/* FLOW DIAGRAM */
+.flow-diagram { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; overflow-x: auto; }
+.flow-row { display: flex; align-items: center; gap: 0; justify-content: center; flex-wrap: wrap; gap: 4px; }
+.flow-box {
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
+  padding: 12px 16px; text-align: center; min-width: 120px;
+}
+.flow-box.highlight { border-color: var(--purple); background: rgba(124,58,237,0.1); }
+.flow-box.result { border-color: var(--green); background: rgba(16,185,129,0.08); }
+.flow-box-title { font-size: 12px; font-weight: 700; margin-bottom: 3px; }
+.flow-box-sub { font-size: 10px; color: var(--muted); }
+.flow-arrow { color: var(--muted); font-size: 18px; padding: 0 6px; }
+.flow-plus { color: var(--yellow); font-size: 20px; font-weight: 800; padding: 0 8px; }
+
+/* LORA VISUAL */
+.lora-visual { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.lora-panel { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 22px; }
+.lora-panel h3 { font-size: 14px; font-weight: 800; margin-bottom: 12px; }
+.param-bar { margin-bottom: 12px; }
+.param-label { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 12px; }
+.param-label span { color: var(--muted); }
+.bar-track { background: var(--surface2); border-radius: 99px; height: 8px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 99px; transition: width 1s ease; }
+.bar-full { background: linear-gradient(90deg, var(--red), var(--yellow)); }
+.bar-lora { background: linear-gradient(90deg, var(--green), var(--teal)); }
+.lora-eq { text-align: center; padding: 16px; background: var(--surface2); border-radius: 10px; margin-top: 12px; font-family: var(--mono); font-size: 13px; color: var(--purple-light); }
+
+/* COMPARISON TABLE */
+.comp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.comp-table th { background: var(--surface2); padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); border-bottom: 1px solid var(--border); }
+.comp-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.comp-table tr:last-child td { border-bottom: none; }
+.comp-table tr:hover td { background: rgba(255,255,255,0.02); }
+.tick { color: var(--green); font-weight: 700; }
+.cross { color: var(--red); font-weight: 700; }
+.partial { color: var(--yellow); font-weight: 700; }
+
+/* USE CASES */
+.use-case-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.use-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+.use-card.good { border-color: rgba(16,185,129,0.3); }
+.use-card.bad { border-color: rgba(239,68,68,0.3); }
+.use-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.use-icon { font-size: 18px; }
+.use-title { font-size: 13px; font-weight: 700; }
+.use-items { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.use-items li { font-size: 12px; color: var(--muted); display: flex; align-items: flex-start; gap: 8px; }
+.use-items li::before { content: '•'; color: var(--green); flex-shrink: 0; }
+.use-card.bad .use-items li::before { color: var(--red); }
+
+/* PREREQS */
+.prereq-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.prereq-chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.prereq-day { background: var(--purple); color: white; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; }
+
+/* EXERCISES */
+.ex-list { display: flex; flex-direction: column; gap: 12px; counter-reset: ex; }
+.ex-item { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; display: flex; gap: 14px; counter-increment: ex; }
+.ex-num { width: 32px; height: 32px; border-radius: 50%; background: rgba(124,58,237,0.15); border: 2px solid var(--purple); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: var(--purple-light); flex-shrink: 0; }
+.ex-body { flex: 1; }
+.ex-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.ex-desc { font-size: 12px; color: var(--muted); line-height: 1.6; }
+.ex-difficulty { display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+.diff-easy { background: rgba(16,185,129,0.15); color: var(--green); }
+.diff-med { background: rgba(245,158,11,0.15); color: var(--yellow); }
+.diff-hard { background: rgba(239,68,68,0.15); color: var(--red); }
+
+/* CALLOUT */
+.callout { background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.25); border-radius: 12px; padding: 16px 20px; display: flex; gap: 12px; align-items: flex-start; margin: 20px 0; }
+.callout-icon { font-size: 18px; flex-shrink: 0; }
+.callout-text { font-size: 13px; color: var(--text); line-height: 1.6; }
+.callout-text strong { color: var(--yellow); }
+.callout.info { background: rgba(124,58,237,0.07); border-color: rgba(124,58,237,0.25); }
+.callout.info .callout-text strong { color: var(--purple-light); }
+
+/* WIDGET */
+.widget { background: var(--card); border: 1px solid rgba(124,58,237,0.3); border-radius: 16px; padding: 28px; }
+.widget-title { font-size: 16px; font-weight: 800; margin-bottom: 6px; }
+.widget-sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+
+/* BULLET LIST */
+.bullet-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.bullet-list li { list-style: none; font-size: 14px; color: var(--muted); display: flex; align-items: flex-start; gap: 10px; line-height: 1.6; }
+.bullet-list li::before { content: '→'; color: var(--purple-light); flex-shrink: 0; font-weight: 700; }
+
+/* MODEL SELECTOR WIDGET */
+.select-row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+.select-label { font-size: 13px; font-weight: 600; }
+.select-input {
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+  color: var(--text); font-family: var(--font); font-size: 13px;
+  padding: 9px 14px; appearance: none; cursor: pointer;
+  transition: border-color 0.2s;
+}
+.select-input:focus { outline: none; border-color: var(--purple); }
+.rec-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-top: 8px; display: none; }
+.rec-card.visible { display: block; }
+.rec-model-name { font-size: 18px; font-weight: 800; color: var(--purple-light); margin-bottom: 4px; }
+.rec-meta { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+.rec-cmd { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 12px 16px; font-family: var(--mono); font-size: 12px; color: #a5d6ff; white-space: pre; overflow-x: auto; margin-bottom: 10px; }
+.rec-py { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 12px 16px; font-family: var(--mono); font-size: 12px; color: #c9d1d9; white-space: pre; overflow-x: auto; }
+
+/* FOOTER */
+footer { padding: 40px 0; border-top: 1px solid var(--border); }
+.footer-inner { display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; color: var(--muted); font-size: 13px; }
+.footer-nav { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+
+@media(max-width:700px) {
+  .triangle-container { grid-template-columns: 1fr; }
+  .lora-visual { grid-template-columns: 1fr; }
+  .use-case-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body data-animation-density="high">
+
+<nav>
+  <div class="nav-inner">
+    <a href="day15.html" class="nav-btn">← Day 15: PyTorch</a>
+    <a href="../index.html" class="nav-brand">🤖 Agentic AI</a>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button class="nav-btn complete" id="nav-complete-btn" onclick="markComplete()">Mark Complete</button>
+      <a href="day17.html" class="nav-btn next">Day 17 →</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+
+  <div class="day-hero">
+    <div class="day-num">Day 16 — HuggingFace</div>
+    <h1>HuggingFace<br>Transformers</h1>
+    <p>Pipeline API, model hub &amp; local inference. The npm of ML — 500K+ models, one consistent API, and the fastest path from idea to running inference.</p>
+    <div class="topic-pills">
+      <span class="topic-pill">pipeline() API</span>
+      <span class="topic-pill">AutoModel</span>
+      <span class="topic-pill">Chat Templates</span>
+      <span class="topic-pill">Ollama</span>
+      <span class="topic-pill">GGUF / llama.cpp</span>
+      <span class="topic-pill">Quantization</span>
+    </div>
+  </div>
+
+  <!-- SECTION 1 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">Section 01</div>
+      <h2>The HuggingFace Ecosystem</h2>
+      <p>The Hub is the npm of ML — 500K+ models, datasets, and spaces. Understanding the ecosystem means knowing which library to reach for first.</p>
+    </div>
+
+    <ul class="bullet-list">
+      <li><strong>Hub</strong> — 500K+ models, datasets, Spaces. Search by task, architecture, language, or license. Every model has a model card with architecture details and limitations.</li>
+      <li><strong>transformers</strong> — the main library. AutoModel, AutoTokenizer, pipeline(). Works with PyTorch, TensorFlow, and JAX.</li>
+      <li><strong>peft</strong> — parameter-efficient fine-tuning: LoRA, QLoRA, prefix tuning. Day 17 covers this in depth.</li>
+      <li><strong>trl</strong> — transformer reinforcement learning: SFTTrainer, PPO, DPO. Used for RLHF and instruction tuning.</li>
+      <li><strong>accelerate</strong> — distributed training abstraction. Write training code once, run on 1 GPU or 8.</li>
+      <li><strong>HuggingFace Spaces</strong> — deploy Gradio / Streamlit apps in one click. Great for demos and sharing fine-tuned models.</li>
+    </ul>
+
+    <div class="callout info" style="margin-top:24px;">
+      <span class="callout-icon">📋</span>
+      <div class="callout-text"><strong>Reading model cards:</strong> always check (1) architecture — transformer decoder vs encoder, (2) training data — open vs proprietary, (3) limitations section — what the model fails at, (4) license — many models are non-commercial only.</div>
+    </div>
+  </div>
+
+  <!-- SECTION 2 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">Section 02</div>
+      <h2>The pipeline() API</h2>
+      <p>Fastest way to run any model — handles tokenization, inference, and decoding in one call. Graduate to AutoModel only when you need custom control over the process.</p>
+    </div>
+
+    <ul class="bullet-list">
+      <li><strong>Task types</strong> — text-generation, text-classification, question-answering, summarization, translation, image-classification, object-detection, and more.</li>
+      <li><strong>Pipeline config</strong> — model, device, batch_size, truncation, max_new_tokens. All set at init, not at call time.</li>
+      <li><strong>Batch inference</strong> — pass a list of strings, get a list of results. Much more efficient than sequential single calls.</li>
+      <li><strong>When to graduate</strong> — need access to hidden states, logits, attention weights, or custom generation logic.</li>
+    </ul>
+
+    <div class="code-wrap" style="margin-top:24px;">
+      <span class="code-label">PYTHON</span>
+      <div class="code-block"><span class="c-kw">from</span> <span class="c-bi">transformers</span> <span class="c-kw">import</span> <span class="c-fn">pipeline</span>
+<span class="c-kw">import</span> <span class="c-bi">torch</span>
+
+<span class="c-cmt"># Text generation — simplest usage</span>
+generator = <span class="c-fn">pipeline</span>(
+    <span class="c-str">"text-generation"</span>,
+    model=<span class="c-str">"meta-llama/Llama-3.2-3B-Instruct"</span>,
+    torch_dtype=<span class="c-bi">torch</span>.<span class="c-type">bfloat16</span>,
+    device_map=<span class="c-str">"auto"</span>
+)
+
+result = <span class="c-fn">generator</span>(
+    <span class="c-str">"Explain attention mechanism in transformers:"</span>,
+    max_new_tokens=<span class="c-num">200</span>,
+    temperature=<span class="c-num">0.7</span>,
+    do_sample=<span class="c-bi">True</span>
+)
+<span class="c-fn">print</span>(result[<span class="c-num">0</span>][<span class="c-str">"generated_text"</span>])
+
+<span class="c-cmt"># Batch inference — process multiple inputs efficiently</span>
+results = <span class="c-fn">generator</span>(
+    [<span class="c-str">"Question 1:"</span>, <span class="c-str">"Question 2:"</span>, <span class="c-str">"Question 3:"</span>],
+    batch_size=<span class="c-num">4</span>,
+    max_new_tokens=<span class="c-num">100</span>
+)</div>
+    </div>
+  </div>
+
+  <!-- SECTION 3 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">Section 03</div>
+      <h2>AutoModel &amp; AutoTokenizer</h2>
+      <p>The Auto-classes are model-agnostic loaders — write code once and it works for Llama, Mistral, Qwen, Phi, and any other supported architecture.</p>
+    </div>
+
+    <ul class="bullet-list">
+      <li><strong>AutoTokenizer</strong> — BPE tokenization, padding, truncation, special tokens — all handled automatically per model config.</li>
+      <li><strong>apply_chat_template()</strong> — converts a list of message dicts to the model-specific format. Critical for instruction-following models. Skip this and you get garbage outputs.</li>
+      <li><strong>Sampling parameters</strong> — temperature (randomness), top_p (nucleus sampling), repetition_penalty (reduce loops).</li>
+      <li><strong>Decoding only new tokens</strong> — slice output_ids with input length to get only the generated text, not the prompt repeated back.</li>
+    </ul>
+
+    <div class="code-wrap" style="margin-top:24px;">
+      <span class="code-label">PYTHON</span>
+      <div class="code-block"><span class="c-kw">from</span> <span class="c-bi">transformers</span> <span class="c-kw">import</span> <span class="c-type">AutoModelForCausalLM</span>, <span class="c-type">AutoTokenizer</span>
+<span class="c-kw">import</span> <span class="c-bi">torch</span>
+
+model_name = <span class="c-str">"mistralai/Mistral-7B-Instruct-v0.3"</span>
+tokenizer = <span class="c-type">AutoTokenizer</span>.<span class="c-fn">from_pretrained</span>(model_name)
+model = <span class="c-type">AutoModelForCausalLM</span>.<span class="c-fn">from_pretrained</span>(
+    model_name,
+    torch_dtype=<span class="c-bi">torch</span>.<span class="c-type">bfloat16</span>,
+    device_map=<span class="c-str">"auto"</span>
+)
+
+<span class="c-cmt"># Chat template — model-specific formatting</span>
+messages = [
+    {<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: <span class="c-str">"What is LoRA fine-tuning?"</span>}
+]
+formatted = tokenizer.<span class="c-fn">apply_chat_template</span>(
+    messages,
+    tokenize=<span class="c-bi">False</span>,
+    add_generation_prompt=<span class="c-bi">True</span>
+)
+
+<span class="c-cmt"># Tokenize and generate</span>
+inputs = <span class="c-fn">tokenizer</span>(formatted, return_tensors=<span class="c-str">"pt"</span>).<span class="c-fn">to</span>(model.device)
+<span class="c-kw">with</span> <span class="c-bi">torch</span>.<span class="c-fn">no_grad</span>():
+    output_ids = model.<span class="c-fn">generate</span>(
+        **inputs,
+        max_new_tokens=<span class="c-num">300</span>,
+        temperature=<span class="c-num">0.7</span>,
+        do_sample=<span class="c-bi">True</span>,
+        top_p=<span class="c-num">0.9</span>,
+        repetition_penalty=<span class="c-num">1.1</span>
+    )
+
+<span class="c-cmt"># Decode only the new tokens</span>
+new_tokens = output_ids[<span class="c-num">0</span>][inputs[<span class="c-str">"input_ids"</span>].shape[<span class="c-num">1</span>]:]
+response = tokenizer.<span class="c-fn">decode</span>(new_tokens, skip_special_tokens=<span class="c-bi">True</span>)</div>
+    </div>
+  </div>
+
+  <!-- SECTION 4 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">Section 04</div>
+      <h2>Running Models Locally with Ollama</h2>
+      <p>Ollama is a one-command local LLM server with an OpenAI-compatible API. Run Llama, Mistral, Qwen, and others without touching Python for the server setup.</p>
+    </div>
+
+    <ul class="bullet-list">
+      <li><strong>Supported models</strong> — Llama 3.2, Mistral, Phi-3.5, Gemma 2, Qwen2.5, DeepSeek, and dozens more from the Ollama library.</li>
+      <li><strong>Quantization levels</strong> — Q4_K_M is the recommended default (best quality/size tradeoff). Q8_0 for highest quality. Q2_K for smallest size.</li>
+      <li><strong>OpenAI-compatible API</strong> — point any OpenAI client to localhost:11434 and it just works. No code changes needed.</li>
+      <li><strong>LangChain integration</strong> — ChatOllama works as a drop-in replacement for ChatOpenAI in any LangChain chain.</li>
+    </ul>
+
+    <div class="code-wrap" style="margin-top:24px;">
+      <span class="code-label">BASH</span>
+      <div class="code-block"><span class="c-cmt"># Install and run Ollama</span>
+curl -fsSL https://ollama.ai/install.sh | sh
+ollama pull llama3.2:3b          <span class="c-cmt"># pull 3B model (~2GB)</span>
+ollama pull qwen2.5-coder:7b     <span class="c-cmt"># coding specialist</span>
+ollama serve                      <span class="c-cmt"># start API server (port 11434)</span></div>
+    </div>
+
+    <div class="code-wrap">
+      <span class="code-label">PYTHON</span>
+      <div class="code-block"><span class="c-kw">from</span> <span class="c-bi">langchain_ollama</span> <span class="c-kw">import</span> <span class="c-type">ChatOllama</span>
+<span class="c-kw">from</span> <span class="c-bi">openai</span> <span class="c-kw">import</span> <span class="c-type">OpenAI</span>
+
+<span class="c-cmt"># LangChain integration</span>
+llm = <span class="c-type">ChatOllama</span>(model=<span class="c-str">"llama3.2:3b"</span>, temperature=<span class="c-num">0.7</span>)
+response = llm.<span class="c-fn">invoke</span>(<span class="c-str">"Explain RLHF in simple terms"</span>)
+
+<span class="c-cmt"># OpenAI-compatible API (use existing OpenAI clients)</span>
+client = <span class="c-type">OpenAI</span>(base_url=<span class="c-str">"http://localhost:11434/v1"</span>, api_key=<span class="c-str">"ollama"</span>)
+response = client.chat.completions.<span class="c-fn">create</span>(
+    model=<span class="c-str">"llama3.2:3b"</span>,
+    messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: <span class="c-str">"Explain RLHF"</span>}]
+)</div>
+    </div>
+  </div>
+
+  <!-- SECTION 5 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">Section 05</div>
+      <h2>GGUF Quantized Models &amp; llama.cpp</h2>
+      <p>GGUF is the compressed model format that powers consumer-GPU and CPU inference. llama.cpp is the C++ engine underneath Ollama that makes it all fast.</p>
+    </div>
+
+    <ul class="bullet-list">
+      <li><strong>GGUF</strong> — single-file model format. Self-contained: weights, tokenizer config, and metadata all in one file.</li>
+      <li><strong>Quantization tradeoff</strong> — lower bits = smaller file + less VRAM, with some quality loss. Q4_K_M hits the sweet spot.</li>
+      <li><strong>llama.cpp</strong> — C++ inference engine. Supports CPU, CUDA, Metal (Apple), Vulkan. Powers Ollama, LM Studio, and many local tools.</li>
+      <li><strong>When to use GGUF</strong> — development and testing on consumer hardware, edge deployment, anywhere you can't run full BF16 weights.</li>
+    </ul>
+
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-top:24px;">
+      <table class="comp-table">
+        <thead>
+          <tr>
+            <th>Quantization</th>
+            <th>Size (7B model)</th>
+            <th>Quality</th>
+            <th>VRAM needed</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="font-family:var(--mono);color:var(--purple-light);font-weight:700;">FP16</td>
+            <td>14 GB</td>
+            <td class="tick">Reference</td>
+            <td>14 GB</td>
+          </tr>
+          <tr>
+            <td style="font-family:var(--mono);color:var(--green);font-weight:700;">Q8_0</td>
+            <td>7.7 GB</td>
+            <td class="tick">Excellent (99%)</td>
+            <td>8 GB</td>
+          </tr>
+          <tr>
+            <td style="font-family:var(--mono);color:var(--yellow);font-weight:700;">Q4_K_M</td>
+            <td>4.1 GB</td>
+            <td class="partial">Good (96%)</td>
+            <td>5 GB</td>
+          </tr>
+          <tr>
+            <td style="font-family:var(--mono);color:var(--yellow);font-weight:700;">Q3_K_M</td>
+            <td>3.3 GB</td>
+            <td class="partial">Acceptable (93%)</td>
+            <td>4 GB</td>
+          </tr>
+          <tr>
+            <td style="font-family:var(--mono);color:var(--red);font-weight:700;">Q2_K</td>
+            <td>2.7 GB</td>
+            <td class="cross">Degraded (87%)</td>
+            <td>3 GB</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- WIDGET -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">Interactive</div>
+      <h2>Model Selector</h2>
+      <p>Pick your task and available hardware — get a specific model recommendation with commands to run it.</p>
+    </div>
+
+    <div class="widget">
+      <div class="widget-title">Model Selector</div>
+      <div class="widget-sub">Select a task and hardware scale to get a recommendation</div>
+
+      <div class="select-row">
+        <span class="select-label">Task</span>
+        <select class="select-input" id="task-select" onchange="updateRec()">
+          <option value="">— Choose a task —</option>
+          <option value="text-gen">Text Generation</option>
+          <option value="code">Code Completion</option>
+          <option value="embed">Embeddings</option>
+          <option value="classify">Classification</option>
+        </select>
+      </div>
+
+      <div class="select-row">
+        <span class="select-label">Hardware</span>
+        <select class="select-input" id="hw-select" onchange="updateRec()">
+          <option value="">— Choose hardware —</option>
+          <option value="laptop">Laptop (8 GB RAM)</option>
+          <option value="workstation">Workstation (24 GB VRAM)</option>
+          <option value="server">Server (80 GB VRAM)</option>
+          <option value="cloud">Cloud (unlimited)</option>
+        </select>
+      </div>
+
+      <div class="rec-card" id="rec-card">
+        <div class="rec-model-name" id="rec-name"></div>
+        <div class="rec-meta" id="rec-meta"></div>
+        <div class="rec-cmd" id="rec-cmd"></div>
+        <div class="rec-py" id="rec-py"></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-nav">
+        <a href="day15.html" class="nav-btn">← Day 15: PyTorch</a>
+        <button class="nav-btn complete" id="footer-complete-btn" onclick="markComplete()">Mark Complete</button>
+        <a href="day17.html" class="nav-btn next">Day 17 →</a>
+      </div>
+      <div>Day 16 of the AI Mastery Curriculum &middot; Built for Sharjeel Sohail</div>
+    </div>
+  </div>
+</footer>
+
+<script src="../bg-animation.js"></script>
+<script>
+// ── Mark Complete (aai_progress) ────────────────────────────────
+function markComplete() {
+  try {
+    const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
+    const isDone = p[16] === 'complete';
+    p[16] = isDone ? 'active' : 'complete';
+    localStorage.setItem('aai_progress', JSON.stringify(p));
+    updateCompleteButtons();
+  } catch(e) {}
+}
+
+function updateCompleteButtons() {
+  try {
+    const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
+    const done = p[16] === 'complete';
+    const label = done ? 'Completed ✓' : 'Mark Complete';
+    ['nav-complete-btn', 'footer-complete-btn'].forEach(id => {
+      const btn = document.getElementById(id);
+      if (btn) {
+        btn.textContent = label;
+        btn.classList.toggle('done', done);
+      }
+    });
+  } catch(e) {}
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  try {
+    const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
+    if (!p[16] || p[16] === 'locked') { p[16] = 'active'; localStorage.setItem('aai_progress', JSON.stringify(p)); }
+  } catch(e) {}
+  updateCompleteButtons();
+});
+
+// ── Model Selector Widget ────────────────────────────────────────
+const RECS = {
+  'text-gen': {
+    laptop:      { name: 'Llama 3.2 3B (Q4_K_M)', meta: '~2 GB · CPU/MPS · Ollama', cmd: 'ollama pull llama3.2:3b\nollama run llama3.2:3b', py: 'from langchain_ollama import ChatOllama\nllm = ChatOllama(model="llama3.2:3b", temperature=0.7)' },
+    workstation: { name: 'Llama 3.1 8B (BF16)', meta: '~16 GB VRAM · CUDA · HuggingFace', cmd: 'ollama pull llama3.1:8b', py: 'from transformers import pipeline\npipe = pipeline("text-generation", model="meta-llama/Llama-3.1-8B-Instruct",\n    torch_dtype=torch.bfloat16, device_map="auto")' },
+    server:      { name: 'Llama 3.1 70B (BF16)', meta: '~140 GB VRAM · Multi-GPU · HuggingFace', cmd: 'ollama pull llama3.1:70b', py: 'from transformers import AutoModelForCausalLM\nmodel = AutoModelForCausalLM.from_pretrained(\n    "meta-llama/Llama-3.1-70B-Instruct",\n    torch_dtype=torch.bfloat16, device_map="auto")' },
+    cloud:       { name: 'Claude 3.5 Sonnet via API', meta: 'Unlimited · API · Anthropic / OpenRouter', cmd: 'pip install anthropic', py: 'import anthropic\nclient = anthropic.Anthropic()\nresponse = client.messages.create(\n    model="claude-sonnet-4-5",\n    max_tokens=1024,\n    messages=[{"role": "user", "content": "Hello"}])' },
+  },
+  'code': {
+    laptop:      { name: 'Qwen2.5-Coder 3B (Q4_K_M)', meta: '~2 GB · CPU/MPS · Ollama', cmd: 'ollama pull qwen2.5-coder:3b\nollama run qwen2.5-coder:3b', py: 'from langchain_ollama import ChatOllama\nllm = ChatOllama(model="qwen2.5-coder:3b")' },
+    workstation: { name: 'Qwen2.5-Coder 7B (BF16)', meta: '~14 GB VRAM · CUDA · Ollama', cmd: 'ollama pull qwen2.5-coder:7b', py: 'from langchain_ollama import ChatOllama\nllm = ChatOllama(model="qwen2.5-coder:7b", temperature=0)' },
+    server:      { name: 'DeepSeek-Coder-V2 Instruct', meta: '~80 GB VRAM · Single A100 · HuggingFace', cmd: 'ollama pull deepseek-coder-v2', py: 'from transformers import AutoModelForCausalLM\nmodel = AutoModelForCausalLM.from_pretrained(\n    "deepseek-ai/DeepSeek-Coder-V2-Instruct",\n    torch_dtype=torch.bfloat16, device_map="auto")' },
+    cloud:       { name: 'Claude 3.5 Sonnet (coding)', meta: 'Unlimited · API · Anthropic', cmd: 'pip install anthropic', py: 'import anthropic\nclient = anthropic.Anthropic()\n# Claude excels at code generation and review' },
+  },
+  'embed': {
+    laptop:      { name: 'nomic-embed-text (Ollama)', meta: '~300 MB · CPU · Ollama', cmd: 'ollama pull nomic-embed-text', py: 'from langchain_ollama import OllamaEmbeddings\nemb = OllamaEmbeddings(model="nomic-embed-text")\nvecs = emb.embed_documents(["Hello world"])' },
+    workstation: { name: 'BAAI/bge-large-en-v1.5', meta: '~1.3 GB · GPU · HuggingFace', cmd: 'pip install sentence-transformers', py: 'from sentence_transformers import SentenceTransformer\nmodel = SentenceTransformer("BAAI/bge-large-en-v1.5")\nvecs = model.encode(["Hello world"])' },
+    server:      { name: 'text-embedding-3-large (OpenAI)', meta: 'API · 3072 dimensions · Best quality', cmd: 'pip install openai', py: 'from openai import OpenAI\nclient = OpenAI()\nresponse = client.embeddings.create(\n    model="text-embedding-3-large",\n    input="Hello world")' },
+    cloud:       { name: 'text-embedding-3-large (OpenAI)', meta: 'API · 3072 dimensions · Best quality', cmd: 'pip install openai', py: 'from openai import OpenAI\nclient = OpenAI()\nresponse = client.embeddings.create(\n    model="text-embedding-3-large",\n    input="Hello world")' },
+  },
+  'classify': {
+    laptop:      { name: 'distilbert-base-uncased-finetuned-sst-2', meta: '~250 MB · CPU · HuggingFace', cmd: 'pip install transformers torch', py: 'from transformers import pipeline\nclassifier = pipeline("sentiment-analysis")\nresult = classifier("I love this product!")' },
+    workstation: { name: 'DeBERTa-v3-large', meta: '~900 MB · GPU · HuggingFace', cmd: 'pip install transformers torch', py: 'from transformers import pipeline\nclassifier = pipeline("zero-shot-classification",\n    model="cross-encoder/nli-deberta-v3-large", device=0)\nresult = classifier("This text", candidate_labels=["positive","negative"])' },
+    server:      { name: 'DeBERTa-v3-large (batched)', meta: '~900 MB · Multi-GPU · batch_size=64', cmd: 'pip install transformers torch accelerate', py: 'from transformers import pipeline\nclassifier = pipeline("zero-shot-classification",\n    model="cross-encoder/nli-deberta-v3-large",\n    device_map="auto", batch_size=64)' },
+    cloud:       { name: 'Claude 3 Haiku (structured output)', meta: 'API · Cheapest Claude · Fast', cmd: 'pip install anthropic', py: 'import anthropic\n# Use Claude with JSON output for classification\n# Cheaper than Sonnet, faster than Opus' },
+  },
+};
+
+function updateRec() {
+  const task = document.getElementById('task-select').value;
+  const hw   = document.getElementById('hw-select').value;
+  const card = document.getElementById('rec-card');
+
+  if (!task || !hw) { card.classList.remove('visible'); return; }
+
+  const rec = RECS[task][hw];
+  document.getElementById('rec-name').textContent = rec.name;
+  document.getElementById('rec-meta').textContent = rec.meta;
+  document.getElementById('rec-cmd').textContent  = rec.cmd;
+  document.getElementById('rec-py').textContent   = rec.py;
+  card.classList.add('visible');
+}
+</script>
+</body>
+</html>

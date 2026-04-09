@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 13: CrewAI &amp; Role-Based Agents — Crews, tasks, tools &amp; hierarchical processes</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f; --card: #141420; --surface2: #1a1a2e; --border: #2a2a45;
+  --purple: #7c3aed; --purple-light: #a855f7; --teal: #0d9488; --green: #10b981;
+  --red: #ef4444; --yellow: #f59e0b; --text: #e2e8f0; --muted: #64748b;
+  --font: 'Inter', sans-serif; --mono: 'JetBrains Mono', monospace;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; overflow-x: hidden; }
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(124,58,237,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 90% 80%, rgba(13,148,136,0.05) 0%, transparent 60%);
+  pointer-events: none; z-index: 0;
+}
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+nav { border-bottom: 1px solid var(--border); padding: 0; background: rgba(10,10,15,0.85); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; }
+.nav-inner { max-width: 1100px; margin: 0 auto; padding: 0 24px; height: 52px; display: flex; align-items: center; justify-content: space-between; }
+.nav-btn {
+  padding: 7px 18px; border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface2); color: var(--muted);
+  font-size: 13px; font-weight: 600;
+  text-decoration: none; transition: all 0.2s;
+  font-family: inherit; cursor: pointer;
+}
+.nav-btn:hover { border-color: var(--purple); color: var(--text); }
+.nav-btn.next { border-color: rgba(124,58,237,0.5); color: var(--purple-light); }
+.nav-btn.next:hover { background: var(--purple); color: white; border-color: var(--purple); }
+.nav-btn.complete { border-color: rgba(245,158,11,0.5); color: var(--yellow); }
+.nav-btn.complete:hover { background: var(--yellow); color: #0a0a0f; border-color: var(--yellow); }
+.nav-btn.done { background: rgba(16,185,129,0.15); border-color: var(--green); color: var(--green); }
+.nav-brand { font-size: 14px; font-weight: 700; color: var(--muted); text-decoration: none; letter-spacing: -0.2px; transition: color 0.2s; }
+.nav-brand:hover { color: var(--text); }
+
+.day-hero { padding: 56px 0 40px; }
+.day-num { font-size: 12px; font-weight: 700; color: var(--yellow); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+.day-hero h1 { font-size: clamp(32px, 5vw, 56px); font-weight: 900; letter-spacing: -2px; margin-bottom: 16px; }
+.day-hero p { font-size: 17px; color: var(--muted); max-width: 600px; line-height: 1.6; margin-bottom: 28px; }
+.topic-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+.topic-pill { padding: 5px 12px; border-radius: 20px; background: var(--surface2); border: 1px solid var(--border); font-size: 12px; color: var(--muted); font-weight: 500; }
+
+.section { padding: 56px 0; border-top: 1px solid var(--border); }
+.section-header { margin-bottom: 32px; }
+.section-num { font-size: 11px; font-weight: 700; color: var(--purple-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.section-header h2 { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 10px; }
+.section-header p { color: var(--muted); font-size: 15px; line-height: 1.6; max-width: 640px; }
+
+/* CODE BLOCKS */
+.code-block {
+  background: #0d1117; border: 1px solid #30363d; border-radius: 12px;
+  padding: 24px; font-family: var(--mono); font-size: 12.5px; line-height: 1.8;
+  overflow-x: auto; white-space: pre;
+}
+.code-wrap { position: relative; margin-top: 16px; }
+.code-label { position: absolute; top: -10px; left: 16px; background: var(--purple); color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.5px; }
+.c-cmt { color: #8b949e; }
+.c-kw { color: #ff7b72; }
+.c-fn { color: #d2a8ff; }
+.c-str { color: #a5d6ff; }
+.c-type { color: #ffa657; }
+.c-num { color: #f2cc60; }
+.c-bi { color: #79c0ff; }
+.c-dec { color: #ffa657; }
+
+/* CALLOUT */
+.callout { background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.25); border-radius: 12px; padding: 16px 20px; display: flex; gap: 12px; align-items: flex-start; margin: 20px 0; }
+.callout-icon { font-size: 18px; flex-shrink: 0; }
+.callout-text { font-size: 13px; color: var(--text); line-height: 1.6; }
+.callout-text strong { color: var(--yellow); }
+.callout.info { background: rgba(124,58,237,0.07); border-color: rgba(124,58,237,0.25); }
+.callout.info .callout-text strong { color: var(--purple-light); }
+
+/* CONCEPT GRID */
+.concept-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; margin-top: 20px; }
+.concept-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; transition: border-color 0.2s; }
+.concept-card:hover { border-color: var(--purple); }
+.concept-icon { font-size: 24px; margin-bottom: 10px; }
+.concept-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+.concept-desc { font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+/* COMPARISON TABLE */
+.comp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.comp-table th { background: var(--surface2); padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); border-bottom: 1px solid var(--border); }
+.comp-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.comp-table tr:last-child td { border-bottom: none; }
+.comp-table tr:hover td { background: rgba(255,255,255,0.02); }
+.tick { color: var(--green); font-weight: 700; }
+.cross { color: var(--red); font-weight: 700; }
+.partial { color: var(--yellow); font-weight: 700; }
+
+/* CREW DESIGNER WIDGET */
+.widget-box { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-top: 24px; }
+.widget-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.widget-subtitle { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+.crew-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+.crew-btn {
+  padding: 9px 18px; border-radius: 8px; border: none; font-family: var(--font);
+  font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+}
+.crew-btn.primary { background: var(--purple); color: white; }
+.crew-btn.primary:hover { background: var(--purple-light); }
+.crew-btn.secondary { background: var(--teal); color: white; }
+.crew-btn.secondary:hover { opacity: 0.85; }
+.crew-btn.danger { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+.crew-btn.danger:hover { background: rgba(239,68,68,0.25); }
+.crew-btn.yaml-btn { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+.crew-btn.yaml-btn:hover { border-color: var(--green); color: var(--green); }
+.agents-area { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; min-height: 60px; }
+.agent-card {
+  background: var(--surface2); border: 1px solid var(--purple); border-radius: 10px;
+  padding: 12px 16px; min-width: 180px; position: relative;
+}
+.agent-card-role { font-size: 13px; font-weight: 700; color: var(--purple-light); margin-bottom: 4px; }
+.agent-card-goal { font-size: 11px; color: var(--muted); line-height: 1.4; }
+.agent-card-del { position: absolute; top: 8px; right: 8px; background: none; border: none; color: var(--muted); cursor: pointer; font-size: 14px; transition: color 0.2s; }
+.agent-card-del:hover { color: var(--red); }
+.tasks-area { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+.task-card {
+  background: var(--surface2); border: 1px solid var(--teal); border-radius: 10px;
+  padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;
+}
+.task-card-info { flex: 1; }
+.task-card-desc { font-size: 12px; color: var(--text); margin-bottom: 2px; }
+.task-card-agent { font-size: 11px; color: var(--teal); }
+.task-card-del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 14px; transition: color 0.2s; margin-left: 12px; }
+.task-card-del:hover { color: var(--red); }
+.yaml-output {
+  background: #0d1117; border: 1px solid #30363d; border-radius: 10px;
+  padding: 20px; font-family: var(--mono); font-size: 12px; line-height: 1.8;
+  white-space: pre; overflow-x: auto; display: none; margin-top: 12px;
+}
+.empty-state { color: var(--muted); font-size: 13px; font-style: italic; }
+.section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 8px; }
+
+/* FOOTER */
+footer { padding: 40px 0; border-top: 1px solid var(--border); text-align: center; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body data-animation-density="high">
+
+<nav>
+  <div class="nav-inner">
+    <a href="day12.html" class="nav-btn">← Day 12</a>
+    <a href="../index.html" class="nav-brand">Agentic AI Mastery</a>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <a href="day14.html" class="nav-btn next">Day 14 →</a>
+      <button class="nav-btn complete" id="complete-btn" onclick="markComplete()">Mark Complete</button>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="day-hero">
+    <div class="day-num">Day 13 — Week 2</div>
+    <h1>CrewAI &amp; Role-Based<br>Agents</h1>
+    <p>Crews, tasks, tools &amp; hierarchical processes. Learn CrewAI's abstractions for building multi-agent pipelines where each agent has a role, goal, and backstory — and how Sequential and Hierarchical processes orchestrate collaboration.</p>
+    <div class="topic-pills">
+      <span class="topic-pill">Agent / Task / Crew</span>
+      <span class="topic-pill">Sequential Process</span>
+      <span class="topic-pill">Hierarchical Process</span>
+      <span class="topic-pill">Custom Tools</span>
+      <span class="topic-pill">YAML Config</span>
+      <span class="topic-pill">CrewAI vs LangGraph</span>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 1 -->
+<div class="container">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">Section 01</div>
+      <h2>CrewAI Architecture</h2>
+      <p>CrewAI provides three core abstractions: Agent (a role-based LLM actor), Task (a unit of work with an expected output), and Crew (the orchestrator that runs agents against tasks).</p>
+    </div>
+
+    <div class="concept-grid">
+      <div class="concept-card">
+        <div class="concept-icon">🤖</div>
+        <div class="concept-title">Agent</div>
+        <div class="concept-desc">The core actor. Defined by: <strong>role</strong> (expertise domain), <strong>goal</strong> (what it tries to achieve), <strong>backstory</strong> (context injected into system prompt), <strong>tools</strong> (functions it can call), and <strong>llm</strong> (which model backs it). Think of it as a specialized employee with a job description.</div>
+      </div>
+      <div class="concept-card">
+        <div class="concept-icon">📋</div>
+        <div class="concept-title">Task</div>
+        <div class="concept-desc">A unit of work. Defined by: <strong>description</strong> (detailed instructions), <strong>expected_output</strong> (format and completeness criteria), <strong>agent</strong> (who executes it), and optionally <strong>context</strong> (output from prior tasks) and <strong>output_file</strong>. Tasks are the unit of composition — they chain together via context.</div>
+      </div>
+      <div class="concept-card">
+        <div class="concept-icon">👥</div>
+        <div class="concept-title">Crew</div>
+        <div class="concept-desc">The orchestrator. Takes a list of agents and tasks, a process type (Sequential or Hierarchical), and optional memory configuration. <code style="font-family:var(--mono);font-size:11px;">.kickoff(inputs={})</code> runs the full workflow. Crew manages task routing, output passing, and error handling.</div>
+      </div>
+      <div class="concept-card">
+        <div class="concept-icon">🔀</div>
+        <div class="concept-title">Process Types</div>
+        <div class="concept-desc"><strong>Sequential</strong>: tasks run in the order defined, each receiving the output of the previous. Predictable, auditable. <strong>Hierarchical</strong>: a manager LLM reads all tasks and dynamically delegates to agents. More flexible but less deterministic — good for open-ended research tasks.</div>
+      </div>
+    </div>
+
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-top:24px;">
+      <table class="comp-table">
+        <thead>
+          <tr>
+            <th>Framework</th>
+            <th>Level of Abstraction</th>
+            <th>Control</th>
+            <th>Best For</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>CrewAI</strong></td>
+            <td>High — role/task/crew DSL</td>
+            <td class="cross">Less granular</td>
+            <td>Role-based workflows, content pipelines, research crews</td>
+          </tr>
+          <tr>
+            <td><strong>LangGraph</strong></td>
+            <td>Low — explicit state machine</td>
+            <td class="tick">Full control</td>
+            <td>Complex conditional flows, HITL, production agents needing auditability</td>
+          </tr>
+          <tr>
+            <td><strong>Raw agent loop</strong></td>
+            <td>None — build everything</td>
+            <td class="tick">Maximum</td>
+            <td>Simple single-agent ReAct loops, rapid prototyping</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 2 -->
+<div class="container">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">Section 02</div>
+      <h2>Building Agents with Roles</h2>
+      <p>The quality of your agents depends almost entirely on the quality of role, goal, and backstory. Vague roles produce vague outputs. Specific, expert-level backstories produce expert-level reasoning.</p>
+    </div>
+
+    <div class="callout info">
+      <span class="callout-icon">💡</span>
+      <div class="callout-text"><strong>Role Design Principle:</strong> Write backstories as if you were onboarding a senior contractor. Specify the years of experience, what they're exceptionally good at, what standards they hold themselves to, and what pitfalls they know to avoid. The LLM uses this context to calibrate tone, depth, and judgment in every response.</div>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-label">Python — Agent Definition</div>
+      <div class="code-block"><span class="c-kw">from</span> crewai <span class="c-kw">import</span> <span class="c-type">Agent</span>, <span class="c-type">Task</span>, <span class="c-type">Crew</span>, <span class="c-type">Process</span>
+<span class="c-kw">from</span> crewai_tools <span class="c-kw">import</span> <span class="c-type">SerperDevTool</span>, <span class="c-type">FileReadTool</span>
+
+<span class="c-cmt"># Tool definition — SerperDev for web search</span>
+search_tool = <span class="c-type">SerperDevTool</span>()
+
+<span class="c-cmt"># Research agent — expensive model for quality</span>
+researcher = <span class="c-type">Agent</span>(
+    role=<span class="c-str">"Senior AI Research Analyst"</span>,
+    goal=<span class="c-str">"Find comprehensive, accurate information about {topic}"</span>,
+    backstory=<span class="c-str">"""You are an expert AI researcher with 10 years of experience
+    in machine learning and NLP systems. You excel at finding cutting-edge
+    papers, synthesizing complex technical information, and distinguishing
+    between hype and substance. You always cite your sources and flag
+    uncertainty when you encounter it."""</span>,
+    tools=[search_tool],
+    llm=<span class="c-str">"claude-3-5-sonnet-20241022"</span>,
+    verbose=<span class="c-type">True</span>,
+    memory=<span class="c-type">True</span>   <span class="c-cmt"># enables short-term memory within the task</span>
+)
+
+<span class="c-cmt"># Writer agent — cheaper model, writing is less compute-intensive</span>
+writer = <span class="c-type">Agent</span>(
+    role=<span class="c-str">"Technical Content Writer"</span>,
+    goal=<span class="c-str">"Transform research into clear, engaging technical articles"</span>,
+    backstory=<span class="c-str">"""You are a technical writer who has spent years making complex
+    AI concepts accessible to senior engineers. You write with precision and
+    clarity, using concrete examples over abstractions. You structure content
+    with a logical flow: problem → mechanism → implementation → gotchas."""</span>,
+    llm=<span class="c-str">"gpt-4o-mini"</span>,  <span class="c-cmt"># cheaper model for writing tasks</span>
+    verbose=<span class="c-type">True</span>
+)
+
+<span class="c-cmt"># Agent memory types:</span>
+<span class="c-cmt"># short_term_memory  — within a task execution (enabled by memory=True)</span>
+<span class="c-cmt"># long_term_memory   — persisted across crew runs (requires storage backend)</span>
+<span class="c-cmt"># entity_memory      — tracks entities mentioned (people, orgs, concepts)</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 3 -->
+<div class="container">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">Section 03</div>
+      <h2>Tasks &amp; Expected Outputs</h2>
+      <p>A well-defined task is the key to reliable CrewAI pipelines. The expected_output field is not optional boilerplate — the agent uses it to understand the quality bar and stops when it believes it's met.</p>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-label">Python — Task Definition &amp; Dependencies</div>
+      <div class="code-block"><span class="c-kw">from</span> pydantic <span class="c-kw">import</span> <span class="c-type">BaseModel</span>
+<span class="c-kw">from</span> typing <span class="c-kw">import</span> <span class="c-type">List</span>
+
+<span class="c-cmt"># Research task — first in chain</span>
+research_task = <span class="c-type">Task</span>(
+    description=<span class="c-str">"""Research {topic} thoroughly. Find:
+    1. Current state of the art — what works best today
+    2. Key limitations and open challenges
+    3. Recent breakthrough papers (2024–2025) with arxiv links
+    4. Practical implementation considerations for production systems
+    5. Common failure modes reported in the literature"""</span>,
+    expected_output=<span class="c-str">"""A comprehensive research report containing:
+    - Executive summary (3–4 sentences)
+    - Findings for each of the 5 areas above
+    - Minimum 3 paper citations with arxiv IDs
+    - A "Practical Implications" section for ML engineers"""</span>,
+    agent=researcher,
+    output_file=<span class="c-str">"research.md"</span>   <span class="c-cmt"># save output to disk</span>
+)
+
+<span class="c-cmt"># Write task — depends on research task output</span>
+write_task = <span class="c-type">Task</span>(
+    description=<span class="c-str">"""Using the research provided in context, write a technical blog
+    post about {topic}. Target audience: senior ML engineers who are
+    time-constrained and highly skeptical of hype. Length: 1500 words.
+    Include: code examples (Python), practical insights, common pitfalls.
+    Avoid: excessive preamble, marketing language, vague claims."""</span>,
+    expected_output=<span class="c-str">"""A publication-ready technical article in Markdown with:
+    - Compelling intro that states the core problem
+    - At least 2 runnable code examples
+    - A "When NOT to use this" section
+    - Concrete performance numbers or benchmarks
+    - Closing with actionable next steps"""</span>,
+    agent=writer,
+    context=[research_task],  <span class="c-cmt"># researcher's output is injected as context</span>
+    output_file=<span class="c-str">"article.md"</span>
+)
+
+<span class="c-cmt"># Structured output with Pydantic</span>
+<span class="c-kw">class</span> <span class="c-type">ResearchReport</span>(<span class="c-type">BaseModel</span>):
+    summary: <span class="c-type">str</span>
+    key_findings: <span class="c-type">List</span>[<span class="c-type">str</span>]
+    citations: <span class="c-type">List</span>[<span class="c-type">str</span>]
+    recommendation: <span class="c-type">str</span>
+
+structured_task = <span class="c-type">Task</span>(
+    description=<span class="c-str">"Research {topic} and return structured findings"</span>,
+    expected_output=<span class="c-str">"A structured research report"</span>,
+    agent=researcher,
+    output_pydantic=<span class="c-type">ResearchReport</span>  <span class="c-cmt"># enforce schema on output</span>
+)</div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 4 -->
+<div class="container">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">Section 04</div>
+      <h2>Crew Execution &amp; Processes</h2>
+      <p>Sequential vs Hierarchical process is the most important architectural decision in CrewAI. Sequential is predictable and auditable. Hierarchical gives the manager LLM full delegation authority — use it for complex, open-ended tasks where the optimal sequence isn't known in advance.</p>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-label">Python — Sequential &amp; Hierarchical Crews</div>
+      <div class="code-block"><span class="c-kw">from</span> crewai <span class="c-kw">import</span> <span class="c-type">Agent</span>, <span class="c-type">Task</span>, <span class="c-type">Crew</span>, <span class="c-type">Process</span>
+
+<span class="c-cmt"># ── Sequential Crew ────────────────────────────────────────</span>
+<span class="c-cmt"># Tasks run in defined order; each can access prior outputs via context</span>
+crew = <span class="c-type">Crew</span>(
+    agents=[researcher, writer],
+    tasks=[research_task, write_task],
+    process=<span class="c-type">Process</span>.sequential,
+    verbose=<span class="c-type">True</span>,
+    memory=<span class="c-type">True</span>   <span class="c-cmt"># enables cross-task memory sharing</span>
+)
+
+<span class="c-cmt"># Synchronous execution with input interpolation</span>
+result = crew.<span class="c-fn">kickoff</span>(inputs={<span class="c-str">"topic"</span>: <span class="c-str">"LoRA fine-tuning for LLMs"</span>})
+<span class="c-fn">print</span>(result.raw)      <span class="c-cmt"># final task output as string</span>
+<span class="c-fn">print</span>(result.token_usage)  <span class="c-cmt"># total tokens used across all agents</span>
+
+<span class="c-cmt"># Async execution for web apps and concurrent runs</span>
+<span class="c-kw">import</span> asyncio
+<span class="c-kw">async def</span> <span class="c-fn">run_async</span>():
+    result = <span class="c-kw">await</span> crew.<span class="c-fn">kickoff_async</span>(inputs={<span class="c-str">"topic"</span>: <span class="c-str">"RLHF"</span>})
+    <span class="c-kw">return</span> result.raw
+
+<span class="c-cmt"># ── Hierarchical Crew ─────────────────────────────────────</span>
+<span class="c-cmt"># Manager LLM reads all tasks and delegates dynamically</span>
+<span class="c-cmt"># Use when: tasks are complex, interdependent, order not fixed</span>
+crew_hierarchical = <span class="c-type">Crew</span>(
+    agents=[researcher, writer, editor],
+    tasks=[complex_research_task],      <span class="c-cmt"># can be a single high-level task</span>
+    process=<span class="c-type">Process</span>.hierarchical,
+    manager_llm=<span class="c-str">"gpt-4o"</span>,             <span class="c-cmt"># use a powerful model as manager</span>
+    verbose=<span class="c-type">True</span>
+)
+
+<span class="c-cmt"># Batch kickoff: run same crew against many inputs in parallel</span>
+inputs_list = [
+    {<span class="c-str">"topic"</span>: <span class="c-str">"LoRA"</span>},
+    {<span class="c-str">"topic"</span>: <span class="c-str">"RLHF"</span>},
+    {<span class="c-str">"topic"</span>: <span class="c-str">"RAG"</span>},
+]
+results = crew.<span class="c-fn">kickoff_for_each</span>(inputs=inputs_list)</div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 5 -->
+<div class="container">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">Section 05</div>
+      <h2>Custom Tools &amp; YAML Configuration</h2>
+      <p>Any Python function can become a CrewAI tool with the @tool decorator. For production deployments, YAML-driven configuration separates agent definitions from application code — enabling non-engineers to modify agent behavior without touching Python.</p>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-label">Python — Custom Tool &amp; YAML Config</div>
+      <div class="code-block"><span class="c-kw">from</span> crewai.tools <span class="c-kw">import</span> tool
+<span class="c-kw">import</span> json
+
+<span class="c-cmt"># Custom tool — any Python function with @tool decorator</span>
+<span class="c-cmt"># Docstring becomes the tool description the LLM sees</span>
+<span class="c-dec">@tool</span>(<span class="c-str">"Database Query Tool"</span>)
+<span class="c-kw">def</span> <span class="c-fn">query_database</span>(sql_query: <span class="c-type">str</span>) -> <span class="c-type">str</span>:
+    <span class="c-str">"""Query the product database with a SQL SELECT statement.
+    Returns results as JSON. Use for looking up product information,
+    pricing, inventory levels, or customer records.
+    Do NOT use for UPDATE, DELETE, or INSERT operations."""</span>
+    <span class="c-kw">try</span>:
+        results = db.<span class="c-fn">execute</span>(sql_query).<span class="c-fn">fetchall</span>()
+        <span class="c-kw">return</span> json.<span class="c-fn">dumps</span>(results, default=<span class="c-type">str</span>)
+    <span class="c-kw">except Exception as</span> e:
+        <span class="c-kw">return</span> <span class="c-str">f"Query failed: {e}"</span>
+
+<span class="c-cmt"># YAML configuration (agents.yaml) for production</span>
+<span class="c-cmt"># ───────────────────────────────────────────────</span>
+<span class="c-cmt"># researcher:</span>
+<span class="c-cmt">#   role: "Senior Research Analyst"</span>
+<span class="c-cmt">#   goal: "Research {topic} comprehensively"</span>
+<span class="c-cmt">#   backstory: "10 years of ML research experience..."</span>
+<span class="c-cmt">#   tools: [search_tool, file_read_tool]</span>
+<span class="c-cmt">#   llm: claude-3-5-sonnet-20241022</span>
+<span class="c-cmt">#   verbose: true</span>
+<span class="c-cmt">#</span>
+<span class="c-cmt"># tasks.yaml</span>
+<span class="c-cmt"># ───────────────────────────────────────────────</span>
+<span class="c-cmt"># research_task:</span>
+<span class="c-cmt">#   description: "Research {topic} and identify..."</span>
+<span class="c-cmt">#   expected_output: "Comprehensive report with..."</span>
+<span class="c-cmt">#   agent: researcher</span>
+
+<span class="c-cmt"># Load from YAML using CrewBase pattern</span>
+<span class="c-kw">from</span> crewai <span class="c-kw">import</span> <span class="c-type">CrewBase</span>
+
+<span class="c-dec">@CrewBase</span>
+<span class="c-kw">class</span> <span class="c-type">ResearchCrew</span>:
+    agents_config = <span class="c-str">"config/agents.yaml"</span>
+    tasks_config  = <span class="c-str">"config/tasks.yaml"</span>
+
+    <span class="c-dec">@agent</span>
+    <span class="c-kw">def</span> <span class="c-fn">researcher</span>(self) -> <span class="c-type">Agent</span>:
+        <span class="c-kw">return</span> <span class="c-type">Agent</span>(config=self.agents_config[<span class="c-str">"researcher"</span>], tools=[search_tool])
+
+    <span class="c-dec">@crew</span>
+    <span class="c-kw">def</span> <span class="c-fn">crew</span>(self) -> <span class="c-type">Crew</span>:
+        <span class="c-kw">return</span> <span class="c-type">Crew</span>(agents=self.agents, tasks=self.tasks, verbose=<span class="c-type">True</span>)</div>
+    </div>
+
+    <div class="callout info" style="margin-top:24px;">
+      <span class="callout-icon">🏗️</span>
+      <div class="callout-text"><strong>Best Practices:</strong> One responsibility per agent — don't build a "do everything" agent. Agents with narrow scope are faster, more reliable, and cheaper (smaller context, more focused generation). Use cheap models (gpt-4o-mini) for writing/formatting tasks and expensive models (claude-3-5-sonnet, gpt-4o) only for reasoning-heavy research tasks.</div>
+    </div>
+  </div>
+</div>
+
+<!-- INTERACTIVE WIDGET -->
+<div class="container">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">Interactive</div>
+      <h2>CrewAI Crew Designer</h2>
+      <p>Design a crew by adding agents and tasks, then generate a YAML configuration you can drop directly into a CrewAI project.</p>
+    </div>
+
+    <div class="widget-box">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+        <div>
+          <div class="section-label">Agents</div>
+          <div class="agents-area" id="agents-area">
+            <div class="empty-state">No agents yet. Click "Add Agent".</div>
+          </div>
+          <button class="crew-btn primary" onclick="addAgent()">+ Add Agent</button>
+        </div>
+        <div>
+          <div class="section-label">Tasks</div>
+          <div class="tasks-area" id="tasks-area">
+            <div class="empty-state">No tasks yet. Add an agent first, then add tasks.</div>
+          </div>
+          <button class="crew-btn secondary" onclick="addTask()">+ Add Task</button>
+        </div>
+      </div>
+
+      <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="crew-btn yaml-btn" onclick="generateYAML()">Generate YAML</button>
+        <button class="crew-btn danger" onclick="resetCrew()">Reset</button>
+      </div>
+
+      <div class="yaml-output" id="yaml-output"></div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="container">
+    <p>Agentic AI Mastery — Day 13: CrewAI &amp; Role-Based Agents</p>
+  </div>
+</footer>
+
+<section style="max-width:900px;margin:2rem auto;padding:0 1.5rem 3rem;">
+  <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;">
+    <div style="font-size:0.75rem;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:1px;">Practice</div>
+    <h2 style="margin:0;font-size:1.4rem;font-weight:700;color:white;">Exercises</h2>
+  </div>
+  <p style="color:#9ca3af;margin-bottom:1.5rem;">Build a 3-agent research crew, implement a custom database tool, configure hierarchical process with a manager LLM, and export crew config to YAML.</p>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;">
+    <a href="../exercises/day13_exercises.html" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.6rem 1.25rem;background:linear-gradient(135deg,#7c3aed,#0d9488);color:white;font-weight:700;font-size:0.9rem;border-radius:8px;text-decoration:none;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">Open Exercises →</a>
+    <a href="day14.html" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.6rem 1.25rem;background:var(--surface2);border:1px solid var(--border);color:var(--purple-light);font-weight:700;font-size:0.9rem;border-radius:8px;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.borderColor='#7c3aed'" onmouseout="this.style.borderColor='var(--border)'">Day 14: Capstone →</a>
+  </div>
+</section>
+
+<script>
+// ── Mark Complete ─────────────────────────────────────────────────────────────
+function markComplete() {
+  try {
+    const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
+    p[13] = 'done';
+    localStorage.setItem('aai_progress', JSON.stringify(p));
+    const btn = document.getElementById('complete-btn');
+    btn.textContent = 'Completed!';
+    btn.classList.remove('complete');
+    btn.classList.add('done');
+  } catch(e) {}
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  try {
+    const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
+    if (!p[13] || p[13] === 'locked') {
+      p[13] = 'active';
+      localStorage.setItem('aai_progress', JSON.stringify(p));
+    }
+    if (p[13] === 'done') {
+      const btn = document.getElementById('complete-btn');
+      btn.textContent = 'Completed!';
+      btn.classList.remove('complete');
+      btn.classList.add('done');
+    }
+  } catch(e) {}
+});
+
+// ── Crew Designer ─────────────────────────────────────────────────────────────
+let agents = [];
+let tasks = [];
+
+function renderAgents() {
+  const el = document.getElementById('agents-area');
+  if (agents.length === 0) {
+    el.innerHTML = '<div class="empty-state">No agents yet. Click "Add Agent".</div>';
+    return;
+  }
+  el.innerHTML = agents.map((a, i) => `
+    <div class="agent-card">
+      <button class="agent-card-del" onclick="removeAgent(${i})" title="Remove">✕</button>
+      <div class="agent-card-role">${escHtml(a.role)}</div>
+      <div class="agent-card-goal">${escHtml(a.goal)}</div>
+    </div>
+  `).join('');
+}
+
+function renderTasks() {
+  const el = document.getElementById('tasks-area');
+  if (tasks.length === 0) {
+    el.innerHTML = '<div class="empty-state">No tasks yet. Add an agent first, then add tasks.</div>';
+    return;
+  }
+  el.innerHTML = tasks.map((t, i) => `
+    <div class="task-card">
+      <div class="task-card-info">
+        <div class="task-card-desc">${escHtml(t.description.substring(0, 80))}${t.description.length > 80 ? '…' : ''}</div>
+        <div class="task-card-agent">Agent: ${escHtml(t.agent)}</div>
+      </div>
+      <button class="task-card-del" onclick="removeTask(${i})" title="Remove">✕</button>
+    </div>
+  `).join('');
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function addAgent() {
+  const role = prompt('Agent role (e.g., "Senior Research Analyst"):');
+  if (!role || !role.trim()) return;
+  const goal = prompt(`Goal for "${role.trim()}" (e.g., "Find accurate information about {topic}"):`) || 'Complete assigned tasks effectively';
+  agents.push({ role: role.trim(), goal: goal.trim() });
+  renderAgents();
+  document.getElementById('yaml-output').style.display = 'none';
+}
+
+function removeAgent(i) {
+  agents.splice(i, 1);
+  renderAgents();
+  document.getElementById('yaml-output').style.display = 'none';
+}
+
+function addTask() {
+  if (agents.length === 0) {
+    alert('Add at least one agent first.');
+    return;
+  }
+  const desc = prompt('Task description (e.g., "Research {topic} and identify key challenges"):');
+  if (!desc || !desc.trim()) return;
+  const agentNames = agents.map((a, i) => `${i + 1}. ${a.role}`).join('\n');
+  const choice = prompt(`Assign to which agent?\n${agentNames}\nEnter number:`);
+  const idx = parseInt(choice) - 1;
+  if (isNaN(idx) || idx < 0 || idx >= agents.length) {
+    alert('Invalid agent number.');
+    return;
+  }
+  tasks.push({ description: desc.trim(), agent: agents[idx].role });
+  renderTasks();
+  document.getElementById('yaml-output').style.display = 'none';
+}
+
+function removeTask(i) {
+  tasks.splice(i, 1);
+  renderTasks();
+  document.getElementById('yaml-output').style.display = 'none';
+}
+
+function generateYAML() {
+  if (agents.length === 0 && tasks.length === 0) {
+    alert('Add at least one agent and one task first.');
+    return;
+  }
+  const agentYaml = agents.length > 0
+    ? agents.map(a =>
+        `  ${a.role.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')}:\n` +
+        `    role: "${a.role}"\n` +
+        `    goal: "${a.goal}"\n` +
+        `    backstory: "Expert with deep knowledge in this domain."\n` +
+        `    llm: claude-3-5-sonnet-20241022\n` +
+        `    verbose: true`
+      ).join('\n\n')
+    : '  # No agents defined';
+
+  const taskYaml = tasks.length > 0
+    ? tasks.map((t, i) =>
+        `  task_${i + 1}:\n` +
+        `    description: "${t.description}"\n` +
+        `    expected_output: "A complete and accurate result"\n` +
+        `    agent: ${t.agent.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')}`
+      ).join('\n\n')
+    : '  # No tasks defined';
+
+  const crewYaml =
+    `# agents.yaml\nagents:\n${agentYaml}\n\n` +
+    `# tasks.yaml\ntasks:\n${taskYaml}\n\n` +
+    `# crew.py\n` +
+    `crew = Crew(\n` +
+    `    agents=[${agents.map(a => a.role.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')).join(', ')}],\n` +
+    `    tasks=[${tasks.map((_, i) => `task_${i + 1}`).join(', ')}],\n` +
+    `    process=Process.sequential,\n` +
+    `    verbose=True,\n` +
+    `)`;
+
+  const el = document.getElementById('yaml-output');
+  el.textContent = crewYaml;
+  el.style.display = 'block';
+}
+
+function resetCrew() {
+  agents = [];
+  tasks = [];
+  renderAgents();
+  renderTasks();
+  document.getElementById('yaml-output').style.display = 'none';
+}
+
+// Initialize
+renderAgents();
+renderTasks();
+</script>
+
+<script src="../bg-animation.js"></script>
+</body>
+</html>

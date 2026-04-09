@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 22: Advanced Prompt Engineering</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f; --card: #141420; --surface2: #1a1a2e; --border: #2a2a45;
+  --purple: #7c3aed; --purple-light: #a855f7; --teal: #0d9488; --green: #10b981;
+  --red: #ef4444; --yellow: #f59e0b; --text: #e2e8f0; --muted: #64748b;
+  --font: 'Inter', sans-serif; --mono: 'JetBrains Mono', monospace;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; overflow-x: hidden; }
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(124,58,237,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 90% 80%, rgba(13,148,136,0.05) 0%, transparent 60%);
+  pointer-events: none; z-index: 0;
+}
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  border-bottom: 1px solid var(--border);
+  background: rgba(10,10,15,0.9);
+  backdrop-filter: blur(12px);
+  padding: 0;
+}
+.nav-inner {
+  max-width: 1100px; margin: 0 auto; padding: 0 24px;
+  height: 52px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-btn {
+  padding: 7px 18px; border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface2); color: var(--muted);
+  font-size: 13px; font-weight: 600;
+  text-decoration: none; transition: all 0.2s;
+  font-family: inherit; cursor: pointer;
+}
+.nav-btn:hover { border-color: var(--purple); color: var(--text); }
+.nav-btn.next {
+  border-color: rgba(124,58,237,0.5);
+  color: var(--purple-light);
+}
+.nav-btn.next:hover {
+  background: var(--purple); color: white; border-color: var(--purple);
+}
+.nav-btn.complete {
+  border-color: rgba(245,158,11,0.5);
+  color: var(--yellow);
+}
+.nav-btn.complete:hover {
+  background: var(--yellow); color: #0a0a0f; border-color: var(--yellow);
+}
+.nav-btn.complete.done {
+  background: var(--yellow); color: #0a0a0f; border-color: var(--yellow);
+}
+.nav-brand {
+  font-size: 14px; font-weight: 700; color: var(--muted);
+  text-decoration: none; letter-spacing: -0.2px;
+  transition: color 0.2s;
+}
+.nav-brand:hover { color: var(--text); }
+
+.day-hero { padding: 56px 0 40px; }
+.day-num { font-size: 12px; font-weight: 700; color: var(--purple-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+.day-hero h1 { font-size: clamp(32px, 5vw, 56px); font-weight: 900; letter-spacing: -2px; margin-bottom: 16px; }
+.day-hero p { font-size: 17px; color: var(--muted); max-width: 600px; line-height: 1.6; margin-bottom: 28px; }
+.topic-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+.topic-pill { padding: 5px 12px; border-radius: 20px; background: var(--surface2); border: 1px solid var(--border); font-size: 12px; color: var(--muted); font-weight: 500; }
+
+.section { padding: 56px 0; border-top: 1px solid var(--border); }
+.section-header { margin-bottom: 32px; }
+.section-num { font-size: 11px; font-weight: 700; color: var(--purple-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.section-header h2 { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 10px; }
+.section-header p { color: var(--muted); font-size: 15px; line-height: 1.6; max-width: 640px; }
+
+/* CODE BLOCKS — white-space: pre is REQUIRED */
+.code-block {
+  background: #0d1117; border: 1px solid #30363d; border-radius: 12px;
+  padding: 24px; font-family: var(--mono); font-size: 12.5px; line-height: 1.8;
+  overflow-x: auto; white-space: pre;
+}
+.code-wrap { position: relative; margin-top: 16px; }
+.code-label { position: absolute; top: -10px; left: 16px; background: var(--purple); color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.5px; }
+.c-cmt { color: #8b949e; }
+.c-kw { color: #ff7b72; }
+.c-fn { color: #d2a8ff; }
+.c-str { color: #a5d6ff; }
+.c-type { color: #ffa657; }
+.c-num { color: #f2cc60; }
+.c-bi { color: #79c0ff; }
+.c-dec { color: #ffa657; }
+
+/* DECISION TRIANGLE */
+.triangle-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 20px; }
+.tri-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+  padding: 20px; text-align: center; position: relative; overflow: hidden;
+  transition: all 0.2s;
+}
+.tri-card:hover { transform: translateY(-3px); }
+.tri-card.active-prompting { border-color: rgba(16,185,129,0.5); }
+.tri-card.active-rag { border-color: rgba(13,148,136,0.5); }
+.tri-card.active-finetune { border-color: rgba(168,85,247,0.5); }
+.tri-icon { font-size: 32px; margin-bottom: 10px; }
+.tri-title { font-size: 15px; font-weight: 800; margin-bottom: 8px; }
+.tri-when { font-size: 11px; color: var(--muted); line-height: 1.5; margin-bottom: 10px; }
+.tri-cost { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 20px; }
+.cost-low { background: rgba(16,185,129,0.15); color: var(--green); }
+.cost-mid { background: rgba(13,148,136,0.15); color: var(--teal); }
+.cost-high { background: rgba(168,85,247,0.15); color: var(--purple-light); }
+
+/* FLOW DIAGRAM */
+.flow-diagram { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; overflow-x: auto; }
+.flow-row { display: flex; align-items: center; gap: 0; justify-content: center; flex-wrap: wrap; gap: 4px; }
+.flow-box {
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
+  padding: 12px 16px; text-align: center; min-width: 120px;
+}
+.flow-box.highlight { border-color: var(--purple); background: rgba(124,58,237,0.1); }
+.flow-box.result { border-color: var(--green); background: rgba(16,185,129,0.08); }
+.flow-box-title { font-size: 12px; font-weight: 700; margin-bottom: 3px; }
+.flow-box-sub { font-size: 10px; color: var(--muted); }
+.flow-arrow { color: var(--muted); font-size: 18px; padding: 0 6px; }
+.flow-plus { color: var(--yellow); font-size: 20px; font-weight: 800; padding: 0 8px; }
+
+/* LORA VISUAL */
+.lora-visual { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.lora-panel { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 22px; }
+.lora-panel h3 { font-size: 14px; font-weight: 800; margin-bottom: 12px; }
+.param-bar { margin-bottom: 12px; }
+.param-label { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 12px; }
+.param-label span { color: var(--muted); }
+.bar-track { background: var(--surface2); border-radius: 99px; height: 8px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 99px; transition: width 1s ease; }
+.bar-full { background: linear-gradient(90deg, var(--red), var(--yellow)); }
+.bar-lora { background: linear-gradient(90deg, var(--green), var(--teal)); }
+.lora-eq { text-align: center; padding: 16px; background: var(--surface2); border-radius: 10px; margin-top: 12px; font-family: var(--mono); font-size: 13px; color: var(--purple-light); }
+
+/* COMPARISON TABLE */
+.comp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.comp-table th { background: var(--surface2); padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); border-bottom: 1px solid var(--border); }
+.comp-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.comp-table tr:last-child td { border-bottom: none; }
+.comp-table tr:hover td { background: rgba(255,255,255,0.02); }
+.tick { color: var(--green); font-weight: 700; }
+.cross { color: var(--red); font-weight: 700; }
+.partial { color: var(--yellow); font-weight: 700; }
+
+/* USE CASES */
+.use-case-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.use-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+.use-card.good { border-color: rgba(16,185,129,0.3); }
+.use-card.bad { border-color: rgba(239,68,68,0.3); }
+.use-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.use-icon { font-size: 18px; }
+.use-title { font-size: 13px; font-weight: 700; }
+.use-items { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.use-items li { font-size: 12px; color: var(--muted); display: flex; align-items: flex-start; gap: 8px; }
+.use-items li::before { content: '•'; color: var(--green); flex-shrink: 0; }
+.use-card.bad .use-items li::before { color: var(--red); }
+
+/* PREREQS */
+.prereq-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.prereq-chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.prereq-day { background: var(--purple); color: white; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; }
+
+/* EXERCISES */
+.ex-list { display: flex; flex-direction: column; gap: 12px; counter-reset: ex; }
+.ex-item { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; display: flex; gap: 14px; counter-increment: ex; }
+.ex-num { width: 32px; height: 32px; border-radius: 50%; background: rgba(124,58,237,0.15); border: 2px solid var(--purple); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: var(--purple-light); flex-shrink: 0; }
+.ex-body { flex: 1; }
+.ex-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.ex-desc { font-size: 12px; color: var(--muted); line-height: 1.6; }
+.ex-difficulty { display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+.diff-easy { background: rgba(16,185,129,0.15); color: var(--green); }
+.diff-med { background: rgba(245,158,11,0.15); color: var(--yellow); }
+.diff-hard { background: rgba(239,68,68,0.15); color: var(--red); }
+
+/* CALLOUT */
+.callout { background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.25); border-radius: 12px; padding: 16px 20px; display: flex; gap: 12px; align-items: flex-start; margin: 20px 0; }
+.callout-icon { font-size: 18px; flex-shrink: 0; }
+.callout-text { font-size: 13px; color: var(--text); line-height: 1.6; }
+.callout-text strong { color: var(--yellow); }
+.callout.info { background: rgba(124,58,237,0.07); border-color: rgba(124,58,237,0.25); }
+.callout.info .callout-text strong { color: var(--purple-light); }
+
+/* WIDGET */
+.widget { background: var(--card); border: 1px solid rgba(124,58,237,0.3); border-radius: 16px; padding: 28px; }
+.widget-title { font-size: 16px; font-weight: 800; margin-bottom: 6px; }
+.widget-sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+
+/* BULLET LIST */
+.bullet-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.bullet-list li { list-style: none; font-size: 14px; color: var(--muted); display: flex; align-items: flex-start; gap: 10px; line-height: 1.6; }
+.bullet-list li::before { content: '→'; color: var(--purple-light); flex-shrink: 0; font-weight: 700; }
+
+/* FOOTER */
+footer { padding: 40px 0; border-top: 1px solid var(--border); }
+.footer-inner { display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; color: var(--muted); font-size: 13px; }
+.footer-nav { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+
+/* TECHNIQUE COMPARATOR WIDGET */
+.technique-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px; }
+.technique-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+.technique-card.active { border-color: var(--purple); background: rgba(124,58,237,0.07); }
+.technique-name { font-size: 14px; font-weight: 800; color: var(--purple-light); margin-bottom: 8px; }
+.technique-prompt { font-family: var(--mono); font-size: 11px; color: var(--text); background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 12px; white-space: pre-wrap; margin-bottom: 10px; line-height: 1.6; }
+.technique-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.tech-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
+.tech-benefit { background: rgba(16,185,129,0.15); color: var(--green); }
+.tech-cost { background: rgba(245,158,11,0.15); color: var(--yellow); }
+.widget-textarea { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-family: var(--font); font-size: 13px; color: var(--text); resize: vertical; min-height: 80px; margin-bottom: 12px; }
+.widget-textarea:focus { outline: none; border-color: var(--purple); }
+.radio-group { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.radio-label { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; padding: 7px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); transition: all 0.2s; }
+.radio-label:has(input:checked) { border-color: var(--purple); background: rgba(124,58,237,0.1); color: var(--purple-light); }
+.radio-label input { accent-color: var(--purple); }
+.compare-btn { padding: 10px 24px; border-radius: 8px; background: linear-gradient(135deg, var(--purple), var(--teal)); border: none; color: white; font-size: 14px; font-weight: 700; cursor: pointer; font-family: var(--font); transition: opacity 0.2s; }
+.compare-btn:hover { opacity: 0.88; }
+
+@media(max-width:700px) {
+  .triangle-container { grid-template-columns: 1fr; }
+  .lora-visual { grid-template-columns: 1fr; }
+  .use-case-grid { grid-template-columns: 1fr; }
+  .technique-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body data-animation-density="high">
+
+<nav>
+  <div class="nav-inner">
+    <a href="day21.html" class="nav-btn">← Day 21</a>
+    <a href="../index.html" class="nav-brand">🤖 Agentic AI</a>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button class="nav-btn complete" id="nav-complete-btn" onclick="markComplete()">Mark Complete</button>
+      <a href="day23.html" class="nav-btn next">Day 23 →</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+
+  <div class="day-hero">
+    <div class="day-num">Day 22 — Advanced Prompt Engineering</div>
+    <h1>ToT, Self-Consistency,<br>HyDE &amp; Instructor</h1>
+    <p>Go beyond basic prompting. Master reasoning chains, multi-path exploration, hypothetical embeddings, and guaranteed structured outputs using Instructor + Pydantic.</p>
+    <div class="topic-pills">
+      <span class="topic-pill">Chain-of-Thought</span>
+      <span class="topic-pill">Tree of Thought</span>
+      <span class="topic-pill">Self-Consistency</span>
+      <span class="topic-pill">HyDE</span>
+      <span class="topic-pill">Instructor</span>
+      <span class="topic-pill">Prompt Caching</span>
+    </div>
+  </div>
+
+  <!-- SECTION 1: CoT Variants -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">Section 01</div>
+      <h2>Chain-of-Thought &amp; Its Variants</h2>
+      <p>CoT unlocks LLM reasoning by making thinking explicit. From simple zero-shot triggers to multi-path majority voting — each variant trades token cost for accuracy.</p>
+    </div>
+
+    <ul class="bullet-list">
+      <li><strong>Zero-shot CoT:</strong> "Let's think step by step" — dramatically improves reasoning with no examples</li>
+      <li><strong>Few-shot CoT:</strong> include worked examples with explicit reasoning traces — higher accuracy, higher cost</li>
+      <li><strong>When CoT helps vs hurts:</strong> reasoning tasks (math, logic) benefit; simple factual recall can degrade with unnecessary steps</li>
+      <li><strong>Self-consistency:</strong> sample N CoT paths independently, return the majority vote answer — robust against single-path errors</li>
+    </ul>
+
+    <div class="code-wrap" style="margin-top:28px;">
+      <span class="code-label">PYTHON</span>
+      <div class="code-block"><span class="c-cmt"># Zero-shot CoT</span>
+<span class="c-fn">response</span> = llm.<span class="c-fn">invoke</span>(<span class="c-str">"""
+Solve step by step:
+
+A store has 50 items. 20% are returned each week.
+New stock of 15 items arrives. After 3 weeks, how many items?
+
+Think through this step by step before giving the final answer.
+"""</span>)
+
+<span class="c-cmt"># Self-consistency: sample 10 paths, majority vote</span>
+<span class="c-kw">import</span> re
+<span class="c-kw">from</span> collections <span class="c-kw">import</span> <span class="c-type">Counter</span>
+
+<span class="c-kw">def</span> <span class="c-fn">self_consistent_answer</span>(question: <span class="c-bi">str</span>, n_samples: <span class="c-bi">int</span> = <span class="c-num">10</span>) -> <span class="c-bi">str</span>:
+    responses = []
+    <span class="c-kw">for</span> _ <span class="c-kw">in</span> <span class="c-fn">range</span>(n_samples):
+        response = llm.<span class="c-fn">invoke</span>(<span class="c-str">f"Solve step by step: {question}\n\nFinal answer:"</span>)
+        <span class="c-cmt"># Extract final numeric answer</span>
+        match = re.<span class="c-fn">search</span>(<span class="c-str">r"Final answer:?\s*(\d+)"</span>, response.content)
+        <span class="c-kw">if</span> match:
+            responses.<span class="c-fn">append</span>(match.<span class="c-fn">group</span>(<span class="c-num">1</span>))
+
+    <span class="c-kw">if</span> responses:
+        <span class="c-kw">return</span> <span class="c-type">Counter</span>(responses).<span class="c-fn">most_common</span>(<span class="c-num">1</span>)[<span class="c-num">0</span>][<span class="c-num">0</span>]
+    <span class="c-kw">return</span> <span class="c-str">"Unable to determine"</span></div>
+    </div>
+  </div>
+
+  <!-- SECTION 2: Tree of Thought -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">Section 02</div>
+      <h2>Tree of Thought</h2>
+      <p>ToT explores multiple reasoning branches simultaneously, evaluates each, and expands the most promising ones — solving problems that single-path CoT fails on.</p>
+    </div>
+
+    <ul class="bullet-list">
+      <li><strong>ToT:</strong> explore multiple reasoning branches, evaluate each, expand promising ones — structured search over a thought space</li>
+      <li><strong>BFS vs DFS:</strong> BFS explores all thoughts at each depth level; DFS commits to one path then backtracks on failure</li>
+      <li><strong>Self-evaluation prompts:</strong> "Rate this reasoning path 1-5" — the LLM judges its own intermediate steps</li>
+      <li><strong>When to use:</strong> multi-step planning, math proofs, strategic decisions — anything requiring deliberate search</li>
+    </ul>
+
+    <div class="code-wrap" style="margin-top:28px;">
+      <span class="code-label">PYTHON</span>
+      <div class="code-block"><span class="c-kw">class</span> <span class="c-type">TreeOfThought</span>:
+    <span class="c-kw">def</span> <span class="c-fn">__init__</span>(<span class="c-bi">self</span>, llm, branching_factor=<span class="c-num">3</span>, max_depth=<span class="c-num">4</span>):
+        <span class="c-bi">self</span>.llm = llm
+        <span class="c-bi">self</span>.k = branching_factor
+        <span class="c-bi">self</span>.max_depth = max_depth
+
+    <span class="c-kw">def</span> <span class="c-fn">generate_thoughts</span>(<span class="c-bi">self</span>, problem: <span class="c-bi">str</span>, current_state: <span class="c-bi">str</span>) -> <span class="c-bi">list</span>[<span class="c-bi">str</span>]:
+        prompt = <span class="c-str">f"""Problem: {problem}
+Current state: {current_state}
+Generate {self.k} different next reasoning steps (one per line):"""</span>
+        response = <span class="c-bi">self</span>.llm.<span class="c-fn">invoke</span>(prompt)
+        <span class="c-kw">return</span> [line.<span class="c-fn">strip</span>() <span class="c-kw">for</span> line <span class="c-kw">in</span> response.content.<span class="c-fn">split</span>(<span class="c-str">'\n'</span>) <span class="c-kw">if</span> line.<span class="c-fn">strip</span>()]
+
+    <span class="c-kw">def</span> <span class="c-fn">evaluate_thought</span>(<span class="c-bi">self</span>, problem: <span class="c-bi">str</span>, thought: <span class="c-bi">str</span>) -> <span class="c-bi">float</span>:
+        prompt = <span class="c-str">f"""Problem: {problem}
+Reasoning path: {thought}
+Rate this reasoning path from 1 (wrong direction) to 5 (excellent):
+Reply with only the number."""</span>
+        response = <span class="c-bi">self</span>.llm.<span class="c-fn">invoke</span>(prompt)
+        <span class="c-kw">try</span>:
+            <span class="c-kw">return</span> <span class="c-bi">float</span>(response.content.<span class="c-fn">strip</span>())
+        <span class="c-kw">except</span>:
+            <span class="c-kw">return</span> <span class="c-num">2.5</span>
+
+    <span class="c-kw">def</span> <span class="c-fn">solve</span>(<span class="c-bi">self</span>, problem: <span class="c-bi">str</span>) -> <span class="c-bi">str</span>:
+        <span class="c-cmt"># BFS: explore all thoughts at each depth level</span>
+        current_thoughts = [<span class="c-str">""</span>]
+        <span class="c-kw">for</span> depth <span class="c-kw">in</span> <span class="c-fn">range</span>(<span class="c-bi">self</span>.max_depth):
+            next_thoughts = []
+            <span class="c-kw">for</span> thought <span class="c-kw">in</span> current_thoughts:
+                candidates = <span class="c-bi">self</span>.<span class="c-fn">generate_thoughts</span>(problem, thought)
+                scored = [(c, <span class="c-bi">self</span>.<span class="c-fn">evaluate_thought</span>(problem, thought + <span class="c-str">"\n"</span> + c))
+                          <span class="c-kw">for</span> c <span class="c-kw">in</span> candidates]
+                scored.<span class="c-fn">sort</span>(key=<span class="c-kw">lambda</span> x: x[<span class="c-num">1</span>], reverse=<span class="c-bi">True</span>)
+                next_thoughts.<span class="c-fn">extend</span>([thought + <span class="c-str">"\n"</span> + c <span class="c-kw">for</span> c, _ <span class="c-kw">in</span> scored[:<span class="c-num">2</span>]])
+            current_thoughts = next_thoughts
+        <span class="c-kw">return</span> <span class="c-fn">max</span>(current_thoughts, key=<span class="c-kw">lambda</span> t: <span class="c-bi">self</span>.<span class="c-fn">evaluate_thought</span>(problem, t))</div>
+    </div>
+  </div>
+
+  <!-- SECTION 3: HyDE & Meta-Prompting -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">Section 03</div>
+      <h2>HyDE &amp; Meta-Prompting</h2>
+      <p>HyDE inverts retrieval: generate a hypothetical answer first, then use its embedding to search — bridging the vocabulary gap between queries and documents.</p>
+    </div>
+
+    <ul class="bullet-list">
+      <li><strong>HyDE:</strong> generate hypothetical answer → embed for retrieval (not the original query) — improves recall by 10–30% on technical corpora</li>
+      <li><strong>Meta-prompting:</strong> use an LLM to write optimized prompts for another LLM — automated prompt engineering at scale</li>
+      <li><strong>Prompt compression:</strong> LLMLingua-style selective context retention — keep signal, drop filler tokens</li>
+      <li><strong>Automatic prompt optimization:</strong> DSPy-style compiled programs — the framework discovers optimal few-shot examples and instructions</li>
+    </ul>
+
+    <div class="code-wrap" style="margin-top:28px;">
+      <span class="code-label">PYTHON</span>
+      <div class="code-block"><span class="c-cmt"># HyDE implementation</span>
+hyde_system = <span class="c-str">"You are an expert. Write a detailed technical paragraph answering:"</span>
+
+<span class="c-kw">def</span> <span class="c-fn">hyde_retrieve</span>(query: <span class="c-bi">str</span>, retriever, llm) -> <span class="c-bi">list</span>:
+    <span class="c-cmt"># Step 1: Generate hypothetical answer</span>
+    hypothetical = llm.<span class="c-fn">invoke</span>(<span class="c-str">f"{hyde_system}\n\n{query}"</span>).content
+
+    <span class="c-cmt"># Step 2: Embed the hypothetical answer (not the query!)</span>
+    hyp_embedding = embed_model.<span class="c-fn">embed_query</span>(hypothetical)
+
+    <span class="c-cmt"># Step 3: Search using hypothetical embedding</span>
+    <span class="c-kw">return</span> vectorstore.<span class="c-fn">similarity_search_by_vector</span>(hyp_embedding, k=<span class="c-num">5</span>)
+
+<span class="c-cmt"># Meta-prompting: LLM writes its own system prompt</span>
+meta_prompt = <span class="c-str">"""You are a prompt engineering expert.
+Write an optimal system prompt for an AI assistant that will:
+1. Extract structured data from customer support tickets
+2. Output valid JSON matching this schema: {ticket_id, urgency, category, summary}
+3. Handle ambiguous or incomplete tickets gracefully
+
+The prompt should be production-ready and resistant to prompt injection."""</span>
+
+optimized_system_prompt = llm.<span class="c-fn">invoke</span>(meta_prompt).content</div>
+    </div>
+  </div>
+
+  <!-- SECTION 4: Instructor -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">Section 04</div>
+      <h2>Instructor Library for Structured Outputs</h2>
+      <p>Instructor patches the Anthropic and OpenAI clients to return validated Pydantic models instead of raw text. Auto-retry with validation error feedback included.</p>
+    </div>
+
+    <ul class="bullet-list">
+      <li><strong>Instructor:</strong> Pydantic + function calling → guaranteed structured LLM outputs with automatic schema enforcement</li>
+      <li><strong>Automatic retry:</strong> validation errors are fed back to the model as natural language — the LLM corrects its own output</li>
+      <li><strong>Nested models, validators, field constraints:</strong> full Pydantic v2 feature set available in LLM responses</li>
+      <li><strong>Streaming structured outputs:</strong> partial models streamed as they generate — useful for progressive UI updates</li>
+    </ul>
+
+    <div class="code-wrap" style="margin-top:28px;">
+      <span class="code-label">PYTHON</span>
+      <div class="code-block"><span class="c-kw">import</span> instructor
+<span class="c-kw">from</span> anthropic <span class="c-kw">import</span> <span class="c-type">Anthropic</span>
+<span class="c-kw">from</span> pydantic <span class="c-kw">import</span> <span class="c-type">BaseModel</span>, <span class="c-type">Field</span>, validator
+<span class="c-kw">from</span> typing <span class="c-kw">import</span> <span class="c-type">Optional</span>
+<span class="c-kw">import</span> enum
+
+<span class="c-kw">class</span> <span class="c-type">Urgency</span>(<span class="c-bi">str</span>, enum.<span class="c-type">Enum</span>):
+    LOW = <span class="c-str">"low"</span>
+    MEDIUM = <span class="c-str">"medium"</span>
+    HIGH = <span class="c-str">"high"</span>
+    CRITICAL = <span class="c-str">"critical"</span>
+
+<span class="c-kw">class</span> <span class="c-type">SupportTicket</span>(<span class="c-type">BaseModel</span>):
+    ticket_id: <span class="c-bi">str</span> = <span class="c-type">Field</span>(description=<span class="c-str">"Extracted ticket ID or 'UNKNOWN'"</span>)
+    urgency: <span class="c-type">Urgency</span> = <span class="c-type">Field</span>(description=<span class="c-str">"Urgency level based on content"</span>)
+    category: <span class="c-bi">str</span> = <span class="c-type">Field</span>(description=<span class="c-str">"Issue category: billing, technical, account, other"</span>)
+    summary: <span class="c-bi">str</span> = <span class="c-type">Field</span>(max_length=<span class="c-num">150</span>, description=<span class="c-str">"One-sentence summary"</span>)
+    requires_human: <span class="c-bi">bool</span> = <span class="c-type">Field</span>(description=<span class="c-str">"Whether this needs human escalation"</span>)
+
+    <span class="c-dec">@validator</span>(<span class="c-str">"summary"</span>)
+    <span class="c-kw">def</span> <span class="c-fn">summary_must_be_informative</span>(cls, v):
+        <span class="c-kw">if</span> <span class="c-fn">len</span>(v) < <span class="c-num">10</span>:
+            <span class="c-kw">raise</span> <span class="c-type">ValueError</span>(<span class="c-str">"Summary must be at least 10 characters"</span>)
+        <span class="c-kw">return</span> v
+
+<span class="c-cmt"># Patch client with instructor</span>
+client = instructor.<span class="c-fn">from_anthropic</span>(<span class="c-type">Anthropic</span>())
+
+<span class="c-cmt"># Extract structured data — auto-validates, auto-retries on failure</span>
+ticket = client.messages.<span class="c-fn">create</span>(
+    model=<span class="c-str">"claude-3-5-sonnet-20241022"</span>,
+    max_tokens=<span class="c-num">512</span>,
+    messages=[{
+        <span class="c-str">"role"</span>: <span class="c-str">"user"</span>,
+        <span class="c-str">"content"</span>: <span class="c-str">f"Extract ticket data from: 'My subscription was charged twice! Order #12345. URGENT!'"</span>
+    }],
+    response_model=<span class="c-type">SupportTicket</span>,
+    max_retries=<span class="c-num">3</span>  <span class="c-cmt"># automatically retry with validation errors fed back</span>
+)
+
+<span class="c-fn">print</span>(ticket.urgency)         <span class="c-cmt"># Urgency.CRITICAL</span>
+<span class="c-fn">print</span>(ticket.requires_human)  <span class="c-cmt"># True</span>
+<span class="c-fn">print</span>(ticket.summary)         <span class="c-cmt"># "Duplicate charge on subscription order #12345"</span></div>
+    </div>
+  </div>
+
+  <!-- SECTION 5: Prompt Compression -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">Section 05</div>
+      <h2>Prompt Compression &amp; Context Efficiency</h2>
+      <p>128K context is not infinite. Every token costs money and adds latency. Cache prefixes aggressively, compress history, and only retrieve what's relevant.</p>
+    </div>
+
+    <ul class="bullet-list">
+      <li><strong>Why compression:</strong> 128K context != infinite — every token costs money and latency; optimize aggressively</li>
+      <li><strong>Selective context:</strong> only include relevant chunks, not the whole document — semantic similarity threshold as a gate</li>
+      <li><strong>Summarization chains:</strong> compress long conversation history into a rolling summary before it exceeds window limits</li>
+      <li><strong>Prompt caching:</strong> Anthropic's 90% discount on repeated prefixes — mark stable system prompts with cache_control</li>
+    </ul>
+
+    <div class="code-wrap" style="margin-top:28px;">
+      <span class="code-label">PYTHON</span>
+      <div class="code-block"><span class="c-cmt"># Prompt caching with Anthropic (90% cost reduction on cache hits)</span>
+<span class="c-kw">import</span> anthropic
+
+client = anthropic.<span class="c-type">Anthropic</span>()
+
+<span class="c-cmt"># The system prompt is cached after first call</span>
+response = client.messages.<span class="c-fn">create</span>(
+    model=<span class="c-str">"claude-3-5-sonnet-20241022"</span>,
+    max_tokens=<span class="c-num">1024</span>,
+    system=[{
+        <span class="c-str">"type"</span>: <span class="c-str">"text"</span>,
+        <span class="c-str">"text"</span>: long_system_prompt,  <span class="c-cmt"># e.g., 10K token knowledge base</span>
+        <span class="c-str">"cache_control"</span>: {<span class="c-str">"type"</span>: <span class="c-str">"ephemeral"</span>}  <span class="c-cmt"># cache this!</span>
+    }],
+    messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: user_question}]
+)
+
+<span class="c-cmt"># cache_read_input_tokens will show cached tokens on subsequent calls</span>
+<span class="c-cmt"># Cached tokens cost 10% of regular input token price</span>
+<span class="c-fn">print</span>(response.usage.cache_read_input_tokens)</div>
+    </div>
+  </div>
+
+  <!-- WIDGET: Prompt Technique Comparator -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">Interactive</div>
+      <h2>Prompt Technique Comparator</h2>
+      <p>Type a question and see exactly what prompt would be sent with each technique — plus expected benefit and token overhead.</p>
+    </div>
+
+    <div class="widget">
+      <div class="widget-title">Prompt Technique Comparator</div>
+      <div class="widget-sub">Enter a question, choose a technique, and see how the prompt transforms.</div>
+
+      <textarea class="widget-textarea" id="user-question" placeholder="e.g. How many days between March 15 and July 4?">How many days between March 15 and July 4?</textarea>
+
+      <div class="radio-group">
+        <label class="radio-label"><input type="radio" name="technique" value="zero-shot" checked> Zero-shot</label>
+        <label class="radio-label"><input type="radio" name="technique" value="cot"> Chain-of-Thought</label>
+        <label class="radio-label"><input type="radio" name="technique" value="self-consistency"> Self-Consistency (5 samples)</label>
+        <label class="radio-label"><input type="radio" name="technique" value="hyde"> HyDE</label>
+      </div>
+
+      <button class="compare-btn" onclick="comparePrompt()">Compare Technique</button>
+
+      <div id="technique-output" style="margin-top:20px;"></div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-nav">
+        <a href="day21.html" class="nav-btn">← Day 21</a>
+        <button class="nav-btn complete" id="footer-complete-btn" onclick="markComplete()">Mark Complete</button>
+        <a href="day23.html" class="nav-btn next">Day 23 →</a>
+      </div>
+      <div>
+        <a href="../exercises/day22_exercises.html" style="color:var(--purple-light);text-decoration:none;font-weight:600;">⚡ Open Interactive Exercises →</a>
+      </div>
+      <div>Day 22 of the AI Mastery Curriculum &middot; Built for Sharjeel Sohail</div>
+    </div>
+  </div>
+</footer>
+
+<script src="../bg-animation.js"></script>
+<script>
+// ── Mark Complete ────────────────────────────────────────────────
+function markComplete() {
+  try {
+    const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
+    const isDone = p[22] === 'complete';
+    p[22] = isDone ? 'active' : 'complete';
+    localStorage.setItem('aai_progress', JSON.stringify(p));
+    updateCompleteButtons();
+  } catch(e) {}
+}
+
+function updateCompleteButtons() {
+  try {
+    const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
+    const done = p[22] === 'complete';
+    const label = done ? 'Completed ✓' : 'Mark Complete';
+    ['nav-complete-btn', 'footer-complete-btn'].forEach(id => {
+      const btn = document.getElementById(id);
+      if (btn) {
+        btn.textContent = label;
+        btn.classList.toggle('done', done);
+      }
+    });
+  } catch(e) {}
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  try {
+    const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
+    if (!p[22] || p[22] === 'locked') { p[22] = 'active'; localStorage.setItem('aai_progress', JSON.stringify(p)); }
+  } catch(e) {}
+  updateCompleteButtons();
+});
+
+// ── Prompt Technique Comparator ─────────────────────────────────
+const TECHNIQUES = {
+  'zero-shot': {
+    name: 'Zero-shot',
+    benefit: 'Simple & fast',
+    overhead: '+0 tokens',
+    buildPrompt: q => q,
+    description: 'Send the question directly. No examples, no instructions. Works for simple tasks.'
+  },
+  'cot': {
+    name: 'Chain-of-Thought',
+    benefit: '+20-40% accuracy on reasoning',
+    overhead: '+~8 tokens input, +~60 output',
+    buildPrompt: q => `${q}\n\nThink through this step by step before giving the final answer.`,
+    description: 'Append "think step by step" to trigger explicit reasoning traces. Most cost-effective reasoning boost.'
+  },
+  'self-consistency': {
+    name: 'Self-Consistency (5 samples)',
+    benefit: '+30-50% accuracy on hard reasoning',
+    overhead: '+5x inference cost (5 LLM calls)',
+    buildPrompt: q => `[Sample 1/5] Solve step by step: ${q}\n\nFinal answer:\n\n[Sample 2/5] ...\n[Sample 3/5] ...\n[Sample 4/5] ...\n[Sample 5/5] ...\n\n→ Majority vote across all answers`,
+    description: 'Run 5 independent CoT paths and return the majority vote. Trades cost for reliability on critical reasoning tasks.'
+  },
+  'hyde': {
+    name: 'HyDE (Hypothetical Document Embeddings)',
+    benefit: '+10-30% retrieval recall',
+    overhead: '+1 LLM call before retrieval',
+    buildPrompt: q => `[Step 1 — Generate hypothetical answer]\nSystem: You are an expert. Write a detailed technical paragraph answering:\n${q}\n\n[Step 2 — Embed the hypothetical answer]\nembed(hypothetical_answer)  ← not embed(query)\n\n[Step 3 — Search vector DB]\nvectorstore.similarity_search_by_vector(hyp_embedding, k=5)`,
+    description: 'Generate a hypothetical answer, embed it, then use that embedding for retrieval. Bridges vocabulary gap between query and documents.'
+  }
+};
+
+function comparePrompt() {
+  const question = document.getElementById('user-question').value.trim();
+  if (!question) return;
+  const selected = document.querySelector('input[name="technique"]:checked').value;
+  const t = TECHNIQUES[selected];
+  const prompt = t.buildPrompt(question);
+
+  const out = document.getElementById('technique-output');
+  out.innerHTML = `
+    <div class="technique-card active">
+      <div class="technique-name">${t.name}</div>
+      <div class="technique-prompt">${escapeHtml(prompt)}</div>
+      <div class="technique-meta">
+        <span class="tech-badge tech-benefit">Benefit: ${t.benefit}</span>
+        <span class="tech-badge tech-cost">Token overhead: ${t.overhead}</span>
+      </div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.6;">${t.description}</div>
+    </div>
+  `;
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 10: Vector Databases in Depth — FAISS, Chroma, Pinecone, Weaviate &amp; Qdrant</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f; --card: #141420; --surface2: #1a1a2e; --border: #2a2a45;
+  --purple: #7c3aed; --purple-light: #a855f7; --teal: #0d9488; --green: #10b981;
+  --red: #ef4444; --yellow: #f59e0b; --text: #e2e8f0; --muted: #64748b;
+  --font: 'Inter', sans-serif; --mono: 'JetBrains Mono', monospace;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; overflow-x: hidden; }
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(124,58,237,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 90% 80%, rgba(13,148,136,0.05) 0%, transparent 60%);
+  pointer-events: none; z-index: 0;
+}
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  border-bottom: 1px solid var(--border);
+  background: rgba(10,10,15,0.9);
+  backdrop-filter: blur(12px);
+  padding: 0;
+}
+.nav-inner {
+  max-width: 1100px; margin: 0 auto; padding: 0 24px;
+  height: 52px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-btn {
+  padding: 7px 18px; border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface2); color: var(--muted);
+  font-size: 13px; font-weight: 600;
+  text-decoration: none; transition: all 0.2s;
+  font-family: inherit; cursor: pointer;
+}
+.nav-btn:hover { border-color: var(--purple); color: var(--text); }
+.nav-btn.next {
+  border-color: rgba(124,58,237,0.5);
+  color: var(--purple-light);
+}
+.nav-btn.next:hover {
+  background: var(--purple); color: white; border-color: var(--purple);
+}
+.nav-btn.complete {
+  border-color: rgba(245,158,11,0.5);
+  color: var(--yellow);
+}
+.nav-btn.complete:hover {
+  background: var(--yellow); color: #0a0a0f; border-color: var(--yellow);
+}
+.nav-btn.complete.done {
+  background: var(--yellow); color: #0a0a0f; border-color: var(--yellow);
+}
+.nav-brand {
+  font-size: 14px; font-weight: 700; color: var(--muted);
+  text-decoration: none; letter-spacing: -0.2px;
+  transition: color 0.2s;
+}
+.nav-brand:hover { color: var(--text); }
+
+.day-hero { padding: 56px 0 40px; }
+.day-num { font-size: 12px; font-weight: 700; color: var(--green); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+.day-hero h1 { font-size: clamp(32px, 5vw, 56px); font-weight: 900; letter-spacing: -2px; margin-bottom: 16px; }
+.day-hero p { font-size: 17px; color: var(--muted); max-width: 600px; line-height: 1.6; margin-bottom: 28px; }
+.topic-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+.topic-pill { padding: 5px 12px; border-radius: 20px; background: var(--surface2); border: 1px solid var(--border); font-size: 12px; color: var(--muted); font-weight: 500; }
+
+.section { padding: 56px 0; border-top: 1px solid var(--border); }
+.section-header { margin-bottom: 32px; }
+.section-num { font-size: 11px; font-weight: 700; color: var(--purple-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.section-header h2 { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 10px; }
+.section-header p { color: var(--muted); font-size: 15px; line-height: 1.6; max-width: 640px; }
+
+/* CODE BLOCKS — white-space: pre is REQUIRED */
+.code-block {
+  background: #0d1117; border: 1px solid #30363d; border-radius: 12px;
+  padding: 24px; font-family: var(--mono); font-size: 12.5px; line-height: 1.8;
+  overflow-x: auto; white-space: pre;
+}
+.code-wrap { position: relative; margin-top: 16px; }
+.code-label { position: absolute; top: -10px; left: 16px; background: var(--purple); color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.5px; }
+.c-cmt { color: #8b949e; }
+.c-kw { color: #ff7b72; }
+.c-fn { color: #d2a8ff; }
+.c-str { color: #a5d6ff; }
+.c-type { color: #ffa657; }
+.c-num { color: #f2cc60; }
+.c-bi { color: #79c0ff; }
+.c-dec { color: #ffa657; }
+
+/* COMPARISON TABLE */
+.comp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.comp-table th { background: var(--surface2); padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); border-bottom: 1px solid var(--border); }
+.comp-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.comp-table tr:last-child td { border-bottom: none; }
+.comp-table tr:hover td { background: rgba(255,255,255,0.02); }
+.tick { color: var(--green); font-weight: 700; }
+.cross { color: var(--red); font-weight: 700; }
+.partial { color: var(--yellow); font-weight: 700; }
+
+/* CALLOUT */
+.callout { background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.25); border-radius: 12px; padding: 16px 20px; display: flex; gap: 12px; align-items: flex-start; margin: 20px 0; }
+.callout-icon { font-size: 18px; flex-shrink: 0; }
+.callout-text { font-size: 13px; color: var(--text); line-height: 1.6; }
+.callout-text strong { color: var(--yellow); }
+.callout.info { background: rgba(124,58,237,0.07); border-color: rgba(124,58,237,0.25); }
+.callout.info .callout-text strong { color: var(--purple-light); }
+.callout.green { background: rgba(16,185,129,0.07); border-color: rgba(16,185,129,0.25); }
+.callout.green .callout-text strong { color: var(--green); }
+
+/* CARDS */
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
+.card-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media(max-width:700px) { .card-grid-2 { grid-template-columns: 1fr; } }
+
+/* DB ANATOMY VISUAL */
+.db-anatomy { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 20px; }
+@media(max-width:700px) { .db-anatomy { grid-template-columns: 1fr; } }
+.db-part { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+.db-part-title { font-size: 13px; font-weight: 800; margin-bottom: 6px; }
+.db-part-sub { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+/* METRIC BADGES */
+.metric-badge { display: inline-block; padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; font-family: var(--mono); }
+.mb-green { background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+.mb-yellow { background: rgba(245,158,11,0.15); color: var(--yellow); border: 1px solid rgba(245,158,11,0.3); }
+.mb-red { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+.mb-purple { background: rgba(124,58,237,0.15); color: var(--purple-light); border: 1px solid rgba(124,58,237,0.3); }
+
+/* WIDGET */
+.widget { background: var(--card); border: 1px solid rgba(124,58,237,0.3); border-radius: 16px; padding: 28px; }
+.widget-title { font-size: 16px; font-weight: 800; margin-bottom: 6px; }
+.widget-sub { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+
+.question-block { margin-bottom: 20px; }
+.question-label { font-size: 13px; font-weight: 700; margin-bottom: 10px; color: var(--text); }
+.radio-group { display: flex; flex-wrap: wrap; gap: 8px; }
+.radio-opt {
+  padding: 7px 16px; border-radius: 8px; font-size: 13px;
+  border: 1px solid var(--border); background: var(--surface2); color: var(--muted);
+  cursor: pointer; transition: all 0.2s; user-select: none;
+}
+.radio-opt:hover { border-color: var(--purple); color: var(--text); }
+.radio-opt.selected { background: rgba(124,58,237,0.15); border-color: var(--purple); color: var(--purple-light); font-weight: 600; }
+
+.recommendation {
+  margin-top: 24px; border-radius: 14px; overflow: hidden;
+  border: 1px solid var(--border); background: var(--surface2);
+  opacity: 0; transform: translateY(8px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.recommendation.visible { opacity: 1; transform: translateY(0); }
+.rec-header { padding: 16px 20px; display: flex; align-items: center; gap: 14px; }
+.rec-db-name { font-size: 22px; font-weight: 900; }
+.rec-tagline { font-size: 13px; color: var(--muted); }
+.rec-body { padding: 0 20px 20px; font-size: 13px; color: var(--muted); line-height: 1.7; }
+.rec-body strong { color: var(--text); }
+.rec-features { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+
+footer { padding: 40px 0; border-top: 1px solid var(--border); }
+.footer-inner { display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; color: var(--muted); font-size: 13px; }
+.footer-nav { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+</style>
+</head>
+<body data-animation-density="high">
+
+<nav>
+  <div class="nav-inner">
+    <a href="day9.html" class="nav-btn">← Day 9: Providers</a>
+    <a href="../index.html" class="nav-brand">🤖 Agentic AI</a>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button class="nav-btn complete" id="nav-complete-btn" onclick="markComplete()">Mark Complete</button>
+      <a href="day11.html" class="nav-btn next">Day 11 →</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+
+  <div class="day-hero">
+    <div class="day-num">Day 10 — Vector Databases</div>
+    <h1>Vector Databases<br>in Depth</h1>
+    <p>From FAISS prototyping to Qdrant in production: understand index structures, distance metrics, payload filtering, hybrid search, and how to choose the right vector store for your RAG system.</p>
+    <div class="topic-pills">
+      <span class="topic-pill">HNSW / IVF Indexes</span>
+      <span class="topic-pill">ANN Search</span>
+      <span class="topic-pill">Payload Filtering</span>
+      <span class="topic-pill">Hybrid Search</span>
+      <span class="topic-pill">Multi-tenancy</span>
+      <span class="topic-pill">Quantization</span>
+    </div>
+  </div>
+
+  <!-- SECTION 1 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">01 — Fundamentals</div>
+      <h2>Why Vector Databases?</h2>
+      <p>Traditional databases find rows by exact match or range scan. Vector databases find semantically similar content — the embedding closest to your query vector — using Approximate Nearest Neighbor search across millions or billions of high-dimensional vectors in milliseconds.</p>
+    </div>
+
+    <div class="db-anatomy">
+      <div class="db-part">
+        <div class="db-part-title" style="color:var(--purple-light);">Index (HNSW / IVF)</div>
+        <div class="db-part-sub">The data structure that enables fast ANN search. HNSW builds a navigable small-world graph — high recall, ~30ms latency. IVF partitions into clusters — better memory efficiency at billion scale.</div>
+      </div>
+      <div class="db-part">
+        <div class="db-part-title" style="color:var(--teal);">Payload / Metadata</div>
+        <div class="db-part-sub">Structured data stored alongside each vector: tenant_id, doc_type, created_at, tags. Used for mandatory pre-filtering (security) and post-filtering (relevance). Rich filtering is what separates production DBs from FAISS.</div>
+      </div>
+      <div class="db-part">
+        <div class="db-part-title" style="color:var(--green);">Collection</div>
+        <div class="db-part-sub">The top-level namespace in most vector DBs. Each collection has its own index config, vector dimension, and distance metric. Think "table" in relational DBs. Weaviate calls them "classes"; Pinecone calls them "indexes".</div>
+      </div>
+    </div>
+
+    <div class="card-grid-2" style="margin-top:20px;">
+      <div class="card">
+        <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--purple-light);">Distance Metrics</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div>
+            <div style="font-size:13px;font-weight:700;margin-bottom:3px;">Cosine Similarity</div>
+            <div style="font-size:12px;color:var(--muted);">Measures angle between vectors. Direction only, ignores magnitude. <strong style="color:var(--text);">Use when:</strong> comparing normalized text embeddings (OpenAI, Anthropic).</div>
+          </div>
+          <div>
+            <div style="font-size:13px;font-weight:700;margin-bottom:3px;">Dot Product</div>
+            <div style="font-size:12px;color:var(--muted);">Magnitude + direction. Faster than cosine. <strong style="color:var(--text);">Use when:</strong> vectors are already unit-normalized — mathematically equivalent to cosine, cheaper to compute.</div>
+          </div>
+          <div>
+            <div style="font-size:13px;font-weight:700;margin-bottom:3px;">Euclidean (L2)</div>
+            <div style="font-size:12px;color:var(--muted);">Straight-line distance in vector space. <strong style="color:var(--text);">Use when:</strong> magnitude matters (e.g. image embeddings, audio features, ColBERT multi-vector).</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--teal);">ANN vs Exact Search</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2);border-radius:8px;padding:12px;">
+            <div style="font-size:12px;font-weight:700;color:var(--green);margin-bottom:4px;">ANN (Approximate)</div>
+            <div style="font-size:12px;color:var(--muted);">Returns ~95–99% of exact results. Millisecond latency at any scale. Used in production. HNSW recall can be tuned via ef parameter.</div>
+          </div>
+          <div style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:12px;">
+            <div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:4px;">Exact Search (Brute Force)</div>
+            <div style="font-size:12px;color:var(--muted);">100% recall. O(n) — scales linearly with corpus size. Fine for &lt;10K vectors. Impractical beyond 100K without GPU acceleration.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="overflow-x:auto;margin-top:24px;">
+      <table class="comp-table">
+        <thead>
+          <tr>
+            <th>DB</th><th>Best For</th><th>Hosting</th><th>Filtering</th><th>Hybrid Search</th><th>Scale</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>FAISS</strong></td>
+            <td>Research, prototyping</td>
+            <td><span class="metric-badge mb-yellow">Local</span></td>
+            <td class="cross">No</td>
+            <td class="cross">No</td>
+            <td>Millions</td>
+          </tr>
+          <tr>
+            <td><strong>Chroma</strong></td>
+            <td>Development</td>
+            <td><span class="metric-badge mb-yellow">Local/Server</span></td>
+            <td class="partial">Basic</td>
+            <td class="cross">No</td>
+            <td>Thousands</td>
+          </tr>
+          <tr>
+            <td><strong>Qdrant</strong></td>
+            <td>Production, self-hosted</td>
+            <td><span class="metric-badge mb-green">Self/Cloud</span></td>
+            <td class="tick">Rich</td>
+            <td class="tick">Yes</td>
+            <td>Billions</td>
+          </tr>
+          <tr>
+            <td><strong>Weaviate</strong></td>
+            <td>Schema-based, modules</td>
+            <td><span class="metric-badge mb-green">Self/Cloud</span></td>
+            <td class="tick">GraphQL</td>
+            <td class="tick">Yes</td>
+            <td>Billions</td>
+          </tr>
+          <tr>
+            <td><strong>Pinecone</strong></td>
+            <td>Managed, serverless</td>
+            <td><span class="metric-badge mb-purple">Cloud only</span></td>
+            <td class="tick">Metadata</td>
+            <td class="tick">Yes</td>
+            <td>Billions</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SECTION 2 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">02 — Development</div>
+      <h2>FAISS &amp; Chroma — For Development</h2>
+      <p>FAISS is a C++/Python library, not a database. It has no server, no persistence, no payload filtering. Excellent for benchmarking ANN algorithms and building quick prototypes. Chroma adds persistence and a simple filtering API on top of embedding search — ideal for early-stage RAG development.</p>
+    </div>
+
+    <div class="callout">
+      <span class="callout-icon">⚠️</span>
+      <div class="callout-text"><strong>FAISS in production:</strong> FAISS has no built-in security, persistence, or tenant isolation. Never use it as the sole vector store in a multi-tenant production system. Use it for offline embedding indexing and benchmarking instead.</div>
+    </div>
+
+    <div class="code-wrap">
+      <span class="code-label">PYTHON — FAISS + Chroma</span>
+      <div class="code-block"><span class="c-kw">import</span> faiss
+<span class="c-kw">import</span> numpy <span class="c-kw">as</span> np
+
+<span class="c-cmt"># FAISS: create HNSW index (high recall, good speed)</span>
+dimension = <span class="c-num">1536</span>  <span class="c-cmt"># OpenAI embedding dimension</span>
+index = faiss.<span class="c-fn">IndexHNSWFlat</span>(dimension, <span class="c-num">32</span>)  <span class="c-cmt"># 32 neighbors</span>
+
+<span class="c-cmt"># Add vectors</span>
+vectors = np.random.<span class="c-fn">random</span>((<span class="c-num">10000</span>, dimension)).<span class="c-fn">astype</span>(<span class="c-str">'float32'</span>)
+index.<span class="c-fn">add</span>(vectors)
+
+<span class="c-cmt"># Search: find 5 nearest neighbors</span>
+query = np.random.<span class="c-fn">random</span>((<span class="c-num">1</span>, dimension)).<span class="c-fn">astype</span>(<span class="c-str">'float32'</span>)
+distances, indices = index.<span class="c-fn">search</span>(query, k=<span class="c-num">5</span>)
+<span class="c-fn">print</span>(<span class="c-fn">f</span><span class="c-str">"Nearest doc indices: {indices[0]}"</span>)
+<span class="c-fn">print</span>(<span class="c-fn">f</span><span class="c-str">"Distances: {distances[0]}"</span>)
+
+<span class="c-cmt"># Chroma — simple persistent vector store</span>
+<span class="c-kw">import</span> chromadb
+client = chromadb.<span class="c-fn">PersistentClient</span>(path=<span class="c-str">"./chroma_db"</span>)
+collection = client.<span class="c-fn">get_or_create_collection</span>(<span class="c-str">"docs"</span>)
+
+collection.<span class="c-fn">add</span>(
+    documents=[<span class="c-str">"LangChain is..."</span>, <span class="c-str">"FAISS is..."</span>],
+    ids=[<span class="c-str">"doc1"</span>, <span class="c-str">"doc2"</span>]
+)
+results = collection.<span class="c-fn">query</span>(query_texts=[<span class="c-str">"explain langchain"</span>], n_results=<span class="c-num">2</span>)</div>
+    </div>
+
+    <div class="card-grid-2" style="margin-top:20px;">
+      <div class="card">
+        <div style="font-size:13px;font-weight:700;margin-bottom:8px;color:var(--yellow);">FAISS Index Types</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="font-size:12px;color:var(--muted);"><strong style="color:var(--text);">IndexFlatL2:</strong> Exact brute-force. Baseline for recall benchmarking.</div>
+          <div style="font-size:12px;color:var(--muted);"><strong style="color:var(--text);">IndexHNSWFlat:</strong> High recall, good query speed. Best for prototyping up to 1M vectors.</div>
+          <div style="font-size:12px;color:var(--muted);"><strong style="color:var(--text);">IndexIVFFlat:</strong> Inverted file with flat quantizer. Scale to 100M+ with controlled recall.</div>
+          <div style="font-size:12px;color:var(--muted);"><strong style="color:var(--text);">IndexIVFPQ:</strong> Product quantization — extreme memory compression, some recall loss.</div>
+        </div>
+      </div>
+      <div class="card">
+        <div style="font-size:13px;font-weight:700;margin-bottom:8px;color:var(--teal);">Chroma for Development</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="font-size:12px;color:var(--muted);">Persistent client saves to disk — survives restarts, no external server needed.</div>
+          <div style="font-size:12px;color:var(--muted);">Server mode: <code style="font-family:var(--mono);font-size:11px;">chroma run --path ./db</code> exposes HTTP API for multi-process access.</div>
+          <div style="font-size:12px;color:var(--muted);">LangChain integration: <code style="font-family:var(--mono);font-size:11px;">Chroma(embedding_function=...)</code> — drop-in retriever.</div>
+          <div style="font-size:12px;color:var(--muted);">When to graduate: &gt;100K docs, need tenant isolation, need hybrid search.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 3 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">03 — Production</div>
+      <h2>Qdrant — Production-Grade Rust-Native</h2>
+      <p>Qdrant is written in Rust — zero GC pauses, predictable latency under load. It has the richest payload filtering of any open-source vector DB: nested conditions, range filters, geo filters, full-text match on payload fields. The go-to choice for self-hosted production RAG.</p>
+    </div>
+
+    <div class="card-grid-2">
+      <div class="card">
+        <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--purple-light);">Key Qdrant Concepts</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="font-size:13px;color:var(--muted);"><strong style="color:var(--text);">Collection:</strong> Analogous to a table. Defines vector size, distance metric, and indexing params.</div>
+          <div style="font-size:13px;color:var(--muted);"><strong style="color:var(--text);">Point:</strong> One record = vector + payload (dict) + id. Points are upserted atomically.</div>
+          <div style="font-size:13px;color:var(--muted);"><strong style="color:var(--text);">Named vectors:</strong> A single point can have multiple vectors (dense + sparse) under different names.</div>
+          <div style="font-size:13px;color:var(--muted);"><strong style="color:var(--text);">Payload indexes:</strong> Create keyword/integer/float indexes on payload fields to enable fast pre-filtering before ANN.</div>
+        </div>
+      </div>
+      <div class="card">
+        <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--teal);">Quantization &amp; Memory</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="font-size:13px;color:var(--muted);"><strong style="color:var(--text);">Scalar quantization:</strong> Compress float32 → int8. 4x memory reduction, &lt;1% recall loss.</div>
+          <div style="font-size:13px;color:var(--muted);"><strong style="color:var(--text);">Product quantization:</strong> Split vector into subvectors, quantize each. 8–32x compression, higher recall loss.</div>
+          <div style="font-size:13px;color:var(--muted);"><strong style="color:var(--text);">mmap storage:</strong> Qdrant pages vector data in from disk on demand — run multi-billion scale on a single node with commodity SSDs.</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:20px;">
+      <div class="code-wrap">
+        <span class="code-label">PYTHON — Qdrant Production Pattern</span>
+        <div class="code-block"><span class="c-kw">from</span> qdrant_client <span class="c-kw">import</span> <span class="c-type">QdrantClient</span>
+<span class="c-kw">from</span> qdrant_client.models <span class="c-kw">import</span> (
+    <span class="c-type">Distance</span>, <span class="c-type">VectorParams</span>, <span class="c-type">PointStruct</span>,
+    <span class="c-type">Filter</span>, <span class="c-type">FieldCondition</span>, <span class="c-type">MatchValue</span>, <span class="c-type">Range</span>
+)
+
+client = <span class="c-type">QdrantClient</span>(url=<span class="c-str">"http://localhost:6333"</span>)
+
+<span class="c-cmt"># Create collection</span>
+client.<span class="c-fn">create_collection</span>(
+    collection_name=<span class="c-str">"documents"</span>,
+    vectors_config=<span class="c-type">VectorParams</span>(size=<span class="c-num">1536</span>, distance=<span class="c-type">Distance</span>.COSINE)
+)
+
+<span class="c-cmt"># Upsert points with rich payload</span>
+client.<span class="c-fn">upsert</span>(
+    collection_name=<span class="c-str">"documents"</span>,
+    points=[
+        <span class="c-type">PointStruct</span>(
+            id=<span class="c-num">1</span>,
+            vector=embedding_1,
+            payload={
+                <span class="c-str">"tenant_id"</span>: <span class="c-str">"acme-corp"</span>,
+                <span class="c-str">"doc_type"</span>: <span class="c-str">"policy"</span>,
+                <span class="c-str">"created_at"</span>: <span class="c-num">1704067200</span>
+            }
+        )
+    ]
+)
+
+<span class="c-cmt"># Search with mandatory tenant filter</span>
+results = client.<span class="c-fn">search</span>(
+    collection_name=<span class="c-str">"documents"</span>,
+    query_vector=query_embedding,
+    query_filter=<span class="c-type">Filter</span>(
+        must=[
+            <span class="c-type">FieldCondition</span>(key=<span class="c-str">"tenant_id"</span>, match=<span class="c-type">MatchValue</span>(value=<span class="c-str">"acme-corp"</span>)),
+            <span class="c-type">FieldCondition</span>(key=<span class="c-str">"doc_type"</span>, match=<span class="c-type">MatchValue</span>(value=<span class="c-str">"policy"</span>))
+        ]
+    ),
+    limit=<span class="c-num">5</span>,
+    with_payload=<span class="c-bi">True</span>
+)</div>
+      </div>
+    </div>
+
+    <div class="callout info" style="margin-top:20px;">
+      <span class="callout-icon">💡</span>
+      <div class="callout-text"><strong>Multi-tenancy security pattern:</strong> Always apply <code style="font-family:var(--mono);">tenant_id</code> as a <code style="font-family:var(--mono);">must</code> filter in every search. This ensures complete data isolation — one tenant can never retrieve another's documents. Index the <code style="font-family:var(--mono);">tenant_id</code> payload field to avoid full collection scans during pre-filtering.</div>
+    </div>
+  </div>
+
+  <!-- SECTION 4 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">04 — Managed</div>
+      <h2>Weaviate &amp; Pinecone</h2>
+      <p>Weaviate's module system lets you plug in vectorizers, re-rankers, and generative modules — the entire RAG pipeline becomes configuration. Pinecone's serverless tier eliminates infrastructure entirely: no cluster sizing, no index management, pay per query.</p>
+    </div>
+
+    <div class="card-grid-2">
+      <div class="card">
+        <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--teal);">Weaviate — Schema-Based</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="font-size:12px;color:var(--muted);">Classes (collections) have typed properties — enforces data quality at ingestion.</div>
+          <div style="font-size:12px;color:var(--muted);">GraphQL query interface — expressive filter syntax including references between classes.</div>
+          <div style="font-size:12px;color:var(--muted);"><strong style="color:var(--text);">Vectorizer modules:</strong> text2vec-openai, text2vec-cohere, multi2vec-clip — Weaviate handles embedding internally on upsert.</div>
+          <div style="font-size:12px;color:var(--muted);">Multi-tenancy built-in: each tenant is an isolated shard with independent key management.</div>
+        </div>
+      </div>
+      <div class="card">
+        <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--purple-light);">Pinecone — Serverless</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="font-size:12px;color:var(--muted);">Zero infrastructure: create an index, start upserting. Scales automatically to billions.</div>
+          <div style="font-size:12px;color:var(--muted);"><strong style="color:var(--text);">Namespaces:</strong> Logical partitions within an index. Use for tenant isolation — each tenant's vectors live in their own namespace, queried separately.</div>
+          <div style="font-size:12px;color:var(--muted);">Sparse-dense hybrid search built-in: provide both dense embedding and sparse BM25 vector in a single upsert.</div>
+          <div style="font-size:12px;color:var(--muted);">Tradeoff: no self-hosting, fully managed cost model, less control over indexing strategy.</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:20px;">
+      <div class="code-wrap">
+        <span class="code-label">PYTHON — Weaviate + Pinecone</span>
+        <div class="code-block"><span class="c-cmt"># Weaviate</span>
+<span class="c-kw">import</span> weaviate
+client = weaviate.<span class="c-fn">connect_to_local</span>()
+collection = client.collections.<span class="c-fn">get</span>(<span class="c-str">"Document"</span>)
+
+<span class="c-cmt"># Query with filters</span>
+results = collection.query.<span class="c-fn">near_text</span>(
+    query=<span class="c-str">"machine learning"</span>,
+    filters=weaviate.classes.query.Filter.<span class="c-fn">by_property</span>(<span class="c-str">"tenant"</span>).<span class="c-fn">equal</span>(<span class="c-str">"acme"</span>),
+    limit=<span class="c-num">5</span>
+)
+
+<span class="c-cmt"># Pinecone</span>
+<span class="c-kw">from</span> pinecone <span class="c-kw">import</span> <span class="c-type">Pinecone</span>
+pc = <span class="c-type">Pinecone</span>(api_key=<span class="c-str">"..."</span>)
+index = pc.<span class="c-type">Index</span>(<span class="c-str">"my-index"</span>)
+
+<span class="c-cmt"># Upsert with namespace (tenant isolation)</span>
+index.<span class="c-fn">upsert</span>(
+    vectors=[{<span class="c-str">"id"</span>: <span class="c-str">"doc1"</span>, <span class="c-str">"values"</span>: embedding, <span class="c-str">"metadata"</span>: {<span class="c-str">"type"</span>: <span class="c-str">"policy"</span>}}],
+    namespace=<span class="c-str">"acme-corp"</span>
+)
+
+<span class="c-cmt"># Query within namespace</span>
+results = index.<span class="c-fn">query</span>(
+    vector=query_embedding,
+    top_k=<span class="c-num">5</span>,
+    namespace=<span class="c-str">"acme-corp"</span>,
+    filter={<span class="c-str">"type"</span>: {<span class="c-str">"$eq"</span>: <span class="c-str">"policy"</span>}}
+)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 5 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">05 — Decision</div>
+      <h2>Choosing the Right Vector DB</h2>
+      <p>The right choice depends on four axes: scale, hosting preference, filtering complexity, and whether you need hybrid search. Resist over-engineering at the prototype stage — start with Chroma and migrate when you hit its limits.</p>
+    </div>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <div class="callout-text"><strong>The Golden Path:</strong> Start with <strong>Chroma</strong> for development (zero setup, Python-native) → migrate to <strong>Qdrant</strong> for self-hosted production (rich filtering, hybrid search, Rust performance) → use <strong>Pinecone</strong> for fully managed serverless when infrastructure is a constraint.</div>
+    </div>
+
+    <div class="card-grid-2">
+      <div class="card">
+        <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--yellow);">Production Checklist</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="font-size:12px;color:var(--muted);display:flex;gap:8px;"><span style="color:var(--yellow);">→</span> Snapshots + restore procedure tested before launch</div>
+          <div style="font-size:12px;color:var(--muted);display:flex;gap:8px;"><span style="color:var(--yellow);">→</span> Payload fields indexed (tenant_id, doc_type at minimum)</div>
+          <div style="font-size:12px;color:var(--muted);display:flex;gap:8px;"><span style="color:var(--yellow);">→</span> Monitoring: query latency p99, index size, memory pressure</div>
+          <div style="font-size:12px;color:var(--muted);display:flex;gap:8px;"><span style="color:var(--yellow);">→</span> Index rebuilding strategy (HNSW ef_construction tuning)</div>
+          <div style="font-size:12px;color:var(--muted);display:flex;gap:8px;"><span style="color:var(--yellow);">→</span> Embedding dimension fixed at schema time — changing it requires re-indexing</div>
+        </div>
+      </div>
+      <div class="card">
+        <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--teal);">Advanced Patterns</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="font-size:12px;color:var(--muted);display:flex;gap:8px;"><span style="color:var(--teal);">→</span> <strong style="color:var(--text);">Multi-vector (ColBERT):</strong> Late interaction models produce per-token vectors. Query uses MaxSim scoring across all token pairs. Higher recall, higher storage cost.</div>
+          <div style="font-size:12px;color:var(--muted);display:flex;gap:8px;"><span style="color:var(--teal);">→</span> <strong style="color:var(--text);">Hybrid search:</strong> Dense (semantic) + sparse (BM25 keyword) re-ranked with RRF. Dramatically improves recall for domain-specific terminology.</div>
+          <div style="font-size:12px;color:var(--muted);display:flex;gap:8px;"><span style="color:var(--teal);">→</span> <strong style="color:var(--text);">Embedding dimension:</strong> 1536 (OpenAI ada-002) = 6GB RAM per 1M vectors uncompressed. Use int8 quantization to fit 4x more in the same memory.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INTERACTIVE WIDGET -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">06 — Interactive</div>
+      <h2>Vector DB Decision Matrix</h2>
+      <p>Answer four questions to get a recommendation with explanation.</p>
+    </div>
+
+    <div class="widget">
+      <div class="widget-title">Find Your Vector DB</div>
+      <div class="widget-sub">Select an option for each question. Recommendation updates automatically.</div>
+
+      <div class="question-block">
+        <div class="question-label">1. How many documents do you expect to index?</div>
+        <div class="radio-group" id="q1">
+          <div class="radio-opt" data-q="1" data-v="small" onclick="selectOpt(this)">Under 100K</div>
+          <div class="radio-opt" data-q="1" data-v="mid" onclick="selectOpt(this)">100K – 10M</div>
+          <div class="radio-opt" data-q="1" data-v="large" onclick="selectOpt(this)">Over 10M</div>
+        </div>
+      </div>
+
+      <div class="question-block">
+        <div class="question-label">2. Where do you prefer to host?</div>
+        <div class="radio-group" id="q2">
+          <div class="radio-opt" data-q="2" data-v="local" onclick="selectOpt(this)">Local / Self-hosted</div>
+          <div class="radio-opt" data-q="2" data-v="managed" onclick="selectOpt(this)">Fully managed cloud</div>
+        </div>
+      </div>
+
+      <div class="question-block">
+        <div class="question-label">3. Do you need rich payload filtering (tenant isolation, multi-field conditions)?</div>
+        <div class="radio-group" id="q3">
+          <div class="radio-opt" data-q="3" data-v="no" onclick="selectOpt(this)">No — simple or none</div>
+          <div class="radio-opt" data-q="3" data-v="yes" onclick="selectOpt(this)">Yes — required</div>
+        </div>
+      </div>
+
+      <div class="question-block">
+        <div class="question-label">4. Do you need hybrid search (keyword + semantic in one query)?</div>
+        <div class="radio-group" id="q4">
+          <div class="radio-opt" data-q="4" data-v="no" onclick="selectOpt(this)">No — semantic only</div>
+          <div class="radio-opt" data-q="4" data-v="yes" onclick="selectOpt(this)">Yes — hybrid needed</div>
+        </div>
+      </div>
+
+      <div class="recommendation" id="recommendation">
+        <div class="rec-header" id="rec-header">
+          <div>
+            <div class="rec-db-name" id="rec-name"></div>
+            <div class="rec-tagline" id="rec-tagline"></div>
+          </div>
+        </div>
+        <div class="rec-body" id="rec-body"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXERCISES -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">07 — Practice</div>
+      <h2>Exercises</h2>
+    </div>
+    <a href="../exercises/day10_exercises.html" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.6rem 1.25rem;background:linear-gradient(135deg,#7c3aed,#0d9488);color:white;font-weight:700;font-size:0.9rem;border-radius:8px;text-decoration:none;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">Open Interactive Exercises →</a>
+  </div>
+
+</div><!-- /container -->
+
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-nav">
+        <a href="day9.html" class="nav-btn">← Day 9: Providers</a>
+        <button class="nav-btn complete" id="footer-complete-btn" onclick="markComplete()">Mark Complete</button>
+        <a href="day11.html" class="nav-btn next">Day 11 →</a>
+      </div>
+      <div style="color:var(--muted);font-size:13px;">Day 10 of 10+ · Agentic AI Mastery</div>
+    </div>
+  </div>
+</footer>
+
+<script src="../bg-animation.js"></script>
+<script>
+// ── Mark Complete (aai_progress) ────────────────────────────────
+function markComplete() {
+  try {
+    const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
+    const isDone = p[10] === 'complete';
+    p[10] = isDone ? 'active' : 'complete';
+    localStorage.setItem('aai_progress', JSON.stringify(p));
+    updateCompleteButtons();
+  } catch(e) {}
+}
+
+function updateCompleteButtons() {
+  try {
+    const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
+    const done = p[10] === 'complete';
+    const label = done ? 'Completed ✓' : 'Mark Complete';
+    ['nav-complete-btn', 'footer-complete-btn'].forEach(id => {
+      const btn = document.getElementById(id);
+      if (btn) {
+        btn.textContent = label;
+        btn.classList.toggle('done', done);
+      }
+    });
+  } catch(e) {}
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  try {
+    const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
+    if (!p[10] || p[10] === 'locked') { p[10] = 'active'; localStorage.setItem('aai_progress', JSON.stringify(p)); }
+  } catch(e) {}
+  updateCompleteButtons();
+});
+
+// ── Vector DB Decision Matrix ────────────────────────────────────
+const answers = { 1: null, 2: null, 3: null, 4: null };
+
+function selectOpt(el) {
+  const q = parseInt(el.dataset.q);
+  document.querySelectorAll(`[data-q="${q}"]`).forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  answers[q] = el.dataset.v;
+  updateRecommendation();
+}
+
+const DB_INFO = {
+  chroma: {
+    name: 'Chroma',
+    tagline: 'Simple embedded vector store for development',
+    color: '#10b981',
+    body: '<strong>Best for:</strong> Early-stage development with under 100K documents and no tenant isolation requirements. Zero setup — runs embedded in your Python process. Persistent client saves to disk. LangChain integration is first-class.<br><br><strong>When to graduate:</strong> When you need rich payload filtering, hybrid search, or multi-tenancy — migrate to Qdrant for self-hosted, or Pinecone for managed.',
+    features: ['Embedded Python', 'Persistent', 'LangChain native', 'Simple API']
+  },
+  faiss: {
+    name: 'FAISS',
+    tagline: 'Research-grade ANN library for prototyping',
+    color: '#f59e0b',
+    body: '<strong>Best for:</strong> Benchmarking ANN algorithms and quick local prototypes. In-memory only — no persistence. Ideal for validating your embedding strategy before committing to a production DB.<br><br><strong>Limitation:</strong> No payload filtering, no server, no multi-tenancy. Must rebuild index from scratch on restart.',
+    features: ['In-memory', 'Fast ANN', 'HNSW/IVF/PQ', 'Research use']
+  },
+  qdrant: {
+    name: 'Qdrant',
+    tagline: 'Rust-native production vector DB — self-hosted',
+    color: '#a855f7',
+    body: '<strong>Best for:</strong> Production self-hosted deployments requiring rich filtering, multi-tenancy, and predictable latency. Rust implementation eliminates GC pauses. Supports hybrid search (dense + sparse BM25), scalar/product quantization, and mmap storage for billion-scale without huge RAM.<br><br><strong>Run with Docker:</strong> <code style="font-family:monospace;font-size:11px;">docker run -p 6333:6333 qdrant/qdrant</code>',
+    features: ['Self-hosted', 'Rust native', 'Rich filters', 'Hybrid search', 'Quantization']
+  },
+  weaviate: {
+    name: 'Weaviate',
+    tagline: 'Schema-based vector DB with vectorizer modules',
+    color: '#0d9488',
+    body: '<strong>Best for:</strong> Teams that want the full RAG pipeline as configuration — Weaviate can call OpenAI/Cohere to generate embeddings internally on upsert via vectorizer modules. GraphQL API is expressive for complex relationship queries between classes.<br><br><strong>Multi-tenancy:</strong> Built-in with per-tenant shard isolation. Excellent for SaaS products with many customers.',
+    features: ['Schema-based', 'Vectorizer modules', 'GraphQL', 'Multi-tenancy', 'Hybrid search']
+  },
+  pinecone: {
+    name: 'Pinecone',
+    tagline: 'Fully managed serverless vector database',
+    color: '#60a5fa',
+    body: '<strong>Best for:</strong> Teams that want zero infrastructure management. Serverless tier scales to billions of vectors with per-query billing — no cluster to size or maintain. Namespaces provide tenant isolation. Sparse-dense hybrid search built-in.<br><br><strong>Tradeoff:</strong> No self-hosting option, higher per-query cost at very high volume vs self-hosted Qdrant.',
+    features: ['Serverless', 'No infrastructure', 'Namespaces', 'Hybrid search', 'Billions scale']
+  }
+};
+
+function updateRecommendation() {
+  if (!answers[1] || !answers[2] || !answers[3] || !answers[4]) return;
+
+  let db = 'chroma';
+
+  // Scoring logic
+  if (answers[1] === 'small' && answers[2] === 'local' && answers[3] === 'no' && answers[4] === 'no') {
+    db = 'chroma';
+  } else if (answers[1] === 'small' && answers[2] === 'local' && answers[3] === 'no') {
+    db = 'faiss';
+  } else if (answers[2] === 'managed') {
+    db = answers[1] === 'large' || answers[3] === 'yes' || answers[4] === 'yes' ? 'pinecone' : 'pinecone';
+  } else if (answers[2] === 'local' && (answers[3] === 'yes' || answers[4] === 'yes' || answers[1] !== 'small')) {
+    db = 'qdrant';
+  } else if (answers[3] === 'yes' && answers[4] === 'yes') {
+    db = 'weaviate';
+  } else {
+    db = 'qdrant';
+  }
+
+  const info = DB_INFO[db];
+  const rec = document.getElementById('recommendation');
+  const header = document.getElementById('rec-header');
+
+  document.getElementById('rec-name').textContent = info.name;
+  document.getElementById('rec-name').style.color = info.color;
+  document.getElementById('rec-tagline').textContent = info.tagline;
+  header.style.borderBottom = `1px solid var(--border)`;
+
+  let featuresHtml = info.features.map(f =>
+    `<span class="metric-badge mb-purple">${f}</span>`
+  ).join('');
+
+  document.getElementById('rec-body').innerHTML = info.body + `<div class="rec-features">${featuresHtml}</div>`;
+
+  rec.classList.add('visible');
+}
+</script>
+</body>
+</html>

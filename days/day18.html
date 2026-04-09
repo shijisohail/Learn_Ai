@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 18: MLflow & Experiment Tracking — Runs, registry & LangSmith integration</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f; --card: #141420; --surface2: #1a1a2e; --border: #2a2a45;
+  --purple: #7c3aed; --purple-light: #a855f7; --teal: #0d9488; --green: #10b981;
+  --red: #ef4444; --yellow: #f59e0b; --text: #e2e8f0; --muted: #64748b;
+  --font: 'Inter', sans-serif; --mono: 'JetBrains Mono', monospace;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; overflow-x: hidden; }
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(124,58,237,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 90% 80%, rgba(13,148,136,0.05) 0%, transparent 60%);
+  pointer-events: none; z-index: 0;
+}
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+nav { border-bottom: 1px solid var(--border); padding: 0; background: rgba(10,10,15,0.85); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; }
+.nav-inner { max-width: 1100px; margin: 0 auto; padding: 0 24px; height: 52px; display: flex; align-items: center; justify-content: space-between; }
+.nav-btn {
+  padding: 7px 18px; border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface2); color: var(--muted);
+  font-size: 13px; font-weight: 600;
+  text-decoration: none; transition: all 0.2s;
+  font-family: inherit; cursor: pointer;
+}
+.nav-btn:hover { border-color: var(--purple); color: var(--text); }
+.nav-btn.next { border-color: rgba(124,58,237,0.5); color: var(--purple-light); }
+.nav-btn.next:hover { background: var(--purple); color: white; border-color: var(--purple); }
+.nav-btn.complete { border-color: rgba(245,158,11,0.5); color: var(--yellow); }
+.nav-btn.complete:hover { background: var(--yellow); color: #0a0a0f; border-color: var(--yellow); }
+.nav-btn.done { background: rgba(16,185,129,0.15); border-color: var(--green); color: var(--green); }
+.nav-brand { font-size: 14px; font-weight: 700; color: var(--muted); text-decoration: none; letter-spacing: -0.2px; transition: color 0.2s; }
+.nav-brand:hover { color: var(--text); }
+
+.day-hero { padding: 56px 0 40px; }
+.day-num { font-size: 12px; font-weight: 700; color: var(--yellow); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+.day-hero h1 { font-size: clamp(32px, 5vw, 56px); font-weight: 900; letter-spacing: -2px; margin-bottom: 16px; }
+.day-hero p { font-size: 17px; color: var(--muted); max-width: 600px; line-height: 1.6; margin-bottom: 28px; }
+.topic-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+.topic-pill { padding: 5px 12px; border-radius: 20px; background: var(--surface2); border: 1px solid var(--border); font-size: 12px; color: var(--muted); font-weight: 500; }
+
+.section { padding: 56px 0; border-top: 1px solid var(--border); }
+.section-header { margin-bottom: 32px; }
+.section-num { font-size: 11px; font-weight: 700; color: var(--purple-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.section-header h2 { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 10px; }
+.section-header p { color: var(--muted); font-size: 15px; line-height: 1.6; max-width: 640px; }
+
+/* CODE BLOCKS — white-space: pre is REQUIRED */
+.code-block {
+  background: #0d1117; border: 1px solid #30363d; border-radius: 12px;
+  padding: 24px; font-family: var(--mono); font-size: 12.5px; line-height: 1.8;
+  overflow-x: auto; white-space: pre;
+}
+.code-wrap { position: relative; margin-top: 16px; }
+.code-label { position: absolute; top: -10px; left: 16px; background: var(--purple); color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.5px; }
+.c-cmt { color: #8b949e; }
+.c-kw { color: #ff7b72; }
+.c-fn { color: #d2a8ff; }
+.c-str { color: #a5d6ff; }
+.c-type { color: #ffa657; }
+.c-num { color: #f2cc60; }
+.c-bi { color: #79c0ff; }
+.c-dec { color: #ffa657; }
+
+/* DECISION TRIANGLE */
+.triangle-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 20px; }
+.tri-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+  padding: 20px; text-align: center; position: relative; overflow: hidden;
+  transition: all 0.2s;
+}
+.tri-card:hover { transform: translateY(-3px); }
+.tri-card.active-prompting { border-color: rgba(16,185,129,0.5); }
+.tri-card.active-rag { border-color: rgba(13,148,136,0.5); }
+.tri-card.active-finetune { border-color: rgba(168,85,247,0.5); }
+.tri-icon { font-size: 32px; margin-bottom: 10px; }
+.tri-title { font-size: 15px; font-weight: 800; margin-bottom: 8px; }
+.tri-when { font-size: 11px; color: var(--muted); line-height: 1.5; margin-bottom: 10px; }
+.tri-cost { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 20px; }
+.cost-low { background: rgba(16,185,129,0.15); color: var(--green); }
+.cost-mid { background: rgba(13,148,136,0.15); color: var(--teal); }
+.cost-high { background: rgba(168,85,247,0.15); color: var(--purple-light); }
+
+/* FLOW DIAGRAM */
+.flow-diagram { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; overflow-x: auto; }
+.flow-row { display: flex; align-items: center; gap: 0; justify-content: center; flex-wrap: wrap; gap: 4px; }
+.flow-box {
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
+  padding: 12px 16px; text-align: center; min-width: 120px;
+}
+.flow-box.highlight { border-color: var(--purple); background: rgba(124,58,237,0.1); }
+.flow-box.result { border-color: var(--green); background: rgba(16,185,129,0.08); }
+.flow-box-title { font-size: 12px; font-weight: 700; margin-bottom: 3px; }
+.flow-box-sub { font-size: 10px; color: var(--muted); }
+.flow-arrow { color: var(--muted); font-size: 18px; padding: 0 6px; }
+.flow-plus { color: var(--yellow); font-size: 20px; font-weight: 800; padding: 0 8px; }
+
+/* LORA VISUAL */
+.lora-visual { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.lora-panel { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 22px; }
+.lora-panel h3 { font-size: 14px; font-weight: 800; margin-bottom: 12px; }
+.param-bar { margin-bottom: 12px; }
+.param-label { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 12px; }
+.param-label span { color: var(--muted); }
+.bar-track { background: var(--surface2); border-radius: 99px; height: 8px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 99px; transition: width 1s ease; }
+.bar-full { background: linear-gradient(90deg, var(--red), var(--yellow)); }
+.bar-lora { background: linear-gradient(90deg, var(--green), var(--teal)); }
+.lora-eq { text-align: center; padding: 16px; background: var(--surface2); border-radius: 10px; margin-top: 12px; font-family: var(--mono); font-size: 13px; color: var(--purple-light); }
+
+/* COMPARISON TABLE */
+.comp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.comp-table th { background: var(--surface2); padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); border-bottom: 1px solid var(--border); }
+.comp-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.comp-table tr:last-child td { border-bottom: none; }
+.comp-table tr:hover td { background: rgba(255,255,255,0.02); }
+.tick { color: var(--green); font-weight: 700; }
+.cross { color: var(--red); font-weight: 700; }
+.partial { color: var(--yellow); font-weight: 700; }
+
+/* USE CASES */
+.use-case-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.use-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+.use-card.good { border-color: rgba(16,185,129,0.3); }
+.use-card.bad { border-color: rgba(239,68,68,0.3); }
+.use-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.use-icon { font-size: 18px; }
+.use-title { font-size: 13px; font-weight: 700; }
+.use-items { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.use-items li { font-size: 12px; color: var(--muted); display: flex; align-items: flex-start; gap: 8px; }
+.use-items li::before { content: '•'; color: var(--green); flex-shrink: 0; }
+.use-card.bad .use-items li::before { color: var(--red); }
+
+/* PREREQS */
+.prereq-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.prereq-chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.prereq-day { background: var(--purple); color: white; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; }
+
+/* EXERCISES */
+.ex-list { display: flex; flex-direction: column; gap: 12px; counter-reset: ex; }
+.ex-item { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; display: flex; gap: 14px; counter-increment: ex; }
+.ex-num { width: 32px; height: 32px; border-radius: 50%; background: rgba(124,58,237,0.15); border: 2px solid var(--purple); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: var(--purple-light); flex-shrink: 0; }
+.ex-body { flex: 1; }
+.ex-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.ex-desc { font-size: 12px; color: var(--muted); line-height: 1.6; }
+.ex-difficulty { display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+.diff-easy { background: rgba(16,185,129,0.15); color: var(--green); }
+.diff-med { background: rgba(245,158,11,0.15); color: var(--yellow); }
+.diff-hard { background: rgba(239,68,68,0.15); color: var(--red); }
+
+/* CALLOUT */
+.callout { background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.25); border-radius: 12px; padding: 16px 20px; display: flex; gap: 12px; align-items: flex-start; margin: 20px 0; }
+.callout-icon { font-size: 18px; flex-shrink: 0; }
+.callout-text { font-size: 13px; color: var(--text); line-height: 1.6; }
+.callout-text strong { color: var(--yellow); }
+.callout.info { background: rgba(124,58,237,0.07); border-color: rgba(124,58,237,0.25); }
+.callout.info .callout-text strong { color: var(--purple-light); }
+
+/* CONCEPT GRID */
+.concept-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; margin-top: 20px; }
+.concept-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; transition: border-color 0.2s; }
+.concept-card:hover { border-color: var(--purple); }
+.concept-icon { font-size: 24px; margin-bottom: 10px; }
+.concept-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+.concept-desc { font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+/* WIDGET */
+.widget-box { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-top: 24px; }
+.widget-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.widget-subtitle { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+.sim-btn {
+  padding: 10px 24px; border-radius: 8px; background: var(--purple);
+  border: none; color: white; font-size: 14px; font-weight: 600;
+  font-family: var(--font); cursor: pointer; transition: background 0.2s;
+}
+.sim-btn:hover { background: var(--purple-light); }
+
+/* FOOTER */
+footer { padding: 40px 0; border-top: 1px solid var(--border); text-align: center; color: var(--muted); font-size: 13px; }
+
+@media(max-width:700px) {
+  .triangle-container { grid-template-columns: 1fr; }
+  .lora-visual { grid-template-columns: 1fr; }
+  .use-case-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body data-animation-density="high">
+
+<nav>
+  <div class="nav-inner">
+    <a href="day17.html" class="nav-btn">← Day 17</a>
+    <a href="../index.html" class="nav-brand">Agentic AI Mastery</a>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <a href="day19.html" class="nav-btn next">Day 19 →</a>
+      <button class="nav-btn complete" id="complete-btn" onclick="markComplete()">Mark Complete</button>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="day-hero">
+    <div class="day-num">Day 18 — Week 3</div>
+    <h1>MLflow &amp;<br>Experiment Tracking</h1>
+    <p>Runs, registry &amp; LangSmith integration. Stop losing track of which hyperparameter config produced your best model. Master MLflow for experiment tracking, model registry, and continuous LLM evaluation with LangSmith and RAGAS.</p>
+    <div class="topic-pills">
+      <span class="topic-pill">MLflow Runs</span>
+      <span class="topic-pill">Model Registry</span>
+      <span class="topic-pill">LangSmith</span>
+      <span class="topic-pill">RAGAS Evaluation</span>
+      <span class="topic-pill">Hyperparameter Search</span>
+      <span class="topic-pill">Experiment Comparison</span>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 1 -->
+<div class="container">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">Section 01</div>
+      <h2>Why Experiment Tracking?</h2>
+      <p>The reproducibility crisis in ML: "which config produced my best model?" Without tracking, you're flying blind. MLflow solves this at every layer of the ML workflow.</p>
+    </div>
+
+    <div class="callout">
+      <span class="callout-icon">⚠️</span>
+      <div class="callout-text"><strong>The Reproducibility Crisis:</strong> Without experiment tracking, you run 20 fine-tuning jobs, pick the best one, then six months later you cannot reproduce it. MLflow eliminates this by capturing every run, every parameter, every artifact.</div>
+    </div>
+
+    <div class="concept-grid">
+      <div class="concept-card">
+        <div class="concept-icon">📊</div>
+        <div class="concept-title">Tracking</div>
+        <div class="concept-desc">Log runs, parameters, metrics, and artifacts. The core MLflow component. Every experiment run gets a unique run ID and is stored in the tracking server.</div>
+      </div>
+      <div class="concept-card">
+        <div class="concept-icon">📦</div>
+        <div class="concept-title">Projects</div>
+        <div class="concept-desc">Package ML code in a reusable, reproducible form using MLproject files. Define dependencies, entry points, and parameters declaratively.</div>
+      </div>
+      <div class="concept-card">
+        <div class="concept-icon">🗄️</div>
+        <div class="concept-title">Model Registry</div>
+        <div class="concept-desc">Centralized model store with versioning and lifecycle stages: None → Staging → Production → Archived. Decouple model identity from run IDs.</div>
+      </div>
+      <div class="concept-card">
+        <div class="concept-icon">🔁</div>
+        <div class="concept-title">Recipes</div>
+        <div class="concept-desc">Opinionated pipelines for common ML workflows. Standardized steps for data ingestion, feature engineering, training, and evaluation.</div>
+      </div>
+    </div>
+
+    <div style="margin-top:28px;">
+      <table class="comp-table">
+        <thead>
+          <tr>
+            <th>Tool</th>
+            <th>Primary Use</th>
+            <th>LLM Native?</th>
+            <th>Best For</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>MLflow</strong></td>
+            <td>Run tracking, model registry, artifact store</td>
+            <td><span class="partial">Partial</span></td>
+            <td>All ML experiments, fine-tuning runs, hyperparameter search</td>
+          </tr>
+          <tr>
+            <td><strong>Weights &amp; Biases</strong></td>
+            <td>Rich dashboards, sweep visualization, team collab</td>
+            <td><span class="partial">Partial</span></td>
+            <td>Research teams, interactive experiment exploration</td>
+          </tr>
+          <tr>
+            <td><strong>LangSmith</strong></td>
+            <td>LLM chain tracing, dataset eval, prompt versioning</td>
+            <td><span class="tick">Yes</span></td>
+            <td>RAG pipelines, agent traces, LLM A/B testing</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout info" style="margin-top:24px;">
+      <span class="callout-icon">💡</span>
+      <div class="callout-text"><strong>Use all three:</strong> MLflow for fine-tuning experiments and the model registry. W&amp;B for rich sweep visualization if you have a research-heavy team. LangSmith for production LLM chain tracing and prompt evaluation. They complement each other.</div>
+    </div>
+
+    <div class="code-wrap" style="margin-top:24px;">
+      <span class="code-label">PYTHON — Setup</span>
+      <div class="code-block"><span class="c-kw">import</span> <span class="c-bi">mlflow</span>
+
+<span class="c-cmt"># Set tracking server (default: ./mlruns locally)</span>
+<span class="c-bi">mlflow</span>.<span class="c-fn">set_tracking_uri</span>(<span class="c-str">"postgresql://user:pass@host/mlflow"</span>)
+<span class="c-bi">mlflow</span>.<span class="c-fn">set_experiment</span>(<span class="c-str">"llama3-finetune-qlora"</span>)</div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 2 -->
+<div class="container">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">Section 02</div>
+      <h2>Logging Runs</h2>
+      <p>Every training job becomes a logged run with parameters, time-series metrics, artifacts, and tags. MLflow's context manager pattern keeps tracking code clean.</p>
+    </div>
+
+    <div class="use-case-grid" style="margin-bottom:24px;">
+      <div class="use-card good">
+        <div class="use-header"><span class="use-icon">📋</span><span class="use-title">What to Log</span></div>
+        <ul class="use-items">
+          <li>All hyperparameters (rank, alpha, lr, batch size, epochs)</li>
+          <li>Training loss at every step</li>
+          <li>Evaluation metrics (loss, perplexity, RAGAS scores)</li>
+          <li>Adapter config JSON and training curves as artifacts</li>
+          <li>Tags: model_family, dataset_version, author, git_sha</li>
+        </ul>
+      </div>
+      <div class="use-card bad">
+        <div class="use-header"><span class="use-icon">❌</span><span class="use-title">Common Mistakes</span></div>
+        <ul class="use-items">
+          <li>Only logging final eval loss (you lose the training curve)</li>
+          <li>Hardcoding run names instead of using descriptive names</li>
+          <li>Not logging the dataset version (reproducibility fails)</li>
+          <li>Forgetting artifacts — the adapter config IS the experiment</li>
+          <li>Never using nested runs for hyperparameter sweeps</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="code-wrap">
+      <span class="code-label">PYTHON — Full Run Logging</span>
+      <div class="code-block"><span class="c-kw">with</span> <span class="c-bi">mlflow</span>.<span class="c-fn">start_run</span>(run_name=<span class="c-str">"qlora-r16-alpha32-lr2e4"</span>) <span class="c-kw">as</span> run:
+    <span class="c-cmt"># Log hyperparameters</span>
+    <span class="c-bi">mlflow</span>.<span class="c-fn">log_params</span>({
+        <span class="c-str">"model"</span>: <span class="c-str">"meta-llama/Llama-3.2-3B"</span>,
+        <span class="c-str">"lora_rank"</span>: <span class="c-num">16</span>,
+        <span class="c-str">"lora_alpha"</span>: <span class="c-num">32</span>,
+        <span class="c-str">"learning_rate"</span>: <span class="c-num">2e-4</span>,
+        <span class="c-str">"batch_size"</span>: <span class="c-num">4</span>,
+        <span class="c-str">"gradient_accumulation"</span>: <span class="c-num">4</span>,
+        <span class="c-str">"num_epochs"</span>: <span class="c-num">3</span>,
+        <span class="c-str">"dataset"</span>: <span class="c-str">"alpaca-clean-52k"</span>
+    })
+
+    <span class="c-cmt"># Log metrics during training (call inside training loop)</span>
+    <span class="c-kw">for</span> step, loss <span class="c-kw">in</span> training_losses:
+        <span class="c-bi">mlflow</span>.<span class="c-fn">log_metric</span>(<span class="c-str">"train_loss"</span>, loss, step=step)
+        <span class="c-bi">mlflow</span>.<span class="c-fn">log_metric</span>(<span class="c-str">"learning_rate"</span>, <span class="c-fn">get_lr</span>(step), step=step)
+
+    <span class="c-cmt"># Log evaluation metrics</span>
+    <span class="c-bi">mlflow</span>.<span class="c-fn">log_metrics</span>({
+        <span class="c-str">"eval_loss"</span>: <span class="c-num">0.89</span>,
+        <span class="c-str">"eval_perplexity"</span>: <span class="c-num">2.44</span>,
+        <span class="c-str">"ragas_faithfulness"</span>: <span class="c-num">0.87</span>
+    })
+
+    <span class="c-cmt"># Log artifacts</span>
+    <span class="c-bi">mlflow</span>.<span class="c-fn">log_artifact</span>(<span class="c-str">"./lora-adapter/adapter_config.json"</span>)
+    <span class="c-bi">mlflow</span>.<span class="c-fn">log_artifact</span>(<span class="c-str">"./training_curve.png"</span>)
+
+    <span class="c-fn">print</span>(<span class="c-str">f"Run ID: {run.info.run_id}"</span>)</div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 3 -->
+<div class="container">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">Section 03</div>
+      <h2>Model Registry</h2>
+      <p>The registry is the handshake between training and production. Register a run's model, promote it through lifecycle stages, and load it by name — no hardcoded paths, no run IDs in production code.</p>
+    </div>
+
+    <div class="flow-diagram">
+      <div class="flow-row">
+        <div class="flow-box">
+          <div class="flow-box-title">Training Run</div>
+          <div class="flow-box-sub">log_model()</div>
+        </div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">
+          <div class="flow-box-title">Registered</div>
+          <div class="flow-box-sub">Stage: None</div>
+        </div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box highlight">
+          <div class="flow-box-title">Staging</div>
+          <div class="flow-box-sub">Human validates</div>
+        </div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box result">
+          <div class="flow-box-title">Production</div>
+          <div class="flow-box-sub">Load by name</div>
+        </div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">
+          <div class="flow-box-title">Archived</div>
+          <div class="flow-box-sub">Rollback ready</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout info" style="margin-top:24px;">
+      <span class="callout-icon">💡</span>
+      <div class="callout-text"><strong>Approval Workflow:</strong> Require a human sign-off before promoting to Production. Use the MlflowClient API with CI/CD: only promote after eval metrics pass thresholds and a senior engineer approves the staging run.</div>
+    </div>
+
+    <div class="code-wrap" style="margin-top:20px;">
+      <span class="code-label">PYTHON — Registry Lifecycle</span>
+      <div class="code-block"><span class="c-cmt"># Register model from run</span>
+model_uri = <span class="c-str">f"runs:/{run.info.run_id}/model"</span>
+registered = <span class="c-bi">mlflow</span>.<span class="c-fn">register_model</span>(model_uri, <span class="c-str">"CustomerSupportBot"</span>)
+<span class="c-cmt"># Version 1 created in stage "None"</span>
+
+<span class="c-cmt"># Promote to staging (via client API)</span>
+client = <span class="c-bi">mlflow</span>.tracking.<span class="c-type">MlflowClient</span>()
+client.<span class="c-fn">transition_model_version_stage</span>(
+    name=<span class="c-str">"CustomerSupportBot"</span>,
+    version=<span class="c-num">1</span>,
+    stage=<span class="c-str">"Staging"</span>,
+    archive_existing_versions=<span class="c-kw">False</span>
+)
+
+<span class="c-cmt"># Promote to Production after validation</span>
+client.<span class="c-fn">transition_model_version_stage</span>(
+    name=<span class="c-str">"CustomerSupportBot"</span>,
+    version=<span class="c-num">1</span>,
+    stage=<span class="c-str">"Production"</span>
+)
+
+<span class="c-cmt"># Load production model by name (decoupled from run ID)</span>
+model = <span class="c-bi">mlflow</span>.pyfunc.<span class="c-fn">load_model</span>(<span class="c-str">"models:/CustomerSupportBot/Production"</span>)</div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 4 -->
+<div class="container">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">Section 04</div>
+      <h2>Comparing Experiments</h2>
+      <p>The real value of tracking: programmatically search across hundreds of runs to find the best model. The MLflow UI gives you visual comparison; the Python API gives you automation.</p>
+    </div>
+
+    <div class="concept-grid" style="margin-bottom:24px;">
+      <div class="concept-card">
+        <div class="concept-icon">🔍</div>
+        <div class="concept-title">search_runs() API</div>
+        <div class="concept-desc">Filter by any logged metric, param, or tag. Returns a pandas DataFrame. Sort by eval_loss ASC to find the best run automatically.</div>
+      </div>
+      <div class="concept-card">
+        <div class="concept-icon">📈</div>
+        <div class="concept-title">MLflow UI</div>
+        <div class="concept-desc">Built-in web UI at localhost:5000. Compare runs side-by-side with parallel coordinates plot for hyperparameter impact visualization.</div>
+      </div>
+      <div class="concept-card">
+        <div class="concept-icon">📤</div>
+        <div class="concept-title">Export for Analysis</div>
+        <div class="concept-desc">The returned DataFrame is just pandas — export to CSV, load into a Jupyter notebook, or feed into a downstream reporting pipeline.</div>
+      </div>
+    </div>
+
+    <div class="code-wrap">
+      <span class="code-label">PYTHON — Programmatic Comparison</span>
+      <div class="code-block"><span class="c-cmt"># Find best run by eval_loss</span>
+runs = <span class="c-bi">mlflow</span>.<span class="c-fn">search_runs</span>(
+    experiment_names=[<span class="c-str">"llama3-finetune-qlora"</span>],
+    filter_string=<span class="c-str">"metrics.eval_loss &lt; 1.0"</span>,
+    order_by=[<span class="c-str">"metrics.eval_loss ASC"</span>]
+)
+
+best_run = runs.<span class="c-fn">iloc</span>[<span class="c-num">0</span>]
+<span class="c-fn">print</span>(<span class="c-str">f"Best run: {best_run['run_id']}"</span>)
+<span class="c-fn">print</span>(<span class="c-str">f"Eval loss: {best_run['metrics.eval_loss']:.4f}"</span>)
+<span class="c-fn">print</span>(<span class="c-str">f"Config: rank={best_run['params.lora_rank']}, lr={best_run['params.learning_rate']}"</span>)</div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 5 -->
+<div class="container">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">Section 05</div>
+      <h2>LangSmith for LLM Evaluation</h2>
+      <p>LangSmith is to LLM chains what MLflow is to traditional ML. Create golden datasets, run your chain against them, score with LLM-as-judge evaluators, and compare prompt versions.</p>
+    </div>
+
+    <div class="callout">
+      <span class="callout-icon">🧪</span>
+      <div class="callout-text"><strong>Evaluation Strategy:</strong> Build a golden dataset of 50-200 Q&amp;A pairs representative of your production traffic. Run your RAG pipeline against them after every significant change. Track scores over time — not just the latest run.</div>
+    </div>
+
+    <div class="use-case-grid" style="margin-bottom:24px;">
+      <div class="use-card good">
+        <div class="use-header"><span class="use-icon">✅</span><span class="use-title">LangSmith Evaluators</span></div>
+        <ul class="use-items">
+          <li>qa — LLM checks if answer matches reference</li>
+          <li>context_qa — verifies answer is grounded in context</li>
+          <li>criteria — score any criterion with a rubric</li>
+          <li>Custom LLM-as-judge with your own prompt</li>
+          <li>RAGAS faithfulness, relevancy as custom evaluators</li>
+        </ul>
+      </div>
+      <div class="use-card good">
+        <div class="use-header"><span class="use-icon">🔬</span><span class="use-title">A/B Prompt Testing</span></div>
+        <ul class="use-items">
+          <li>Run both prompt versions against the same dataset</li>
+          <li>LangSmith shows side-by-side score comparison</li>
+          <li>Statistical significance testing built in</li>
+          <li>Track experiment_prefix per prompt version</li>
+          <li>No code change needed — just swap the prompt hub commit</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="code-wrap">
+      <span class="code-label">PYTHON — LangSmith Evaluation</span>
+      <div class="code-block"><span class="c-kw">from</span> <span class="c-bi">langsmith</span> <span class="c-kw">import</span> <span class="c-type">Client</span>
+<span class="c-kw">from</span> <span class="c-bi">langsmith.evaluation</span> <span class="c-kw">import</span> <span class="c-fn">evaluate</span>
+
+client = <span class="c-type">Client</span>()
+
+<span class="c-cmt"># Create evaluation dataset</span>
+dataset = client.<span class="c-fn">create_dataset</span>(<span class="c-str">"rag-eval-v1"</span>)
+client.<span class="c-fn">create_examples</span>(
+    inputs=[{<span class="c-str">"question"</span>: <span class="c-str">"What is LoRA?"</span>}, {<span class="c-str">"question"</span>: <span class="c-str">"Explain RLHF"</span>}],
+    outputs=[{<span class="c-str">"answer"</span>: <span class="c-str">"LoRA is..."</span>}, {<span class="c-str">"answer"</span>: <span class="c-str">"RLHF is..."</span>}],
+    dataset_id=dataset.id
+)
+
+<span class="c-cmt"># Run evaluation</span>
+<span class="c-kw">def</span> <span class="c-fn">predict</span>(inputs: <span class="c-type">dict</span>) -> <span class="c-type">dict</span>:
+    <span class="c-kw">return</span> {<span class="c-str">"answer"</span>: rag_chain.<span class="c-fn">invoke</span>(inputs[<span class="c-str">"question"</span>])}
+
+results = <span class="c-fn">evaluate</span>(
+    predict,
+    data=<span class="c-str">"rag-eval-v1"</span>,
+    evaluators=[<span class="c-str">"qa"</span>],  <span class="c-cmt"># or custom LLM-as-judge evaluator</span>
+    experiment_prefix=<span class="c-str">"rag-v2-hybrid-search"</span>
+)</div>
+    </div>
+  </div>
+</div>
+
+<!-- INTERACTIVE WIDGET -->
+<div class="container">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">Interactive</div>
+      <h2>MLflow Run Comparison Visualizer</h2>
+      <p>Three pre-filled experiment runs with different hyperparameters. See which configuration produced the best results at a glance.</p>
+    </div>
+
+    <div class="widget-box">
+      <div class="widget-title">Run Comparison</div>
+      <div class="widget-subtitle">Experiment: llama3-finetune-qlora — click a run to highlight it</div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;" id="run-cards">
+        <!-- Run A -->
+        <div class="run-card" data-run="A" onclick="selectRun('A')" style="background:var(--surface2);border:2px solid var(--border);border-radius:12px;padding:16px;cursor:pointer;transition:all 0.2s;">
+          <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Run A</div>
+          <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text);">rank=8, lr=1e-4</div>
+          <div style="margin-bottom:6px;">
+            <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;"><span style="color:var(--muted);">eval_loss</span><span style="color:var(--yellow);">1.24</span></div>
+            <div style="background:var(--bg);border-radius:99px;height:6px;overflow:hidden;"><div style="width:38%;height:100%;background:var(--yellow);border-radius:99px;"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;"><span style="color:var(--muted);">faithfulness</span><span style="color:var(--teal);">0.78</span></div>
+            <div style="background:var(--bg);border-radius:99px;height:6px;overflow:hidden;"><div style="width:78%;height:100%;background:var(--teal);border-radius:99px;"></div></div>
+          </div>
+          <div style="margin-top:10px;font-size:10px;color:var(--muted);">batch=4 · epochs=3</div>
+        </div>
+
+        <!-- Run B — Best -->
+        <div class="run-card" data-run="B" onclick="selectRun('B')" style="background:var(--surface2);border:2px solid var(--green);border-radius:12px;padding:16px;cursor:pointer;transition:all 0.2s;box-shadow:0 0 16px rgba(16,185,129,0.15);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Run B</span>
+            <span style="font-size:10px;font-weight:700;background:rgba(16,185,129,0.15);color:var(--green);padding:2px 8px;border-radius:4px;">BEST</span>
+          </div>
+          <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text);">rank=16, lr=2e-4</div>
+          <div style="margin-bottom:6px;">
+            <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;"><span style="color:var(--muted);">eval_loss</span><span style="color:var(--green);">0.89</span></div>
+            <div style="background:var(--bg);border-radius:99px;height:6px;overflow:hidden;"><div style="width:72%;height:100%;background:var(--green);border-radius:99px;"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;"><span style="color:var(--muted);">faithfulness</span><span style="color:var(--green);">0.91</span></div>
+            <div style="background:var(--bg);border-radius:99px;height:6px;overflow:hidden;"><div style="width:91%;height:100%;background:var(--green);border-radius:99px;"></div></div>
+          </div>
+          <div style="margin-top:10px;font-size:10px;color:var(--muted);">batch=4 · epochs=3</div>
+        </div>
+
+        <!-- Run C -->
+        <div class="run-card" data-run="C" onclick="selectRun('C')" style="background:var(--surface2);border:2px solid var(--border);border-radius:12px;padding:16px;cursor:pointer;transition:all 0.2s;">
+          <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Run C</div>
+          <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text);">rank=32, lr=3e-4</div>
+          <div style="margin-bottom:6px;">
+            <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;"><span style="color:var(--muted);">eval_loss</span><span style="color:var(--yellow);">1.05</span></div>
+            <div style="background:var(--bg);border-radius:99px;height:6px;overflow:hidden;"><div style="width:55%;height:100%;background:var(--yellow);border-radius:99px;"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;"><span style="color:var(--muted);">faithfulness</span><span style="color:var(--yellow);">0.83</span></div>
+            <div style="background:var(--bg);border-radius:99px;height:6px;overflow:hidden;"><div style="width:83%;height:100%;background:var(--yellow);border-radius:99px;"></div></div>
+          </div>
+          <div style="margin-top:10px;font-size:10px;color:var(--muted);">batch=8 · epochs=3</div>
+        </div>
+      </div>
+
+      <!-- SVG Bar Chart -->
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:20px;">
+        <div style="font-size:13px;font-weight:700;margin-bottom:16px;color:var(--text);">Eval Loss Comparison (lower is better)</div>
+        <svg id="bar-chart" viewBox="0 0 600 200" style="width:100%;height:auto;">
+          <!-- Y axis -->
+          <line x1="60" y1="10" x2="60" y2="160" stroke="#2a2a45" stroke-width="1"/>
+          <text x="55" y="15" fill="#64748b" font-size="10" text-anchor="end" font-family="Inter,sans-serif">1.4</text>
+          <text x="55" y="55" fill="#64748b" font-size="10" text-anchor="end" font-family="Inter,sans-serif">1.0</text>
+          <text x="55" y="100" fill="#64748b" font-size="10" text-anchor="end" font-family="Inter,sans-serif">0.7</text>
+          <text x="55" y="160" fill="#64748b" font-size="10" text-anchor="end" font-family="Inter,sans-serif">0.0</text>
+          <!-- Grid lines -->
+          <line x1="60" y1="15" x2="580" y2="15" stroke="#2a2a45" stroke-width="0.5" stroke-dasharray="4,4"/>
+          <line x1="60" y1="55" x2="580" y2="55" stroke="#2a2a45" stroke-width="0.5" stroke-dasharray="4,4"/>
+          <line x1="60" y1="100" x2="580" y2="100" stroke="#2a2a45" stroke-width="0.5" stroke-dasharray="4,4"/>
+          <!-- Bar A: loss 1.24 → height ~89 -->
+          <rect id="bar-a" x="110" y="71" width="80" height="89" rx="4" fill="#f59e0b" opacity="0.7"/>
+          <text x="150" y="65" fill="#f59e0b" font-size="11" font-weight="700" text-anchor="middle" font-family="Inter,sans-serif">1.24</text>
+          <text x="150" y="178" fill="#64748b" font-size="11" text-anchor="middle" font-family="Inter,sans-serif">Run A</text>
+          <!-- Bar B: loss 0.89 → height ~64 -->
+          <rect id="bar-b" x="260" y="96" width="80" height="64" rx="4" fill="#10b981" opacity="0.9"/>
+          <text x="300" y="90" fill="#10b981" font-size="11" font-weight="700" text-anchor="middle" font-family="Inter,sans-serif">0.89 ★</text>
+          <text x="300" y="178" fill="#64748b" font-size="11" text-anchor="middle" font-family="Inter,sans-serif">Run B</text>
+          <!-- Bar C: loss 1.05 → height ~75 -->
+          <rect id="bar-c" x="410" y="85" width="80" height="75" rx="4" fill="#f59e0b" opacity="0.7"/>
+          <text x="450" y="79" fill="#f59e0b" font-size="11" font-weight="700" text-anchor="middle" font-family="Inter,sans-serif">1.05</text>
+          <text x="450" y="178" fill="#64748b" font-size="11" text-anchor="middle" font-family="Inter,sans-serif">Run C</text>
+        </svg>
+      </div>
+
+      <div id="run-detail" style="margin-top:16px;padding:14px 18px;background:rgba(124,58,237,0.07);border:1px solid rgba(124,58,237,0.25);border-radius:10px;font-size:13px;color:var(--text);display:none;">
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="container">
+    <p>Agentic AI Mastery — Day 18: MLflow &amp; Experiment Tracking</p>
+  </div>
+</footer>
+
+<section style="max-width:900px;margin:2rem auto;padding:0 1.5rem 3rem;">
+  <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;">
+    <div style="font-size:0.75rem;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:1px;">Practice</div>
+    <h2 style="margin:0;font-size:1.4rem;font-weight:700;color:white;">Exercises</h2>
+  </div>
+  <p style="color:#9ca3af;margin-bottom:1.5rem;">Hands-on MLflow exercises — track a fine-tuning run, register a model, and run LangSmith evaluation on a RAG pipeline.</p>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;">
+    <a href="../exercises/day18_exercises.html" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.6rem 1.25rem;background:linear-gradient(135deg,#7c3aed,#0d9488);color:white;font-weight:700;font-size:0.9rem;border-radius:8px;text-decoration:none;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">Open Exercises →</a>
+    <a href="day19.html" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.6rem 1.25rem;background:var(--surface2);border:1px solid var(--border);color:var(--purple-light);font-weight:700;font-size:0.9rem;border-radius:8px;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.borderColor='#7c3aed'" onmouseout="this.style.borderColor='var(--border)'">Day 19: MLOps Pipelines →</a>
+  </div>
+</section>
+
+<script src="../bg-animation.js"></script>
+<script>
+// ── Mark Complete ─────────────────────────────────────────────────────────────
+function markComplete() {
+  try {
+    const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
+    p[18] = 'done';
+    localStorage.setItem('aai_progress', JSON.stringify(p));
+    const btn = document.getElementById('complete-btn');
+    btn.textContent = 'Completed!';
+    btn.classList.remove('complete');
+    btn.classList.add('done');
+  } catch(e) {}
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  try {
+    const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
+    if (!p[18] || p[18] === 'locked') {
+      p[18] = 'active';
+      localStorage.setItem('aai_progress', JSON.stringify(p));
+    }
+    if (p[18] === 'done') {
+      const btn = document.getElementById('complete-btn');
+      btn.textContent = 'Completed!';
+      btn.classList.remove('complete');
+      btn.classList.add('done');
+    }
+  } catch(e) {}
+});
+
+// ── Run Comparison ─────────────────────────────────────────────────────────────
+const runData = {
+  A: { params: 'rank=8, lora_alpha=16, lr=1e-4, batch=4', eval_loss: 1.24, faithfulness: 0.78, note: 'Underfitting — rank too low to capture domain-specific patterns.' },
+  B: { params: 'rank=16, lora_alpha=32, lr=2e-4, batch=4', eval_loss: 0.89, faithfulness: 0.91, note: 'Best configuration — standard LoRA rank with appropriate learning rate.' },
+  C: { params: 'rank=32, lora_alpha=64, lr=3e-4, batch=8', eval_loss: 1.05, faithfulness: 0.83, note: 'Higher rank + LR caused some instability. More parameters but not better results.' }
+};
+
+function selectRun(run) {
+  document.querySelectorAll('.run-card').forEach(card => {
+    card.style.borderColor = 'var(--border)';
+    card.style.boxShadow = 'none';
+  });
+  const selected = document.querySelector(`[data-run="${run}"]`);
+  selected.style.borderColor = 'var(--purple-light)';
+  selected.style.boxShadow = '0 0 16px rgba(168,85,247,0.2)';
+
+  const detail = document.getElementById('run-detail');
+  const d = runData[run];
+  detail.style.display = 'block';
+  detail.innerHTML = `<strong style="color:var(--purple-light);">Run ${run} Details</strong><br>
+    <span style="color:var(--muted);">${d.params}</span><br>
+    <span style="color:var(--text);">eval_loss: <strong>${d.eval_loss}</strong> · faithfulness: <strong>${d.faithfulness}</strong></span><br>
+    <span style="color:var(--muted);font-size:12px;margin-top:6px;display:block;">${d.note}</span>`;
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 20: AI System Observability — RAGAS, LangSmith, Prometheus & drift detection</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f; --card: #141420; --surface2: #1a1a2e; --border: #2a2a45;
+  --purple: #7c3aed; --purple-light: #a855f7; --teal: #0d9488; --green: #10b981;
+  --red: #ef4444; --yellow: #f59e0b; --text: #e2e8f0; --muted: #64748b;
+  --font: 'Inter', sans-serif; --mono: 'JetBrains Mono', monospace;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; overflow-x: hidden; }
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(124,58,237,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 90% 80%, rgba(13,148,136,0.05) 0%, transparent 60%);
+  pointer-events: none; z-index: 0;
+}
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+nav { border-bottom: 1px solid var(--border); padding: 0; background: rgba(10,10,15,0.85); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; }
+.nav-inner { max-width: 1100px; margin: 0 auto; padding: 0 24px; height: 52px; display: flex; align-items: center; justify-content: space-between; }
+.nav-btn {
+  padding: 7px 18px; border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface2); color: var(--muted);
+  font-size: 13px; font-weight: 600;
+  text-decoration: none; transition: all 0.2s;
+  font-family: inherit; cursor: pointer;
+}
+.nav-btn:hover { border-color: var(--purple); color: var(--text); }
+.nav-btn.next { border-color: rgba(124,58,237,0.5); color: var(--purple-light); }
+.nav-btn.next:hover { background: var(--purple); color: white; border-color: var(--purple); }
+.nav-btn.complete { border-color: rgba(245,158,11,0.5); color: var(--yellow); }
+.nav-btn.complete:hover { background: var(--yellow); color: #0a0a0f; border-color: var(--yellow); }
+.nav-btn.done { background: rgba(16,185,129,0.15); border-color: var(--green); color: var(--green); }
+.nav-brand { font-size: 14px; font-weight: 700; color: var(--muted); text-decoration: none; letter-spacing: -0.2px; transition: color 0.2s; }
+.nav-brand:hover { color: var(--text); }
+
+.day-hero { padding: 56px 0 40px; }
+.day-num { font-size: 12px; font-weight: 700; color: var(--yellow); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+.day-hero h1 { font-size: clamp(32px, 5vw, 56px); font-weight: 900; letter-spacing: -2px; margin-bottom: 16px; }
+.day-hero p { font-size: 17px; color: var(--muted); max-width: 600px; line-height: 1.6; margin-bottom: 28px; }
+.topic-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+.topic-pill { padding: 5px 12px; border-radius: 20px; background: var(--surface2); border: 1px solid var(--border); font-size: 12px; color: var(--muted); font-weight: 500; }
+
+.section { padding: 56px 0; border-top: 1px solid var(--border); }
+.section-header { margin-bottom: 32px; }
+.section-num { font-size: 11px; font-weight: 700; color: var(--purple-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.section-header h2 { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 10px; }
+.section-header p { color: var(--muted); font-size: 15px; line-height: 1.6; max-width: 640px; }
+
+/* CODE BLOCKS — white-space: pre is REQUIRED */
+.code-block {
+  background: #0d1117; border: 1px solid #30363d; border-radius: 12px;
+  padding: 24px; font-family: var(--mono); font-size: 12.5px; line-height: 1.8;
+  overflow-x: auto; white-space: pre;
+}
+.code-wrap { position: relative; margin-top: 16px; }
+.code-label { position: absolute; top: -10px; left: 16px; background: var(--purple); color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.5px; }
+.c-cmt { color: #8b949e; }
+.c-kw { color: #ff7b72; }
+.c-fn { color: #d2a8ff; }
+.c-str { color: #a5d6ff; }
+.c-type { color: #ffa657; }
+.c-num { color: #f2cc60; }
+.c-bi { color: #79c0ff; }
+.c-dec { color: #ffa657; }
+
+/* DECISION TRIANGLE */
+.triangle-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 20px; }
+.tri-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+  padding: 20px; text-align: center; position: relative; overflow: hidden;
+  transition: all 0.2s;
+}
+.tri-card:hover { transform: translateY(-3px); }
+.tri-card.active-prompting { border-color: rgba(16,185,129,0.5); }
+.tri-card.active-rag { border-color: rgba(13,148,136,0.5); }
+.tri-card.active-finetune { border-color: rgba(168,85,247,0.5); }
+.tri-icon { font-size: 32px; margin-bottom: 10px; }
+.tri-title { font-size: 15px; font-weight: 800; margin-bottom: 8px; }
+.tri-when { font-size: 11px; color: var(--muted); line-height: 1.5; margin-bottom: 10px; }
+.tri-cost { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 20px; }
+.cost-low { background: rgba(16,185,129,0.15); color: var(--green); }
+.cost-mid { background: rgba(13,148,136,0.15); color: var(--teal); }
+.cost-high { background: rgba(168,85,247,0.15); color: var(--purple-light); }
+
+/* FLOW DIAGRAM */
+.flow-diagram { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; overflow-x: auto; }
+.flow-row { display: flex; align-items: center; gap: 0; justify-content: center; flex-wrap: wrap; gap: 4px; }
+.flow-box {
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
+  padding: 12px 16px; text-align: center; min-width: 100px;
+}
+.flow-box.highlight { border-color: var(--purple); background: rgba(124,58,237,0.1); }
+.flow-box.result { border-color: var(--green); background: rgba(16,185,129,0.08); }
+.flow-box-title { font-size: 12px; font-weight: 700; margin-bottom: 3px; }
+.flow-box-sub { font-size: 10px; color: var(--muted); }
+.flow-arrow { color: var(--muted); font-size: 18px; padding: 0 4px; }
+
+/* COMPARISON TABLE */
+.comp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.comp-table th { background: var(--surface2); padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); border-bottom: 1px solid var(--border); }
+.comp-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.comp-table tr:last-child td { border-bottom: none; }
+.comp-table tr:hover td { background: rgba(255,255,255,0.02); }
+.tick { color: var(--green); font-weight: 700; }
+.cross { color: var(--red); font-weight: 700; }
+.partial { color: var(--yellow); font-weight: 700; }
+
+/* CALLOUT */
+.callout { background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.25); border-radius: 12px; padding: 16px 20px; display: flex; gap: 12px; align-items: flex-start; margin: 20px 0; }
+.callout-icon { font-size: 18px; flex-shrink: 0; }
+.callout-text { font-size: 13px; color: var(--text); line-height: 1.6; }
+.callout-text strong { color: var(--yellow); }
+.callout.info { background: rgba(124,58,237,0.07); border-color: rgba(124,58,237,0.25); }
+.callout.info .callout-text strong { color: var(--purple-light); }
+.callout.warning { background: rgba(239,68,68,0.07); border-color: rgba(239,68,68,0.25); }
+.callout.warning .callout-text strong { color: var(--red); }
+
+/* CONCEPT GRID */
+.concept-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; margin-top: 20px; }
+.concept-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; transition: border-color 0.2s; }
+.concept-card:hover { border-color: var(--purple); }
+.concept-icon { font-size: 24px; margin-bottom: 10px; }
+.concept-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+.concept-desc { font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+/* WIDGET */
+.widget-box { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-top: 24px; }
+.widget-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.widget-subtitle { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+.sim-btn {
+  padding: 10px 24px; border-radius: 8px; background: var(--purple);
+  border: none; color: white; font-size: 14px; font-weight: 600;
+  font-family: var(--font); cursor: pointer; transition: background 0.2s;
+}
+.sim-btn:hover { background: var(--purple-light); }
+
+/* METRIC CARD */
+.metric-card {
+  background: var(--surface2); border: 2px solid var(--border); border-radius: 12px;
+  padding: 20px; text-align: center; transition: all 0.3s;
+}
+.metric-card.ok { border-color: rgba(16,185,129,0.4); }
+.metric-card.warn { border-color: rgba(245,158,11,0.5); }
+.metric-card.alert { border-color: var(--red); box-shadow: 0 0 20px rgba(239,68,68,0.2); }
+.metric-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+.metric-value { font-size: 32px; font-weight: 900; margin-bottom: 4px; font-family: var(--mono); }
+.metric-value.ok { color: var(--green); }
+.metric-value.warn { color: var(--yellow); }
+.metric-value.alert { color: var(--red); }
+.metric-status { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; display: inline-block; }
+.status-ok { background: rgba(16,185,129,0.15); color: var(--green); }
+.status-warn { background: rgba(245,158,11,0.15); color: var(--yellow); }
+.status-alert { background: rgba(239,68,68,0.15); color: var(--red); }
+
+/* FOOTER */
+footer { padding: 40px 0; border-top: 1px solid var(--border); text-align: center; color: var(--muted); font-size: 13px; }
+
+@media(max-width:700px) {
+  .triangle-container { grid-template-columns: 1fr; }
+  .concept-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body data-animation-density="high">
+
+<nav>
+  <div class="nav-inner">
+    <a href="day19.html" class="nav-btn">← Day 19</a>
+    <a href="../index.html" class="nav-brand">Agentic AI Mastery</a>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <a href="day21.html" class="nav-btn next">Day 21 →</a>
+      <button class="nav-btn complete" id="complete-btn" onclick="markComplete()">Mark Complete</button>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="day-hero">
+    <div class="day-num">Day 20 — Week 3</div>
+    <h1>AI System<br>Observability</h1>
+    <p>RAGAS, LangSmith, Prometheus &amp; drift detection. Traditional observability monitors latency and errors. LLM observability adds quality metrics, hallucination tracking, and semantic drift — build the full stack.</p>
+    <div class="topic-pills">
+      <span class="topic-pill">LangSmith Tracing</span>
+      <span class="topic-pill">RAGAS Evaluation</span>
+      <span class="topic-pill">Prometheus</span>
+      <span class="topic-pill">Grafana</span>
+      <span class="topic-pill">Drift Detection</span>
+      <span class="topic-pill">LLM SLOs</span>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 1 -->
+<div class="container">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">Section 01</div>
+      <h2>Why AI Observability is Different</h2>
+      <p>Traditional observability tells you your API is up. LLM observability tells you your API is answering well. You need both — and they require different tooling.</p>
+    </div>
+
+    <div class="callout warning">
+      <span class="callout-icon">⚠️</span>
+      <div class="callout-text"><strong>The Silent Failure Mode:</strong> An LLM service can have 100% uptime, sub-second latency, and zero HTTP errors — while hallucinating 40% of answers. Traditional monitoring sees nothing wrong. You need quality metrics running continuously in production.</div>
+    </div>
+
+    <div class="concept-grid" style="margin-bottom:28px;">
+      <div class="concept-card">
+        <div class="concept-icon">⚡</div>
+        <div class="concept-title">Infrastructure Metrics</div>
+        <div class="concept-desc">Latency, throughput, error rate, GPU utilization, memory. Same as any API — use Prometheus. These tell you the system is running, not how well.</div>
+      </div>
+      <div class="concept-card">
+        <div class="concept-icon">🧠</div>
+        <div class="concept-title">LLM Quality Metrics</div>
+        <div class="concept-desc">RAGAS faithfulness, answer relevancy, hallucination rate, refusal rate. These require running another model as evaluator — sample 5-10% of traffic nightly.</div>
+      </div>
+      <div class="concept-card">
+        <div class="concept-icon">💬</div>
+        <div class="concept-title">Trace-Level Visibility</div>
+        <div class="concept-desc">LangSmith captures every chain invocation: inputs, retrieved context, LLM output, latency, token counts. Essential for debugging specific failures.</div>
+      </div>
+      <div class="concept-card">
+        <div class="concept-icon">📉</div>
+        <div class="concept-title">Drift Detection</div>
+        <div class="concept-desc">Input distribution shifts over time as user behavior evolves. Embedding centroid drift and KL divergence catch this before quality degrades visibly.</div>
+      </div>
+    </div>
+
+    <table class="comp-table">
+      <thead>
+        <tr>
+          <th>Metric</th>
+          <th>Tool</th>
+          <th>Alert Threshold</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>P99 latency</td><td>Prometheus</td><td>&gt;5s</td></tr>
+        <tr><td>Token throughput</td><td>Prometheus</td><td>&lt;100 tok/s</td></tr>
+        <tr><td>RAGAS faithfulness</td><td>RAGAS + cron</td><td>&lt;0.80</td></tr>
+        <tr><td>Answer relevancy</td><td>RAGAS + cron</td><td>&lt;0.75</td></tr>
+        <tr><td>Error rate</td><td>Prometheus</td><td>&gt;2%</td></tr>
+        <tr><td>GPU utilization</td><td>Prometheus</td><td>&gt;95% sustained</td></tr>
+        <tr><td>Cost per request</td><td>Custom metric</td><td>&gt;$0.05</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- SECTION 2 -->
+<div class="container">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">Section 02</div>
+      <h2>LangSmith Production Tracing</h2>
+      <p>LangSmith traces every LLM call and chain invocation in production. Two environment variables and the @traceable decorator are all you need to get full visibility.</p>
+    </div>
+
+    <div class="callout info">
+      <span class="callout-icon">💡</span>
+      <div class="callout-text"><strong>Sampling Rate:</strong> In production, set LANGCHAIN_TRACING_SAMPLE_RATE=0.1 to trace 10% of requests. Full tracing adds ~5ms latency per request due to async upload — negligible at 10%, noticeable at 100%.</div>
+    </div>
+
+    <div class="code-wrap" style="margin-top:20px;">
+      <span class="code-label">PYTHON — Production Tracing</span>
+      <div class="code-block"><span class="c-kw">import</span> os
+<span class="c-kw">from</span> <span class="c-bi">langsmith</span> <span class="c-kw">import</span> traceable
+
+os.environ[<span class="c-str">"LANGCHAIN_TRACING_V2"</span>] = <span class="c-str">"true"</span>
+os.environ[<span class="c-str">"LANGCHAIN_API_KEY"</span>] = <span class="c-str">"ls__..."</span>
+
+<span class="c-cmt"># Trace any function with @traceable</span>
+<span class="c-dec">@traceable</span>(name=<span class="c-str">"RAG Pipeline"</span>, tags=[<span class="c-str">"production"</span>, <span class="c-str">"v2.1"</span>])
+<span class="c-kw">def</span> <span class="c-fn">answer_question</span>(question: <span class="c-type">str</span>, tenant_id: <span class="c-type">str</span>) -> <span class="c-type">dict</span>:
+    context = retriever.<span class="c-fn">invoke</span>(question)
+    answer = rag_chain.<span class="c-fn">invoke</span>({<span class="c-str">"question"</span>: question, <span class="c-str">"context"</span>: context})
+    <span class="c-kw">return</span> {<span class="c-str">"answer"</span>: answer, <span class="c-str">"sources"</span>: [d.metadata <span class="c-kw">for</span> d <span class="c-kw">in</span> context]}
+
+<span class="c-cmt"># Capture user feedback</span>
+<span class="c-kw">from</span> <span class="c-bi">langsmith</span> <span class="c-kw">import</span> <span class="c-type">Client</span>
+client = <span class="c-type">Client</span>()
+
+<span class="c-kw">def</span> <span class="c-fn">record_feedback</span>(run_id: <span class="c-type">str</span>, score: <span class="c-type">int</span>, comment: <span class="c-type">str</span> = <span class="c-str">""</span>):
+    client.<span class="c-fn">create_feedback</span>(
+        run_id=run_id,
+        key=<span class="c-str">"user_rating"</span>,
+        score=score,      <span class="c-cmt"># 1 = positive, 0 = negative</span>
+        comment=comment
+    )</div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 3 -->
+<div class="container">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">Section 03</div>
+      <h2>RAGAS for Continuous Evaluation</h2>
+      <p>Don't wait for user complaints. Run RAGAS nightly on a sample of production traffic and alert before humans notice quality degradation.</p>
+    </div>
+
+    <div class="concept-grid" style="margin-bottom:24px;">
+      <div class="concept-card">
+        <div class="concept-icon">📅</div>
+        <div class="concept-title">Nightly Eval Job</div>
+        <div class="concept-desc">Cron job at 2am: fetch last 24h of traces from LangSmith, run RAGAS faithfulness + relevancy, log scores to MLflow, alert if below threshold.</div>
+      </div>
+      <div class="concept-card">
+        <div class="concept-icon">📊</div>
+        <div class="concept-title">5-10% Sampling</div>
+        <div class="concept-desc">Evaluate a random 5-10% sample of production queries. RAGAS costs ~$0.002 per evaluation call — evaluating everything is expensive. Statistical sampling is sufficient.</div>
+      </div>
+      <div class="concept-card">
+        <div class="concept-icon">📈</div>
+        <div class="concept-title">Trend Analysis</div>
+        <div class="concept-desc">A single low score might be noise. A week-over-week downward trend is a signal. Track rolling 7-day averages in MLflow and alert on sustained degradation.</div>
+      </div>
+    </div>
+
+    <div class="code-wrap">
+      <span class="code-label">PYTHON — Nightly Evaluation Job</span>
+      <div class="code-block"><span class="c-kw">from</span> <span class="c-bi">ragas</span> <span class="c-kw">import</span> evaluate
+<span class="c-kw">from</span> <span class="c-bi">ragas.metrics</span> <span class="c-kw">import</span> faithfulness, answer_relevancy
+<span class="c-kw">import</span> schedule
+<span class="c-kw">import</span> time
+
+<span class="c-kw">def</span> <span class="c-fn">nightly_evaluation</span>():
+    <span class="c-str">"""Run RAGAS evaluation on sampled production traces"""</span>
+    <span class="c-kw">from</span> <span class="c-bi">langsmith</span> <span class="c-kw">import</span> <span class="c-type">Client</span>
+    client = <span class="c-type">Client</span>()
+    runs = <span class="c-fn">list</span>(client.<span class="c-fn">list_runs</span>(
+        project_name=<span class="c-str">"production"</span>,
+        run_type=<span class="c-str">"chain"</span>,
+        limit=<span class="c-num">200</span>,
+        filter=<span class="c-str">'and(eq(status, "success"), gte(start_time, -86400))'</span>
+    ))
+
+    <span class="c-cmt"># Format for RAGAS</span>
+    eval_data = [{
+        <span class="c-str">"question"</span>: run.inputs.<span class="c-fn">get</span>(<span class="c-str">"question"</span>, <span class="c-str">""</span>),
+        <span class="c-str">"answer"</span>: run.outputs.<span class="c-fn">get</span>(<span class="c-str">"answer"</span>, <span class="c-str">""</span>),
+        <span class="c-str">"contexts"</span>: [run.outputs.<span class="c-fn">get</span>(<span class="c-str">"context"</span>, <span class="c-str">""</span>)]
+    } <span class="c-kw">for</span> run <span class="c-kw">in</span> runs <span class="c-kw">if</span> run.inputs.<span class="c-fn">get</span>(<span class="c-str">"question"</span>)]
+
+    dataset = <span class="c-type">Dataset</span>.<span class="c-fn">from_list</span>(eval_data)
+    scores = <span class="c-fn">evaluate</span>(dataset, metrics=[faithfulness, answer_relevancy])
+
+    <span class="c-cmt"># Alert if below threshold</span>
+    <span class="c-kw">if</span> scores[<span class="c-str">"faithfulness"</span>] &lt; <span class="c-num">0.80</span>:
+        <span class="c-fn">send_alert</span>(<span class="c-str">f"Faithfulness score degraded: {scores['faithfulness']:.3f}"</span>)
+
+    <span class="c-cmt"># Log to MLflow</span>
+    <span class="c-kw">with</span> <span class="c-bi">mlflow</span>.<span class="c-fn">start_run</span>(run_name=<span class="c-str">f"ragas-eval-{date.today()}"</span>):
+        <span class="c-bi">mlflow</span>.<span class="c-fn">log_metrics</span>(<span class="c-fn">dict</span>(scores))
+
+schedule.every().day.<span class="c-fn">at</span>(<span class="c-str">"02:00"</span>).<span class="c-fn">do</span>(nightly_evaluation)</div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 4 -->
+<div class="container">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">Section 04</div>
+      <h2>Prometheus + Grafana for LLM Infrastructure</h2>
+      <p>Expose a /metrics endpoint from your serving layer. Prometheus scrapes it every 15 seconds. Grafana dashboards give you the ops view. Takes 30 minutes to set up and pays dividends forever.</p>
+    </div>
+
+    <div class="callout info">
+      <span class="callout-icon">💡</span>
+      <div class="callout-text"><strong>Key Grafana Panels for LLM APIs:</strong> (1) Request rate + error rate, (2) Latency heatmap with P50/P95/P99, (3) Token throughput (input vs output), (4) GPU utilization per replica, (5) Cost accumulator per model. Build these first.</div>
+    </div>
+
+    <div class="code-wrap" style="margin-top:20px;">
+      <span class="code-label">PYTHON — Prometheus Metrics</span>
+      <div class="code-block"><span class="c-kw">from</span> <span class="c-bi">prometheus_client</span> <span class="c-kw">import</span> <span class="c-type">Counter</span>, <span class="c-type">Histogram</span>, <span class="c-type">Gauge</span>, <span class="c-fn">start_http_server</span>
+<span class="c-kw">import</span> time
+
+<span class="c-cmt"># Define metrics</span>
+REQUEST_COUNT = <span class="c-type">Counter</span>(<span class="c-str">"llm_requests_total"</span>, <span class="c-str">"Total LLM requests"</span>, [<span class="c-str">"model"</span>, <span class="c-str">"status"</span>])
+TOKEN_COUNTER = <span class="c-type">Counter</span>(<span class="c-str">"llm_tokens_total"</span>, <span class="c-str">"Total tokens processed"</span>, [<span class="c-str">"model"</span>, <span class="c-str">"type"</span>])
+LATENCY = <span class="c-type">Histogram</span>(<span class="c-str">"llm_latency_seconds"</span>, <span class="c-str">"LLM request latency"</span>,
+                    buckets=[<span class="c-num">0.1</span>, <span class="c-num">0.5</span>, <span class="c-num">1.0</span>, <span class="c-num">2.0</span>, <span class="c-num">5.0</span>, <span class="c-num">10.0</span>, <span class="c-num">30.0</span>])
+GPU_UTIL = <span class="c-type">Gauge</span>(<span class="c-str">"gpu_utilization_percent"</span>, <span class="c-str">"GPU utilization"</span>, [<span class="c-str">"gpu_id"</span>])
+
+<span class="c-cmt"># Instrument your LLM calls</span>
+<span class="c-kw">def</span> <span class="c-fn">generate_with_metrics</span>(prompt: <span class="c-type">str</span>, model: <span class="c-type">str</span> = <span class="c-str">"claude-3-5-sonnet"</span>) -> <span class="c-type">str</span>:
+    start = time.<span class="c-fn">time</span>()
+    <span class="c-kw">try</span>:
+        response = llm.<span class="c-fn">invoke</span>(prompt)
+        REQUEST_COUNT.<span class="c-fn">labels</span>(model=model, status=<span class="c-str">"success"</span>).<span class="c-fn">inc</span>()
+        TOKEN_COUNTER.<span class="c-fn">labels</span>(model=model, type=<span class="c-str">"input"</span>).<span class="c-fn">inc</span>(<span class="c-fn">count_tokens</span>(prompt))
+        TOKEN_COUNTER.<span class="c-fn">labels</span>(model=model, type=<span class="c-str">"output"</span>).<span class="c-fn">inc</span>(<span class="c-fn">count_tokens</span>(response))
+        <span class="c-kw">return</span> response
+    <span class="c-kw">except</span> <span class="c-type">Exception</span> <span class="c-kw">as</span> e:
+        REQUEST_COUNT.<span class="c-fn">labels</span>(model=model, status=<span class="c-str">"error"</span>).<span class="c-fn">inc</span>()
+        <span class="c-kw">raise</span>
+    <span class="c-kw">finally</span>:
+        LATENCY.<span class="c-fn">observe</span>(time.<span class="c-fn">time</span>() - start)
+
+<span class="c-fn">start_http_server</span>(<span class="c-num">9090</span>)  <span class="c-cmt"># expose /metrics endpoint for Prometheus</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 5 -->
+<div class="container">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">Section 05</div>
+      <h2>Drift Detection &amp; Continuous Learning</h2>
+      <p>Models trained on last month's data degrade on next month's traffic. Embedding drift detection catches this before users notice — then automatically triggers the fine-tuning pipeline.</p>
+    </div>
+
+    <div class="concept-grid" style="margin-bottom:24px;">
+      <div class="concept-card">
+        <div class="concept-icon">📐</div>
+        <div class="concept-title">Input Drift</div>
+        <div class="concept-desc">Track embedding centroid distance week over week. KL divergence on distance distributions catches distribution shifts. Alert when KS test p-value &lt; 0.05.</div>
+      </div>
+      <div class="concept-card">
+        <div class="concept-icon">📤</div>
+        <div class="concept-title">Output Drift</div>
+        <div class="concept-desc">Track response length distribution, refusal rate, and sentiment. Sudden change in any of these signals behavioral drift — often before quality metrics show it.</div>
+      </div>
+      <div class="concept-card">
+        <div class="concept-icon">🔁</div>
+        <div class="concept-title">Continuous Learning</div>
+        <div class="concept-desc">Drift alert → trigger KFP/SageMaker pipeline → fine-tune on new data + original data → evaluate → register in MLflow → canary deploy. Full loop automated.</div>
+      </div>
+    </div>
+
+    <div class="code-wrap">
+      <span class="code-label">PYTHON — Embedding Drift Detector</span>
+      <div class="code-block"><span class="c-kw">import</span> <span class="c-bi">numpy</span> <span class="c-kw">as</span> np
+<span class="c-kw">from</span> <span class="c-bi">scipy</span> <span class="c-kw">import</span> stats
+
+<span class="c-kw">class</span> <span class="c-type">DriftDetector</span>:
+    <span class="c-kw">def</span> <span class="c-fn">__init__</span>(<span class="c-bi">self</span>, baseline_embeddings: np.<span class="c-type">ndarray</span>):
+        <span class="c-bi">self</span>.baseline = baseline_embeddings
+        <span class="c-bi">self</span>.baseline_centroid = baseline_embeddings.<span class="c-fn">mean</span>(axis=<span class="c-num">0</span>)
+
+    <span class="c-kw">def</span> <span class="c-fn">check_drift</span>(<span class="c-bi">self</span>, current_embeddings: np.<span class="c-type">ndarray</span>) -> <span class="c-type">dict</span>:
+        current_centroid = current_embeddings.<span class="c-fn">mean</span>(axis=<span class="c-num">0</span>)
+
+        <span class="c-cmt"># Centroid distance drift</span>
+        centroid_drift = np.linalg.<span class="c-fn">norm</span>(current_centroid - <span class="c-bi">self</span>.baseline_centroid)
+
+        <span class="c-cmt"># KL divergence on distance distributions</span>
+        baseline_dists = np.linalg.<span class="c-fn">norm</span>(<span class="c-bi">self</span>.baseline - <span class="c-bi">self</span>.baseline_centroid, axis=<span class="c-num">1</span>)
+        current_dists = np.linalg.<span class="c-fn">norm</span>(current_embeddings - <span class="c-bi">self</span>.baseline_centroid, axis=<span class="c-num">1</span>)
+        ks_stat, p_value = stats.<span class="c-fn">ks_2samp</span>(baseline_dists, current_dists)
+
+        <span class="c-kw">return</span> {
+            <span class="c-str">"centroid_drift"</span>: <span class="c-fn">float</span>(centroid_drift),
+            <span class="c-str">"ks_statistic"</span>: <span class="c-fn">float</span>(ks_stat),
+            <span class="c-str">"p_value"</span>: <span class="c-fn">float</span>(p_value),
+            <span class="c-str">"drift_detected"</span>: p_value &lt; <span class="c-num">0.05</span>
+        }</div>
+    </div>
+  </div>
+</div>
+
+<!-- INTERACTIVE WIDGET -->
+<div class="container">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">Interactive</div>
+      <h2>Live Metrics Dashboard</h2>
+      <p>Simulated production metrics with live animation. Click "Trigger Drift Alert" to simulate a quality degradation event.</p>
+    </div>
+
+    <div class="widget-box">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <div>
+          <div class="widget-title">Production LLM Metrics</div>
+          <div class="widget-subtitle">Updating every 2 seconds — simulated production traffic</div>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button class="sim-btn" onclick="triggerDrift()" id="drift-btn" style="background:var(--red);">Trigger Drift Alert</button>
+          <button class="sim-btn" onclick="resetDrift()" id="reset-btn" style="display:none;background:var(--teal);">Reset</button>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:20px;" id="metric-grid">
+        <div class="metric-card ok" id="card-latency">
+          <div class="metric-label">P99 Latency</div>
+          <div class="metric-value ok" id="val-latency">1.2s</div>
+          <div class="metric-status status-ok" id="status-latency">OK — threshold 5s</div>
+        </div>
+        <div class="metric-card ok" id="card-faith">
+          <div class="metric-label">Faithfulness Score</div>
+          <div class="metric-value ok" id="val-faith">0.88</div>
+          <div class="metric-status status-ok" id="status-faith">OK — threshold 0.80</div>
+        </div>
+        <div class="metric-card ok" id="card-rps">
+          <div class="metric-label">Requests / sec</div>
+          <div class="metric-value ok" id="val-rps">18</div>
+          <div class="metric-status status-ok" id="status-rps">Normal load</div>
+        </div>
+        <div class="metric-card ok" id="card-gpu">
+          <div class="metric-label">GPU Utilization</div>
+          <div class="metric-value ok" id="val-gpu">74%</div>
+          <div class="metric-status status-ok" id="status-gpu">OK — threshold 95%</div>
+        </div>
+      </div>
+
+      <div id="drift-alert-msg" style="display:none;padding:16px 20px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.4);border-radius:10px;font-size:13px;color:var(--red);">
+        <strong>DRIFT ALERT:</strong> Faithfulness score 0.76 — below threshold 0.80. KS test p-value 0.012 &lt; 0.05. Triggering fine-tune pipeline: <code style="background:rgba(239,68,68,0.1);padding:2px 6px;border-radius:4px;font-size:12px;">kfp_client.run_pipeline("llm-finetune-pipeline")</code>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="container">
+    <p>Agentic AI Mastery — Day 20: AI System Observability</p>
+  </div>
+</footer>
+
+<section style="max-width:900px;margin:2rem auto;padding:0 1.5rem 3rem;">
+  <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;">
+    <div style="font-size:0.75rem;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:1px;">Practice</div>
+    <h2 style="margin:0;font-size:1.4rem;font-weight:700;color:white;">Exercises</h2>
+  </div>
+  <p style="color:#9ca3af;margin-bottom:1.5rem;">Hands-on observability exercises — instrument a FastAPI LLM service with Prometheus, set up LangSmith tracing, and implement a nightly RAGAS evaluation job.</p>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;">
+    <a href="../exercises/day20_exercises.html" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.6rem 1.25rem;background:linear-gradient(135deg,#7c3aed,#0d9488);color:white;font-weight:700;font-size:0.9rem;border-radius:8px;text-decoration:none;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">Open Exercises →</a>
+    <a href="day21.html" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.6rem 1.25rem;background:var(--surface2);border:1px solid var(--border);color:var(--purple-light);font-weight:700;font-size:0.9rem;border-radius:8px;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.borderColor='#7c3aed'" onmouseout="this.style.borderColor='var(--border)'">Day 21: Week 3 Capstone →</a>
+  </div>
+</section>
+
+<script src="../bg-animation.js"></script>
+<script>
+// ── Mark Complete ─────────────────────────────────────────────────────────────
+function markComplete() {
+  try {
+    const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
+    p[20] = 'done';
+    localStorage.setItem('aai_progress', JSON.stringify(p));
+    const btn = document.getElementById('complete-btn');
+    btn.textContent = 'Completed!';
+    btn.classList.remove('complete');
+    btn.classList.add('done');
+  } catch(e) {}
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  try {
+    const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
+    if (!p[20] || p[20] === 'locked') {
+      p[20] = 'active';
+      localStorage.setItem('aai_progress', JSON.stringify(p));
+    }
+    if (p[20] === 'done') {
+      const btn = document.getElementById('complete-btn');
+      btn.textContent = 'Completed!';
+      btn.classList.remove('complete');
+      btn.classList.add('done');
+    }
+  } catch(e) {}
+});
+
+// ── Live Metrics Dashboard ────────────────────────────────────────────────────
+let metricsInterval = null;
+let driftMode = false;
+
+const ranges = {
+  latency: { min: 0.8, max: 2.5, unit: 's', warn: 3.5, alert: 5.0, fmt: v => v.toFixed(1) + 's' },
+  faith:   { min: 0.82, max: 0.93, unit: '', warn: 0.80, alert: 0.75, fmt: v => v.toFixed(2), lowerIsBad: true },
+  rps:     { min: 12, max: 28, unit: '', warn: null, alert: null, fmt: v => Math.round(v).toString() },
+  gpu:     { min: 67, max: 94, unit: '%', warn: 90, alert: 95, fmt: v => Math.round(v) + '%' }
+};
+
+function getRandom(min, max) {
+  return min + Math.random() * (max - min);
+}
+
+function updateCard(key, value) {
+  const r = ranges[key];
+  const valEl = document.getElementById('val-' + key);
+  const cardEl = document.getElementById('card-' + key);
+  const statusEl = document.getElementById('status-' + key);
+  const fmtVal = r.fmt(value);
+
+  let state = 'ok';
+  if (r.lowerIsBad) {
+    if (r.alert !== null && value < r.alert) state = 'alert';
+    else if (r.warn !== null && value < r.warn) state = 'warn';
+  } else {
+    if (r.alert !== null && value > r.alert) state = 'alert';
+    else if (r.warn !== null && value > r.warn) state = 'warn';
+  }
+
+  valEl.textContent = fmtVal;
+  valEl.className = 'metric-value ' + state;
+  cardEl.className = 'metric-card ' + state;
+
+  const statusMap = {
+    ok: { cls: 'status-ok', latency: 'OK — threshold 5s', faith: 'OK — threshold 0.80', rps: 'Normal load', gpu: 'OK — threshold 95%' },
+    warn: { cls: 'status-warn', latency: 'Warning — approaching limit', faith: 'Warning — below 0.80', rps: 'Elevated', gpu: 'High — monitor closely' },
+    alert: { cls: 'status-alert', latency: 'ALERT — SLO breached', faith: 'ALERT — quality degraded', rps: 'Very high', gpu: 'ALERT — overloaded' }
+  };
+  statusEl.className = 'metric-status ' + statusMap[state].cls;
+  statusEl.textContent = statusMap[state][key] || state.toUpperCase();
+}
+
+function tick() {
+  if (driftMode) {
+    updateCard('latency', getRandom(1.0, 1.8));
+    updateCard('faith', getRandom(0.72, 0.78));
+    updateCard('rps', getRandom(15, 25));
+    updateCard('gpu', getRandom(70, 85));
+  } else {
+    updateCard('latency', getRandom(ranges.latency.min, ranges.latency.max));
+    updateCard('faith', getRandom(ranges.faith.min, ranges.faith.max));
+    updateCard('rps', getRandom(ranges.rps.min, ranges.rps.max));
+    updateCard('gpu', getRandom(ranges.gpu.min, ranges.gpu.max));
+  }
+}
+
+metricsInterval = setInterval(tick, 2000);
+tick();
+
+function triggerDrift() {
+  driftMode = true;
+  document.getElementById('drift-alert-msg').style.display = 'block';
+  document.getElementById('drift-btn').style.display = 'none';
+  document.getElementById('reset-btn').style.display = 'inline-flex';
+  tick();
+}
+
+function resetDrift() {
+  driftMode = false;
+  document.getElementById('drift-alert-msg').style.display = 'none';
+  document.getElementById('drift-btn').style.display = 'inline-flex';
+  document.getElementById('reset-btn').style.display = 'none';
+  tick();
+}
+</script>
+</body>
+</html>
