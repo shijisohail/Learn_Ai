@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 5: Final Capstone | Agentic AI Mastery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0a0a0f;
+  --card: #141420;
+  --surface2: #1a1a2e;
+  --border: #2a2a45;
+  --purple: #7c3aed;
+  --purple-light: #a855f7;
+  --teal: #0d9488;
+  --teal-light: #2dd4bf;
+  --green: #10b981;
+  --yellow: #f59e0b;
+  --red: #ef4444;
+  --blue: #3b82f6;
+  --text: #e2e8f0;
+  --muted: #64748b;
+  --font: 'Inter', sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 30% 10%, rgba(245,158,11,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 50% at 70% 80%, rgba(124,58,237,0.06) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  position: relative;
+  z-index: 1;
+}
+
+nav {
+  border-bottom: 1px solid var(--border);
+  padding: 14px 0;
+  position: sticky;
+  top: 0;
+  background: rgba(10,10,15,0.88);
+  backdrop-filter: blur(12px);
+  z-index: 100;
+}
+
+.nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: -0.3px;
+  text-decoration: none;
+  color: var(--text);
+}
+
+.logo-icon {
+  width: 30px; height: 30px;
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.nav-btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--text);
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.nav-btn:hover { background: var(--card); transform: translateY(-1px); border-color: rgba(245,158,11,0.4); }
+.nav-btn.active { border-color: rgba(245,158,11,0.5); color: #fbbf24; }
+
+/* HERO — special treatment for finale */
+.week-hero {
+  padding: 80px 0 60px;
+  text-align: center;
+}
+
+.week-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 18px;
+  border-radius: 20px;
+  background: rgba(245,158,11,0.1);
+  border: 1px solid rgba(245,158,11,0.3);
+  font-size: 11px;
+  font-weight: 700;
+  color: #fbbf24;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 22px;
+}
+
+.week-num {
+  font-size: clamp(48px, 8vw, 96px);
+  font-weight: 900;
+  letter-spacing: -4px;
+  line-height: 1;
+  background: linear-gradient(135deg, #fbbf24 0%, #f97316 30%, #ef4444 60%, #a855f7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  background-size: 200% 200%;
+  animation: gradShift 4s ease infinite;
+  margin-bottom: 12px;
+}
+
+@keyframes gradShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.week-theme {
+  font-size: clamp(20px, 4vw, 32px);
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin-bottom: 12px;
+}
+
+.week-days-range {
+  font-size: 15px;
+  color: var(--muted);
+  margin-bottom: 28px;
+  font-family: var(--mono);
+}
+
+.skills-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 32px;
+}
+
+.skill-chip {
+  padding: 5px 14px;
+  border-radius: 20px;
+  background: rgba(245,158,11,0.1);
+  border: 1px solid rgba(245,158,11,0.3);
+  font-size: 12px;
+  font-weight: 600;
+  color: #fbbf24;
+}
+
+/* MILESTONE BANNER */
+.milestone-banner {
+  background: linear-gradient(135deg, rgba(245,158,11,0.08), rgba(124,58,237,0.08));
+  border: 1px solid rgba(245,158,11,0.25);
+  border-radius: 16px;
+  padding: 24px 28px;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.milestone-banner p {
+  font-size: 15px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.milestone-banner strong {
+  color: #fbbf24;
+}
+
+.section-header {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--muted);
+  margin-bottom: 22px;
+  margin-top: 56px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.section-header::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.days-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 22px;
+  margin-bottom: 56px;
+}
+
+/* Day cards for capstone are larger / more prominent */
+.day-card {
+  background: var(--card);
+  border: 1px solid rgba(245,158,11,0.25);
+  border-radius: 20px;
+  overflow: hidden;
+  text-decoration: none;
+  color: var(--text);
+  display: block;
+  transition: transform 0.25s, border-color 0.25s, box-shadow 0.25s;
+  position: relative;
+}
+.day-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+  border-color: rgba(245,158,11,0.5);
+}
+
+.day-card-bar { height: 4px; }
+.day-card-inner { padding: 28px 28px 22px; }
+
+.day-card-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--muted);
+  margin-bottom: 6px;
+  font-family: var(--mono);
+}
+
+.day-card-title {
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  margin-bottom: 14px;
+  line-height: 1.2;
+}
+
+.day-card-desc {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-bottom: 18px;
+}
+
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+
+.tag {
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: var(--mono);
+}
+
+.day-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.day-card-arrow { font-size: 18px; transition: transform 0.2s; }
+.day-card:hover .day-card-arrow { transform: translateX(5px); }
+
+/* FINAL CAPSTONE CARD */
+.capstone-card {
+  background: var(--card);
+  border: 1px solid rgba(245,158,11,0.35);
+  border-radius: 20px;
+  padding: 40px;
+  margin-bottom: 56px;
+  position: relative;
+  overflow: hidden;
+}
+
+.capstone-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #fbbf24, #f97316, #ef4444, #a855f7, #2dd4bf);
+}
+
+.capstone-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #fbbf24;
+  margin-bottom: 12px;
+}
+
+.capstone-title {
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: -0.8px;
+  margin-bottom: 12px;
+  line-height: 1.15;
+}
+
+.capstone-desc {
+  font-size: 15px;
+  color: var(--muted);
+  line-height: 1.7;
+  max-width: 680px;
+  margin-bottom: 24px;
+}
+
+.capstone-items {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.capstone-items li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.capstone-items li::before {
+  content: '→';
+  color: #fbbf24;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* COMPLETION STATS */
+.completion-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px;
+  margin-bottom: 56px;
+}
+
+.completion-stat {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 18px;
+  text-align: center;
+}
+
+.completion-stat-value {
+  font-size: 32px;
+  font-weight: 900;
+  letter-spacing: -1.5px;
+  margin-bottom: 4px;
+  background: linear-gradient(135deg, #fbbf24, #f97316);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.completion-stat-label {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.week-footer-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 32px 0 48px;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.footer-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 10px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  color: var(--text);
+  transition: all 0.2s;
+}
+.footer-nav-btn:hover { border-color: var(--yellow); transform: translateY(-2px); }
+.footer-nav-btn.home { border-color: rgba(245,158,11,0.4); color: #fbbf24; }
+
+@media (max-width: 700px) {
+  .days-grid { grid-template-columns: 1fr; }
+  .completion-row { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="container">
+    <div class="nav-inner">
+      <a href="../index.html" class="logo">
+        <div class="logo-icon">🏆</div>
+        Agentic AI Mastery
+      </a>
+      <div class="nav-links">
+        <a href="../index.html" class="nav-btn">← Dashboard</a>
+        <a href="week1.html" class="nav-btn">Week 1</a>
+        <a href="week2.html" class="nav-btn">Week 2</a>
+        <a href="week3.html" class="nav-btn">Week 3</a>
+        <a href="week4.html" class="nav-btn">Week 4</a>
+        <a href="week5.html" class="nav-btn active">Week 5</a>
+        <a href="../exercises/index.html" class="nav-btn" style="border-color:rgba(245,158,11,0.35);color:#fbbf24;">Exercises</a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<main>
+<div class="container">
+
+  <section class="week-hero">
+    <div class="week-eyebrow">Final Chapter — 30-Day Agentic AI Mastery</div>
+    <div class="week-num">Week 5</div>
+    <div class="week-theme">Final Capstone</div>
+    <div class="week-days-range">Days 29 – 30</div>
+    <div class="skills-row">
+      <span class="skill-chip">AI Copilot Architecture</span>
+      <span class="skill-chip">Full-Stack Build</span>
+      <span class="skill-chip">System Design</span>
+      <span class="skill-chip">Production Ship</span>
+    </div>
+  </section>
+
+  <!-- MILESTONE BANNER -->
+  <div class="milestone-banner">
+    <p>
+      You have covered <strong>28 days</strong> of core curriculum — LLMs, agentic frameworks, ML fundamentals,
+      fine-tuning, MLOps, prompt engineering, safety, and cloud deployment. These final two days exist to
+      <strong>synthesize everything</strong> into a single, production-grade AI system that demonstrates
+      Senior/Staff-level engineering competence.
+    </p>
+  </div>
+
+  <!-- COMPLETION STATS -->
+  <div class="section-header">30-Day Achievement Summary</div>
+  <div class="completion-row">
+    <div class="completion-stat">
+      <div class="completion-stat-value">30</div>
+      <div class="completion-stat-label">Days Covered</div>
+    </div>
+    <div class="completion-stat">
+      <div class="completion-stat-value">203</div>
+      <div class="completion-stat-label">Glossary Terms</div>
+    </div>
+    <div class="completion-stat">
+      <div class="completion-stat-value">116</div>
+      <div class="completion-stat-label">Interview Q&A</div>
+    </div>
+    <div class="completion-stat">
+      <div class="completion-stat-value">5</div>
+      <div class="completion-stat-label">Weeks Complete</div>
+    </div>
+  </div>
+
+  <!-- DAY CARDS -->
+  <div class="section-header">Days 29 – 30</div>
+  <div class="days-grid">
+
+    <a href="../days/day29.html" class="day-card">
+      <div class="day-card-bar" style="background:linear-gradient(90deg,#f59e0b,#a855f7)"></div>
+      <div class="day-card-inner">
+        <div class="day-card-label">Day 29</div>
+        <div class="day-card-title" style="color:#fbbf24">AI Copilot Architecture</div>
+        <div class="day-card-desc">
+          Design and implement the architecture of a production AI Copilot system — covering context management,
+          tool routing, memory tiers, streaming UX, and observability hooks.
+        </div>
+        <div class="tag-row">
+          <span class="tag">Context management</span>
+          <span class="tag">Tool routing</span>
+          <span class="tag">Memory tiers</span>
+          <span class="tag">Streaming UX</span>
+        </div>
+        <div class="day-card-footer">
+          <span>Architecture → implementation</span>
+          <span class="day-card-arrow" style="color:#fbbf24">→</span>
+        </div>
+      </div>
+    </a>
+
+    <a href="../days/day30.html" class="day-card" style="border-color:rgba(239,68,68,0.3)">
+      <div class="day-card-bar" style="background:linear-gradient(90deg,#fbbf24,#f97316,#ef4444,#a855f7)"></div>
+      <div class="day-card-inner">
+        <div class="day-card-label">Day 30 · Final Capstone</div>
+        <div class="day-card-title" style="background:linear-gradient(135deg,#fbbf24,#f97316,#ef4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">30-Day Final Capstone</div>
+        <div class="day-card-desc">
+          Build and ship the complete capstone project integrating all 30 days of learning — a full-stack
+          AI system from architecture diagram to deployed, monitored, production endpoint.
+        </div>
+        <div class="tag-row">
+          <span class="tag">Full-stack</span>
+          <span class="tag">Multi-agent</span>
+          <span class="tag">RAG</span>
+          <span class="tag">Fine-tuned model</span>
+          <span class="tag">K8s deploy</span>
+        </div>
+        <div class="day-card-footer">
+          <span>The complete system</span>
+          <span class="day-card-arrow" style="color:#fbbf24">→</span>
+        </div>
+      </div>
+    </a>
+
+  </div>
+
+  <!-- WHAT YOU'LL BUILD -->
+  <div class="section-header">What You'll Build</div>
+  <div class="capstone-card">
+    <div class="capstone-eyebrow">30-Day Final Capstone Project</div>
+    <div class="capstone-title">Production AI Copilot: Full-Stack Architecture to Deployment</div>
+    <div class="capstone-desc">
+      The capstone integrates every major concept from the 30-day curriculum into a single, shipable
+      AI Copilot system. You will design, build, test, and deploy a production-grade multi-agent
+      system that a Senior/Staff AI Engineer would be proud to put on a portfolio.
+    </div>
+    <ul class="capstone-items">
+      <li>Copilot architecture diagram: context window manager, short/long-term memory tiers, tool router</li>
+      <li>Multi-agent backend: LangGraph orchestrator + specialist agents (Code, Docs, Search, Critic)</li>
+      <li>RAG pipeline: LangChain LCEL + pgvector with HyDE retrieval and cross-encoder reranking</li>
+      <li>Fine-tuned domain adapter (LoRA) loaded via HuggingFace PEFT for domain-specific responses</li>
+      <li>FastAPI backend with SSE streaming, JWT multi-tenant auth, and Pydantic structured outputs</li>
+      <li>NeMo Guardrails layer blocking unsafe prompts with audit logging to MLflow</li>
+      <li>RAGAS evaluation suite + LangSmith traces providing real-time quality monitoring</li>
+      <li>Docker image + Kubernetes Helm chart deployed to AWS EKS with GPU node pool and HPA</li>
+      <li>GitHub Actions CI/CD: lint → test → eval → deploy → smoke test on every push to main</li>
+    </ul>
+  </div>
+
+</div>
+</main>
+
+<div class="container">
+  <div class="week-footer-nav">
+    <a href="week4.html" class="footer-nav-btn">← Week 4: Prompt Eng & Cloud</a>
+    <a href="../index.html" class="footer-nav-btn home">🏠 Back to Dashboard</a>
+  </div>
+</div>
+
+<script src="../bg-animation.js"></script>
+</body>
+</html>

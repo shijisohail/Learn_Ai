@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 27: Docker & Kubernetes for AI — Containerization, GPU scheduling & Helm charts</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f; --card: #141420; --surface2: #1a1a2e; --border: #2a2a45;
+  --purple: #7c3aed; --purple-light: #a855f7; --teal: #0d9488; --green: #10b981;
+  --red: #ef4444; --yellow: #f59e0b; --text: #e2e8f0; --muted: #64748b;
+  --font: 'Inter', sans-serif; --mono: 'JetBrains Mono', monospace;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; overflow-x: hidden; }
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(124,58,237,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 90% 80%, rgba(13,148,136,0.05) 0%, transparent 60%);
+  pointer-events: none; z-index: 0;
+}
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+nav { border-bottom: 1px solid var(--border); padding: 14px 0; background: rgba(10,10,15,0.85); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; }
+.nav-inner { max-width: 1100px; margin: 0 auto; padding: 0 24px; height: 52px; display: flex; align-items: center; justify-content: space-between; }
+.nav-btn { padding: 7px 18px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 13px; font-weight: 600; text-decoration: none; transition: all 0.2s; font-family: inherit; cursor: pointer; }
+.nav-btn:hover { border-color: var(--purple); color: var(--text); }
+.nav-btn.next { border-color: rgba(124,58,237,0.5); color: var(--purple-light); }
+.nav-btn.next:hover { background: var(--purple); color: white; border-color: var(--purple); }
+.nav-btn.complete { border-color: rgba(245,158,11,0.5); color: var(--yellow); }
+.nav-btn.complete:hover { background: var(--yellow); color: #0a0a0f; border-color: var(--yellow); }
+.nav-btn.done { background: rgba(16,185,129,0.15); border-color: var(--green); color: var(--green); }
+.nav-brand { font-size: 14px; font-weight: 700; color: var(--muted); text-decoration: none; letter-spacing: -0.2px; transition: color 0.2s; }
+.nav-brand:hover { color: var(--text); }
+
+.day-hero { padding: 56px 0 40px; }
+.day-num { font-size: 12px; font-weight: 700; color: var(--yellow); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+.day-hero h1 { font-size: clamp(32px, 5vw, 56px); font-weight: 900; letter-spacing: -2px; margin-bottom: 16px; }
+.day-hero h1 span { background: linear-gradient(135deg, #a855f7, #34d399); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.day-hero p { font-size: 17px; color: var(--muted); max-width: 600px; line-height: 1.6; margin-bottom: 28px; }
+.topic-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+.topic-pill { padding: 5px 12px; border-radius: 20px; background: var(--surface2); border: 1px solid var(--border); font-size: 12px; color: var(--muted); font-weight: 500; }
+
+.section { padding: 56px 0; border-top: 1px solid var(--border); }
+.section-header { margin-bottom: 32px; }
+.section-num { font-size: 11px; font-weight: 700; color: var(--purple-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.section-header h2 { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 10px; }
+.section-header p { color: var(--muted); font-size: 15px; line-height: 1.6; max-width: 640px; }
+
+.code-block { background: #0d1117; border: 1px solid #30363d; border-radius: 12px; padding: 24px; font-family: var(--mono); font-size: 12.5px; line-height: 1.8; overflow-x: auto; white-space: pre; }
+.code-wrap { position: relative; margin-top: 16px; }
+.code-label { position: absolute; top: -10px; left: 16px; background: var(--purple); color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.5px; }
+.c-cmt { color: #8b949e; }
+.c-kw { color: #ff7b72; }
+.c-fn { color: #d2a8ff; }
+.c-str { color: #a5d6ff; }
+.c-type { color: #ffa657; }
+.c-num { color: #f2cc60; }
+.c-bi { color: #79c0ff; }
+.c-dec { color: #ffa657; }
+
+.callout { background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.25); border-radius: 12px; padding: 16px 20px; display: flex; gap: 12px; align-items: flex-start; margin: 20px 0; }
+.callout-icon { font-size: 18px; flex-shrink: 0; }
+.callout-text { font-size: 13px; color: var(--text); line-height: 1.6; }
+.callout-text strong { color: var(--yellow); }
+.callout.info { background: rgba(124,58,237,0.07); border-color: rgba(124,58,237,0.25); }
+.callout.info .callout-text strong { color: var(--purple-light); }
+
+.bullet-list { list-style: none; display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.bullet-list li { font-size: 14px; color: var(--text); display: flex; align-items: flex-start; gap: 10px; line-height: 1.6; }
+.bullet-list li::before { content: '▸'; color: var(--purple-light); flex-shrink: 0; margin-top: 1px; }
+
+.info-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-top: 20px; }
+.info-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+.info-card.highlight-purple { border-color: rgba(124,58,237,0.4); }
+.info-card.highlight-teal { border-color: rgba(13,148,136,0.4); }
+.info-card.highlight-green { border-color: rgba(16,185,129,0.4); }
+.info-card.highlight-yellow { border-color: rgba(245,158,11,0.4); }
+.info-icon { font-size: 28px; margin-bottom: 10px; }
+.info-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+.info-desc { font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+/* Widget */
+.widget-box { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-top: 24px; }
+.widget-title { font-size: 16px; font-weight: 800; margin-bottom: 6px; }
+.widget-desc { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+.option-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+.check-item { display: flex; align-items: center; gap: 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; cursor: pointer; }
+.check-item input { accent-color: var(--purple); width: 15px; height: 15px; cursor: pointer; }
+.check-item label { font-size: 13px; font-weight: 500; cursor: pointer; }
+.select-row { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+.select-row label { font-size: 13px; font-weight: 600; }
+.select-row select { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); padding: 6px 10px; font-size: 13px; font-family: var(--font); }
+.run-btn { padding: 10px 24px; border-radius: 8px; background: linear-gradient(135deg, var(--purple), var(--teal)); border: none; color: white; font-size: 14px; font-weight: 700; font-family: var(--font); cursor: pointer; transition: opacity 0.2s; }
+.run-btn:hover { opacity: 0.85; }
+.generated-output { margin-top: 16px; display: none; }
+.copy-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.copy-top span { font-size: 12px; font-weight: 700; color: var(--green); }
+.copy-top button { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); padding: 4px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; font-family: var(--font); }
+.copy-top button:hover { border-color: var(--purple); color: var(--text); }
+
+footer { padding: 40px 0; border-top: 1px solid var(--border); text-align: center; color: var(--muted); font-size: 13px; }
+
+@media(max-width:700px) {
+  .info-grid { grid-template-columns: 1fr; }
+  .option-row { flex-direction: column; }
+}
+</style>
+</head>
+<body data-animation-density="high">
+
+<nav>
+  <div class="nav-inner">
+    <a href="day26.html" class="nav-btn">← Day 26</a>
+    <a href="../index.html" class="nav-brand">Agentic AI Mastery</a>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <a href="day28.html" class="nav-btn next">Day 28 →</a>
+      <button class="nav-btn complete" id="complete-btn" onclick="markComplete()">Mark Complete</button>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="day-hero">
+    <div class="day-num">Day 27 — Docker & Kubernetes for AI</div>
+    <h1>Containerization,<br><span>GPU Scheduling & Helm</span></h1>
+    <p>Package your AI services into portable containers, orchestrate them across GPU clusters with Kubernetes, and manage production deployments with Helm. The gap between a local demo and a scalable production system is exactly this stack.</p>
+    <div class="topic-pills">
+      <span class="topic-pill">Docker Multi-Stage</span>
+      <span class="topic-pill">NVIDIA Container Toolkit</span>
+      <span class="topic-pill">K8s GPU Scheduling</span>
+      <span class="topic-pill">Helm Charts</span>
+      <span class="topic-pill">Batch Inference</span>
+      <span class="topic-pill">HPA</span>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 1 -->
+<div class="container">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">01 — Why Containerize</div>
+      <h2>Why Containerize AI Applications</h2>
+      <p>GPU dependencies, Python packages, model weights, and CUDA versions form a notoriously fragile environment. Docker solves "works on my GPU" permanently.</p>
+    </div>
+
+    <div class="info-grid">
+      <div class="info-card highlight-purple">
+        <div class="info-icon">📦</div>
+        <div class="info-title">Reproducibility</div>
+        <div class="info-desc">"Works on my GPU" becomes "works everywhere." CUDA version, Python packages, system libs — all locked in the image. Dev, staging, and prod are identical.</div>
+      </div>
+      <div class="info-card highlight-teal">
+        <div class="info-icon">🔀</div>
+        <div class="info-title">Microservices</div>
+        <div class="info-desc">Separate your FastAPI gateway, embedding service, and LLM backend into independent containers. Scale the embedding service 10x without touching the LLM container.</div>
+      </div>
+      <div class="info-card highlight-green">
+        <div class="info-icon">⚙️</div>
+        <div class="info-title">Kubernetes Orchestration</div>
+        <div class="info-desc">Kubernetes schedules AI containers on GPU nodes, runs health checks, restarts crashed LLM services, and performs rolling updates with zero downtime.</div>
+      </div>
+      <div class="info-card highlight-yellow">
+        <div class="info-icon">🖥️</div>
+        <div class="info-title">GPU in Containers</div>
+        <div class="info-desc">NVIDIA Container Toolkit exposes host GPUs to containers. Request <code style="background:var(--surface2);padding:1px 4px;border-radius:3px;font-size:11px;font-family:var(--mono);">nvidia.com/gpu: 1</code> as a Kubernetes resource like CPU or RAM.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 2 -->
+<div class="container">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">02 — Dockerizing LLM Services</div>
+      <h2>Dockerizing a FastAPI LLM Service</h2>
+      <p>Multi-stage builds keep images lean. GPU-enabled base images require NVIDIA CUDA. Model weights can be baked in, mounted as a volume, or downloaded at startup — each has tradeoffs.</p>
+    </div>
+
+    <div class="callout info">
+      <span class="callout-icon">💡</span>
+      <div class="callout-text"><strong>Model weight strategy:</strong> Bake into image for immutable deploys (large image, fast startup). Volume mount for shared weights across pods (fast image, needs PVC). Download at startup for flexibility (slow cold start, use init containers).</div>
+    </div>
+
+    <div class="code-wrap">
+      <span class="code-label">DOCKERFILE — Multi-Stage GPU Build</span>
+      <div class="code-block"><span class="c-cmt"># Stage 1: Builder</span>
+<span class="c-kw">FROM</span> <span class="c-type">python:3.11-slim</span> <span class="c-kw">AS</span> builder
+<span class="c-kw">WORKDIR</span> /app
+<span class="c-kw">COPY</span> requirements.txt .
+<span class="c-kw">RUN</span> pip install --user --no-cache-dir -r requirements.txt
+
+<span class="c-cmt"># Stage 2: Runtime with CUDA support</span>
+<span class="c-kw">FROM</span> <span class="c-type">nvidia/cuda:12.1.0-cudnn8-runtime-ubuntu22.04</span>
+<span class="c-kw">RUN</span> apt-get update && apt-get install -y python3.11 python3-pip && rm -rf /var/lib/apt/lists/*
+<span class="c-kw">WORKDIR</span> /app
+
+<span class="c-cmt"># Copy installed packages from builder</span>
+<span class="c-kw">COPY</span> --from=builder /root/.local /root/.local
+<span class="c-kw">COPY</span> . .
+
+<span class="c-kw">ENV</span> PATH=/root/.local/bin:$PATH
+<span class="c-kw">ENV</span> PYTHONUNBUFFERED=1
+<span class="c-kw">ENV</span> MODEL_PATH=/app/models/llama3-3b
+
+<span class="c-kw">HEALTHCHECK</span> --interval=30s --timeout=10s --start-period=120s \
+    <span class="c-kw">CMD</span> curl -f http://localhost:8000/health || exit 1
+
+<span class="c-kw">EXPOSE</span> 8000
+<span class="c-kw">CMD</span> [<span class="c-str">"uvicorn"</span>, <span class="c-str">"main:app"</span>, <span class="c-str">"--host"</span>, <span class="c-str">"0.0.0.0"</span>, <span class="c-str">"--port"</span>, <span class="c-str">"8000"</span>, <span class="c-str">"--workers"</span>, <span class="c-str">"1"</span>]</div>
+    </div>
+
+    <div class="code-wrap" style="margin-top:32px;">
+      <span class="code-label">YAML — docker-compose.yml (Local Dev)</span>
+      <div class="code-block"><span class="c-cmt"># docker-compose.yml for local development</span>
+<span class="c-fn">version</span>: <span class="c-str">"3.8"</span>
+<span class="c-fn">services</span>:
+  <span class="c-fn">llm-api</span>:
+    <span class="c-kw">build</span>: .
+    <span class="c-kw">ports</span>: [<span class="c-str">"8000:8000"</span>]
+    <span class="c-kw">environment</span>:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - QDRANT_URL=http://qdrant:6333
+    <span class="c-kw">depends_on</span>: [qdrant, redis]
+    <span class="c-kw">deploy</span>:
+      <span class="c-kw">resources</span>:
+        <span class="c-kw">reservations</span>:
+          <span class="c-kw">devices</span>:
+            - <span class="c-kw">driver</span>: nvidia
+              <span class="c-kw">count</span>: <span class="c-num">1</span>
+              <span class="c-kw">capabilities</span>: [gpu]
+
+  <span class="c-fn">qdrant</span>:
+    <span class="c-kw">image</span>: <span class="c-str">qdrant/qdrant:latest</span>
+    <span class="c-kw">ports</span>: [<span class="c-str">"6333:6333"</span>]
+    <span class="c-kw">volumes</span>: [<span class="c-str">"qdrant_data:/qdrant/storage"</span>]
+
+  <span class="c-fn">redis</span>:
+    <span class="c-kw">image</span>: <span class="c-str">redis:7-alpine</span>
+    <span class="c-kw">ports</span>: [<span class="c-str">"6379:6379"</span>]
+
+<span class="c-fn">volumes</span>:
+  <span class="c-fn">qdrant_data</span>:</div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 3 -->
+<div class="container">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">03 — Kubernetes for AI</div>
+      <h2>Kubernetes for AI Workloads</h2>
+      <p>Kubernetes schedules GPU pods, runs readiness probes that wait for model loading, and restarts unhealthy LLM containers automatically. GPU nodes are expensive — K8s ensures they're always busy.</p>
+    </div>
+
+    <ul class="bullet-list">
+      <li><strong>GPU node pools:</strong> GKE Autopilot GPU, EKS managed GPU node groups — K8s provisions GPU VMs on-demand</li>
+      <li><strong>nodeSelector &amp; tolerations:</strong> Pin LLM pods to GPU nodes using labels; taint GPU nodes so only GPU workloads run there</li>
+      <li><strong>Resource requests/limits:</strong> <code style="background:var(--surface2);padding:1px 4px;border-radius:3px;font-family:var(--mono);font-size:12px;">nvidia.com/gpu: 1</code> is a schedulable resource just like CPU — K8s won't assign the pod until a GPU is available</li>
+      <li><strong>Readiness probes:</strong> LLMs take 60-180s to load. The readiness probe prevents traffic until the model is warmed up and responding</li>
+    </ul>
+
+    <div class="code-wrap">
+      <span class="code-label">YAML — Kubernetes Deployment with GPU</span>
+      <div class="code-block"><span class="c-cmt"># deployment.yaml</span>
+<span class="c-fn">apiVersion</span>: apps/v1
+<span class="c-fn">kind</span>: <span class="c-type">Deployment</span>
+<span class="c-fn">metadata</span>:
+  <span class="c-kw">name</span>: llm-service
+<span class="c-fn">spec</span>:
+  <span class="c-kw">replicas</span>: <span class="c-num">2</span>
+  <span class="c-fn">selector</span>:
+    <span class="c-kw">matchLabels</span>:
+      <span class="c-kw">app</span>: llm-service
+  <span class="c-fn">template</span>:
+    <span class="c-fn">metadata</span>:
+      <span class="c-kw">labels</span>:
+        <span class="c-kw">app</span>: llm-service
+    <span class="c-fn">spec</span>:
+      <span class="c-kw">nodeSelector</span>:
+        <span class="c-kw">nvidia.com/gpu.present</span>: <span class="c-str">"true"</span>
+      <span class="c-fn">containers</span>:
+      - <span class="c-kw">name</span>: llm-service
+        <span class="c-kw">image</span>: myregistry/llm-service:v1.2.0
+        <span class="c-fn">resources</span>:
+          <span class="c-kw">requests</span>:
+            <span class="c-kw">memory</span>: <span class="c-str">"16Gi"</span>
+            <span class="c-kw">nvidia.com/gpu</span>: <span class="c-num">1</span>
+          <span class="c-kw">limits</span>:
+            <span class="c-kw">memory</span>: <span class="c-str">"24Gi"</span>
+            <span class="c-kw">nvidia.com/gpu</span>: <span class="c-num">1</span>
+        <span class="c-fn">env</span>:
+        - <span class="c-kw">name</span>: ANTHROPIC_API_KEY
+          <span class="c-fn">valueFrom</span>:
+            <span class="c-fn">secretKeyRef</span>:
+              <span class="c-kw">name</span>: ai-secrets
+              <span class="c-kw">key</span>: anthropic-api-key
+        <span class="c-fn">readinessProbe</span>:
+          <span class="c-fn">httpGet</span>:
+            <span class="c-kw">path</span>: /health
+            <span class="c-kw">port</span>: <span class="c-num">8000</span>
+          <span class="c-kw">initialDelaySeconds</span>: <span class="c-num">120</span>   <span class="c-cmt"># wait for model to load</span>
+          <span class="c-kw">periodSeconds</span>: <span class="c-num">10</span>
+        <span class="c-fn">livenessProbe</span>:
+          <span class="c-fn">httpGet</span>:
+            <span class="c-kw">path</span>: /health
+            <span class="c-kw">port</span>: <span class="c-num">8000</span>
+          <span class="c-kw">initialDelaySeconds</span>: <span class="c-num">180</span>
+          <span class="c-kw">failureThreshold</span>: <span class="c-num">3</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 4 -->
+<div class="container">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">04 — Helm Charts</div>
+      <h2>Helm Charts &amp; Multi-Service AI Stacks</h2>
+      <p>Helm is Kubernetes's package manager — templated YAML that's parameterized so you can deploy the same chart to dev, staging, and prod with different values files.</p>
+    </div>
+
+    <div class="callout">
+      <span class="callout-icon">🎯</span>
+      <div class="callout-text"><strong>Helm lifecycle:</strong> <code style="background:var(--surface2);padding:1px 4px;border-radius:3px;font-family:var(--mono);font-size:11px;">helm install</code> → first deploy. <code style="background:var(--surface2);padding:1px 4px;border-radius:3px;font-family:var(--mono);font-size:11px;">helm upgrade</code> → rolling update. <code style="background:var(--surface2);padding:1px 4px;border-radius:3px;font-family:var(--mono);font-size:11px;">helm rollback</code> → instant revert. Track revisions like git commits.</div>
+    </div>
+
+    <div class="code-wrap">
+      <span class="code-label">YAML — values.yaml (AI Stack)</span>
+      <div class="code-block"><span class="c-cmt"># values.yaml</span>
+<span class="c-fn">llmService</span>:
+  <span class="c-fn">image</span>:
+    <span class="c-kw">repository</span>: myregistry/llm-service
+    <span class="c-kw">tag</span>: <span class="c-str">"v1.2.0"</span>
+  <span class="c-kw">replicas</span>: <span class="c-num">2</span>
+  <span class="c-kw">model</span>: <span class="c-str">"claude-3-5-sonnet-20241022"</span>
+  <span class="c-fn">resources</span>:
+    <span class="c-kw">gpu</span>: <span class="c-num">1</span>
+    <span class="c-kw">memory</span>: <span class="c-str">"16Gi"</span>
+
+<span class="c-fn">qdrant</span>:
+  <span class="c-kw">enabled</span>: <span class="c-bi">true</span>
+  <span class="c-fn">persistence</span>:
+    <span class="c-kw">size</span>: <span class="c-str">"100Gi"</span>
+  <span class="c-kw">replicas</span>: <span class="c-num">3</span>
+
+<span class="c-fn">redis</span>:
+  <span class="c-kw">enabled</span>: <span class="c-bi">true</span>
+  <span class="c-fn">auth</span>:
+    <span class="c-kw">enabled</span>: <span class="c-bi">true</span>
+
+<span class="c-fn">ingress</span>:
+  <span class="c-kw">enabled</span>: <span class="c-bi">true</span>
+  <span class="c-kw">host</span>: <span class="c-str">"ai-api.mycompany.com"</span>
+  <span class="c-kw">tls</span>: <span class="c-bi">true</span></div>
+    </div>
+
+    <div class="code-wrap" style="margin-top:32px;">
+      <span class="code-label">BASH — Helm Deploy & Rollback</span>
+      <div class="code-block"><span class="c-cmt"># Deploy AI stack with Helm</span>
+helm repo <span class="c-fn">add</span> myorg https://charts.mycompany.com
+helm <span class="c-fn">install</span> ai-stack myorg/ai-platform \
+  --values production-values.yaml \
+  --set llmService.replicas=<span class="c-num">3</span> \
+  --namespace ai-production \
+  --create-namespace
+
+<span class="c-cmt"># Rolling update (zero-downtime)</span>
+helm <span class="c-fn">upgrade</span> ai-stack myorg/ai-platform --set llmService.image.tag=v1.3.0
+
+<span class="c-cmt"># Rollback if quality drops</span>
+helm <span class="c-fn">rollback</span> ai-stack <span class="c-num">1</span>  <span class="c-cmt"># roll back to revision 1</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 5 -->
+<div class="container">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">05 — Batch &amp; Production Patterns</div>
+      <h2>Batch Inference &amp; Production Patterns</h2>
+      <p>K8s Jobs for overnight batch processing, HPA for auto-scaling based on queue depth, PodDisruptionBudgets for maintenance safety, and spot/preemptible instances for dramatic cost reduction.</p>
+    </div>
+
+    <ul class="bullet-list">
+      <li><strong>K8s Jobs:</strong> Process 1M documents overnight with parallelism — 4 pods run simultaneously, K8s tracks completion and restarts failures</li>
+      <li><strong>Horizontal Pod Autoscaler:</strong> Scale LLM replicas based on request queue depth in Redis/SQS — not just CPU utilization</li>
+      <li><strong>PodDisruptionBudget:</strong> Guarantee minimum replicas during node drain/upgrades — critical for stateful LLM services with warm caches</li>
+      <li><strong>Spot/Preemptible instances:</strong> Use GKE Spot or AWS Spot for batch jobs — 60-80% cost reduction; add retry logic for eviction tolerance</li>
+    </ul>
+
+    <div class="code-wrap">
+      <span class="code-label">YAML — K8s Batch Job (Spot Instances)</span>
+      <div class="code-block"><span class="c-cmt"># K8s Job for batch inference</span>
+<span class="c-fn">apiVersion</span>: batch/v1
+<span class="c-fn">kind</span>: <span class="c-type">Job</span>
+<span class="c-fn">metadata</span>:
+  <span class="c-kw">name</span>: batch-embed-documents
+<span class="c-fn">spec</span>:
+  <span class="c-kw">parallelism</span>: <span class="c-num">4</span>      <span class="c-cmt"># 4 pods run in parallel</span>
+  <span class="c-kw">completions</span>: <span class="c-num">1000</span>   <span class="c-cmt"># process 1000 batches total</span>
+  <span class="c-fn">template</span>:
+    <span class="c-fn">spec</span>:
+      <span class="c-kw">nodeSelector</span>:
+        <span class="c-kw">cloud.google.com/gke-spot</span>: <span class="c-str">"true"</span>   <span class="c-cmt"># use preemptible for cost savings</span>
+      <span class="c-fn">containers</span>:
+      - <span class="c-kw">name</span>: embedder
+        <span class="c-kw">image</span>: myregistry/batch-embedder:latest
+        <span class="c-fn">resources</span>:
+          <span class="c-kw">requests</span>:
+            <span class="c-kw">nvidia.com/gpu</span>: <span class="c-num">1</span>
+      <span class="c-kw">restartPolicy</span>: OnFailure</div>
+    </div>
+
+    <!-- Interactive Widget: Docker Compose Generator -->
+    <div class="widget-box">
+      <div class="widget-title">Docker Compose Generator</div>
+      <div class="widget-desc">Select the services you need — get a ready-to-use docker-compose.yml.</div>
+      <div class="option-row">
+        <label class="check-item"><input type="checkbox" id="svc-llm" checked> <span>LLM API (FastAPI)</span></label>
+        <label class="check-item"><input type="checkbox" id="svc-qdrant"> <span>Qdrant Vector DB</span></label>
+        <label class="check-item"><input type="checkbox" id="svc-redis"> <span>Redis Cache</span></label>
+        <label class="check-item"><input type="checkbox" id="svc-postgres"> <span>PostgreSQL</span></label>
+        <label class="check-item"><input type="checkbox" id="svc-nginx"> <span>Nginx Proxy</span></label>
+        <label class="check-item"><input type="checkbox" id="svc-prometheus"> <span>Prometheus Metrics</span></label>
+      </div>
+      <div class="select-row">
+        <label>GPU Support:</label>
+        <select id="gpu-select">
+          <option value="yes">Yes — NVIDIA GPU</option>
+          <option value="no">No — CPU only</option>
+        </select>
+      </div>
+      <button class="run-btn" onclick="generateCompose()">Generate docker-compose.yml</button>
+      <div class="generated-output" id="compose-output">
+        <div class="copy-top">
+          <span>Generated docker-compose.yml</span>
+          <button onclick="copyCompose()">Copy</button>
+        </div>
+        <div class="code-block" id="compose-result" style="max-height:400px;overflow-y:auto;white-space:pre;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section style="max-width:1100px;margin:2rem auto;padding:0 24px 3rem;">
+  <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;">
+    <div style="font-size:0.75rem;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:1px;">Practice</div>
+    <h2 style="margin:0;font-size:1.4rem;font-weight:700;color:white;">Exercises</h2>
+  </div>
+  <p style="color:#9ca3af;margin-bottom:1.5rem;">Build and ship a multi-container AI stack: Dockerize your FastAPI LLM service, write K8s manifests, and deploy with Helm to a local cluster.</p>
+  <a href="../exercises/day27_exercises.html" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.6rem 1.25rem;background:linear-gradient(135deg,#7c3aed,#0d9488);color:white;font-weight:700;font-size:0.9rem;border-radius:8px;text-decoration:none;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">Open Interactive Exercises →</a>
+</section>
+
+<footer>
+  <div class="container">
+    <p>Agentic AI Mastery &mdash; Day 27: Docker &amp; Kubernetes for AI &mdash; Built for Sharjeel Sohail</p>
+    <div style="margin-top:16px;display:flex;justify-content:center;gap:16px;">
+      <a href="day26.html" style="color:var(--muted);text-decoration:none;font-size:13px;">← Day 26</a>
+      <a href="../index.html" style="color:var(--muted);text-decoration:none;font-size:13px;">Dashboard</a>
+      <a href="day28.html" style="color:var(--muted);text-decoration:none;font-size:13px;">Day 28 →</a>
+    </div>
+  </div>
+</footer>
+
+<script src="../bg-animation.js"></script>
+<script>
+// ── Mark Complete ─────────────────────────────────────────────────────────────
+function markComplete() {
+  try {
+    const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
+    p[27] = 'done';
+    localStorage.setItem('aai_progress', JSON.stringify(p));
+    const btn = document.getElementById('complete-btn');
+    btn.textContent = 'Completed!';
+    btn.classList.remove('complete');
+    btn.classList.add('done');
+  } catch(e) {}
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  try {
+    const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
+    if (!p[27] || p[27] === 'locked') {
+      p[27] = 'active';
+      localStorage.setItem('aai_progress', JSON.stringify(p));
+    }
+    if (p[27] === 'done') {
+      const btn = document.getElementById('complete-btn');
+      btn.textContent = 'Completed!';
+      btn.classList.remove('complete');
+      btn.classList.add('done');
+    }
+  } catch(e) {}
+});
+
+// ── Docker Compose Generator ──────────────────────────────────────────────────
+function generateCompose() {
+  const llm = document.getElementById('svc-llm').checked;
+  const qdrant = document.getElementById('svc-qdrant').checked;
+  const redis = document.getElementById('svc-redis').checked;
+  const postgres = document.getElementById('svc-postgres').checked;
+  const nginx = document.getElementById('svc-nginx').checked;
+  const prometheus = document.getElementById('svc-prometheus').checked;
+  const gpu = document.getElementById('gpu-select').value === 'yes';
+
+  let services = 'version: "3.8"\nservices:\n';
+  let volumes = 'volumes:\n';
+  let hasVolumes = false;
+
+  if (llm) {
+    services += `  llm-api:\n    build: .\n    ports:\n      - "8000:8000"\n    environment:\n      - ANTHROPIC_API_KEY=\${ANTHROPIC_API_KEY}\n`;
+    if (qdrant) services += `      - QDRANT_URL=http://qdrant:6333\n`;
+    if (redis) services += `      - REDIS_URL=redis://redis:6379\n`;
+    if (postgres) services += `      - DATABASE_URL=postgresql://ai:secret@postgres:5432/aidb\n`;
+    const deps = [];
+    if (qdrant) deps.push('qdrant');
+    if (redis) deps.push('redis');
+    if (postgres) deps.push('postgres');
+    if (deps.length) services += `    depends_on:\n      - ${deps.join('\n      - ')}\n`;
+    if (gpu) {
+      services += `    deploy:\n      resources:\n        reservations:\n          devices:\n            - driver: nvidia\n              count: 1\n              capabilities: [gpu]\n`;
+    }
+    services += '\n';
+  }
+
+  if (qdrant) {
+    services += `  qdrant:\n    image: qdrant/qdrant:latest\n    ports:\n      - "6333:6333"\n    volumes:\n      - qdrant_data:/qdrant/storage\n\n`;
+    volumes += `  qdrant_data:\n`;
+    hasVolumes = true;
+  }
+
+  if (redis) {
+    services += `  redis:\n    image: redis:7-alpine\n    ports:\n      - "6379:6379"\n    command: redis-server --appendonly yes\n    volumes:\n      - redis_data:/data\n\n`;
+    volumes += `  redis_data:\n`;
+    hasVolumes = true;
+  }
+
+  if (postgres) {
+    services += `  postgres:\n    image: postgres:16-alpine\n    environment:\n      POSTGRES_USER: ai\n      POSTGRES_PASSWORD: secret\n      POSTGRES_DB: aidb\n    volumes:\n      - postgres_data:/var/lib/postgresql/data\n    ports:\n      - "5432:5432"\n\n`;
+    volumes += `  postgres_data:\n`;
+    hasVolumes = true;
+  }
+
+  if (nginx) {
+    services += `  nginx:\n    image: nginx:alpine\n    ports:\n      - "80:80"\n      - "443:443"\n    volumes:\n      - ./nginx.conf:/etc/nginx/nginx.conf:ro\n    depends_on:\n      - llm-api\n\n`;
+  }
+
+  if (prometheus) {
+    services += `  prometheus:\n    image: prom/prometheus:latest\n    ports:\n      - "9090:9090"\n    volumes:\n      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro\n      - prometheus_data:/prometheus\n\n`;
+    volumes += `  prometheus_data:\n`;
+    hasVolumes = true;
+  }
+
+  const result = services + (hasVolumes ? '\n' + volumes : '');
+  document.getElementById('compose-result').textContent = result;
+  document.getElementById('compose-output').style.display = 'block';
+}
+
+function copyCompose() {
+  const text = document.getElementById('compose-result').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('.copy-top button');
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 2000);
+  });
+}
+</script>
+</body>
+</html>

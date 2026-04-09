@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 2: Frameworks, Models & Embeddings | Agentic AI Mastery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0a0a0f;
+  --card: #141420;
+  --surface2: #1a1a2e;
+  --border: #2a2a45;
+  --purple: #7c3aed;
+  --purple-light: #a855f7;
+  --teal: #0d9488;
+  --teal-light: #2dd4bf;
+  --green: #10b981;
+  --yellow: #f59e0b;
+  --red: #ef4444;
+  --blue: #3b82f6;
+  --text: #e2e8f0;
+  --muted: #64748b;
+  --font: 'Inter', sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 10%, rgba(124,58,237,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(13,148,136,0.05) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  position: relative;
+  z-index: 1;
+}
+
+/* NAV */
+nav {
+  border-bottom: 1px solid var(--border);
+  padding: 14px 0;
+  position: sticky;
+  top: 0;
+  background: rgba(10,10,15,0.88);
+  backdrop-filter: blur(12px);
+  z-index: 100;
+}
+
+.nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: -0.3px;
+  text-decoration: none;
+  color: var(--text);
+}
+
+.logo-icon {
+  width: 30px; height: 30px;
+  background: linear-gradient(135deg, var(--purple), var(--teal));
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.nav-btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--text);
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.nav-btn:hover { background: var(--card); transform: translateY(-1px); border-color: rgba(124,58,237,0.4); }
+.nav-btn.active { border-color: rgba(124,58,237,0.5); color: var(--purple-light); }
+
+/* HERO */
+.week-hero {
+  padding: 72px 0 52px;
+  text-align: center;
+}
+
+.week-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 18px;
+  border-radius: 20px;
+  background: rgba(124,58,237,0.1);
+  border: 1px solid rgba(124,58,237,0.25);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--purple-light);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 22px;
+}
+
+.week-num {
+  font-size: clamp(48px, 8vw, 96px);
+  font-weight: 900;
+  letter-spacing: -4px;
+  line-height: 1;
+  background: linear-gradient(135deg, #a855f7 0%, #06b6d4 50%, #10b981 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  background-size: 200% 200%;
+  animation: gradShift 4s ease infinite;
+  margin-bottom: 12px;
+}
+
+@keyframes gradShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.week-theme {
+  font-size: clamp(20px, 4vw, 32px);
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin-bottom: 12px;
+}
+
+.week-days-range {
+  font-size: 15px;
+  color: var(--muted);
+  margin-bottom: 28px;
+  font-family: var(--mono);
+}
+
+.skills-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 0;
+}
+
+.skill-chip {
+  padding: 5px 14px;
+  border-radius: 20px;
+  background: rgba(124,58,237,0.1);
+  border: 1px solid rgba(124,58,237,0.25);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--purple-light);
+}
+
+/* SECTION */
+.section-header {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--muted);
+  margin-bottom: 22px;
+  margin-top: 56px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.section-header::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* DAY CARDS GRID */
+.days-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 18px;
+  margin-bottom: 56px;
+}
+
+.day-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  overflow: hidden;
+  text-decoration: none;
+  color: var(--text);
+  display: block;
+  transition: transform 0.25s, border-color 0.25s, box-shadow 0.25s;
+}
+.day-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+}
+
+.day-card-bar { height: 3px; }
+.day-card-inner { padding: 20px 22px 18px; }
+
+.day-card-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--muted);
+  margin-bottom: 4px;
+  font-family: var(--mono);
+}
+
+.day-card-title {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  margin-bottom: 14px;
+  line-height: 1.2;
+}
+
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.tag {
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: var(--mono);
+}
+
+.day-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.day-card-arrow { font-size: 16px; transition: transform 0.2s; }
+.day-card:hover .day-card-arrow { transform: translateX(4px); }
+
+/* CAPSTONE SECTION */
+.capstone-card {
+  background: var(--card);
+  border: 1px solid rgba(124,58,237,0.3);
+  border-radius: 20px;
+  padding: 36px;
+  margin-bottom: 56px;
+  position: relative;
+  overflow: hidden;
+}
+
+.capstone-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--purple), var(--teal), var(--green));
+}
+
+.capstone-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--purple-light);
+  margin-bottom: 12px;
+}
+
+.capstone-title {
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  margin-bottom: 10px;
+}
+
+.capstone-desc {
+  font-size: 15px;
+  color: var(--muted);
+  line-height: 1.7;
+  max-width: 600px;
+  margin-bottom: 20px;
+}
+
+.capstone-items {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.capstone-items li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.capstone-items li::before {
+  content: '→';
+  color: var(--teal-light);
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* FOOTER NAV */
+.week-footer-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 32px 0 48px;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.footer-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 10px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  color: var(--text);
+  transition: all 0.2s;
+}
+.footer-nav-btn:hover { border-color: var(--purple); transform: translateY(-2px); }
+.footer-nav-btn.next { border-color: rgba(124,58,237,0.4); color: var(--purple-light); }
+
+/* ANIMATIONS */
+@keyframes fadeDown {
+  from { opacity: 0; transform: translateY(-14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 700px) {
+  .days-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="container">
+    <div class="nav-inner">
+      <a href="../index.html" class="logo">
+        <div class="logo-icon">🤖</div>
+        Agentic AI Mastery
+      </a>
+      <div class="nav-links">
+        <a href="../index.html" class="nav-btn">← Dashboard</a>
+        <a href="week1.html" class="nav-btn">Week 1</a>
+        <a href="week2.html" class="nav-btn active">Week 2</a>
+        <a href="week3.html" class="nav-btn">Week 3</a>
+        <a href="week4.html" class="nav-btn">Week 4</a>
+        <a href="week5.html" class="nav-btn">Week 5</a>
+        <a href="../exercises/index.html" class="nav-btn" style="border-color:rgba(13,148,136,0.35);color:#2dd4bf;">Exercises</a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<main>
+<div class="container">
+
+  <!-- HERO -->
+  <section class="week-hero">
+    <div class="week-eyebrow">30-Day Agentic AI Mastery</div>
+    <div class="week-num">Week 2</div>
+    <div class="week-theme">Frameworks, Models & Embeddings</div>
+    <div class="week-days-range">Days 8 – 14</div>
+    <div class="skills-row">
+      <span class="skill-chip">LangChain</span>
+      <span class="skill-chip">LCEL</span>
+      <span class="skill-chip">LLM Providers</span>
+      <span class="skill-chip">Vector DBs</span>
+      <span class="skill-chip">Embeddings</span>
+      <span class="skill-chip">Advanced RAG</span>
+      <span class="skill-chip">CrewAI</span>
+    </div>
+  </section>
+
+  <!-- DAY CARDS -->
+  <div class="section-header">Days 8 – 14</div>
+  <div class="days-grid">
+
+    <a href="../days/day8.html" class="day-card">
+      <div class="day-card-bar" style="background:linear-gradient(90deg,#7c3aed,#a855f7)"></div>
+      <div class="day-card-inner">
+        <div class="day-card-label">Day 8</div>
+        <div class="day-card-title" style="color:#a855f7">LangChain Deep-Dive</div>
+        <div class="tag-row">
+          <span class="tag">LCEL</span>
+          <span class="tag">Chains</span>
+          <span class="tag">RunnablePassthrough</span>
+        </div>
+        <div class="day-card-footer">
+          <span>LangChain Expression Language</span>
+          <span class="day-card-arrow" style="color:#a855f7">→</span>
+        </div>
+      </div>
+    </a>
+
+    <a href="../days/day9.html" class="day-card">
+      <div class="day-card-bar" style="background:linear-gradient(90deg,#0d9488,#2dd4bf)"></div>
+      <div class="day-card-inner">
+        <div class="day-card-label">Day 9</div>
+        <div class="day-card-title" style="color:#2dd4bf">LLM Provider Landscape</div>
+        <div class="tag-row">
+          <span class="tag">OpenAI</span>
+          <span class="tag">Claude</span>
+          <span class="tag">Gemini</span>
+        </div>
+        <div class="day-card-footer">
+          <span>Multi-provider API patterns</span>
+          <span class="day-card-arrow" style="color:#2dd4bf">→</span>
+        </div>
+      </div>
+    </a>
+
+    <a href="../days/day10.html" class="day-card">
+      <div class="day-card-bar" style="background:linear-gradient(90deg,#3b82f6,#60a5fa)"></div>
+      <div class="day-card-inner">
+        <div class="day-card-label">Day 10</div>
+        <div class="day-card-title" style="color:#60a5fa">Vector Databases in Depth</div>
+        <div class="tag-row">
+          <span class="tag">Pinecone</span>
+          <span class="tag">pgvector</span>
+          <span class="tag">Weaviate</span>
+        </div>
+        <div class="day-card-footer">
+          <span>ANN indexing & retrieval</span>
+          <span class="day-card-arrow" style="color:#60a5fa">→</span>
+        </div>
+      </div>
+    </a>
+
+    <a href="../days/day11.html" class="day-card">
+      <div class="day-card-bar" style="background:linear-gradient(90deg,#10b981,#34d399)"></div>
+      <div class="day-card-inner">
+        <div class="day-card-label">Day 11</div>
+        <div class="day-card-title" style="color:#34d399">Embedding Models</div>
+        <div class="tag-row">
+          <span class="tag">text-embedding-3</span>
+          <span class="tag">BGE</span>
+          <span class="tag">Matryoshka</span>
+        </div>
+        <div class="day-card-footer">
+          <span>Semantic similarity & search</span>
+          <span class="day-card-arrow" style="color:#34d399">→</span>
+        </div>
+      </div>
+    </a>
+
+    <a href="../days/day12.html" class="day-card">
+      <div class="day-card-bar" style="background:linear-gradient(90deg,#d97706,#fbbf24)"></div>
+      <div class="day-card-inner">
+        <div class="day-card-label">Day 12</div>
+        <div class="day-card-title" style="color:#fbbf24">Advanced RAG Patterns</div>
+        <div class="tag-row">
+          <span class="tag">HyDE</span>
+          <span class="tag">Reranking</span>
+          <span class="tag">Multi-query</span>
+        </div>
+        <div class="day-card-footer">
+          <span>Production RAG techniques</span>
+          <span class="day-card-arrow" style="color:#fbbf24">→</span>
+        </div>
+      </div>
+    </a>
+
+    <a href="../days/day13.html" class="day-card">
+      <div class="day-card-bar" style="background:linear-gradient(90deg,#db2777,#f472b6)"></div>
+      <div class="day-card-inner">
+        <div class="day-card-label">Day 13</div>
+        <div class="day-card-title" style="color:#f472b6">CrewAI & Role-Based Agents</div>
+        <div class="tag-row">
+          <span class="tag">CrewAI</span>
+          <span class="tag">Roles</span>
+          <span class="tag">Task delegation</span>
+        </div>
+        <div class="day-card-footer">
+          <span>Multi-agent crews & orchestration</span>
+          <span class="day-card-arrow" style="color:#f472b6">→</span>
+        </div>
+      </div>
+    </a>
+
+    <a href="../days/day14.html" class="day-card" style="border-color:rgba(245,158,11,0.3)">
+      <div class="day-card-bar" style="background:linear-gradient(90deg,#f59e0b,#f97316)"></div>
+      <div class="day-card-inner">
+        <div class="day-card-label">Day 14 · Capstone</div>
+        <div class="day-card-title" style="color:#fbbf24">Week 2 Capstone</div>
+        <div class="tag-row">
+          <span class="tag">Integration</span>
+          <span class="tag">Build</span>
+          <span class="tag">Ship</span>
+        </div>
+        <div class="day-card-footer">
+          <span>End-to-end Week 2 project</span>
+          <span class="day-card-arrow" style="color:#fbbf24">→</span>
+        </div>
+      </div>
+    </a>
+
+  </div>
+
+  <!-- WHAT YOU'LL BUILD -->
+  <div class="section-header">What You'll Build</div>
+  <div class="capstone-card">
+    <div class="capstone-eyebrow">Week 2 Capstone Project</div>
+    <div class="capstone-title">Multi-Provider RAG Pipeline with CrewAI Agents</div>
+    <div class="capstone-desc">
+      By the end of Week 2, you will have built a production-ready RAG system that combines multiple
+      LLM providers, a vector database backend, and a CrewAI agent crew for specialized retrieval
+      and synthesis tasks.
+    </div>
+    <ul class="capstone-items">
+      <li>LangChain LCEL pipeline wiring retriever → reranker → LLM with streaming output</li>
+      <li>Vector database with pgvector or Pinecone storing 1,000+ chunked documents</li>
+      <li>Multi-provider fallback: Claude primary, GPT-4o fallback, Gemini for embeddings</li>
+      <li>CrewAI crew with Researcher, Synthesizer, and Critic roles collaborating on answers</li>
+      <li>HyDE + multi-query retrieval boosting recall by ~30% over naive top-k search</li>
+      <li>FastAPI endpoint exposing the pipeline with SSE streaming responses</li>
+    </ul>
+  </div>
+
+</div>
+</main>
+
+<!-- FOOTER NAV -->
+<div class="container">
+  <div class="week-footer-nav">
+    <a href="week1.html" class="footer-nav-btn">← Week 1: Core Foundations</a>
+    <a href="../index.html" class="footer-nav-btn">Dashboard</a>
+    <a href="week3.html" class="footer-nav-btn next">Week 3: ML & Fine-Tuning →</a>
+  </div>
+</div>
+
+<script src="../bg-animation.js"></script>
+</body>
+</html>

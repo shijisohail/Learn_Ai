@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 16 Exercises — HuggingFace Transformers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f; --card: #141420; --surface2: #1a1a2e; --border: #2a2a45;
+  --purple: #7c3aed; --purple-light: #a855f7; --teal: #0d9488;
+  --green: #10b981; --yellow: #f59e0b; --red: #ef4444;
+  --text: #e2e8f0; --muted: #64748b;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
+.sticky-nav { position: sticky; top: 0; z-index: 100; background: rgba(10,10,15,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); padding: 12px 32px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.sticky-nav a { color: var(--muted); text-decoration: none; font-size: 0.85rem; padding: 6px 12px; border-radius: 6px; transition: all 0.2s; border: 1px solid transparent; }
+.sticky-nav a:hover { color: var(--text); background: var(--card); border-color: var(--border); }
+.sticky-nav .brand { color: var(--purple-light); font-weight: 600; font-size: 0.9rem; }
+.nav-sep { color: var(--border); }
+.nav-title { color: var(--text); font-weight: 700; font-size: 0.95rem; flex: 1; }
+.hero { padding: 56px 32px 32px; max-width: 1100px; margin: 0 auto; border-bottom: 1px solid var(--border); }
+.hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: 8px; }
+.hero h1 span { color: var(--purple-light); }
+.hero p { color: var(--muted); font-size: 1rem; max-width: 700px; }
+.hero-meta { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
+.badge-purple { background: rgba(124,58,237,0.15); color: var(--purple-light); border: 1px solid rgba(124,58,237,0.3); }
+.badge-teal { background: rgba(13,148,136,0.15); color: #2dd4bf; border: 1px solid rgba(13,148,136,0.3); }
+.badge-green { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.progress-bar-wrap { max-width: 1100px; margin: 24px auto; padding: 0 32px; }
+.progress-label { font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
+.progress-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--purple), var(--teal)); border-radius: 3px; transition: width 0.5s ease; }
+.main { max-width: 1100px; margin: 0 auto; padding: 32px; display: flex; flex-direction: column; gap: 64px; }
+.exercise { border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: var(--card); }
+.exercise-header { padding: 24px 32px; background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(13,148,136,0.05)); border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.exercise-num { font-size: 0.75rem; color: var(--purple-light); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.exercise-header h2 { font-size: 1.4rem; font-weight: 700; margin: 4px 0 8px; }
+.exercise-header p { color: var(--muted); font-size: 0.9rem; }
+.ex-status { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); transition: background 0.3s; }
+.status-dot.done { background: var(--green); }
+.tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--surface2); }
+.tab-btn { padding: 12px 20px; font-size: 0.82rem; font-weight: 600; color: var(--muted); cursor: pointer; border: none; background: none; border-bottom: 2px solid transparent; transition: all 0.2s; font-family: 'Inter', sans-serif; }
+.tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+.tab-btn.active { color: var(--purple-light); border-bottom-color: var(--purple-light); background: rgba(124,58,237,0.05); }
+.tab-panel { display: none; padding: 28px 32px; }
+.tab-panel.active { display: block; }
+.code-wrap { background: #0d0d18; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin: 12px 0; }
+.code-header { padding: 8px 16px; background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; color: var(--muted); }
+.code-dots { display: flex; gap: 6px; }
+.code-dots span { width: 10px; height: 10px; border-radius: 50%; }
+.code-dots .dot-r { background: var(--red); } .code-dots .dot-y { background: var(--yellow); } .code-dots .dot-g { background: var(--green); }
+.code-body { display: flex; }
+.line-nums { padding: 16px 8px; background: rgba(0,0,0,0.3); border-right: 1px solid var(--border); display: flex; flex-direction: column; min-width: 40px; text-align: right; }
+.line-nums span { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: #3a3a5c; line-height: 1.7; padding: 0 8px; }
+.code-content { padding: 16px; overflow-x: auto; flex: 1; white-space: pre; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; line-height: 1.7; }
+.kw { color: #c792ea; } .fn { color: #82aaff; } .st { color: #c3e88d; } .cm { color: #546e7a; font-style: italic; }
+.nm { color: #f78c6c; } .tp { color: #ffcb6b; } .dt { color: #89ddff; } .va { color: #eeffff; } .bi { color: #ff5370; }
+.task-requirements { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); border-radius: 10px; padding: 16px 20px; margin-bottom: 16px; }
+.task-requirements li { color: var(--text); font-size: 0.88rem; margin: 6px 0 6px 16px; }
+.task-requirements li::marker { color: var(--yellow); }
+.tests-grid { display: flex; flex-direction: column; gap: 8px; }
+.test-case { display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+.test-badge { flex-shrink: 0; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; font-family: 'Inter', sans-serif; letter-spacing: 0.5px; }
+.test-badge.pass { background: rgba(16,185,129,0.2); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.test-badge.pending { background: rgba(100,116,139,0.2); color: var(--muted); border: 1px solid rgba(100,116,139,0.3); }
+.test-content { flex: 1; } .test-input { color: var(--text); } .test-expected { color: var(--muted); margin-top: 2px; }
+.hints-list { display: flex; flex-direction: column; gap: 8px; }
+.hint-toggle { width: 100%; text-align: left; padding: 10px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--muted); cursor: pointer; font-family: 'Inter', sans-serif; font-size: 0.85rem; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s; }
+.hint-toggle:hover { border-color: var(--purple); color: var(--text); }
+.hint-toggle .arrow { transition: transform 0.2s; }
+.hint-toggle.open .arrow { transform: rotate(90deg); }
+.hint-body { display: none; padding: 12px 16px; margin-top: 4px; background: rgba(124,58,237,0.05); border: 1px solid rgba(124,58,237,0.2); border-radius: 8px; font-size: 0.85rem; color: var(--text); line-height: 1.6; }
+.hint-body code { background: rgba(124,58,237,0.15); padding: 1px 5px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--purple-light); }
+.section-label { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.section-label.purple { color: var(--purple-light); } .section-label.yellow { color: var(--yellow); }
+.section-label.green { color: #34d399; } .section-label.teal { color: #2dd4bf; }
+.section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.animate-btn { margin-top: 12px; padding: 8px 18px; border-radius: 8px; background: var(--purple); color: white; border: none; cursor: pointer; font-size: 0.82rem; font-weight: 600; font-family: 'Inter', sans-serif; transition: background 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+.animate-btn:hover { background: var(--purple-light); }
+.info-box { padding: 12px 16px; border-radius: 8px; margin: 12px 0; font-size: 0.85rem; }
+.info-box.teal { background: rgba(13,148,136,0.08); border: 1px solid rgba(13,148,136,0.2); color: var(--text); }
+.info-box.teal strong { color: #2dd4bf; }
+.info-box.purple { background: rgba(124,58,237,0.08); border: 1px solid rgba(124,58,237,0.2); color: var(--text); }
+.info-box.purple strong { color: var(--purple-light); }
+.footer { border-top: 1px solid var(--border); padding: 32px; text-align: center; color: var(--muted); font-size: 0.82rem; }
+.footer a { color: var(--purple-light); text-decoration: none; }
+</style>
+</head>
+<body data-animation-density="high">
+
+<nav class="sticky-nav">
+  <a href="../days/day16.html">← Day 16 lesson</a>
+  <span class="nav-sep">|</span>
+  <a href="../index.html" class="brand">🤖 Agentic AI</a>
+  <span class="nav-sep">|</span>
+  <span class="nav-title">Day 16 Exercises — HuggingFace Transformers</span>
+  <a href="day17_exercises.html" style="margin-left:auto;">Day 17 Exercises →</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-meta">
+    <span class="badge badge-purple">Day 16</span>
+    <span class="badge badge-teal">5 Exercises</span>
+    <span class="badge badge-green">Transformers / Ollama</span>
+  </div>
+  <h1>HuggingFace <span>Transformers</span></h1>
+  <p>Go from zero to running open-source LLMs locally — pipeline API for quick wins, AutoModel/AutoTokenizer for control, Ollama for dead-simple local inference, and bitsandbytes quantization for VRAM-constrained machines.</p>
+</div>
+
+<div class="progress-bar-wrap">
+  <div class="progress-label"><span>Progress</span><span id="progress-text">0 / 5 completed</span></div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+</div>
+
+<main class="main">
+
+<!-- ========== EXERCISE 1: PIPELINE API ========== -->
+<section class="exercise" id="ex1">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 1 of 5</div>
+      <h2>Pipeline API — Zero-Shot Text Classification</h2>
+      <p>Use the one-liner <code style="font-family:'JetBrains Mono',monospace;font-size:0.85rem;">transformers.pipeline()</code> to classify text without any training.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot1"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex1','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex1','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex1','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex1','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex1-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Build a reusable <code style="font-family:'JetBrains Mono',monospace;background:rgba(245,158,11,0.15);padding:2px 6px;border-radius:4px;">classify(text, labels)</code> function:</p>
+      <ul>
+        <li>Create a <code style="font-family:'JetBrains Mono',monospace;">pipeline("zero-shot-classification")</code> with <code style="font-family:'JetBrains Mono',monospace;">model="facebook/bart-large-mnli"</code></li>
+        <li>Pass a list of candidate labels and return the top label + score</li>
+        <li>Batch multiple texts at once by passing a list to the pipeline</li>
+        <li>Use <code style="font-family:'JetBrains Mono',monospace;">multi_label=True</code> to allow multiple labels to be positive</li>
+        <li>Time the first call (model load) vs subsequent calls (just inference)</li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(1)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex1-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        <span>day16_ex1_pipeline.py</span>
+        <span># pip install transformers torch</span>
+      </div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span></div>
+        <div class="code-content"><span class="cm"># pip install transformers torch</span>
+<span class="kw">from</span> <span class="va">transformers</span> <span class="kw">import</span> <span class="fn">pipeline</span>
+<span class="kw">import</span> <span class="va">time</span>
+
+<span class="cm"># Load once — model is ~1.6 GB, cached after first download</span>
+<span class="va">t0</span> <span class="dt">=</span> <span class="va">time</span><span class="dt">.</span><span class="fn">time</span><span class="dt">()</span>
+<span class="cm"># TODO: create classifier pipeline</span>
+<span class="va">classifier</span> <span class="dt">=</span> <span class="dt">...</span>
+<span class="fn">print</span><span class="dt">(</span><span class="bi">f</span><span class="st">"Model loaded in {time.time() - t0:.1f}s"</span><span class="dt">)</span>
+
+<span class="kw">def</span> <span class="fn">classify</span><span class="dt">(</span><span class="va">text</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">,</span> <span class="va">labels</span><span class="dt">:</span> <span class="tp">list</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">dict</span><span class="dt">:</span>
+    <span class="st">"""Return top label and score."""</span>
+    <span class="cm"># TODO: run classifier and return {"label": ..., "score": ...}</span>
+    <span class="dt">...</span>
+
+<span class="cm"># Test single classification</span>
+<span class="va">result</span> <span class="dt">=</span> <span class="fn">classify</span><span class="dt">(</span>
+    <span class="st">"This pull request adds retry logic to the HTTP client"</span><span class="dt">,</span>
+    <span class="va">labels</span><span class="dt">=[</span><span class="st">"engineering"</span><span class="dt">,</span> <span class="st">"marketing"</span><span class="dt">,</span> <span class="st">"finance"</span><span class="dt">,</span> <span class="st">"legal"</span><span class="dt">]</span>
+<span class="dt">)</span>
+<span class="fn">print</span><span class="dt">(</span><span class="va">result</span><span class="dt">)</span>  <span class="cm"># Expected: {"label": "engineering", "score": >0.9}</span>
+
+<span class="cm"># TODO: batch classify a list of 3 texts at once</span>
+<span class="va">texts</span> <span class="dt">=</span> <span class="dt">[</span>
+    <span class="st">"Q4 revenue exceeded targets by 12%"</span><span class="dt">,</span>
+    <span class="st">"The defendant filed a motion to dismiss"</span><span class="dt">,</span>
+    <span class="st">"Deploy to production using the new Helm chart"</span><span class="dt">,</span>
+<span class="dt">]</span>
+<span class="cm"># TODO: run batch and print top label for each</span>
+<span class="dt">...</span></div>
+      </div>
+    </div>
+    <div class="info-box teal"><strong>Caching:</strong> HuggingFace downloads to <code style="font-family:'JetBrains Mono',monospace;background:rgba(13,148,136,0.15);padding:1px 5px;border-radius:3px;color:#2dd4bf;">~/.cache/huggingface/hub/</code>. Set <code style="font-family:'JetBrains Mono',monospace;background:rgba(13,148,136,0.15);padding:1px 5px;border-radius:3px;color:#2dd4bf;">HF_HOME</code> env var to change location. Use <code style="font-family:'JetBrains Mono',monospace;background:rgba(13,148,136,0.15);padding:1px 5px;border-radius:3px;color:#2dd4bf;">device=0</code> for GPU or <code style="font-family:'JetBrains Mono',monospace;background:rgba(13,148,136,0.15);padding:1px 5px;border-radius:3px;color:#2dd4bf;">device="cpu"</code> explicitly.</div>
+  </div>
+
+  <div class="tab-panel" id="ex1-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t1-1">T1</span><div class="test-content"><div class="test-input">result = classify("Python FastAPI tutorial", ["tech","sports","politics"])<br>result["label"]</div><div class="test-expected">→ "tech" (score > 0.8)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t1-2">T2</span><div class="test-content"><div class="test-input">0.0 &lt; result["score"] &lt;= 1.0</div><div class="test-expected">→ True (valid probability)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t1-3">T3</span><div class="test-content"><div class="test-input">batch = classifier(["text1","text2"], candidate_labels=["a","b"])<br>len(batch)</div><div class="test-expected">→ 2 (one result per input)</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(1)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex1-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — Creating the pipeline</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")</code>. On GPU: add <code>device=0</code>.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — Extracting top label</span><span class="arrow">▶</span></button>
+        <div class="hint-body">The pipeline returns <code>{"labels": ["tech","sports",...], "scores": [0.95, 0.03,...], ...}</code>. The first element is always the highest scoring: <code>result["labels"][0]</code>.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 2: AUTO MODEL ========== -->
+<section class="exercise" id="ex2">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 2 of 5</div>
+      <h2>AutoTokenizer & AutoModelForCausalLM</h2>
+      <p>Load a causal LM manually for full control over generation — tokenize, generate, decode.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot2"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex2','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex2','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex2','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex2','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex2-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Build a manual generation loop with full tokenizer control:</p>
+      <ul>
+        <li>Load <code style="font-family:'JetBrains Mono',monospace;">AutoTokenizer.from_pretrained("gpt2")</code> and <code style="font-family:'JetBrains Mono',monospace;">AutoModelForCausalLM.from_pretrained("gpt2")</code></li>
+        <li>Tokenize a prompt with <code style="font-family:'JetBrains Mono',monospace;">return_tensors="pt"</code> and inspect <code style="font-family:'JetBrains Mono',monospace;">input_ids.shape</code></li>
+        <li>Call <code style="font-family:'JetBrains Mono',monospace;">model.generate()</code> with <code style="font-family:'JetBrains Mono',monospace;">max_new_tokens=50</code>, <code style="font-family:'JetBrains Mono',monospace;">temperature=0.7</code>, <code style="font-family:'JetBrains Mono',monospace;">do_sample=True</code></li>
+        <li>Decode output with <code style="font-family:'JetBrains Mono',monospace;">tokenizer.decode(output[0], skip_special_tokens=True)</code></li>
+        <li>Set <code style="font-family:'JetBrains Mono',monospace;">tokenizer.pad_token = tokenizer.eos_token</code> to avoid the padding warning</li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(2)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex2-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        <span>day16_ex2_automodel.py</span>
+        <span># pip install transformers torch accelerate</span>
+      </div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span><span>31</span><span>32</span><span>33</span></div>
+        <div class="code-content"><span class="cm"># pip install transformers torch accelerate</span>
+<span class="kw">from</span> <span class="va">transformers</span> <span class="kw">import</span> <span class="tp">AutoTokenizer</span><span class="dt">,</span> <span class="tp">AutoModelForCausalLM</span>
+<span class="kw">import</span> <span class="va">torch</span>
+
+<span class="va">model_id</span> <span class="dt">=</span> <span class="st">"gpt2"</span>  <span class="cm"># 117M params — fast to download</span>
+
+<span class="cm"># TODO: load tokenizer and set pad_token</span>
+<span class="va">tokenizer</span> <span class="dt">=</span> <span class="dt">...</span>
+<span class="va">tokenizer</span><span class="dt">.</span><span class="va">pad_token</span> <span class="dt">=</span> <span class="dt">...</span>
+
+<span class="cm"># TODO: load model in eval mode</span>
+<span class="va">model</span> <span class="dt">=</span> <span class="dt">...</span>
+<span class="va">model</span><span class="dt">.</span><span class="fn">eval</span><span class="dt">()</span>
+
+<span class="kw">def</span> <span class="fn">generate</span><span class="dt">(</span><span class="va">prompt</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">,</span> <span class="va">max_new_tokens</span><span class="dt">:</span> <span class="tp">int</span> <span class="dt">=</span> <span class="nm">50</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">str</span><span class="dt">:</span>
+    <span class="st">"""Tokenize → generate → decode."""</span>
+    <span class="cm"># TODO: tokenize with return_tensors="pt"</span>
+    <span class="va">inputs</span> <span class="dt">=</span> <span class="dt">...</span>
+
+    <span class="cm"># TODO: generate with no_grad, temperature=0.7, do_sample=True</span>
+    <span class="kw">with</span> <span class="va">torch</span><span class="dt">.</span><span class="fn">no_grad</span><span class="dt">():</span>
+        <span class="va">output_ids</span> <span class="dt">=</span> <span class="va">model</span><span class="dt">.</span><span class="fn">generate</span><span class="dt">(</span>
+            <span class="dt">**</span><span class="va">inputs</span><span class="dt">,</span>
+            <span class="va">max_new_tokens</span><span class="dt">=</span><span class="va">max_new_tokens</span><span class="dt">,</span>
+            <span class="cm"># TODO: add temperature and do_sample</span>
+        <span class="dt">)</span>
+
+    <span class="cm"># TODO: decode and return (skip special tokens)</span>
+    <span class="dt">...</span>
+
+<span class="fn">print</span><span class="dt">(</span><span class="fn">generate</span><span class="dt">(</span><span class="st">"The future of artificial intelligence is"</span><span class="dt">))</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex2-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t2-1">T1</span><div class="test-content"><div class="test-input">ids = tokenizer("hello world", return_tensors="pt")["input_ids"]<br>ids.shape[0] == 1</div><div class="test-expected">→ True (batch dimension added)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t2-2">T2</span><div class="test-content"><div class="test-input">out = generate("The sky is"); isinstance(out, str)</div><div class="test-expected">→ True (decoded string returned)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t2-3">T3</span><div class="test-content"><div class="test-input">len(generate("Test", max_new_tokens=20)) > len("Test")</div><div class="test-expected">→ True (text was extended)</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(2)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex2-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — Loading model and tokenizer</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>tokenizer = AutoTokenizer.from_pretrained("gpt2")</code> and <code>model = AutoModelForCausalLM.from_pretrained("gpt2")</code>. For larger models add <code>torch_dtype=torch.bfloat16, device_map="auto"</code>.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — generate() kwargs</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>model.generate(**inputs, max_new_tokens=50, temperature=0.7, do_sample=True, pad_token_id=tokenizer.eos_token_id)</code>. Greedy decoding (default) ignores temperature — you must set <code>do_sample=True</code>.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 3: OLLAMA ========== -->
+<section class="exercise" id="ex3">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 3 of 5</div>
+      <h2>Ollama Local Inference</h2>
+      <p>Run any GGUF-quantized model locally with zero Python dependencies — just the Ollama daemon and its Python SDK.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot3"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex3','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex3','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex3','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex3','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex3-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Use <code style="font-family:'JetBrains Mono',monospace;background:rgba(245,158,11,0.15);padding:2px 6px;border-radius:4px;">ollama.chat()</code> to build a local chat loop:</p>
+      <ul>
+        <li>Install Ollama from <code style="font-family:'JetBrains Mono',monospace;">ollama.com</code> and pull <code style="font-family:'JetBrains Mono',monospace;">llama3.2:1b</code> (smallest model)</li>
+        <li>Use <code style="font-family:'JetBrains Mono',monospace;">ollama.chat(model="llama3.2:1b", messages=[...])</code> for a single turn</li>
+        <li>Use <code style="font-family:'JetBrains Mono',monospace;">stream=True</code> to get token-by-token output and print as it arrives</li>
+        <li>Build a multi-turn conversation by appending assistant replies to the message list</li>
+        <li>Extract <code style="font-family:'JetBrains Mono',monospace;">response["eval_duration"]</code> to compute tokens/second</li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(3)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex3-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        <span>day16_ex3_ollama.py</span>
+        <span># pip install ollama  (also: curl -fsSL https://ollama.com/install.sh | sh)</span>
+      </div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span><span>31</span><span>32</span><span>33</span><span>34</span></div>
+        <div class="code-content"><span class="cm"># pip install ollama</span>
+<span class="cm"># ollama pull llama3.2:1b  (run in terminal first)</span>
+<span class="kw">import</span> <span class="va">ollama</span>
+
+<span class="cm"># --- Single turn (non-streaming) ---</span>
+<span class="va">response</span> <span class="dt">=</span> <span class="va">ollama</span><span class="dt">.</span><span class="fn">chat</span><span class="dt">(</span>
+    <span class="va">model</span><span class="dt">=</span><span class="st">"llama3.2:1b"</span><span class="dt">,</span>
+    <span class="va">messages</span><span class="dt">=[{</span><span class="st">"role"</span><span class="dt">:</span> <span class="st">"user"</span><span class="dt">,</span> <span class="st">"content"</span><span class="dt">:</span> <span class="st">"What is 17 * 23?"</span><span class="dt">}]</span>
+<span class="dt">)</span>
+<span class="fn">print</span><span class="dt">(</span><span class="va">response</span><span class="dt">[</span><span class="st">"message"</span><span class="dt">][</span><span class="st">"content"</span><span class="dt">])</span>
+
+<span class="cm"># Compute tokens/second from metadata</span>
+<span class="va">tps</span> <span class="dt">=</span> <span class="va">response</span><span class="dt">[</span><span class="st">"eval_count"</span><span class="dt">]</span> <span class="dt">/</span> <span class="dt">(</span><span class="va">response</span><span class="dt">[</span><span class="st">"eval_duration"</span><span class="dt">]</span> <span class="dt">/</span> <span class="nm">1e9</span><span class="dt">)</span>
+<span class="fn">print</span><span class="dt">(</span><span class="bi">f</span><span class="st">"Speed: {tps:.1f} tokens/sec"</span><span class="dt">)</span>
+
+<span class="cm"># --- Streaming output ---</span>
+<span class="kw">def</span> <span class="fn">stream_chat</span><span class="dt">(</span><span class="va">prompt</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">):</span>
+    <span class="cm"># TODO: use ollama.chat(..., stream=True) and print each chunk</span>
+    <span class="dt">...</span>
+
+<span class="fn">stream_chat</span><span class="dt">(</span><span class="st">"Explain Python generators in one paragraph"</span><span class="dt">)</span>
+
+<span class="cm"># --- Multi-turn conversation ---</span>
+<span class="kw">def</span> <span class="fn">conversation</span><span class="dt">():</span>
+    <span class="va">messages</span> <span class="dt">=</span> <span class="dt">[]</span>
+    <span class="kw">while</span> <span class="kw">True</span><span class="dt">:</span>
+        <span class="va">user_input</span> <span class="dt">=</span> <span class="fn">input</span><span class="dt">(</span><span class="st">"You: "</span><span class="dt">)</span>
+        <span class="kw">if</span> <span class="va">user_input</span><span class="dt">.</span><span class="fn">lower</span><span class="dt">()</span> <span class="dt">==</span> <span class="st">"quit"</span><span class="dt">:</span> <span class="kw">break</span>
+        <span class="cm"># TODO: append user message, call ollama.chat, append assistant reply</span>
+        <span class="dt">...</span></div>
+      </div>
+    </div>
+    <div class="info-box purple"><strong>Why Ollama?</strong> Zero Python ML dependencies — the model runs in a Go daemon that handles quantization, GPU offloading, and multi-model serving. Your Python code just does HTTP. Perfect for prototyping and CI pipelines without CUDA.</div>
+  </div>
+
+  <div class="tab-panel" id="ex3-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t3-1">T1</span><div class="test-content"><div class="test-input">r = ollama.chat(model="llama3.2:1b", messages=[{"role":"user","content":"say hello"}])<br>"message" in r</div><div class="test-expected">→ True (response has message key)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t3-2">T2</span><div class="test-content"><div class="test-input">r["eval_count"] > 0 and r["eval_duration"] > 0</div><div class="test-expected">→ True (timing metadata present)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t3-3">T3</span><div class="test-content"><div class="test-input">chunks = list(ollama.chat(..., stream=True))<br>all("message" in c for c in chunks)</div><div class="test-expected">→ True (each chunk has message key)</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(3)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex3-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — Streaming loop</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>for chunk in ollama.chat(model=..., messages=..., stream=True): print(chunk["message"]["content"], end="", flush=True)</code></div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — Multi-turn pattern</span><span class="arrow">▶</span></button>
+        <div class="hint-body">Append <code>{"role": "user", "content": user_input}</code>, call chat, then append <code>{"role": "assistant", "content": r["message"]["content"]}</code> before the next loop.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 4: QUANTIZATION ========== -->
+<section class="exercise" id="ex4">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 4 of 5</div>
+      <h2>4-bit Quantization with bitsandbytes</h2>
+      <p>Load a 7B model on a 6 GB GPU using BitsAndBytesConfig — the same technique behind QLoRA fine-tuning.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot4"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex4','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex4','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex4','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex4','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex4-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Load a model in 4-bit precision and compare VRAM usage:</p>
+      <ul>
+        <li>Create a <code style="font-family:'JetBrains Mono',monospace;">BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_compute_dtype=torch.bfloat16)</code></li>
+        <li>Pass the config to <code style="font-family:'JetBrains Mono',monospace;">AutoModelForCausalLM.from_pretrained(..., quantization_config=bnb_config)</code></li>
+        <li>Use <code style="font-family:'JetBrains Mono',monospace;">device_map="auto"</code> to let HuggingFace split across devices</li>
+        <li>Print model size with <code style="font-family:'JetBrains Mono',monospace;">model.get_memory_footprint()</code> before vs after quantization</li>
+        <li>Run a forward pass and confirm the model still produces logits with the correct vocabulary size</li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(4)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex4-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        <span>day16_ex4_quantization.py</span>
+        <span># pip install transformers bitsandbytes torch accelerate</span>
+      </div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span></div>
+        <div class="code-content"><span class="cm"># pip install transformers bitsandbytes torch accelerate</span>
+<span class="kw">from</span> <span class="va">transformers</span> <span class="kw">import</span> <span class="dt">(</span>
+    <span class="tp">AutoTokenizer</span><span class="dt">,</span> <span class="tp">AutoModelForCausalLM</span><span class="dt">,</span> <span class="tp">BitsAndBytesConfig</span>
+<span class="dt">)</span>
+<span class="kw">import</span> <span class="va">torch</span>
+
+<span class="va">model_id</span> <span class="dt">=</span> <span class="st">"TinyLlama/TinyLlama-1.1B-Chat-v1.0"</span>  <span class="cm"># small enough to test with</span>
+
+<span class="cm"># TODO: create BitsAndBytesConfig for 4-bit with bfloat16 compute</span>
+<span class="va">bnb_config</span> <span class="dt">=</span> <span class="tp">BitsAndBytesConfig</span><span class="dt">(</span>
+    <span class="cm"># TODO: fill kwargs</span>
+<span class="dt">)</span>
+
+<span class="cm"># Load tokenizer normally</span>
+<span class="va">tokenizer</span> <span class="dt">=</span> <span class="tp">AutoTokenizer</span><span class="dt">.</span><span class="fn">from_pretrained</span><span class="dt">(</span><span class="va">model_id</span><span class="dt">)</span>
+
+<span class="cm"># TODO: load model with quantization_config and device_map="auto"</span>
+<span class="va">model</span> <span class="dt">=</span> <span class="dt">...</span>
+
+<span class="fn">print</span><span class="dt">(</span><span class="bi">f</span><span class="st">"Memory footprint: {model.get_memory_footprint() / 1024**3:.2f} GB"</span><span class="dt">)</span>
+
+<span class="cm"># Quick sanity check forward pass</span>
+<span class="va">inputs</span> <span class="dt">=</span> <span class="va">tokenizer</span><span class="dt">(</span><span class="st">"Hello world"</span><span class="dt">,</span> <span class="va">return_tensors</span><span class="dt">=</span><span class="st">"pt"</span><span class="dt">).</span><span class="fn">to</span><span class="dt">(</span><span class="va">model</span><span class="dt">.</span><span class="va">device</span><span class="dt">)</span>
+<span class="kw">with</span> <span class="va">torch</span><span class="dt">.</span><span class="fn">no_grad</span><span class="dt">():</span>
+    <span class="va">logits</span> <span class="dt">=</span> <span class="va">model</span><span class="dt">(</span><span class="dt">**</span><span class="va">inputs</span><span class="dt">).</span><span class="va">logits</span>
+<span class="fn">print</span><span class="dt">(</span><span class="bi">f</span><span class="st">"Logits shape: {logits.shape}"</span><span class="dt">)</span>  <span class="cm"># (1, seq_len, vocab_size)</span></div>
+      </div>
+    </div>
+    <div class="info-box teal"><strong>4-bit math:</strong> Weights stored as 4-bit integers (~0.5 GB/B params) but dequantized to bfloat16 during computation. A 7B model goes from 14 GB (bf16) → ~4 GB (4-bit). Use <code style="font-family:'JetBrains Mono',monospace;background:rgba(13,148,136,0.15);padding:1px 5px;border-radius:3px;color:#2dd4bf;">bnb_4bit_use_double_quant=True</code> to halve quantization overhead further.</div>
+  </div>
+
+  <div class="tab-panel" id="ex4-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t4-1">T1</span><div class="test-content"><div class="test-input">model.config.quantization_config.load_in_4bit</div><div class="test-expected">→ True</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t4-2">T2</span><div class="test-content"><div class="test-input">model.get_memory_footprint() / 1024**3 &lt; 1.5</div><div class="test-expected">→ True (1.1B 4-bit fits in ~0.7 GB)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t4-3">T3</span><div class="test-content"><div class="test-input">logits.shape[-1] == tokenizer.vocab_size</div><div class="test-expected">→ True (logits over full vocabulary)</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(4)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex4-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — BitsAndBytesConfig</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_compute_dtype=torch.bfloat16, bnb_4bit_quant_type="nf4")</code>. NF4 (Normal Float 4) is the default for QLoRA.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — from_pretrained kwargs</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>AutoModelForCausalLM.from_pretrained(model_id, quantization_config=bnb_config, device_map="auto")</code>. Don't pass <code>torch_dtype</code> when using quantization_config.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 5: CHAT TEMPLATE ========== -->
+<section class="exercise" id="ex5">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 5 of 5</div>
+      <h2>Chat Templates & apply_chat_template()</h2>
+      <p>Every instruct model has a specific prompt format. Use the tokenizer's built-in template to format messages correctly.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot5"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex5','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex5','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex5','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex5','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex5-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Use <code style="font-family:'JetBrains Mono',monospace;background:rgba(245,158,11,0.15);padding:2px 6px;border-radius:4px;">apply_chat_template()</code> to correctly format prompts:</p>
+      <ul>
+        <li>Load TinyLlama's tokenizer and inspect its <code style="font-family:'JetBrains Mono',monospace;">chat_template</code> attribute</li>
+        <li>Build a messages list with system + user roles</li>
+        <li>Call <code style="font-family:'JetBrains Mono',monospace;">tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)</code></li>
+        <li>Compare the output to manually constructed strings — notice special tokens like <code style="font-family:'JetBrains Mono',monospace;">&lt;|system|&gt;</code></li>
+        <li>Tokenize the formatted prompt and run generation through the full model pipeline</li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(5)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex5-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        <span>day16_ex5_chat_template.py</span>
+        <span># pip install transformers torch</span>
+      </div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span></div>
+        <div class="code-content"><span class="cm"># pip install transformers torch</span>
+<span class="kw">from</span> <span class="va">transformers</span> <span class="kw">import</span> <span class="tp">AutoTokenizer</span>
+
+<span class="va">tokenizer</span> <span class="dt">=</span> <span class="tp">AutoTokenizer</span><span class="dt">.</span><span class="fn">from_pretrained</span><span class="dt">(</span><span class="st">"TinyLlama/TinyLlama-1.1B-Chat-v1.0"</span><span class="dt">)</span>
+
+<span class="cm"># Build the conversation</span>
+<span class="va">messages</span> <span class="dt">=</span> <span class="dt">[</span>
+    <span class="dt">{</span><span class="st">"role"</span><span class="dt">:</span> <span class="st">"system"</span><span class="dt">,</span>    <span class="st">"content"</span><span class="dt">:</span> <span class="st">"You are a helpful Python tutor."</span><span class="dt">},</span>
+    <span class="dt">{</span><span class="st">"role"</span><span class="dt">:</span> <span class="st">"user"</span><span class="dt">,</span>      <span class="st">"content"</span><span class="dt">:</span> <span class="st">"What is a decorator?"</span><span class="dt">},</span>
+<span class="dt">]</span>
+
+<span class="cm"># TODO: apply chat template (tokenize=False to get raw string first)</span>
+<span class="va">formatted</span> <span class="dt">=</span> <span class="dt">...</span>
+<span class="fn">print</span><span class="dt">(</span><span class="st">"Formatted prompt:"</span><span class="dt">)</span>
+<span class="fn">print</span><span class="dt">(</span><span class="va">formatted</span><span class="dt">)</span>
+
+<span class="cm"># Tokenize the formatted string</span>
+<span class="va">inputs</span> <span class="dt">=</span> <span class="va">tokenizer</span><span class="dt">(</span><span class="va">formatted</span><span class="dt">,</span> <span class="va">return_tensors</span><span class="dt">=</span><span class="st">"pt"</span><span class="dt">)</span>
+<span class="fn">print</span><span class="dt">(</span><span class="bi">f</span><span class="st">"\nToken count: {inputs['input_ids'].shape[1]}"</span><span class="dt">)</span>
+
+<span class="cm"># See the raw template Jinja2 string</span>
+<span class="fn">print</span><span class="dt">(</span><span class="st">"\nChat template (truncated):"</span><span class="dt">)</span>
+<span class="fn">print</span><span class="dt">(</span><span class="va">tokenizer</span><span class="dt">.</span><span class="va">chat_template</span><span class="dt">[:</span><span class="nm">200</span><span class="dt">])</span>
+
+<span class="cm"># TODO: add assistant turn and re-apply (multi-turn)</span>
+<span class="va">messages</span><span class="dt">.</span><span class="fn">append</span><span class="dt">({</span><span class="st">"role"</span><span class="dt">:</span> <span class="st">"assistant"</span><span class="dt">,</span> <span class="st">"content"</span><span class="dt">:</span> <span class="st">"A decorator wraps a function..."</span><span class="dt">})</span>
+<span class="va">messages</span><span class="dt">.</span><span class="fn">append</span><span class="dt">({</span><span class="st">"role"</span><span class="dt">:</span> <span class="st">"user"</span><span class="dt">,</span>      <span class="st">"content"</span><span class="dt">:</span> <span class="st">"Can you show an example?"</span><span class="dt">})</span>
+<span class="cm"># TODO: apply template again and check token count increased</span>
+<span class="dt">...</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex5-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t5-1">T1</span><div class="test-content"><div class="test-input">formatted = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)<br>isinstance(formatted, str)</div><div class="test-expected">→ True</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t5-2">T2</span><div class="test-content"><div class="test-input">"system" in formatted.lower() or "&lt;|system|&gt;" in formatted</div><div class="test-expected">→ True (system role is present in formatted string)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t5-3">T3</span><div class="test-content"><div class="test-input">tokenizer.chat_template is not None</div><div class="test-expected">→ True (template exists for this model)</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(5)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex5-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — apply_chat_template kwargs</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)</code>. Set <code>tokenize=True</code> to get token IDs directly instead of a string.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — Why add_generation_prompt?</span><span class="arrow">▶</span></button>
+        <div class="hint-body">It appends the model's generation start token (e.g., <code>&lt;|assistant|&gt;</code>) to signal where the model should start generating. Without it the model may just repeat the conversation.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <p>Day 16 of 30 — <a href="../index.html">Back to curriculum</a> · <a href="day17_exercises.html">Next: Fine-Tuning with LoRA/PEFT →</a></p>
+</footer>
+
+<script>
+let completedCount = 0;
+const totalExercises = 5;
+function markDone(n) {
+  const dot = document.getElementById('dot' + n);
+  if (dot && !dot.classList.contains('done')) {
+    dot.classList.add('done');
+    completedCount++;
+    document.getElementById('progress-text').textContent = completedCount + ' / ' + totalExercises + ' completed';
+    document.getElementById('progress-fill').style.width = (completedCount / totalExercises * 100) + '%';
+  }
+}
+function showTab(exId, tabName) {
+  document.querySelectorAll('#' + exId + ' .tab-panel').forEach(p => { p.classList.toggle('active', p.id === exId + '-' + tabName); });
+  document.querySelectorAll('#' + exId + ' .tab-btn').forEach(b => { b.classList.toggle('active', b.getAttribute('onclick') && b.getAttribute('onclick').includes("'" + tabName + "'")); });
+}
+function toggleHint(btn) {
+  btn.classList.toggle('open');
+  const body = btn.nextElementSibling;
+  body.style.display = body.style.display === 'block' ? 'none' : 'block';
+}
+function runTests(exNum) {
+  const tests = document.querySelectorAll('#ex' + exNum + '-tests .test-badge');
+  tests.forEach((badge, i) => { setTimeout(() => { badge.className = 'test-badge pass'; badge.textContent = '✓ T' + (i + 1); }, i * 300); });
+}
+</script>
+<script src="../bg-animation.js"></script>
+</body>
+</html>

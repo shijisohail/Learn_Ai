@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 9 Exercises — LLM Provider Landscape</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f; --card: #141420; --surface2: #1a1a2e; --border: #2a2a45;
+  --purple: #7c3aed; --purple-light: #a855f7; --teal: #0d9488;
+  --green: #10b981; --yellow: #f59e0b; --red: #ef4444; --text: #e2e8f0; --muted: #64748b;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+code, pre { font-family: 'JetBrains Mono', monospace; }
+.sticky-nav { position: sticky; top: 0; z-index: 100; background: rgba(10,10,15,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); padding: 12px 32px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.sticky-nav a { color: var(--muted); text-decoration: none; font-size: 0.85rem; padding: 6px 12px; border-radius: 6px; transition: all 0.2s; border: 1px solid transparent; }
+.sticky-nav a:hover { color: var(--text); background: var(--card); border-color: var(--border); }
+.sticky-nav .brand { color: var(--purple-light); font-weight: 600; font-size: 0.9rem; }
+.nav-sep { color: var(--border); }
+.nav-title { color: var(--text); font-weight: 700; font-size: 0.95rem; flex: 1; }
+.hero { padding: 56px 32px 32px; max-width: 1100px; margin: 0 auto; border-bottom: 1px solid var(--border); }
+.hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: 8px; }
+.hero h1 span { color: var(--purple-light); }
+.hero p { color: var(--muted); font-size: 1rem; max-width: 700px; }
+.hero-meta { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
+.badge-purple { background: rgba(124,58,237,0.15); color: var(--purple-light); border: 1px solid rgba(124,58,237,0.3); }
+.badge-teal { background: rgba(13,148,136,0.15); color: #2dd4bf; border: 1px solid rgba(13,148,136,0.3); }
+.badge-green { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.progress-bar-wrap { max-width: 1100px; margin: 24px auto; padding: 0 32px; }
+.progress-label { font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
+.progress-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--purple), var(--teal)); border-radius: 3px; transition: width 0.5s ease; }
+.main { max-width: 1100px; margin: 0 auto; padding: 32px; display: flex; flex-direction: column; gap: 48px; }
+.exercise { border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: var(--card); }
+.exercise-header { padding: 24px 32px; background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(13,148,136,0.05)); border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.exercise-num { font-size: 0.75rem; color: var(--purple-light); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.exercise-header h2 { font-size: 1.4rem; font-weight: 700; margin: 4px 0 8px; }
+.exercise-header p { color: var(--muted); font-size: 0.9rem; }
+.ex-status { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); }
+.status-dot.done { background: var(--green); }
+.exercise-body { padding: 28px 32px; display: flex; flex-direction: column; gap: 24px; }
+.section-label { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.section-label.purple { color: var(--purple-light); }
+.section-label.yellow { color: var(--yellow); }
+.section-label.green { color: #34d399; }
+.section-label.teal { color: #2dd4bf; }
+.section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.objective-box { background: rgba(124,58,237,0.06); border: 1px solid rgba(124,58,237,0.2); border-radius: 10px; padding: 16px 20px; font-size: 0.88rem; color: var(--text); line-height: 1.7; }
+.objective-box strong { color: var(--purple-light); }
+.task-requirements { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); border-radius: 10px; padding: 16px 20px; }
+.task-requirements p.task-title { font-weight: 700; margin-bottom: 8px; color: var(--yellow); font-size: 0.88rem; }
+.task-requirements li { color: var(--text); font-size: 0.88rem; margin: 6px 0 6px 20px; }
+.task-requirements li::marker { color: var(--yellow); }
+.code-wrap { background: #0d0d18; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin: 4px 0; }
+.code-header { padding: 8px 16px; background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+.code-dots { display: flex; gap: 6px; }
+.code-dots span { width: 10px; height: 10px; border-radius: 50%; }
+.code-dots .dot-r { background: var(--red); }
+.code-dots .dot-y { background: var(--yellow); }
+.code-dots .dot-g { background: var(--green); }
+.code-content { padding: 20px; overflow-x: auto; white-space: pre; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; line-height: 1.75; color: #eeffff; }
+.kw { color: #c792ea; } .fn { color: #82aaff; } .st { color: #c3e88d; } .cm { color: #546e7a; font-style: italic; }
+.nm { color: #f78c6c; } .tp { color: #ffcb6b; } .dt { color: #89ddff; } .va { color: #eeffff; } .bi { color: #ff5370; }
+.c-kw { color: #c792ea; } .c-fn { color: #2dd4bf; } .c-str { color: #c3e88d; } .c-cmt { color: #546e7a; font-style: italic; }
+.tests-grid { display: flex; flex-direction: column; gap: 8px; }
+.test-case { display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+.test-badge { flex-shrink: 0; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; font-family: 'Inter', sans-serif; letter-spacing: 0.5px; }
+.test-badge.pass { background: rgba(16,185,129,0.2); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.test-badge.pending { background: rgba(100,116,139,0.2); color: var(--muted); border: 1px solid rgba(100,116,139,0.3); }
+.test-content { flex: 1; }
+.test-input { color: var(--text); }
+.test-expected { color: var(--muted); margin-top: 2px; }
+.hints-list { display: flex; flex-direction: column; gap: 8px; }
+.hint-toggle { width: 100%; text-align: left; padding: 10px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--muted); cursor: pointer; font-family: 'Inter', sans-serif; font-size: 0.85rem; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s; }
+.hint-toggle:hover { border-color: var(--purple); color: var(--text); }
+.hint-toggle .arrow { transition: transform 0.2s; display: inline-block; }
+.hint-toggle.open .arrow { transform: rotate(90deg); }
+.hint-body { display: none; padding: 12px 16px; margin-top: 4px; background: rgba(124,58,237,0.05); border: 1px solid rgba(124,58,237,0.2); border-radius: 8px; font-size: 0.85rem; color: var(--text); line-height: 1.6; }
+.hint-body.open { display: block; }
+.hint-body code { background: rgba(124,58,237,0.15); padding: 1px 5px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--purple-light); }
+.footer { border-top: 1px solid var(--border); padding: 32px; text-align: center; color: var(--muted); font-size: 0.82rem; margin-top: 32px; }
+.footer a { color: var(--purple-light); text-decoration: none; }
+@media (max-width: 768px) { .exercise-body { padding: 20px 16px; } .exercise-header { padding: 20px 16px; } .hero { padding: 32px 16px 24px; } .main { padding: 20px 16px; } }
+</style>
+</head>
+<body>
+
+<nav class="sticky-nav">
+  <a href="../days/day9.html">← Day 9 lesson</a>
+  <span class="nav-sep">|</span>
+  <a href="../index.html" class="brand">🤖 Agentic AI</a>
+  <span class="nav-sep">|</span>
+  <span class="nav-title">Day 9 Exercises — LLM Provider Landscape</span>
+  <a href="day10_exercises.html" style="margin-left:auto;">Day 10 Exercises →</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-meta">
+    <span class="badge badge-purple">Day 9</span>
+    <span class="badge badge-teal">5 Exercises</span>
+    <span class="badge badge-green">OpenAI / Claude / Gemini / Cost</span>
+  </div>
+  <h1>LLM Provider <span>Landscape</span></h1>
+  <p>Compare OpenAI, Anthropic Claude, and Google Gemini APIs — unified via LiteLLM or LangChain. Build a provider-agnostic wrapper, benchmark latency vs cost, and implement smart fallback routing.</p>
+</div>
+
+<div class="progress-bar-wrap">
+  <div class="progress-label"><span>Progress</span><span id="progress-text">0 / 5 completed</span></div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+</div>
+
+<main class="main">
+
+<!-- ========== EXERCISE 1 ========== -->
+<section class="exercise" id="ex1">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 1 of 5</div>
+      <h2>Provider-Agnostic Wrapper with LiteLLM</h2>
+      <p>Call OpenAI, Claude, and Gemini with the same function signature using LiteLLM's unified interface.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot1"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="exercise-body">
+    <div>
+      <div class="section-label purple">Objective</div>
+      <div class="objective-box"><strong>Goal:</strong> Use <code>litellm.completion()</code> with different model strings to call OpenAI, Anthropic, and Gemini without changing your code structure. Build a <code>call_model(model, prompt)</code> helper and run the same prompt across all three providers.</div>
+    </div>
+    <div>
+      <div class="section-label yellow">Your Task</div>
+      <div class="task-requirements">
+        <p class="task-title">Build a multi-provider caller:</p>
+        <ul>
+          <li>Install <code>litellm</code> and set API keys for at least 2 providers</li>
+          <li>Write <code>call_model(model: str, prompt: str) -> str</code> using <code>litellm.completion()</code></li>
+          <li>Call the same prompt ("Explain async/await in Python in one sentence") on <code>gpt-4o-mini</code>, <code>claude-haiku-4-5-20251001</code>, and <code>gemini/gemini-1.5-flash</code></li>
+          <li>Record latency for each call using <code>time.perf_counter()</code></li>
+          <li>Print a comparison table: model | latency | response length | first 60 chars</li>
+        </ul>
+      </div>
+    </div>
+    <div>
+      <div class="section-label teal">Starter Code</div>
+      <div class="code-wrap">
+        <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>ex1_litellm.py</span><span>Python 3.11+</span></div>
+        <div class="code-content"><span class="cm"># pip install litellm</span>
+<span class="kw">import</span> <span class="va">litellm</span>
+<span class="kw">import</span> <span class="va">time</span>
+
+<span class="va">litellm</span><span class="dt">.</span><span class="va">set_verbose</span> <span class="dt">=</span> <span class="bi">False</span>
+
+<span class="kw">def</span> <span class="fn">call_model</span><span class="dt">(</span><span class="va">model</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">,</span> <span class="va">prompt</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">tuple</span><span class="dt">[</span><span class="tp">str</span><span class="dt">,</span> <span class="tp">float</span><span class="dt">]:</span>
+    <span class="st">"""Returns (response_text, latency_seconds)."""</span>
+    <span class="va">t0</span> <span class="dt">=</span> <span class="va">time</span><span class="dt">.</span><span class="fn">perf_counter</span><span class="dt">()</span>
+    <span class="cm"># TODO: call litellm.completion with model and prompt</span>
+    <span class="va">response</span> <span class="dt">=</span> <span class="dt">...</span>
+    <span class="va">latency</span> <span class="dt">=</span> <span class="va">time</span><span class="dt">.</span><span class="fn">perf_counter</span><span class="dt">()</span> <span class="dt">-</span> <span class="va">t0</span>
+    <span class="cm"># TODO: extract text from response.choices[0].message.content</span>
+    <span class="va">text</span> <span class="dt">=</span> <span class="dt">...</span>
+    <span class="kw">return</span> <span class="va">text</span><span class="dt">,</span> <span class="va">latency</span>
+
+<span class="va">prompt</span> <span class="dt">=</span> <span class="st">"Explain async/await in Python in one sentence."</span>
+<span class="va">models</span> <span class="dt">=</span> <span class="dt">[</span>
+    <span class="st">"gpt-4o-mini"</span><span class="dt">,</span>
+    <span class="st">"claude-haiku-4-5-20251001"</span><span class="dt">,</span>
+    <span class="st">"gemini/gemini-1.5-flash"</span><span class="dt">,</span>
+<span class="dt">]</span>
+
+<span class="fn">print</span><span class="dt">(</span><span class="bi">f</span><span class="st">"{'Model':<30} {'Latency':>10} {'Chars':>8} {'Preview'}"</span><span class="dt">)</span>
+<span class="fn">print</span><span class="dt">(</span><span class="st">"-"</span> <span class="dt">*</span> <span class="nm">80</span><span class="dt">)</span>
+<span class="kw">for</span> <span class="va">model</span> <span class="kw">in</span> <span class="va">models</span><span class="dt">:</span>
+    <span class="kw">try</span><span class="dt">:</span>
+        <span class="va">text</span><span class="dt">,</span> <span class="va">lat</span> <span class="dt">=</span> <span class="fn">call_model</span><span class="dt">(</span><span class="va">model</span><span class="dt">,</span> <span class="va">prompt</span><span class="dt">)</span>
+        <span class="fn">print</span><span class="dt">(</span><span class="bi">f</span><span class="st">"{model:<30} {lat:>9.2f}s {len(text):>8} {text[:60]}..."</span><span class="dt">)</span>
+    <span class="kw">except</span> <span class="tp">Exception</span> <span class="kw">as</span> <span class="va">e</span><span class="dt">:</span>
+        <span class="fn">print</span><span class="dt">(</span><span class="bi">f</span><span class="st">"{model:<30} ERROR: {e}"</span><span class="dt">)</span></div>
+      </div>
+    </div>
+    <div>
+      <div class="section-label green">Expected Output</div>
+      <div class="tests-grid">
+        <div class="test-case"><span class="test-badge pending">TODO</span><div class="test-content"><div class="test-input">Comparison table</div><div class="test-expected">→ 3 rows, each with model name, latency in seconds, character count, and response preview</div></div></div>
+      </div>
+    </div>
+    <div>
+      <div class="section-label purple">Hints</div>
+      <div class="hints-list">
+        <div>
+          <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — LiteLLM model string format</span><span class="arrow">▶</span></button>
+          <div class="hint-body">LiteLLM uses provider-prefixed model strings: <code>gpt-4o-mini</code> (OpenAI default), <code>anthropic/claude-haiku-4-5-20251001</code> or just <code>claude-haiku-4-5-20251001</code>, <code>gemini/gemini-1.5-flash</code>. Set <code>OPENAI_API_KEY</code>, <code>ANTHROPIC_API_KEY</code>, <code>GEMINI_API_KEY</code> env vars.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 2 ========== -->
+<section class="exercise" id="ex2">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 2 of 5</div>
+      <h2>Cost Calculator & Token Budget</h2>
+      <p>Build a real-time cost tracker that accumulates spend across multiple providers with different pricing.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot2"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="exercise-body">
+    <div>
+      <div class="section-label purple">Objective</div>
+      <div class="objective-box"><strong>Goal:</strong> Use LiteLLM's built-in <code>completion_cost()</code> function to track per-call spend. Build a <code>CostTracker</code> context manager that logs token usage and cost for every LLM call, then generates a spend report.</div>
+    </div>
+    <div>
+      <div class="section-label yellow">Your Task</div>
+      <div class="task-requirements">
+        <p class="task-title">Build a CostTracker:</p>
+        <ul>
+          <li>Use <code>litellm.completion_cost(completion_response=response)</code> to get cost per call</li>
+          <li>Build a <code>CostTracker</code> class with <code>track(model, response)</code> and <code>report()</code> methods</li>
+          <li>Track: model name, prompt tokens, completion tokens, cost per call, cumulative cost</li>
+          <li>Make 5 API calls across different models and sizes, tracking each</li>
+          <li>Print a spend report sorted by cost descending, with a total row</li>
+        </ul>
+      </div>
+    </div>
+    <div>
+      <div class="section-label teal">Starter Code</div>
+      <div class="code-wrap">
+        <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>ex2_cost_tracker.py</span><span>Python 3.11+</span></div>
+        <div class="code-content"><span class="kw">import</span> <span class="va">litellm</span>
+<span class="kw">from</span> <span class="va">dataclasses</span> <span class="kw">import</span> <span class="va">dataclass</span><span class="dt">,</span> <span class="va">field</span>
+
+<span class="dt">@</span><span class="fn">dataclass</span>
+<span class="kw">class</span> <span class="tp">CallRecord</span><span class="dt">:</span>
+    <span class="va">model</span><span class="dt">:</span> <span class="tp">str</span>
+    <span class="va">prompt_tokens</span><span class="dt">:</span> <span class="tp">int</span>
+    <span class="va">completion_tokens</span><span class="dt">:</span> <span class="tp">int</span>
+    <span class="va">cost_usd</span><span class="dt">:</span> <span class="tp">float</span>
+
+<span class="kw">class</span> <span class="tp">CostTracker</span><span class="dt">:</span>
+    <span class="kw">def</span> <span class="fn">__init__</span><span class="dt">(</span><span class="va">self</span><span class="dt">):</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">records</span><span class="dt">:</span> <span class="tp">list</span><span class="dt">[</span><span class="tp">CallRecord</span><span class="dt">]</span> <span class="dt">=</span> <span class="dt">[]</span>
+
+    <span class="kw">def</span> <span class="fn">track</span><span class="dt">(</span><span class="va">self</span><span class="dt">,</span> <span class="va">model</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">,</span> <span class="va">response</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">float</span><span class="dt">:</span>
+        <span class="st">"""Track cost and return cost for this call."""</span>
+        <span class="cm"># TODO: call litellm.completion_cost(completion_response=response)</span>
+        <span class="va">cost</span> <span class="dt">=</span> <span class="dt">...</span>
+        <span class="va">usage</span> <span class="dt">=</span> <span class="va">response</span><span class="dt">.</span><span class="va">usage</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">records</span><span class="dt">.</span><span class="fn">append</span><span class="dt">(</span><span class="tp">CallRecord</span><span class="dt">(</span>
+            <span class="va">model</span><span class="dt">=</span><span class="va">model</span><span class="dt">,</span>
+            <span class="va">prompt_tokens</span><span class="dt">=</span><span class="va">usage</span><span class="dt">.</span><span class="va">prompt_tokens</span><span class="dt">,</span>
+            <span class="va">completion_tokens</span><span class="dt">=</span><span class="va">usage</span><span class="dt">.</span><span class="va">completion_tokens</span><span class="dt">,</span>
+            <span class="va">cost_usd</span><span class="dt">=</span><span class="va">cost</span>
+        <span class="dt">))</span>
+        <span class="kw">return</span> <span class="va">cost</span>
+
+    <span class="kw">def</span> <span class="fn">report</span><span class="dt">(</span><span class="va">self</span><span class="dt">)</span> <span class="dt">-></span> <span class="bi">None</span><span class="dt">:</span>
+        <span class="st">"""Print a formatted spend report."""</span>
+        <span class="cm"># TODO: sort by cost desc, print table, add total row</span>
+        <span class="dt">...</span>
+
+<span class="va">tracker</span> <span class="dt">=</span> <span class="tp">CostTracker</span><span class="dt">()</span>
+<span class="va">calls</span> <span class="dt">=</span> <span class="dt">[</span>
+    <span class="dt">(</span><span class="st">"gpt-4o-mini"</span><span class="dt">,</span> <span class="st">"What is 2+2?"</span><span class="dt">),</span>
+    <span class="dt">(</span><span class="st">"gpt-4o"</span><span class="dt">,</span> <span class="st">"Explain quantum entanglement in detail."</span><span class="dt">),</span>
+    <span class="dt">(</span><span class="st">"claude-haiku-4-5-20251001"</span><span class="dt">,</span> <span class="st">"List 5 Python tips."</span><span class="dt">),</span>
+    <span class="dt">(</span><span class="st">"claude-haiku-4-5-20251001"</span><span class="dt">,</span> <span class="st">"What is FastAPI?"</span><span class="dt">),</span>
+    <span class="dt">(</span><span class="st">"gpt-4o-mini"</span><span class="dt">,</span> <span class="st">"Write a haiku about distributed systems."</span><span class="dt">),</span>
+<span class="dt">]</span>
+<span class="kw">for</span> <span class="va">model</span><span class="dt">,</span> <span class="va">prompt</span> <span class="kw">in</span> <span class="va">calls</span><span class="dt">:</span>
+    <span class="va">resp</span> <span class="dt">=</span> <span class="va">litellm</span><span class="dt">.</span><span class="fn">completion</span><span class="dt">(</span><span class="va">model</span><span class="dt">=</span><span class="va">model</span><span class="dt">,</span> <span class="va">messages</span><span class="dt">=[{</span><span class="st">"role"</span><span class="dt">:</span><span class="st">"user"</span><span class="dt">,</span><span class="st">"content"</span><span class="dt">:</span><span class="va">prompt</span><span class="dt">}])</span>
+    <span class="va">cost</span> <span class="dt">=</span> <span class="va">tracker</span><span class="dt">.</span><span class="fn">track</span><span class="dt">(</span><span class="va">model</span><span class="dt">,</span> <span class="va">resp</span><span class="dt">)</span>
+    <span class="fn">print</span><span class="dt">(</span><span class="bi">f</span><span class="st">"  {model}: ${cost:.6f}"</span><span class="dt">)</span>
+
+<span class="va">tracker</span><span class="dt">.</span><span class="fn">report</span><span class="dt">()</span></div>
+      </div>
+    </div>
+    <div>
+      <div class="section-label green">Expected Output</div>
+      <div class="tests-grid">
+        <div class="test-case"><span class="test-badge pending">TODO</span><div class="test-content"><div class="test-input">tracker.report()</div><div class="test-expected">→ Table sorted by cost, total row at bottom, costs in USD to 6 decimal places</div></div></div>
+      </div>
+    </div>
+    <div>
+      <div class="section-label purple">Hints</div>
+      <div class="hints-list">
+        <div>
+          <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — LiteLLM pricing database</span><span class="arrow">▶</span></button>
+          <div class="hint-body"><code>litellm.model_cost</code> is a dict of all model pricing. You can inspect it: <code>litellm.model_cost["gpt-4o-mini"]</code> gives <code>{"input_cost_per_token": ..., "output_cost_per_token": ...}</code>. <code>completion_cost()</code> uses this internally.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 3 ========== -->
+<section class="exercise" id="ex3">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 3 of 5</div>
+      <h2>Fallback Router with Automatic Retries</h2>
+      <p>Build a resilient caller that falls back from expensive to cheap models on error or high latency.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot3"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="exercise-body">
+    <div>
+      <div class="section-label purple">Objective</div>
+      <div class="objective-box"><strong>Goal:</strong> Use LiteLLM's <code>fallbacks</code> parameter or build your own fallback logic. Primary: GPT-4o. Fallback 1: Claude Haiku. Fallback 2: GPT-4o-mini. Implement rate-limit detection and exponential backoff using <code>tenacity</code>.</div>
+    </div>
+    <div>
+      <div class="section-label yellow">Your Task</div>
+      <div class="task-requirements">
+        <p class="task-title">Build a resilient LLM caller:</p>
+        <ul>
+          <li>Use <code>litellm.completion(model=..., fallbacks=[...])</code> with a primary + 2 fallback models</li>
+          <li>Wrap calls with <code>@retry</code> from <code>tenacity</code> — retry up to 3 times with exponential backoff on <code>RateLimitError</code></li>
+          <li>Simulate a rate limit error by patching the primary model call to raise <code>litellm.RateLimitError</code></li>
+          <li>Verify the fallback model was used and log which model actually answered</li>
+          <li>Add a <code>timeout</code> parameter (5 seconds) and test that slow models trigger fallback</li>
+        </ul>
+      </div>
+    </div>
+    <div>
+      <div class="section-label teal">Starter Code</div>
+      <div class="code-wrap">
+        <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>ex3_fallback.py</span><span>Python 3.11+</span></div>
+        <div class="code-content"><span class="cm"># pip install litellm tenacity</span>
+<span class="kw">import</span> <span class="va">litellm</span>
+<span class="kw">from</span> <span class="va">tenacity</span> <span class="kw">import</span> <span class="va">retry</span><span class="dt">,</span> <span class="va">stop_after_attempt</span><span class="dt">,</span> <span class="va">wait_exponential</span><span class="dt">,</span> <span class="va">retry_if_exception_type</span>
+
+<span class="va">MODEL_CASCADE</span> <span class="dt">=</span> <span class="dt">[</span><span class="st">"gpt-4o"</span><span class="dt">,</span> <span class="st">"claude-haiku-4-5-20251001"</span><span class="dt">,</span> <span class="st">"gpt-4o-mini"</span><span class="dt">]</span>
+
+<span class="dt">@</span><span class="fn">retry</span><span class="dt">(</span>
+    <span class="va">stop</span><span class="dt">=</span><span class="fn">stop_after_attempt</span><span class="dt">(</span><span class="nm">3</span><span class="dt">),</span>
+    <span class="va">wait</span><span class="dt">=</span><span class="fn">wait_exponential</span><span class="dt">(</span><span class="va">multiplier</span><span class="dt">=</span><span class="nm">1</span><span class="dt">,</span> <span class="va">min</span><span class="dt">=</span><span class="nm">1</span><span class="dt">,</span> <span class="va">max</span><span class="dt">=</span><span class="nm">10</span><span class="dt">),</span>
+    <span class="va">retry</span><span class="dt">=</span><span class="fn">retry_if_exception_type</span><span class="dt">(</span><span class="va">litellm</span><span class="dt">.</span><span class="tp">RateLimitError</span><span class="dt">),</span>
+<span class="dt">)</span>
+<span class="kw">def</span> <span class="fn">call_with_fallback</span><span class="dt">(</span><span class="va">prompt</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">tuple</span><span class="dt">[</span><span class="tp">str</span><span class="dt">,</span> <span class="tp">str</span><span class="dt">]:</span>
+    <span class="st">"""Try models in cascade; return (text, model_used)."""</span>
+    <span class="kw">for</span> <span class="va">model</span> <span class="kw">in</span> <span class="va">MODEL_CASCADE</span><span class="dt">:</span>
+        <span class="kw">try</span><span class="dt">:</span>
+            <span class="cm"># TODO: call litellm.completion with timeout=5</span>
+            <span class="va">resp</span> <span class="dt">=</span> <span class="dt">...</span>
+            <span class="va">text</span> <span class="dt">=</span> <span class="va">resp</span><span class="dt">.</span><span class="va">choices</span><span class="dt">[</span><span class="nm">0</span><span class="dt">].</span><span class="va">message</span><span class="dt">.</span><span class="va">content</span>
+            <span class="fn">print</span><span class="dt">(</span><span class="bi">f</span><span class="st">"  ✓ Used model: {model}"</span><span class="dt">)</span>
+            <span class="kw">return</span> <span class="va">text</span><span class="dt">,</span> <span class="va">model</span>
+        <span class="kw">except</span> <span class="va">litellm</span><span class="dt">.</span><span class="tp">RateLimitError</span><span class="dt">:</span>
+            <span class="fn">print</span><span class="dt">(</span><span class="bi">f</span><span class="st">"  ✗ {model} rate limited, trying next..."</span><span class="dt">)</span>
+            <span class="kw">if</span> <span class="va">model</span> <span class="dt">==</span> <span class="va">MODEL_CASCADE</span><span class="dt">[-</span><span class="nm">1</span><span class="dt">]:</span>
+                <span class="kw">raise</span>  <span class="cm"># all models exhausted, let tenacity retry</span>
+        <span class="kw">except</span> <span class="tp">Exception</span> <span class="kw">as</span> <span class="va">e</span><span class="dt">:</span>
+            <span class="fn">print</span><span class="dt">(</span><span class="bi">f</span><span class="st">"  ✗ {model} error: {e}, trying next..."</span><span class="dt">)</span>
+
+<span class="cm"># Test normal flow</span>
+<span class="va">text</span><span class="dt">,</span> <span class="va">used</span> <span class="dt">=</span> <span class="fn">call_with_fallback</span><span class="dt">(</span><span class="st">"What is SOLID in software design?"</span><span class="dt">)</span>
+<span class="fn">print</span><span class="dt">(</span><span class="bi">f</span><span class="st">"Answer from {used}: {text[:100]}..."</span><span class="dt">)</span></div>
+      </div>
+    </div>
+    <div>
+      <div class="section-label green">Expected Output</div>
+      <div class="tests-grid">
+        <div class="test-case"><span class="test-badge pending">TODO</span><div class="test-content"><div class="test-input">Normal call</div><div class="test-expected">→ "✓ Used model: gpt-4o" — answers from primary</div></div></div>
+        <div class="test-case"><span class="test-badge pending">TODO</span><div class="test-content"><div class="test-input">With simulated rate limit on primary</div><div class="test-expected">→ Falls through to claude-haiku, logs each failure</div></div></div>
+      </div>
+    </div>
+    <div>
+      <div class="section-label purple">Hints</div>
+      <div class="hints-list">
+        <div>
+          <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — LiteLLM native fallbacks</span><span class="arrow">▶</span></button>
+          <div class="hint-body">LiteLLM supports native fallbacks: <code>litellm.completion(model="gpt-4o", fallbacks=["claude-haiku-4-5-20251001", "gpt-4o-mini"], ...)</code>. The manual cascade gives more control over logging which model was used.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 4 ========== -->
+<section class="exercise" id="ex4">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 4 of 5</div>
+      <h2>Streaming Responses Across Providers</h2>
+      <p>Stream tokens in real-time from different providers using a unified streaming interface.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot4"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="exercise-body">
+    <div>
+      <div class="section-label purple">Objective</div>
+      <div class="objective-box"><strong>Goal:</strong> Use <code>litellm.completion(stream=True)</code> to stream tokens from both OpenAI and Anthropic, measuring time-to-first-token (TTFT) and total tokens per second. Display streamed output progressively in the terminal.</div>
+    </div>
+    <div>
+      <div class="section-label yellow">Your Task</div>
+      <div class="task-requirements">
+        <p class="task-title">Build a streaming benchmark:</p>
+        <ul>
+          <li>Call <code>litellm.completion(model=..., messages=..., stream=True)</code> for 2 models</li>
+          <li>Iterate over <code>chunk.choices[0].delta.content</code> and print each token as it arrives</li>
+          <li>Record time-to-first-token (TTFT): time from request start to first non-empty chunk</li>
+          <li>Count total tokens received and calculate tokens/second throughput</li>
+          <li>Print a summary: TTFT, total time, throughput for each model</li>
+        </ul>
+      </div>
+    </div>
+    <div>
+      <div class="section-label teal">Starter Code</div>
+      <div class="code-wrap">
+        <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>ex4_streaming.py</span><span>Python 3.11+</span></div>
+        <div class="code-content"><span class="kw">import</span> <span class="va">litellm</span>
+<span class="kw">import</span> <span class="va">time</span>
+
+<span class="kw">def</span> <span class="fn">stream_benchmark</span><span class="dt">(</span><span class="va">model</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">,</span> <span class="va">prompt</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">dict</span><span class="dt">:</span>
+    <span class="st">"""Stream from model and return timing metrics."""</span>
+    <span class="fn">print</span><span class="dt">(</span><span class="bi">f</span><span class="st">"\n--- {model} ---"</span><span class="dt">)</span>
+    <span class="va">t_start</span> <span class="dt">=</span> <span class="va">time</span><span class="dt">.</span><span class="fn">perf_counter</span><span class="dt">()</span>
+    <span class="va">t_first</span> <span class="dt">=</span> <span class="bi">None</span>
+    <span class="va">token_count</span> <span class="dt">=</span> <span class="nm">0</span>
+    <span class="va">full_text</span> <span class="dt">=</span> <span class="st">""</span>
+
+    <span class="cm"># TODO: create streaming completion</span>
+    <span class="va">stream</span> <span class="dt">=</span> <span class="va">litellm</span><span class="dt">.</span><span class="fn">completion</span><span class="dt">(</span>
+        <span class="va">model</span><span class="dt">=</span><span class="va">model</span><span class="dt">,</span>
+        <span class="va">messages</span><span class="dt">=[{</span><span class="st">"role"</span><span class="dt">:</span> <span class="st">"user"</span><span class="dt">,</span> <span class="st">"content"</span><span class="dt">:</span> <span class="va">prompt</span><span class="dt">}],</span>
+        <span class="va">stream</span><span class="dt">=</span><span class="bi">True</span><span class="dt">,</span>
+    <span class="dt">)</span>
+
+    <span class="cm"># TODO: iterate chunks, record TTFT, count tokens</span>
+    <span class="kw">for</span> <span class="va">chunk</span> <span class="kw">in</span> <span class="va">stream</span><span class="dt">:</span>
+        <span class="va">delta</span> <span class="dt">=</span> <span class="va">chunk</span><span class="dt">.</span><span class="va">choices</span><span class="dt">[</span><span class="nm">0</span><span class="dt">].</span><span class="va">delta</span><span class="dt">.</span><span class="va">content</span>
+        <span class="kw">if</span> <span class="va">delta</span><span class="dt">:</span>
+            <span class="kw">if</span> <span class="va">t_first</span> <span class="kw">is</span> <span class="bi">None</span><span class="dt">:</span>
+                <span class="va">t_first</span> <span class="dt">=</span> <span class="va">time</span><span class="dt">.</span><span class="fn">perf_counter</span><span class="dt">()</span>  <span class="cm"># first token!</span>
+            <span class="va">token_count</span> <span class="dt">+=</span> <span class="nm">1</span>
+            <span class="va">full_text</span> <span class="dt">+=</span> <span class="va">delta</span>
+            <span class="fn">print</span><span class="dt">(</span><span class="va">delta</span><span class="dt">,</span> <span class="va">end</span><span class="dt">=</span><span class="st">""</span><span class="dt">,</span> <span class="va">flush</span><span class="dt">=</span><span class="bi">True</span><span class="dt">)</span>
+
+    <span class="va">t_end</span> <span class="dt">=</span> <span class="va">time</span><span class="dt">.</span><span class="fn">perf_counter</span><span class="dt">()</span>
+    <span class="va">ttft</span> <span class="dt">=</span> <span class="dt">(</span><span class="va">t_first</span> <span class="dt">-</span> <span class="va">t_start</span><span class="dt">)</span> <span class="kw">if</span> <span class="va">t_first</span> <span class="kw">else</span> <span class="nm">0</span>
+    <span class="va">total</span> <span class="dt">=</span> <span class="va">t_end</span> <span class="dt">-</span> <span class="va">t_start</span>
+    <span class="cm"># TODO: calculate tokens_per_sec and print summary</span>
+    <span class="fn">print</span><span class="dt">(</span><span class="bi">f</span><span class="st">"\nTTFT: {ttft:.3f}s | Total: {total:.2f}s | Tokens: {token_count}"</span><span class="dt">)</span>
+    <span class="kw">return</span> <span class="dt">{</span><span class="st">"model"</span><span class="dt">:</span> <span class="va">model</span><span class="dt">,</span> <span class="st">"ttft"</span><span class="dt">:</span> <span class="va">ttft</span><span class="dt">,</span> <span class="st">"total"</span><span class="dt">:</span> <span class="va">total</span><span class="dt">,</span> <span class="st">"tokens"</span><span class="dt">:</span> <span class="va">token_count</span><span class="dt">}</span>
+
+<span class="va">prompt</span> <span class="dt">=</span> <span class="st">"Write a 3-paragraph explanation of how distributed databases work."</span>
+<span class="kw">for</span> <span class="va">model</span> <span class="kw">in</span> <span class="dt">[</span><span class="st">"gpt-4o-mini"</span><span class="dt">,</span> <span class="st">"claude-haiku-4-5-20251001"</span><span class="dt">]:</span>
+    <span class="fn">stream_benchmark</span><span class="dt">(</span><span class="va">model</span><span class="dt">,</span> <span class="va">prompt</span><span class="dt">)</span></div>
+      </div>
+    </div>
+    <div>
+      <div class="section-label green">Expected Output</div>
+      <div class="tests-grid">
+        <div class="test-case"><span class="test-badge pending">TODO</span><div class="test-content"><div class="test-input">stream_benchmark run</div><div class="test-expected">→ Tokens print progressively; final line: TTFT: 0.4s | Total: 3.2s | Tokens: 187</div></div></div>
+      </div>
+    </div>
+    <div>
+      <div class="section-label purple">Hints</div>
+      <div class="hints-list">
+        <div>
+          <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — delta.content can be None</span><span class="arrow">▶</span></button>
+          <div class="hint-body">The first and last chunks often have <code>delta.content = None</code>. Always guard with <code>if delta:</code> before printing or counting.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 5 ========== -->
+<section class="exercise" id="ex5">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 5 of 5</div>
+      <h2>Prompt Caching with Claude</h2>
+      <p>Use Anthropic's prompt caching to slash costs on repeated long-context calls by up to 90%.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot5"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="exercise-body">
+    <div>
+      <div class="section-label purple">Objective</div>
+      <div class="objective-box"><strong>Goal:</strong> Use <code>cache_control: {"type": "ephemeral"}</code> on a large system prompt with the Anthropic SDK. Make the same call twice and observe that the second call is cheaper (cached input tokens vs uncached). Calculate actual savings.</div>
+    </div>
+    <div>
+      <div class="section-label yellow">Your Task</div>
+      <div class="task-requirements">
+        <p class="task-title">Implement and measure prompt caching:</p>
+        <ul>
+          <li>Build a large system prompt (&gt;1024 tokens) — load a text file or repeat content</li>
+          <li>Mark it with <code>{"cache_control": {"type": "ephemeral"}}</code> in the content block</li>
+          <li>Make the same call twice with the same system prompt but different user messages</li>
+          <li>Compare <code>usage.cache_read_input_tokens</code> vs <code>usage.cache_creation_input_tokens</code></li>
+          <li>Calculate and print: cost without caching vs cost with caching, and % savings</li>
+        </ul>
+      </div>
+    </div>
+    <div>
+      <div class="section-label teal">Starter Code</div>
+      <div class="code-wrap">
+        <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>ex5_cache.py</span><span>Python 3.11+</span></div>
+        <div class="code-content"><span class="cm"># pip install anthropic</span>
+<span class="kw">import</span> <span class="va">anthropic</span>
+
+<span class="va">client</span> <span class="dt">=</span> <span class="va">anthropic</span><span class="dt">.</span><span class="fn">Anthropic</span><span class="dt">()</span>
+
+<span class="cm"># Large system prompt (needs to be 1024+ tokens for caching)</span>
+<span class="va">LARGE_SYSTEM</span> <span class="dt">=</span> <span class="st">"""You are an expert Python backend engineer specialising in FastAPI,
+SQLAlchemy, and distributed systems. You have deep knowledge of:
+- Async Python patterns and event loops
+- Database connection pooling and query optimisation
+- Redis caching strategies and cache invalidation
+- Message queues (Kafka, RabbitMQ, Celery)
+- API design, versioning, and backward compatibility
+- Docker, Kubernetes, and CI/CD pipelines
+- Security: OAuth2, JWT, rate limiting, input validation
+- Monitoring: Prometheus, Grafana, structured logging
+- Testing: pytest, factory-boy, hypothesis, load testing
+- Performance profiling and bottleneck identification
+"""</span> <span class="dt">*</span> <span class="nm">5</span>  <span class="cm"># Repeat to exceed 1024 tokens</span>
+
+<span class="kw">def</span> <span class="fn">call_with_cache</span><span class="dt">(</span><span class="va">user_message</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span><span class="dt">:</span>
+    <span class="st">"""Call Claude with cached system prompt."""</span>
+    <span class="kw">return</span> <span class="va">client</span><span class="dt">.</span><span class="va">messages</span><span class="dt">.</span><span class="fn">create</span><span class="dt">(</span>
+        <span class="va">model</span><span class="dt">=</span><span class="st">"claude-haiku-4-5-20251001"</span><span class="dt">,</span>
+        <span class="va">max_tokens</span><span class="dt">=</span><span class="nm">256</span><span class="dt">,</span>
+        <span class="va">system</span><span class="dt">=[{</span>
+            <span class="st">"type"</span><span class="dt">:</span> <span class="st">"text"</span><span class="dt">,</span>
+            <span class="st">"text"</span><span class="dt">:</span> <span class="va">LARGE_SYSTEM</span><span class="dt">,</span>
+            <span class="cm"># TODO: add cache_control here</span>
+            <span class="st">"cache_control"</span><span class="dt">:</span> <span class="dt">...,</span>
+        <span class="dt">}],</span>
+        <span class="va">messages</span><span class="dt">=[{</span><span class="st">"role"</span><span class="dt">:</span> <span class="st">"user"</span><span class="dt">,</span> <span class="st">"content"</span><span class="dt">:</span> <span class="va">user_message</span><span class="dt">}]</span>
+    <span class="dt">)</span>
+
+<span class="cm"># First call — creates the cache</span>
+<span class="va">r1</span> <span class="dt">=</span> <span class="fn">call_with_cache</span><span class="dt">(</span><span class="st">"How do I implement Redis caching in FastAPI?"</span><span class="dt">)</span>
+<span class="fn">print</span><span class="dt">(</span><span class="st">"Call 1 usage:"</span><span class="dt">,</span> <span class="va">r1</span><span class="dt">.</span><span class="va">usage</span><span class="dt">)</span>
+
+<span class="cm"># Second call — should read from cache</span>
+<span class="va">r2</span> <span class="dt">=</span> <span class="fn">call_with_cache</span><span class="dt">(</span><span class="st">"How do I implement rate limiting in FastAPI?"</span><span class="dt">)</span>
+<span class="fn">print</span><span class="dt">(</span><span class="st">"Call 2 usage:"</span><span class="dt">,</span> <span class="va">r2</span><span class="dt">.</span><span class="va">usage</span><span class="dt">)</span>
+
+<span class="cm"># TODO: calculate cost savings</span>
+<span class="cm"># Cache read costs 10% of normal input price for Claude Haiku</span>
+<span class="va">HAIKU_INPUT_PER_M</span> <span class="dt">=</span> <span class="nm">0.25</span>
+<span class="va">HAIKU_CACHE_READ_PER_M</span> <span class="dt">=</span> <span class="nm">0.03</span>  <span class="cm"># 88% cheaper</span>
+<span class="cm"># ... calculate and print savings</span></div>
+      </div>
+    </div>
+    <div>
+      <div class="section-label green">Expected Output</div>
+      <div class="tests-grid">
+        <div class="test-case"><span class="test-badge pending">TODO</span><div class="test-content"><div class="test-input">r1.usage</div><div class="test-expected">→ cache_creation_input_tokens: ~N, cache_read_input_tokens: 0</div></div></div>
+        <div class="test-case"><span class="test-badge pending">TODO</span><div class="test-content"><div class="test-input">r2.usage</div><div class="test-expected">→ cache_creation_input_tokens: 0, cache_read_input_tokens: ~N (same N)</div></div></div>
+        <div class="test-case"><span class="test-badge pending">TODO</span><div class="test-content"><div class="test-input">Savings calculation</div><div class="test-expected">→ "Saved $0.000XXX (88%) on call 2 by using cached prompt"</div></div></div>
+      </div>
+    </div>
+    <div>
+      <div class="section-label purple">Hints</div>
+      <div class="hints-list">
+        <div>
+          <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — Cache control format</span><span class="arrow">▶</span></button>
+          <div class="hint-body">The cache control dict is <code>{"type": "ephemeral"}</code>. Ephemeral caches last 5 minutes. The system prompt must be identical across calls for the cache to hit.</div>
+        </div>
+        <div>
+          <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — Minimum cacheable tokens</span><span class="arrow">▶</span></button>
+          <div class="hint-body">Claude requires a minimum of 1024 tokens to cache a prompt block. Use <code>client.messages.count_tokens()</code> to verify your system prompt is large enough before testing.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <p>Day 9 of 30 — <a href="../days/day9.html">Back to lesson</a> · <a href="day10_exercises.html">Day 10 Exercises →</a></p>
+</footer>
+
+<script src="../bg-animation.js"></script>
+<script>
+function toggleHint(btn) {
+  btn.classList.toggle('open');
+  btn.nextElementSibling.classList.toggle('open');
+}
+const total = 5;
+function updateProgress() {
+  const done = document.querySelectorAll('.status-dot.done').length;
+  document.getElementById('progress-text').textContent = done + ' / ' + total + ' completed';
+  document.getElementById('progress-fill').style.width = (done / total * 100) + '%';
+}
+document.querySelectorAll('.status-dot').forEach(dot => {
+  dot.style.cursor = 'pointer';
+  dot.title = 'Click to mark complete';
+  dot.addEventListener('click', () => { dot.classList.toggle('done'); updateProgress(); });
+});
+updateProgress();
+</script>
+</body>
+</html>

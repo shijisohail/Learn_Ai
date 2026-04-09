@@ -713,13 +713,13 @@ footer a:hover { text-decoration: underline; }
 
   <!-- HERO -->
   <section class="hero">
-    <div class="hero-eyebrow">7-Day Intensive Curriculum</div>
+    <div class="hero-eyebrow">30-Day Agentic AI Mastery</div>
     <h1 class="hero-title">
       <span class="gradient-text">Hands-On Exercises</span>
     </h1>
     <p class="hero-tagline"><span>Build. Break. Learn.</span></p>
     <p class="hero-sub">
-      28 exercises across 7 days. Each day ends with a Boss exercise<br>
+      120 exercises across 30 days. Each day ends with a Boss exercise<br>
       that integrates everything you've learned.
     </p>
   </section>
@@ -727,11 +727,11 @@ footer a:hover { text-decoration: underline; }
   <!-- STATS BAR -->
   <div class="stats-bar">
     <div class="stat-card">
-      <span class="stat-value" style="color:var(--purple-light)" id="stat-days">7</span>
+      <span class="stat-value" style="color:var(--purple-light)" id="stat-days">30</span>
       <div class="stat-label">Days Total</div>
     </div>
     <div class="stat-card">
-      <span class="stat-value" style="color:#2dd4bf" id="stat-total">28</span>
+      <span class="stat-value" style="color:#2dd4bf" id="stat-total">120</span>
       <div class="stat-label">Exercises</div>
     </div>
     <div class="stat-card">
@@ -745,7 +745,7 @@ footer a:hover { text-decoration: underline; }
   </div>
 
   <!-- EXERCISES GRID -->
-  <div class="section-title">All 7 Days</div>
+  <div class="section-title">All 30 Days</div>
   <div class="exercises-grid" id="exercisesGrid"></div>
 
   <!-- YOUR PROGRESS -->
@@ -756,9 +756,9 @@ footer a:hover { text-decoration: underline; }
       <div class="po-header">
         <div>
           <div class="po-title">Overall Completion</div>
-          <div style="font-size:12px; color:var(--muted); margin-top:3px;" id="po-sub">0 of 28 exercises complete</div>
+          <div style="font-size:12px; color:var(--muted); margin-top:3px;" id="po-sub">0 of 120 exercises complete</div>
         </div>
-        <div class="po-count" id="po-count">0/28</div>
+        <div class="po-count" id="po-count">0/120</div>
       </div>
       <div class="po-track"><div class="po-fill" id="po-fill" style="width:0%"></div></div>
       <div class="po-day-dots" id="po-dots"></div>
@@ -883,21 +883,300 @@ const DAYS = [
       "Boss: Full agent + FastAPI"
     ],
     file: "day7_exercises.html"
+  },
+  // ── Week 2 ────────────────────────────────────────────────────────────────────
+  {
+    num: 8,
+    title: "LangChain Deep-Dive",
+    color: { accent: '#7c3aed', light: '#a855f7', bg: 'rgba(124,58,237,0.12)', border: 'rgba(124,58,237,0.35)', bar: 'linear-gradient(90deg,#7c3aed,#a855f7)' },
+    exercises: [
+      "Build an LCEL chain with RunnablePassthrough",
+      "Add streaming + callbacks to a chain",
+      "Implement a RunnableBranch router",
+      "Boss: Full RAG chain with memory + streaming"
+    ],
+    file: "day8_exercises.html"
+  },
+  {
+    num: 9,
+    title: "LLM Provider Landscape",
+    color: { accent: '#0d9488', light: '#2dd4bf', bg: 'rgba(13,148,136,0.12)', border: 'rgba(13,148,136,0.35)', bar: 'linear-gradient(90deg,#0d9488,#2dd4bf)' },
+    exercises: [
+      "Call OpenAI, Claude, and Gemini with identical prompts",
+      "Build a multi-provider fallback wrapper",
+      "Benchmark latency & cost across providers",
+      "Boss: Provider-agnostic LangChain abstraction"
+    ],
+    file: "day9_exercises.html"
+  },
+  {
+    num: 10,
+    title: "Vector Databases in Depth",
+    color: { accent: '#3b82f6', light: '#60a5fa', bg: 'rgba(59,130,246,0.12)', border: 'rgba(59,130,246,0.35)', bar: 'linear-gradient(90deg,#3b82f6,#60a5fa)' },
+    exercises: [
+      "Stand up Pinecone & insert 1k vectors",
+      "Implement metadata filtering + hybrid search",
+      "Compare HNSW vs IVF index performance",
+      "Boss: pgvector RAG vs Pinecone RAG benchmark"
+    ],
+    file: "day10_exercises.html"
+  },
+  {
+    num: 11,
+    title: "Embedding Models",
+    color: { accent: '#10b981', light: '#34d399', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.35)', bar: 'linear-gradient(90deg,#10b981,#34d399)' },
+    exercises: [
+      "Visualize embedding space with t-SNE / UMAP",
+      "Compare text-embedding-3-small vs BGE-M3",
+      "Implement Matryoshka truncation benchmark",
+      "Boss: End-to-end embedding pipeline with eval"
+    ],
+    file: "day11_exercises.html"
+  },
+  {
+    num: 12,
+    title: "Advanced RAG Patterns",
+    color: { accent: '#d97706', light: '#fbbf24', bg: 'rgba(217,119,6,0.12)', border: 'rgba(217,119,6,0.35)', bar: 'linear-gradient(90deg,#d97706,#fbbf24)' },
+    exercises: [
+      "Implement HyDE (Hypothetical Document Embeddings)",
+      "Build multi-query retrieval with deduplication",
+      "Add a cross-encoder reranker stage",
+      "Boss: Adaptive RAG that routes by query complexity"
+    ],
+    file: "day12_exercises.html"
+  },
+  {
+    num: 13,
+    title: "CrewAI & Role-Based Agents",
+    color: { accent: '#db2777', light: '#f472b6', bg: 'rgba(219,39,119,0.12)', border: 'rgba(219,39,119,0.35)', bar: 'linear-gradient(90deg,#db2777,#f472b6)' },
+    exercises: [
+      "Define a 3-agent crew with distinct roles",
+      "Add custom tools to specific agents",
+      "Implement sequential vs hierarchical process",
+      "Boss: Research crew producing a structured report"
+    ],
+    file: "day13_exercises.html"
+  },
+  {
+    num: 14,
+    title: "Week 2 Capstone",
+    color: { accent: '#f59e0b', light: '#fbbf24', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.35)', bar: 'linear-gradient(90deg,#f59e0b,#f97316)' },
+    exercises: [
+      "Wire LCEL chain to vector DB retriever",
+      "Add CrewAI post-processing crew",
+      "Add multi-provider fallback + streaming",
+      "Boss: Full multi-provider RAG + CrewAI pipeline"
+    ],
+    file: "day14_exercises.html"
+  },
+  // ── Week 3 ────────────────────────────────────────────────────────────────────
+  {
+    num: 15,
+    title: "PyTorch for LLM Engineers",
+    color: { accent: '#f97316', light: '#fb923c', bg: 'rgba(249,115,22,0.12)', border: 'rgba(249,115,22,0.35)', bar: 'linear-gradient(90deg,#f97316,#fb923c)' },
+    exercises: [
+      "Tensor operations & autograd walkthrough",
+      "Load a model, run half-precision inference",
+      "Profile memory and throughput with torch.profiler",
+      "Boss: Custom attention mask for domain task"
+    ],
+    file: "day15_exercises.html"
+  },
+  {
+    num: 16,
+    title: "HuggingFace Transformers",
+    color: { accent: '#f59e0b', light: '#fbbf24', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.35)', bar: 'linear-gradient(90deg,#f59e0b,#fbbf24)' },
+    exercises: [
+      "Download and run Mistral-7B with Transformers",
+      "Serve a model locally with Ollama",
+      "Compare HF pipeline vs raw generate() speed",
+      "Boss: FastAPI server wrapping local HF model"
+    ],
+    file: "day16_exercises.html"
+  },
+  {
+    num: 17,
+    title: "Fine-Tuning with LoRA/PEFT",
+    color: { accent: '#7c3aed', light: '#a855f7', bg: 'rgba(124,58,237,0.12)', border: 'rgba(124,58,237,0.35)', bar: 'linear-gradient(90deg,#7c3aed,#a855f7)' },
+    exercises: [
+      "Prepare a fine-tuning dataset with prompt template",
+      "Configure LoRA rank, alpha, target modules",
+      "Run QLoRA training loop with gradient checkpointing",
+      "Boss: Evaluate fine-tuned vs base model on held-out set"
+    ],
+    file: "day17_exercises.html"
+  },
+  {
+    num: 18,
+    title: "MLflow & Experiment Tracking",
+    color: { accent: '#0d9488', light: '#2dd4bf', bg: 'rgba(13,148,136,0.12)', border: 'rgba(13,148,136,0.35)', bar: 'linear-gradient(90deg,#0d9488,#2dd4bf)' },
+    exercises: [
+      "Set up MLflow tracking server with artifact store",
+      "Log hyperparameters, metrics, and model artifacts",
+      "Run a hyperparameter sweep with MLflow autolog",
+      "Boss: Model registry with staging → production promotion"
+    ],
+    file: "day18_exercises.html"
+  },
+  {
+    num: 19,
+    title: "MLOps Pipelines",
+    color: { accent: '#10b981', light: '#34d399', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.35)', bar: 'linear-gradient(90deg,#10b981,#34d399)' },
+    exercises: [
+      "Write a GitHub Actions CI pipeline for ML",
+      "Add automated model evaluation gate",
+      "Implement blue/green model deployment",
+      "Boss: Full CI/CD from commit to deployed endpoint"
+    ],
+    file: "day19_exercises.html"
+  },
+  {
+    num: 20,
+    title: "AI System Observability",
+    color: { accent: '#3b82f6', light: '#60a5fa', bg: 'rgba(59,130,246,0.12)', border: 'rgba(59,130,246,0.35)', bar: 'linear-gradient(90deg,#3b82f6,#60a5fa)' },
+    exercises: [
+      "Instrument an agent with LangSmith tracing",
+      "Compute RAGAS faithfulness & context precision",
+      "Build a Grafana dashboard for LLM latency/cost",
+      "Boss: Automated eval harness running on every deploy"
+    ],
+    file: "day20_exercises.html"
+  },
+  {
+    num: 21,
+    title: "Week 3 Capstone",
+    color: { accent: '#f59e0b', light: '#fbbf24', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.35)', bar: 'linear-gradient(90deg,#f59e0b,#f97316)' },
+    exercises: [
+      "Fine-tune 7B model with QLoRA on domain data",
+      "Track all experiments in MLflow",
+      "Build CI/CD pipeline with eval gate",
+      "Boss: RAGAS + LangSmith dashboard for production"
+    ],
+    file: "day21_exercises.html"
+  },
+  // ── Week 4 ────────────────────────────────────────────────────────────────────
+  {
+    num: 22,
+    title: "Advanced Prompt Engineering",
+    color: { accent: '#7c3aed', light: '#a855f7', bg: 'rgba(124,58,237,0.12)', border: 'rgba(124,58,237,0.35)', bar: 'linear-gradient(90deg,#7c3aed,#a855f7)' },
+    exercises: [
+      "Implement chain-of-thought vs direct prompting A/B",
+      "Build a self-consistency voting system",
+      "Create a meta-prompt generator for task decomposition",
+      "Boss: Prompt optimization loop with automatic eval"
+    ],
+    file: "day22_exercises.html"
+  },
+  {
+    num: 23,
+    title: "AI Guardrails & Safety",
+    color: { accent: '#ef4444', light: '#f87171', bg: 'rgba(239,68,68,0.12)', border: 'rgba(239,68,68,0.35)', bar: 'linear-gradient(90deg,#ef4444,#f87171)' },
+    exercises: [
+      "Set up NeMo Guardrails with topic rails",
+      "Implement input sanitization + PII detection",
+      "Red-team your own agent with adversarial prompts",
+      "Boss: Full guardrail layer with audit logging"
+    ],
+    file: "day23_exercises.html"
+  },
+  {
+    num: 24,
+    title: "Structured Outputs & Determinism",
+    color: { accent: '#0d9488', light: '#2dd4bf', bg: 'rgba(13,148,136,0.12)', border: 'rgba(13,148,136,0.35)', bar: 'linear-gradient(90deg,#0d9488,#2dd4bf)' },
+    exercises: [
+      "Extract structured data with Instructor + Pydantic",
+      "Implement JSON mode with retry on validation error",
+      "Build a typed function-calling chain",
+      "Boss: Production pipeline with 100% schema compliance"
+    ],
+    file: "day24_exercises.html"
+  },
+  {
+    num: 25,
+    title: "Auth, Tenancy & Authorization",
+    color: { accent: '#d97706', light: '#fbbf24', bg: 'rgba(217,119,6,0.12)', border: 'rgba(217,119,6,0.35)', bar: 'linear-gradient(90deg,#d97706,#fbbf24)' },
+    exercises: [
+      "Add JWT auth to a FastAPI AI endpoint",
+      "Implement per-tenant rate limiting with Redis",
+      "Build RBAC: user vs admin vs model access",
+      "Boss: Multi-tenant AI service with full auth stack"
+    ],
+    file: "day25_exercises.html"
+  },
+  {
+    num: 26,
+    title: "Cloud AI Services",
+    color: { accent: '#3b82f6', light: '#60a5fa', bg: 'rgba(59,130,246,0.12)', border: 'rgba(59,130,246,0.35)', bar: 'linear-gradient(90deg,#3b82f6,#60a5fa)' },
+    exercises: [
+      "Call AWS Bedrock (Claude) via boto3",
+      "Set up Vertex AI endpoint + call Gemini Pro",
+      "Deploy to Azure OpenAI with managed identity",
+      "Boss: Unified cloud router with failover across 3 providers"
+    ],
+    file: "day26_exercises.html"
+  },
+  {
+    num: 27,
+    title: "Docker & Kubernetes for AI",
+    color: { accent: '#10b981', light: '#34d399', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.35)', bar: 'linear-gradient(90deg,#10b981,#34d399)' },
+    exercises: [
+      "Containerize a FastAPI AI service with GPU support",
+      "Write a Helm chart with configurable replicas",
+      "Set up HPA + resource limits for LLM workloads",
+      "Boss: Full K8s deploy with rolling updates + health checks"
+    ],
+    file: "day27_exercises.html"
+  },
+  {
+    num: 28,
+    title: "RL & Self-Improving Agents",
+    color: { accent: '#db2777', light: '#f472b6', bg: 'rgba(219,39,119,0.12)', border: 'rgba(219,39,119,0.35)', bar: 'linear-gradient(90deg,#db2777,#f472b6)' },
+    exercises: [
+      "Build a preference data collection endpoint",
+      "Implement a simple reward model scoring pipeline",
+      "Run DPO fine-tune on preference pairs",
+      "Boss: Constitutional AI critique-revision loop"
+    ],
+    file: "day28_exercises.html"
+  },
+  // ── Week 5 ────────────────────────────────────────────────────────────────────
+  {
+    num: 29,
+    title: "AI Copilot Architecture",
+    color: { accent: '#f59e0b', light: '#fbbf24', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.35)', bar: 'linear-gradient(90deg,#f59e0b,#a855f7)' },
+    exercises: [
+      "Design context window manager for long sessions",
+      "Implement hierarchical memory (working/episodic/semantic)",
+      "Build a tool router with LLM-based dispatch",
+      "Boss: Full Copilot architecture with streaming UX"
+    ],
+    file: "day29_exercises.html"
+  },
+  {
+    num: 30,
+    title: "30-Day Final Capstone",
+    color: { accent: '#ef4444', light: '#fbbf24', bg: 'rgba(239,68,68,0.08)', border: 'rgba(245,158,11,0.5)', bar: 'linear-gradient(90deg,#fbbf24,#f97316,#ef4444,#a855f7)' },
+    exercises: [
+      "Build the multi-agent backend (LangGraph + specialists)",
+      "Wire RAG pipeline + fine-tuned domain adapter",
+      "Deploy on K8s with guardrails + auth + monitoring",
+      "Boss: End-to-end live demo — production AI Copilot"
+    ],
+    file: "day30_exercises.html"
   }
 ];
 
 // ─── Achievements ──────────────────────────────────────────────────────────────
 const ACHIEVEMENTS = [
-  { id: 'first_blood', icon: '⚡', name: 'First Blood', desc: 'Complete any exercise', check: (s) => s.total >= 1 },
-  { id: 'day1_done',  icon: '1️⃣', name: 'Day 1 Done',  desc: 'Complete all Day 1 exercises', check: (s) => s.day_done[1] },
-  { id: 'day2_done',  icon: '2️⃣', name: 'Day 2 Done',  desc: 'Complete all Day 2 exercises', check: (s) => s.day_done[2] },
-  { id: 'day3_done',  icon: '3️⃣', name: 'Day 3 Done',  desc: 'Complete all Day 3 exercises', check: (s) => s.day_done[3] },
-  { id: 'day4_done',  icon: '4️⃣', name: 'Day 4 Done',  desc: 'Complete all Day 4 exercises', check: (s) => s.day_done[4] },
-  { id: 'day5_done',  icon: '5️⃣', name: 'Day 5 Done',  desc: 'Complete all Day 5 exercises', check: (s) => s.day_done[5] },
-  { id: 'day6_done',  icon: '6️⃣', name: 'Day 6 Done',  desc: 'Complete all Day 6 exercises', check: (s) => s.day_done[6] },
-  { id: 'day7_done',  icon: '7️⃣', name: 'Day 7 Done',  desc: 'Complete all Day 7 exercises', check: (s) => s.day_done[7] },
-  { id: 'boss_hunter', icon: '🎯', name: 'Boss Hunter', desc: 'Complete all 7 boss exercises', check: (s) => s.bosses_done >= 7 },
-  { id: 'full_stack', icon: '🏆', name: 'Full Stack', desc: 'Complete all 28 exercises', check: (s) => s.total >= 28 }
+  { id: 'first_blood',  icon: '⚡', name: 'First Blood',   desc: 'Complete any exercise',              check: (s) => s.total >= 1 },
+  { id: 'week1_done',   icon: '🔵', name: 'Week 1 Done',   desc: 'Complete all 28 Week 1 exercises',   check: (s) => [1,2,3,4,5,6,7].every(d => s.day_done[d]) },
+  { id: 'week2_done',   icon: '🟣', name: 'Week 2 Done',   desc: 'Complete all 28 Week 2 exercises',   check: (s) => [8,9,10,11,12,13,14].every(d => s.day_done[d]) },
+  { id: 'week3_done',   icon: '🟢', name: 'Week 3 Done',   desc: 'Complete all 28 Week 3 exercises',   check: (s) => [15,16,17,18,19,20,21].every(d => s.day_done[d]) },
+  { id: 'week4_done',   icon: '🟠', name: 'Week 4 Done',   desc: 'Complete all 28 Week 4 exercises',   check: (s) => [22,23,24,25,26,27,28].every(d => s.day_done[d]) },
+  { id: 'week5_done',   icon: '🏅', name: 'Week 5 Done',   desc: 'Complete the final capstone days',   check: (s) => [29,30].every(d => s.day_done[d]) },
+  { id: 'halfway',      icon: '⚗️', name: 'Halfway',       desc: 'Complete 60 exercises',              check: (s) => s.total >= 60 },
+  { id: 'boss_hunter',  icon: '🎯', name: 'Boss Hunter',   desc: 'Complete all 30 boss exercises',     check: (s) => s.bosses_done >= 30 },
+  { id: 'full_stack',   icon: '🏆', name: 'Full Stack',    desc: 'Complete all 120 exercises',         check: (s) => s.total >= 120 }
 ];
 
 // ─── Storage ───────────────────────────────────────────────────────────────────
@@ -918,7 +1197,7 @@ function resetAllProgress() {
   localStorage.removeItem(EX_KEY);
   localStorage.removeItem(PREV_ACH_KEY);
   // Also clear day-specific stores
-  for (let d = 1; d <= 7; d++) {
+  for (let d = 1; d <= 30; d++) {
     localStorage.removeItem('aai_ex_day' + d);
   }
   showToast('All progress reset.');
@@ -933,7 +1212,7 @@ function computeStats() {
   const day_done = {};
   const day_progress = {}; // how many out of 4
 
-  for (let d = 1; d <= 7; d++) {
+  for (let d = 1; d <= 30; d++) {
     let dayCount = 0;
     for (let e = 1; e <= 4; e++) {
       const key = 'day' + d + '_ex' + e;
@@ -947,7 +1226,7 @@ function computeStats() {
 
   // Streak = consecutive days with at least 1 exercise done
   let streak = 0;
-  for (let d = 7; d >= 1; d--) {
+  for (let d = 30; d >= 1; d--) {
     if (day_progress[d] > 0) streak++;
     else break;
   }
@@ -985,12 +1264,12 @@ function render() {
 
   // Stats bar
   document.getElementById('stat-done').textContent = stats.total;
-  document.getElementById('stat-pct').textContent = Math.round((stats.total / 28) * 100) + '%';
+  document.getElementById('stat-pct').textContent = Math.round((stats.total / 120) * 100) + '%';
 
   // Progress overview
-  document.getElementById('po-count').textContent = stats.total + '/28';
-  document.getElementById('po-sub').textContent = stats.total + ' of 28 exercises complete';
-  document.getElementById('po-fill').style.width = Math.round((stats.total / 28) * 100) + '%';
+  document.getElementById('po-count').textContent = stats.total + '/120';
+  document.getElementById('po-sub').textContent = stats.total + ' of 120 exercises complete';
+  document.getElementById('po-fill').style.width = Math.round((stats.total / 120) * 100) + '%';
 
   // Day dots in overview
   const dotsEl = document.getElementById('po-dots');
@@ -1020,8 +1299,8 @@ function render() {
   document.getElementById('streak-num').textContent = stats.streak;
   document.getElementById('streak-sub').textContent = stats.streak === 0
     ? 'No days started yet'
-    : stats.streak === 7
-    ? 'All 7 days active!'
+    : stats.streak === 30
+    ? 'All 30 days active!'
     : stats.streak + ' day' + (stats.streak === 1 ? '' : 's') + ' in a row';
 
   // Achievements
@@ -1045,7 +1324,17 @@ function render() {
   const grid = document.getElementById('exercisesGrid');
   grid.innerHTML = '';
 
+  const weekStarts = { 1: 'Week 1: Core Foundations', 8: 'Week 2: Frameworks & Models', 15: 'Week 3: ML & Fine-Tuning', 22: 'Week 4: Prompt Eng & Cloud', 29: 'Week 5: Final Capstone' };
+
   DAYS.forEach((day, idx) => {
+    // Insert week header before first day of each week
+    if (weekStarts[day.num]) {
+      const header = document.createElement('div');
+      header.style.cssText = 'grid-column:1/-1;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);padding:8px 0 4px;display:flex;align-items:center;gap:12px;';
+      header.innerHTML = weekStarts[day.num] + '<span style="flex:1;height:1px;background:var(--border);display:block;"></span>';
+      grid.appendChild(header);
+    }
+
     const dp = stats.day_progress[day.num];
     const isDayDone = dp === 4;
     const ex = getExercises();
@@ -1082,7 +1371,7 @@ function render() {
           </div>
           <div class="card-badges">
             <span class="completion-badge ${completionClass}">${completionText}</span>
-            ${day.num === 7 ? '<span class="boss-chip">Capstone</span>' : ''}
+            ${[7,14,21,30].includes(day.num) ? '<span class="boss-chip">Capstone</span>' : day.num === 29 ? '<span class="boss-chip">Copilot</span>' : ''}
           </div>
         </div>
         <div class="card-day-label">Day ${day.num} Exercises</div>

@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 28: RL & Self-Improving Agents — RLHF, DPO & LLM-as-judge</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f; --card: #141420; --surface2: #1a1a2e; --border: #2a2a45;
+  --purple: #7c3aed; --purple-light: #a855f7; --teal: #0d9488; --green: #10b981;
+  --red: #ef4444; --yellow: #f59e0b; --text: #e2e8f0; --muted: #64748b;
+  --font: 'Inter', sans-serif; --mono: 'JetBrains Mono', monospace;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; overflow-x: hidden; }
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(124,58,237,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 90% 80%, rgba(13,148,136,0.05) 0%, transparent 60%);
+  pointer-events: none; z-index: 0;
+}
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+nav { border-bottom: 1px solid var(--border); padding: 14px 0; background: rgba(10,10,15,0.85); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; }
+.nav-inner { max-width: 1100px; margin: 0 auto; padding: 0 24px; height: 52px; display: flex; align-items: center; justify-content: space-between; }
+.nav-btn { padding: 7px 18px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 13px; font-weight: 600; text-decoration: none; transition: all 0.2s; font-family: inherit; cursor: pointer; }
+.nav-btn:hover { border-color: var(--purple); color: var(--text); }
+.nav-btn.next { border-color: rgba(124,58,237,0.5); color: var(--purple-light); }
+.nav-btn.next:hover { background: var(--purple); color: white; border-color: var(--purple); }
+.nav-btn.complete { border-color: rgba(245,158,11,0.5); color: var(--yellow); }
+.nav-btn.complete:hover { background: var(--yellow); color: #0a0a0f; border-color: var(--yellow); }
+.nav-btn.done { background: rgba(16,185,129,0.15); border-color: var(--green); color: var(--green); }
+.nav-brand { font-size: 14px; font-weight: 700; color: var(--muted); text-decoration: none; letter-spacing: -0.2px; transition: color 0.2s; }
+.nav-brand:hover { color: var(--text); }
+
+.day-hero { padding: 56px 0 40px; }
+.day-num { font-size: 12px; font-weight: 700; color: var(--yellow); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+.day-hero h1 { font-size: clamp(32px, 5vw, 56px); font-weight: 900; letter-spacing: -2px; margin-bottom: 16px; }
+.day-hero h1 span { background: linear-gradient(135deg, #a855f7, #34d399); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.day-hero p { font-size: 17px; color: var(--muted); max-width: 600px; line-height: 1.6; margin-bottom: 28px; }
+.topic-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+.topic-pill { padding: 5px 12px; border-radius: 20px; background: var(--surface2); border: 1px solid var(--border); font-size: 12px; color: var(--muted); font-weight: 500; }
+
+.section { padding: 56px 0; border-top: 1px solid var(--border); }
+.section-header { margin-bottom: 32px; }
+.section-num { font-size: 11px; font-weight: 700; color: var(--purple-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.section-header h2 { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 10px; }
+.section-header p { color: var(--muted); font-size: 15px; line-height: 1.6; max-width: 640px; }
+
+.code-block { background: #0d1117; border: 1px solid #30363d; border-radius: 12px; padding: 24px; font-family: var(--mono); font-size: 12.5px; line-height: 1.8; overflow-x: auto; white-space: pre; }
+.code-wrap { position: relative; margin-top: 16px; }
+.code-label { position: absolute; top: -10px; left: 16px; background: var(--purple); color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.5px; }
+.c-cmt { color: #8b949e; }
+.c-kw { color: #ff7b72; }
+.c-fn { color: #d2a8ff; }
+.c-str { color: #a5d6ff; }
+.c-type { color: #ffa657; }
+.c-num { color: #f2cc60; }
+.c-bi { color: #79c0ff; }
+.c-dec { color: #ffa657; }
+
+.callout { background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.25); border-radius: 12px; padding: 16px 20px; display: flex; gap: 12px; align-items: flex-start; margin: 20px 0; }
+.callout-icon { font-size: 18px; flex-shrink: 0; }
+.callout-text { font-size: 13px; color: var(--text); line-height: 1.6; }
+.callout-text strong { color: var(--yellow); }
+.callout.info { background: rgba(124,58,237,0.07); border-color: rgba(124,58,237,0.25); }
+.callout.info .callout-text strong { color: var(--purple-light); }
+
+.comp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.comp-table th { background: var(--surface2); padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); border-bottom: 1px solid var(--border); }
+.comp-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.comp-table tr:last-child td { border-bottom: none; }
+.comp-table tr:hover td { background: rgba(255,255,255,0.02); }
+.tick { color: var(--green); font-weight: 700; }
+.cross { color: var(--red); font-weight: 700; }
+.partial { color: var(--yellow); font-weight: 700; }
+
+.bullet-list { list-style: none; display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.bullet-list li { font-size: 14px; color: var(--text); display: flex; align-items: flex-start; gap: 10px; line-height: 1.6; }
+.bullet-list li::before { content: '▸'; color: var(--purple-light); flex-shrink: 0; margin-top: 1px; }
+
+/* RLHF Stage Cards */
+.stage-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 20px; }
+.stage-card { background: var(--card); border: 2px solid var(--border); border-radius: 14px; padding: 22px; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; }
+.stage-card:hover { transform: translateY(-2px); }
+.stage-card.active { border-color: var(--purple); background: rgba(124,58,237,0.05); }
+.stage-card.dpo-replaced { border-color: var(--red); background: rgba(239,68,68,0.04); opacity: 0.6; }
+.stage-card.dpo-replaced::after { content: 'Replaced by DPO'; position: absolute; top: 8px; right: 8px; font-size: 9px; font-weight: 700; background: rgba(239,68,68,0.2); color: var(--red); padding: 2px 6px; border-radius: 4px; }
+.stage-num-badge { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: rgba(124,58,237,0.15); border: 2px solid var(--purple); font-size: 12px; font-weight: 800; color: var(--purple-light); margin-bottom: 10px; }
+.stage-title { font-size: 15px; font-weight: 800; margin-bottom: 6px; }
+.stage-detail { font-size: 12px; color: var(--muted); line-height: 1.6; display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+.stage-card.active .stage-detail { display: block; }
+.stage-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.stage-chip { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; }
+.chip-data { background: rgba(13,148,136,0.15); color: var(--teal); }
+.chip-cost { background: rgba(245,158,11,0.15); color: var(--yellow); }
+.chip-lib { background: rgba(124,58,237,0.15); color: var(--purple-light); }
+.stage-progress { display: flex; gap: 6px; align-items: center; margin-top: 20px; }
+.progress-step { flex: 1; height: 4px; border-radius: 2px; background: var(--border); transition: background 0.3s; }
+.progress-step.done { background: var(--purple); }
+.dpo-toggle { display: flex; align-items: center; gap: 10px; margin-top: 16px; cursor: pointer; }
+.toggle-label { font-size: 13px; font-weight: 600; color: var(--text); }
+.toggle-switch { width: 36px; height: 20px; border-radius: 10px; background: var(--border); position: relative; transition: background 0.2s; }
+.toggle-switch.on { background: var(--purple); }
+.toggle-knob { width: 14px; height: 14px; border-radius: 50%; background: white; position: absolute; top: 3px; left: 3px; transition: transform 0.2s; }
+.toggle-switch.on .toggle-knob { transform: translateX(16px); }
+
+/* Widget */
+.widget-box { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-top: 24px; }
+.widget-title { font-size: 16px; font-weight: 800; margin-bottom: 6px; }
+.widget-desc { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+
+footer { padding: 40px 0; border-top: 1px solid var(--border); text-align: center; color: var(--muted); font-size: 13px; }
+
+@media(max-width:700px) {
+  .stage-cards { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body data-animation-density="high">
+
+<nav>
+  <div class="nav-inner">
+    <a href="day27.html" class="nav-btn">← Day 27</a>
+    <a href="../index.html" class="nav-brand">Agentic AI Mastery</a>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <a href="day29.html" class="nav-btn next">Day 29 →</a>
+      <button class="nav-btn complete" id="complete-btn" onclick="markComplete()">Mark Complete</button>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="day-hero">
+    <div class="day-num">Day 28 — RL & Self-Improving Agents</div>
+    <h1>RLHF, DPO &<br><span>LLM-as-Judge Loops</span></h1>
+    <p>Pre-training teaches an LLM to predict tokens. Reinforcement learning teaches it to be helpful, honest, and harmless. Learn how RLHF, DPO, and Constitutional AI close the loop — and how to build a self-improving system without human labelers at scale.</p>
+    <div class="topic-pills">
+      <span class="topic-pill">RLHF</span>
+      <span class="topic-pill">DPO</span>
+      <span class="topic-pill">TRL Library</span>
+      <span class="topic-pill">LLM-as-Judge</span>
+      <span class="topic-pill">Constitutional AI</span>
+      <span class="topic-pill">RLAIF</span>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 1 -->
+<div class="container">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">01 — RL Fundamentals</div>
+      <h2>Reinforcement Learning for LLMs</h2>
+      <p>Pre-training creates a capable but unaligned model. RLHF is the pipeline that shapes that capability into helpfulness. Understanding the stages helps you choose which parts to run yourself.</p>
+    </div>
+
+    <div class="callout info">
+      <span class="callout-icon">🧠</span>
+      <div class="callout-text"><strong>Key insight:</strong> Pre-training learns "what text looks like." RL alignment teaches "what good responses look like." They are separate optimization objectives — which is why you can fine-tune pre-trained weights with RLHF without destroying base capabilities.</div>
+    </div>
+
+    <ul class="bullet-list">
+      <li><strong>RLHF three stages:</strong> (1) SFT on human demonstrations, (2) train a reward model from preference pairs, (3) optimize with PPO using the reward model as the reward signal</li>
+      <li><strong>DPO (Direct Preference Optimization):</strong> Mathematically equivalent to RLHF but eliminates the reward model and PPO entirely — trains directly on preference pairs</li>
+      <li><strong>Constitutional AI:</strong> Self-supervised preference generation — the model critiques and revises its own responses against a constitution, removing most human labeling</li>
+      <li><strong>RLAIF:</strong> Replace human preference labelers with a powerful LLM judge — scalable to millions of pairs</li>
+    </ul>
+
+    <div style="margin-top:28px;background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;">
+      <table class="comp-table">
+        <thead>
+          <tr>
+            <th>Stage</th>
+            <th>Method</th>
+            <th>Data Needed</th>
+            <th>Cost</th>
+            <th>Stability</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>SFT</strong></td><td>Supervised fine-tuning</td><td>1K–100K demos</td><td class="tick">Low</td><td class="tick">High</td></tr>
+          <tr><td><strong>Reward Model</strong></td><td>Bradley-Terry ranking</td><td>10K–500K pairs</td><td class="partial">Medium</td><td class="tick">High</td></tr>
+          <tr><td><strong>PPO</strong></td><td>RL policy optimization</td><td>Same as RM</td><td class="cross">High</td><td class="cross">Low</td></tr>
+          <tr><td><strong>DPO</strong></td><td>Direct preference opt.</td><td>10K–500K pairs</td><td class="partial">Medium</td><td class="tick">High</td></tr>
+          <tr><td><strong>RLAIF</strong></td><td>LLM feedback</td><td>Minimal human</td><td class="tick">Low</td><td class="partial">Medium</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 2 -->
+<div class="container">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">02 — DPO</div>
+      <h2>DPO — Direct Preference Optimization</h2>
+      <p>DPO is now the go-to method for preference alignment at the practitioner level. It's stable, memory-efficient with PEFT, and avoids PPO's reward hacking instabilities.</p>
+    </div>
+
+    <div class="callout">
+      <span class="callout-icon">⚡</span>
+      <div class="callout-text"><strong>DPO vs PPO:</strong> DPO is simpler and more stable for most practical fine-tuning. PPO still wins when you need complex reward shaping (e.g., tool use correctness + answer quality simultaneously). Start with DPO.</div>
+    </div>
+
+    <div class="code-wrap">
+      <span class="code-label">PYTHON — DPO Training with TRL</span>
+      <div class="code-block"><span class="c-kw">from</span> trl <span class="c-kw">import</span> DPOTrainer, DPOConfig
+<span class="c-kw">from</span> transformers <span class="c-kw">import</span> AutoModelForCausalLM, AutoTokenizer
+<span class="c-kw">from</span> peft <span class="c-kw">import</span> LoraConfig, get_peft_model
+<span class="c-kw">from</span> datasets <span class="c-kw">import</span> Dataset
+<span class="c-kw">import</span> torch
+
+<span class="c-cmt"># DPO dataset format: prompt + chosen + rejected</span>
+dpo_data = Dataset.<span class="c-fn">from_list</span>([
+    {
+        <span class="c-str">"prompt"</span>: <span class="c-str">"Explain LoRA fine-tuning:"</span>,
+        <span class="c-str">"chosen"</span>: <span class="c-str">"LoRA (Low-Rank Adaptation) is an efficient fine-tuning method that..."</span>,
+        <span class="c-str">"rejected"</span>: <span class="c-str">"LoRA is just training a model."</span>
+    },
+    <span class="c-cmt"># ... thousands more preference pairs</span>
+])
+
+model = AutoModelForCausalLM.<span class="c-fn">from_pretrained</span>(
+    <span class="c-str">"meta-llama/Llama-3.2-3B"</span>,
+    torch_dtype=torch.bfloat16
+)
+tokenizer = AutoTokenizer.<span class="c-fn">from_pretrained</span>(<span class="c-str">"meta-llama/Llama-3.2-3B"</span>)
+model = <span class="c-fn">get_peft_model</span>(model, <span class="c-fn">LoraConfig</span>(r=<span class="c-num">16</span>, lora_alpha=<span class="c-num">32</span>, task_type=<span class="c-str">"CAUSAL_LM"</span>))
+
+dpo_trainer = <span class="c-fn">DPOTrainer</span>(
+    model=model,
+    ref_model=<span class="c-bi">None</span>,  <span class="c-cmt"># implicit reference (saves memory with PEFT)</span>
+    train_dataset=dpo_data,
+    tokenizer=tokenizer,
+    args=<span class="c-fn">DPOConfig</span>(
+        output_dir=<span class="c-str">"./dpo-output"</span>,
+        beta=<span class="c-num">0.1</span>,          <span class="c-cmt"># KL penalty coefficient</span>
+        max_length=<span class="c-num">512</span>,
+        num_train_epochs=<span class="c-num">2</span>,
+        per_device_train_batch_size=<span class="c-num">2</span>,
+        gradient_accumulation_steps=<span class="c-num">8</span>,
+        bf16=<span class="c-bi">True</span>,
+        learning_rate=<span class="c-num">5e-5</span>,
+    )
+)
+
+dpo_trainer.<span class="c-fn">train</span>()</div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 3 -->
+<div class="container">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">03 — LLM-as-Judge</div>
+      <h2>LLM-as-Judge for Scalable Evaluation</h2>
+      <p>Human labelers are the bottleneck in RLHF. An LLM judge running at API scale can evaluate thousands of responses per minute — and if calibrated against human preferences, produces reliable preference pairs for DPO.</p>
+    </div>
+
+    <ul class="bullet-list">
+      <li><strong>Judge prompts:</strong> Scoring rubric (1-5 per criterion), pairwise comparison (A vs B), or absolute scoring — each has different calibration properties</li>
+      <li><strong>Calibration step:</strong> Validate your judge on 200-500 human-labeled pairs before trusting it. Target Pearson r &gt; 0.85 with human scores</li>
+      <li><strong>RLAIF pipeline:</strong> Generate candidate responses with your model → LLM judge evaluates → filter ambiguous pairs → use clean pairs for DPO</li>
+      <li><strong>Judge model selection:</strong> Use a stronger model than what you're training (judge with Claude 3.5, train Llama 3 3B)</li>
+    </ul>
+
+    <div class="code-wrap">
+      <span class="code-label">PYTHON — LLM Judge + RLAIF Preference Generation</span>
+      <div class="code-block"><span class="c-kw">from</span> langchain_anthropic <span class="c-kw">import</span> ChatAnthropic
+
+judge = <span class="c-fn">ChatAnthropic</span>(model=<span class="c-str">"claude-3-5-sonnet-20241022"</span>)
+
+JUDGE_PROMPT = <span class="c-str">"""You are evaluating an AI response. Rate it on a scale of 1-5.
+
+Criteria:
+- Accuracy: Is the information correct?
+- Completeness: Does it address the question fully?
+- Clarity: Is it clearly written?
+- Safety: Is it appropriate and helpful?
+
+Question: {question}
+Response: {response}
+
+Rate each criterion (1-5) and provide a total score (4-20).
+Format: Accuracy: X, Completeness: X, Clarity: X, Safety: X, Total: X
+Reasoning: [brief explanation]"""</span>
+
+<span class="c-kw">def</span> <span class="c-fn">judge_response</span>(question: <span class="c-type">str</span>, response: <span class="c-type">str</span>) -> <span class="c-type">dict</span>:
+    evaluation = judge.<span class="c-fn">invoke</span>(
+        JUDGE_PROMPT.<span class="c-fn">format</span>(question=question, response=response)
+    ).content
+    <span class="c-kw">return</span> <span class="c-fn">parse_judge_scores</span>(evaluation)
+
+<span class="c-cmt"># RLAIF: generate preference pairs automatically</span>
+<span class="c-kw">def</span> <span class="c-fn">generate_preference_pair</span>(prompt: <span class="c-type">str</span>) -> <span class="c-type">dict</span>:
+    <span class="c-str">"""Generate chosen/rejected pairs using LLM judge"""</span>
+    response_a = llm_a.<span class="c-fn">invoke</span>(prompt).content
+    response_b = llm_b.<span class="c-fn">invoke</span>(prompt).content
+
+    score_a = <span class="c-fn">judge_response</span>(prompt, response_a)[<span class="c-str">"total"</span>]
+    score_b = <span class="c-fn">judge_response</span>(prompt, response_b)[<span class="c-str">"total"</span>]
+
+    <span class="c-kw">if</span> <span class="c-fn">abs</span>(score_a - score_b) &lt; <span class="c-num">2</span>:
+        <span class="c-kw">return</span> <span class="c-bi">None</span>  <span class="c-cmt"># skip ambiguous pairs</span>
+
+    <span class="c-kw">return</span> {
+        <span class="c-str">"prompt"</span>: prompt,
+        <span class="c-str">"chosen"</span>: response_a <span class="c-kw">if</span> score_a &gt; score_b <span class="c-kw">else</span> response_b,
+        <span class="c-str">"rejected"</span>: response_b <span class="c-kw">if</span> score_a &gt; score_b <span class="c-kw">else</span> response_a
+    }</div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 4 -->
+<div class="container">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">04 — Constitutional AI</div>
+      <h2>Constitutional AI Self-Improvement Loop</h2>
+      <p>Anthropic's Constitutional AI technique scales alignment without human labelers. A set of principles (the constitution) drives self-critique and revision. Combined with LLM-as-judge for RLAIF, the loop is nearly autonomous.</p>
+    </div>
+
+    <div class="code-wrap">
+      <span class="code-label">PYTHON — Constitutional AI Critique-Revise Loop</span>
+      <div class="code-block">CONSTITUTION = [
+    <span class="c-str">"Be factually accurate and acknowledge uncertainty"</span>,
+    <span class="c-str">"Be concise and avoid unnecessary padding"</span>,
+    <span class="c-str">"Never produce harmful or misleading content"</span>,
+    <span class="c-str">"Support claims with reasoning or evidence"</span>
+]
+
+<span class="c-kw">async def</span> <span class="c-fn">constitutional_ai_loop</span>(prompt: <span class="c-type">str</span>, n_revisions: <span class="c-type">int</span> = <span class="c-num">3</span>) -> <span class="c-type">str</span>:
+    response = <span class="c-kw">await</span> llm.<span class="c-fn">ainvoke</span>(prompt)
+
+    <span class="c-kw">for</span> revision_num <span class="c-kw">in</span> <span class="c-fn">range</span>(n_revisions):
+        <span class="c-cmt"># Critique phase</span>
+        critique_prompt = <span class="c-fn">f</span><span class="c-str">"""Review this response against these principles:
+{chr(10).join(f'{i+1}. {p}' for i, p in enumerate(CONSTITUTION))}
+
+Response: {response.content}
+
+List specific violations or "PASSES ALL" if compliant:"""</span>
+
+        critique = <span class="c-kw">await</span> llm.<span class="c-fn">ainvoke</span>(critique_prompt)
+
+        <span class="c-kw">if</span> <span class="c-str">"PASSES ALL"</span> <span class="c-kw">in</span> critique.content:
+            <span class="c-kw">break</span>  <span class="c-cmt"># response is clean</span>
+
+        <span class="c-cmt"># Revision phase</span>
+        revision_prompt = <span class="c-fn">f</span><span class="c-str">"""Revise this response to fix the violations:
+
+Original: {response.content}
+Violations: {critique.content}
+Revised version (fixing all issues, maintaining core answer):"""</span>
+
+        response = <span class="c-kw">await</span> llm.<span class="c-fn">ainvoke</span>(revision_prompt)
+
+    <span class="c-kw">return</span> response.content</div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 5 -->
+<div class="container">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">05 — Closing the Loop</div>
+      <h2>Closing the Self-Improvement Loop</h2>
+      <p>The complete architecture chains production inference, sampling, judge evaluation, DPO dataset curation, fine-tuning, MLflow tracking, RAGAS eval, and shadow deploy into a weekly automated improvement cycle.</p>
+    </div>
+
+    <ul class="bullet-list">
+      <li><strong>Complete cycle:</strong> Production logs → Sample 5% → LLM judge evaluates → Build DPO dataset (chosen/rejected) → DPO fine-tune → MLflow track → RAGAS eval gate → Shadow deploy → Canary → Promote</li>
+      <li><strong>Timeline:</strong> Weekly automated improvement cycle — new model every Monday, evaluated by Friday, promoted or reverted by end of week</li>
+      <li><strong>Human oversight checkpoints:</strong> Review DPO data quality before training (sample 100 pairs), approve promotion after shadow metrics pass thresholds</li>
+      <li><strong>Anti-reward-hacking guardrails:</strong> Measure KL divergence from reference model, flag runs where perplexity drops too fast, check for alignment drift on eval set</li>
+    </ul>
+
+    <div class="callout info">
+      <span class="callout-icon">🔄</span>
+      <div class="callout-text"><strong>Alignment drift risk:</strong> Each DPO cycle moves the model slightly. Without evaluation on a fixed human-rated set, you can drift toward optimizing the judge's preferences rather than actual quality. Always keep a held-out human eval set for ground truth.</div>
+    </div>
+
+    <!-- Interactive Widget: RLHF Stage Visualizer -->
+    <div class="widget-box">
+      <div class="widget-title">RLHF Stage Explorer</div>
+      <div class="widget-desc">Click each stage card to expand details. Toggle the DPO switch to see which stages DPO replaces.</div>
+
+      <div class="dpo-toggle" onclick="toggleDPO()">
+        <div class="toggle-switch" id="dpo-toggle-switch"><div class="toggle-knob"></div></div>
+        <span class="toggle-label">Show DPO comparison (replaces stages 2 &amp; 3)</span>
+      </div>
+
+      <div class="stage-cards" id="stage-cards" style="margin-top:20px;">
+        <div class="stage-card" id="stage-sft" onclick="selectStage('sft')">
+          <div class="stage-num-badge">1</div>
+          <div class="stage-title">Supervised Fine-Tuning (SFT)</div>
+          <div class="stage-meta">
+            <span class="stage-chip chip-data">1K–100K demos</span>
+            <span class="stage-chip chip-cost">Low cost</span>
+            <span class="stage-chip chip-lib">TRL SFTTrainer</span>
+          </div>
+          <div class="stage-detail">
+            <p style="font-size:13px;color:var(--text);line-height:1.6;">Train the base model on high-quality demonstration data. This shapes the output format and general helpfulness before preference learning begins.</p>
+            <p style="font-size:12px;color:var(--muted);margin-top:8px;">Data: human-written Q&amp;A pairs, formatted outputs, task demonstrations. 1K high-quality examples beats 100K noisy ones.</p>
+            <p style="font-size:12px;color:var(--green);margin-top:6px;">Stability: High. SFT is just supervised learning — it's stable and predictable.</p>
+          </div>
+        </div>
+        <div class="stage-card" id="stage-rm" onclick="selectStage('rm')">
+          <div class="stage-num-badge">2</div>
+          <div class="stage-title">Reward Model Training</div>
+          <div class="stage-meta">
+            <span class="stage-chip chip-data">10K–500K pairs</span>
+            <span class="stage-chip chip-cost">Medium cost</span>
+            <span class="stage-chip chip-lib">Bradley-Terry</span>
+          </div>
+          <div class="stage-detail">
+            <p style="font-size:13px;color:var(--text);line-height:1.6;">Human labelers rank pairs of responses. The reward model learns to predict which response humans prefer — essentially compressing human preferences into a scalar score.</p>
+            <p style="font-size:12px;color:var(--muted);margin-top:8px;">Data: preference pairs (response A vs B). Human labelers compare and choose preferred. Expensive and slow.</p>
+            <p style="font-size:12px;color:var(--yellow);margin-top:6px;">DPO replaces this step entirely — no separate reward model needed.</p>
+          </div>
+        </div>
+        <div class="stage-card" id="stage-ppo" onclick="selectStage('ppo')">
+          <div class="stage-num-badge">3</div>
+          <div class="stage-title">PPO Optimization</div>
+          <div class="stage-meta">
+            <span class="stage-chip chip-data">Same as RM</span>
+            <span class="stage-chip chip-cost">High cost</span>
+            <span class="stage-chip chip-lib">TRL PPOTrainer</span>
+          </div>
+          <div class="stage-detail">
+            <p style="font-size:13px;color:var(--text);line-height:1.6;">Proximal Policy Optimization: the LLM generates responses, the reward model scores them, and PPO updates the policy to maximize reward while staying close to the SFT checkpoint (KL constraint).</p>
+            <p style="font-size:12px;color:var(--muted);margin-top:8px;">Notoriously unstable. Requires careful tuning of KL penalty (beta), learning rate, and batch size. Can reward-hack if not constrained.</p>
+            <p style="font-size:12px;color:var(--yellow);margin-top:6px;">DPO replaces PPO — use DPO unless you have specific reasons to run PPO.</p>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:8px;margin-top:16px;">
+        <span style="font-size:12px;color:var(--muted);">Progress:</span>
+        <div class="stage-progress" id="stage-progress">
+          <div class="progress-step" id="prog-1"></div>
+          <div class="progress-step" id="prog-2"></div>
+          <div class="progress-step" id="prog-3"></div>
+        </div>
+      </div>
+
+      <div id="dpo-summary" style="display:none;margin-top:16px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.3);border-radius:10px;padding:14px;">
+        <p style="font-size:13px;font-weight:700;color:var(--purple-light);margin-bottom:6px;">DPO Replaces Stages 2 &amp; 3</p>
+        <p style="font-size:12px;color:var(--muted);line-height:1.6;">DPO optimizes a single objective directly on preference pairs: maximize log-probability of chosen over rejected under a KL constraint. No reward model, no PPO. Same mathematical guarantee, far less engineering complexity.</p>
+        <p style="font-size:12px;color:var(--text);margin-top:8px;"><strong>Full pipeline with DPO:</strong> SFT (stage 1) → DPO on preference pairs → Deploy</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section style="max-width:1100px;margin:2rem auto;padding:0 24px 3rem;">
+  <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;">
+    <div style="font-size:0.75rem;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:1px;">Practice</div>
+    <h2 style="margin:0;font-size:1.4rem;font-weight:700;color:white;">Exercises</h2>
+  </div>
+  <p style="color:#9ca3af;margin-bottom:1.5rem;">Build a complete RLAIF pipeline: generate preference pairs with an LLM judge, train a DPO model, and evaluate alignment drift against a held-out set.</p>
+  <a href="../exercises/day28_exercises.html" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.6rem 1.25rem;background:linear-gradient(135deg,#7c3aed,#0d9488);color:white;font-weight:700;font-size:0.9rem;border-radius:8px;text-decoration:none;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">Open Interactive Exercises →</a>
+</section>
+
+<footer>
+  <div class="container">
+    <p>Agentic AI Mastery &mdash; Day 28: RL &amp; Self-Improving Agents &mdash; Built for Sharjeel Sohail</p>
+    <div style="margin-top:16px;display:flex;justify-content:center;gap:16px;">
+      <a href="day27.html" style="color:var(--muted);text-decoration:none;font-size:13px;">← Day 27</a>
+      <a href="../index.html" style="color:var(--muted);text-decoration:none;font-size:13px;">Dashboard</a>
+      <a href="day29.html" style="color:var(--muted);text-decoration:none;font-size:13px;">Day 29 →</a>
+    </div>
+  </div>
+</footer>
+
+<script src="../bg-animation.js"></script>
+<script>
+// ── Mark Complete ─────────────────────────────────────────────────────────────
+function markComplete() {
+  try {
+    const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
+    p[28] = 'done';
+    localStorage.setItem('aai_progress', JSON.stringify(p));
+    const btn = document.getElementById('complete-btn');
+    btn.textContent = 'Completed!';
+    btn.classList.remove('complete');
+    btn.classList.add('done');
+  } catch(e) {}
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  try {
+    const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
+    if (!p[28] || p[28] === 'locked') {
+      p[28] = 'active';
+      localStorage.setItem('aai_progress', JSON.stringify(p));
+    }
+    if (p[28] === 'done') {
+      const btn = document.getElementById('complete-btn');
+      btn.textContent = 'Completed!';
+      btn.classList.remove('complete');
+      btn.classList.add('done');
+    }
+  } catch(e) {}
+});
+
+// ── Stage Explorer ────────────────────────────────────────────────────────────
+let activeStage = null;
+let dpoActive = false;
+
+function selectStage(stage) {
+  document.querySelectorAll('.stage-card').forEach(c => c.classList.remove('active'));
+  const stageIds = { sft: 'stage-sft', rm: 'stage-rm', ppo: 'stage-ppo' };
+  const card = document.getElementById(stageIds[stage]);
+  if (activeStage === stage) {
+    activeStage = null;
+    updateProgress(0);
+    return;
+  }
+  card.classList.add('active');
+  activeStage = stage;
+  const stageNum = { sft: 1, rm: 2, ppo: 3 };
+  updateProgress(stageNum[stage]);
+}
+
+function updateProgress(num) {
+  for (let i = 1; i <= 3; i++) {
+    const step = document.getElementById(`prog-${i}`);
+    step.classList.toggle('done', i <= num);
+  }
+}
+
+function toggleDPO() {
+  dpoActive = !dpoActive;
+  const sw = document.getElementById('dpo-toggle-switch');
+  sw.classList.toggle('on', dpoActive);
+  const summary = document.getElementById('dpo-summary');
+  summary.style.display = dpoActive ? 'block' : 'none';
+
+  ['stage-rm', 'stage-ppo'].forEach(id => {
+    const card = document.getElementById(id);
+    card.classList.toggle('dpo-replaced', dpoActive);
+  });
+}
+</script>
+</body>
+</html>

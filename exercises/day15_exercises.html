@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 15 Exercises — PyTorch for LLM Engineers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f;
+  --card: #141420;
+  --surface2: #1a1a2e;
+  --border: #2a2a45;
+  --purple: #7c3aed;
+  --purple-light: #a855f7;
+  --teal: #0d9488;
+  --green: #10b981;
+  --yellow: #f59e0b;
+  --red: #ef4444;
+  --text: #e2e8f0;
+  --muted: #64748b;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+code, pre, .code-block, .mono { font-family: 'JetBrains Mono', monospace; }
+
+.sticky-nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(10,10,15,0.95); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 32px;
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+}
+.sticky-nav a {
+  color: var(--muted); text-decoration: none; font-size: 0.85rem;
+  padding: 6px 12px; border-radius: 6px; transition: all 0.2s;
+  border: 1px solid transparent;
+}
+.sticky-nav a:hover { color: var(--text); background: var(--card); border-color: var(--border); }
+.sticky-nav .brand { color: var(--purple-light); font-weight: 600; font-size: 0.9rem; }
+.nav-sep { color: var(--border); }
+.nav-title { color: var(--text); font-weight: 700; font-size: 0.95rem; flex: 1; }
+
+.hero {
+  padding: 56px 32px 32px;
+  max-width: 1100px; margin: 0 auto;
+  border-bottom: 1px solid var(--border);
+}
+.hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: 8px; }
+.hero h1 span { color: var(--purple-light); }
+.hero p { color: var(--muted); font-size: 1rem; max-width: 700px; }
+.hero-meta { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+.badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600;
+}
+.badge-purple { background: rgba(124,58,237,0.15); color: var(--purple-light); border: 1px solid rgba(124,58,237,0.3); }
+.badge-teal { background: rgba(13,148,136,0.15); color: #2dd4bf; border: 1px solid rgba(13,148,136,0.3); }
+.badge-green { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+
+.progress-bar-wrap { max-width: 1100px; margin: 24px auto; padding: 0 32px; }
+.progress-label { font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
+.progress-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--purple), var(--teal)); border-radius: 3px; transition: width 0.5s ease; }
+
+.main { max-width: 1100px; margin: 0 auto; padding: 32px; display: flex; flex-direction: column; gap: 64px; }
+
+.exercise {
+  border: 1px solid var(--border); border-radius: 16px; overflow: hidden;
+  background: var(--card);
+}
+.exercise-header {
+  padding: 24px 32px;
+  background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(13,148,136,0.05));
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+}
+.exercise-num { font-size: 0.75rem; color: var(--purple-light); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.exercise-header h2 { font-size: 1.4rem; font-weight: 700; margin: 4px 0 8px; }
+.exercise-header p { color: var(--muted); font-size: 0.9rem; }
+.ex-status { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); transition: background 0.3s; }
+.status-dot.done { background: var(--green); }
+
+.tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--surface2); }
+.tab-btn {
+  padding: 12px 20px; font-size: 0.82rem; font-weight: 600;
+  color: var(--muted); cursor: pointer; border: none; background: none;
+  border-bottom: 2px solid transparent; transition: all 0.2s;
+  font-family: 'Inter', sans-serif;
+}
+.tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+.tab-btn.active { color: var(--purple-light); border-bottom-color: var(--purple-light); background: rgba(124,58,237,0.05); }
+.tab-panel { display: none; padding: 28px 32px; }
+.tab-panel.active { display: block; }
+
+.code-wrap {
+  background: #0d0d18; border: 1px solid var(--border); border-radius: 10px;
+  overflow: hidden; margin: 12px 0;
+}
+.code-header {
+  padding: 8px 16px; background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 0.75rem; color: var(--muted);
+}
+.code-dots { display: flex; gap: 6px; }
+.code-dots span { width: 10px; height: 10px; border-radius: 50%; }
+.code-dots .dot-r { background: var(--red); }
+.code-dots .dot-y { background: var(--yellow); }
+.code-dots .dot-g { background: var(--green); }
+.code-body { display: flex; }
+.line-nums {
+  padding: 16px 8px; background: rgba(0,0,0,0.3); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 0; min-width: 40px; text-align: right;
+}
+.line-nums span { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: #3a3a5c; line-height: 1.7; padding: 0 8px; }
+.code-content {
+  padding: 16px; overflow-x: auto; flex: 1;
+  white-space: pre; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; line-height: 1.7;
+}
+.code-line { display: block; transition: background 0.2s; border-radius: 3px; padding: 0 4px; margin: 0 -4px; }
+.code-line.highlight { background: rgba(124,58,237,0.2); border-left: 3px solid var(--purple); padding-left: 8px; }
+.kw { color: #c792ea; }
+.fn { color: #82aaff; }
+.st { color: #c3e88d; }
+.cm { color: #546e7a; font-style: italic; }
+.nm { color: #f78c6c; }
+.tp { color: #ffcb6b; }
+.dt { color: #89ddff; }
+.va { color: #eeffff; }
+.bi { color: #ff5370; }
+
+.task-section { }
+.task-section h3 { font-size: 1rem; font-weight: 700; color: var(--yellow); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.task-requirements {
+  background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); border-radius: 10px;
+  padding: 16px 20px; margin-bottom: 16px;
+}
+.task-requirements li { color: var(--text); font-size: 0.88rem; margin: 6px 0 6px 16px; }
+.task-requirements li::marker { color: var(--yellow); }
+
+.tests-grid { display: flex; flex-direction: column; gap: 8px; }
+.test-case {
+  display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px;
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;
+}
+.test-badge {
+  flex-shrink: 0; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700;
+  font-family: 'Inter', sans-serif; letter-spacing: 0.5px;
+}
+.test-badge.pass { background: rgba(16,185,129,0.2); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.test-badge.pending { background: rgba(100,116,139,0.2); color: var(--muted); border: 1px solid rgba(100,116,139,0.3); }
+.test-content { flex: 1; }
+.test-input { color: var(--text); }
+.test-expected { color: var(--muted); margin-top: 2px; }
+
+.hints-list { display: flex; flex-direction: column; gap: 8px; }
+.hint-toggle {
+  width: 100%; text-align: left; padding: 10px 16px;
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+  color: var(--muted); cursor: pointer; font-family: 'Inter', sans-serif; font-size: 0.85rem;
+  display: flex; align-items: center; justify-content: space-between; transition: all 0.2s;
+}
+.hint-toggle:hover { border-color: var(--purple); color: var(--text); }
+.hint-toggle .arrow { transition: transform 0.2s; }
+.hint-toggle.open .arrow { transform: rotate(90deg); }
+.hint-body {
+  display: none; padding: 12px 16px; margin-top: 4px;
+  background: rgba(124,58,237,0.05); border: 1px solid rgba(124,58,237,0.2); border-radius: 8px;
+  font-size: 0.85rem; color: var(--text); line-height: 1.6;
+}
+.hint-body code { background: rgba(124,58,237,0.15); padding: 1px 5px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--purple-light); }
+
+.section-label {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+  font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+}
+.section-label.purple { color: var(--purple-light); }
+.section-label.yellow { color: var(--yellow); }
+.section-label.green { color: #34d399; }
+.section-label.teal { color: #2dd4bf; }
+.section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+.animate-btn {
+  margin-top: 12px; padding: 8px 18px; border-radius: 8px;
+  background: var(--purple); color: white; border: none; cursor: pointer;
+  font-size: 0.82rem; font-weight: 600; font-family: 'Inter', sans-serif;
+  transition: background 0.2s; display: inline-flex; align-items: center; gap: 6px;
+}
+.animate-btn:hover { background: var(--purple-light); }
+
+.info-box {
+  padding: 12px 16px; border-radius: 8px; margin: 12px 0; font-size: 0.85rem;
+}
+.info-box.teal { background: rgba(13,148,136,0.08); border: 1px solid rgba(13,148,136,0.2); color: var(--text); }
+.info-box.teal strong { color: #2dd4bf; }
+.info-box.purple { background: rgba(124,58,237,0.08); border: 1px solid rgba(124,58,237,0.2); color: var(--text); }
+.info-box.purple strong { color: var(--purple-light); }
+
+.footer { border-top: 1px solid var(--border); padding: 32px; text-align: center; color: var(--muted); font-size: 0.82rem; }
+.footer a { color: var(--purple-light); text-decoration: none; }
+
+@media (max-width: 768px) {
+  .tab-btn { padding: 10px 12px; font-size: 0.75rem; }
+}
+</style>
+</head>
+<body data-animation-density="high">
+
+<nav class="sticky-nav">
+  <a href="../days/day15.html">← Day 15 lesson</a>
+  <span class="nav-sep">|</span>
+  <a href="../index.html" class="brand">🤖 Agentic AI</a>
+  <span class="nav-sep">|</span>
+  <span class="nav-title">Day 15 Exercises — PyTorch for LLM Engineers</span>
+  <a href="day16_exercises.html" style="margin-left:auto;">Day 16 Exercises →</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-meta">
+    <span class="badge badge-purple">Day 15</span>
+    <span class="badge badge-teal">5 Exercises</span>
+    <span class="badge badge-green">PyTorch / CUDA</span>
+  </div>
+  <h1>PyTorch for <span>LLM Engineers</span></h1>
+  <p>Master the PyTorch primitives every LLM practitioner needs — tensor operations, autograd, inference mode, and GPU memory management. No ML theory required, just the mechanics.</p>
+</div>
+
+<div class="progress-bar-wrap">
+  <div class="progress-label">
+    <span>Progress</span>
+    <span id="progress-text">0 / 5 completed</span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+</div>
+
+<main class="main">
+
+<!-- ========== EXERCISE 1: TENSOR FUNDAMENTALS ========== -->
+<section class="exercise" id="ex1">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 1 of 5</div>
+      <h2>Tensor Fundamentals & Shape Manipulation</h2>
+      <p>Create tensors, inspect shapes, and perform the reshape/view/permute operations that show up constantly in transformer code.</p>
+    </div>
+    <div class="ex-status">
+      <span class="status-dot" id="dot1"></span>
+      <span style="font-size:0.78rem;color:var(--muted)">Completed</span>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex1','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex1','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex1','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex1','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex1-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Build a <code style="font-family:'JetBrains Mono',monospace;background:rgba(245,158,11,0.15);padding:2px 6px;border-radius:4px;">tensor_inspector</code> function and practice shape operations:</p>
+      <ul>
+        <li>Create a tensor from a Python list using <code style="font-family:'JetBrains Mono',monospace;">torch.tensor()</code> and verify its <code style="font-family:'JetBrains Mono',monospace;">.dtype</code>, <code style="font-family:'JetBrains Mono',monospace;">.shape</code>, and <code style="font-family:'JetBrains Mono',monospace;">.device</code></li>
+        <li>Use <code style="font-family:'JetBrains Mono',monospace;">.reshape()</code> to convert a flat 1-D tensor of 12 elements into shape <code style="font-family:'JetBrains Mono',monospace;">(3, 4)</code>, then <code style="font-family:'JetBrains Mono',monospace;">(2, 2, 3)</code></li>
+        <li>Use <code style="font-family:'JetBrains Mono',monospace;">.permute()</code> to transpose a <code style="font-family:'JetBrains Mono',monospace;">(batch, seq, hidden)</code> tensor to <code style="font-family:'JetBrains Mono',monospace;">(seq, batch, hidden)</code></li>
+        <li>Simulate a batch of token embeddings: shape <code style="font-family:'JetBrains Mono',monospace;">(batch=2, seq=5, dim=8)</code> using <code style="font-family:'JetBrains Mono',monospace;">torch.randn()</code></li>
+        <li>Slice out the last token of each sequence using tensor indexing <code style="font-family:'JetBrains Mono',monospace;">[:, -1, :]</code></li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(1)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex1-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        <span>day15_ex1_tensors.py</span>
+        <span># pip install torch</span>
+      </div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span></div>
+        <div class="code-content"><span class="cm"># pip install torch</span>
+<span class="kw">import</span> <span class="va">torch</span>
+
+<span class="kw">def</span> <span class="fn">tensor_inspector</span><span class="dt">(</span><span class="va">data</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">dict</span><span class="dt">:</span>
+    <span class="st">"""Return dtype, shape, device, and numel for any input."""</span>
+    <span class="va">t</span> <span class="dt">=</span> <span class="fn">torch</span><span class="dt">.</span><span class="fn">tensor</span><span class="dt">(</span><span class="va">data</span><span class="dt">)</span>
+    <span class="cm"># TODO: return dict with keys: dtype, shape, device, numel</span>
+    <span class="dt">...</span>
+
+<span class="cm"># --- Shape manipulation ---</span>
+<span class="va">flat</span> <span class="dt">=</span> <span class="fn">torch</span><span class="dt">.</span><span class="fn">arange</span><span class="dt">(</span><span class="nm">12</span><span class="dt">,</span> <span class="va">dtype</span><span class="dt">=</span><span class="va">torch</span><span class="dt">.</span><span class="va">float32</span><span class="dt">)</span>  <span class="cm"># [0,1,...,11]</span>
+<span class="cm"># TODO: reshape to (3, 4)</span>
+<span class="va">matrix</span> <span class="dt">=</span> <span class="dt">...</span>
+<span class="cm"># TODO: reshape to (2, 2, 3)</span>
+<span class="va">cube</span> <span class="dt">=</span> <span class="dt">...</span>
+
+<span class="cm"># --- Transformer dimension pattern ---</span>
+<span class="cm"># batch=2, seq_len=5, hidden_dim=8</span>
+<span class="va">embeddings</span> <span class="dt">=</span> <span class="fn">torch</span><span class="dt">.</span><span class="fn">randn</span><span class="dt">(</span><span class="nm">2</span><span class="dt">,</span> <span class="nm">5</span><span class="dt">,</span> <span class="nm">8</span><span class="dt">)</span>
+
+<span class="cm"># TODO: permute to (seq, batch, hidden) — needed by many RNN-style layers</span>
+<span class="va">seq_first</span> <span class="dt">=</span> <span class="dt">...</span>
+
+<span class="cm"># TODO: slice out the last token of every sequence → shape (2, 8)</span>
+<span class="va">last_token</span> <span class="dt">=</span> <span class="dt">...</span>
+
+<span class="cm"># Verification</span>
+<span class="fn">print</span><span class="dt">(</span><span class="st">"matrix shape:"</span><span class="dt">,</span> <span class="va">matrix</span><span class="dt">.</span><span class="va">shape</span><span class="dt">)</span>    <span class="cm"># torch.Size([3, 4])</span>
+<span class="fn">print</span><span class="dt">(</span><span class="st">"seq_first shape:"</span><span class="dt">,</span> <span class="va">seq_first</span><span class="dt">.</span><span class="va">shape</span><span class="dt">)</span>  <span class="cm"># torch.Size([5, 2, 8])</span>
+<span class="fn">print</span><span class="dt">(</span><span class="st">"last_token shape:"</span><span class="dt">,</span> <span class="va">last_token</span><span class="dt">.</span><span class="va">shape</span><span class="dt">)</span> <span class="cm"># torch.Size([2, 8])</span></div>
+      </div>
+    </div>
+    <div class="info-box teal"><strong>Key insight:</strong> <code style="font-family:'JetBrains Mono',monospace;background:rgba(13,148,136,0.15);padding:1px 5px;border-radius:3px;color:#2dd4bf;">.view()</code> requires contiguous memory; <code style="font-family:'JetBrains Mono',monospace;background:rgba(13,148,136,0.15);padding:1px 5px;border-radius:3px;color:#2dd4bf;">.reshape()</code> always works. After <code style="font-family:'JetBrains Mono',monospace;background:rgba(13,148,136,0.15);padding:1px 5px;border-radius:3px;color:#2dd4bf;">.permute()</code>, call <code style="font-family:'JetBrains Mono',monospace;background:rgba(13,148,136,0.15);padding:1px 5px;border-radius:3px;color:#2dd4bf;">.contiguous()</code> if you plan to reshape again.</div>
+  </div>
+
+  <div class="tab-panel" id="ex1-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case">
+        <span class="test-badge pending" id="t1-1">T1</span>
+        <div class="test-content">
+          <div class="test-input">tensor_inspector([1.0, 2.0, 3.0])["shape"]</div>
+          <div class="test-expected">→ torch.Size([3])</div>
+        </div>
+      </div>
+      <div class="test-case">
+        <span class="test-badge pending" id="t1-2">T2</span>
+        <div class="test-content">
+          <div class="test-input">flat.reshape(3, 4).shape</div>
+          <div class="test-expected">→ torch.Size([3, 4])</div>
+        </div>
+      </div>
+      <div class="test-case">
+        <span class="test-badge pending" id="t1-3">T3</span>
+        <div class="test-content">
+          <div class="test-input">embeddings.permute(1, 0, 2).shape</div>
+          <div class="test-expected">→ torch.Size([5, 2, 8])</div>
+        </div>
+      </div>
+      <div class="test-case">
+        <span class="test-badge pending" id="t1-4">T4</span>
+        <div class="test-content">
+          <div class="test-input">embeddings[:, -1, :].shape</div>
+          <div class="test-expected">→ torch.Size([2, 8])</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(1)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex1-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — tensor_inspector return value</span><span class="arrow">▶</span></button>
+        <div class="hint-body">Return <code>{"dtype": t.dtype, "shape": t.shape, "device": t.device, "numel": t.numel()}</code>. <code>t.numel()</code> gives total number of elements.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — Reshape syntax</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>matrix = flat.reshape(3, 4)</code> and <code>cube = flat.reshape(2, 2, 3)</code>. You can also use <code>-1</code> for one dimension to auto-compute: <code>flat.reshape(3, -1)</code>.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 3 — Permute axes</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>seq_first = embeddings.permute(1, 0, 2)</code> — pass the new order of axis indices. Original axes are (0=batch, 1=seq, 2=hidden).</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 2: AUTOGRAD ========== -->
+<section class="exercise" id="ex2">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 2 of 5</div>
+      <h2>Autograd & Gradient Computation</h2>
+      <p>Understand how PyTorch builds the computation graph and computes gradients — the engine behind fine-tuning.</p>
+    </div>
+    <div class="ex-status">
+      <span class="status-dot" id="dot2"></span>
+      <span style="font-size:0.78rem;color:var(--muted)">Completed</span>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex2','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex2','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex2','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex2','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex2-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Implement a manual gradient descent step using autograd:</p>
+      <ul>
+        <li>Create a weight tensor with <code style="font-family:'JetBrains Mono',monospace;">requires_grad=True</code></li>
+        <li>Compute a simple loss (e.g., <code style="font-family:'JetBrains Mono',monospace;">loss = (w * x - y).pow(2).mean()</code>)</li>
+        <li>Call <code style="font-family:'JetBrains Mono',monospace;">loss.backward()</code> and inspect <code style="font-family:'JetBrains Mono',monospace;">w.grad</code></li>
+        <li>Manually update weights: <code style="font-family:'JetBrains Mono',monospace;">w.data -= lr * w.grad</code></li>
+        <li>Zero the gradient with <code style="font-family:'JetBrains Mono',monospace;">w.grad.zero_()</code> before the next step</li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(2)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex2-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        <span>day15_ex2_autograd.py</span>
+        <span># pip install torch</span>
+      </div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span></div>
+        <div class="code-content"><span class="kw">import</span> <span class="va">torch</span>
+
+<span class="cm"># Synthetic data: y = 3x + noise</span>
+<span class="va">torch</span><span class="dt">.</span><span class="fn">manual_seed</span><span class="dt">(</span><span class="nm">42</span><span class="dt">)</span>
+<span class="va">x</span> <span class="dt">=</span> <span class="va">torch</span><span class="dt">.</span><span class="fn">randn</span><span class="dt">(</span><span class="nm">100</span><span class="dt">)</span>
+<span class="va">y</span> <span class="dt">=</span> <span class="nm">3.0</span> <span class="dt">*</span> <span class="va">x</span> <span class="dt">+</span> <span class="va">torch</span><span class="dt">.</span><span class="fn">randn</span><span class="dt">(</span><span class="nm">100</span><span class="dt">)</span> <span class="dt">*</span> <span class="nm">0.1</span>
+
+<span class="cm"># TODO: create weight w=0.0 with requires_grad=True</span>
+<span class="va">w</span> <span class="dt">=</span> <span class="dt">...</span>
+
+<span class="va">lr</span> <span class="dt">=</span> <span class="nm">0.01</span>
+
+<span class="kw">for</span> <span class="va">step</span> <span class="kw">in</span> <span class="fn">range</span><span class="dt">(</span><span class="nm">100</span><span class="dt">):</span>
+    <span class="cm"># TODO: forward pass — compute MSE loss</span>
+    <span class="va">loss</span> <span class="dt">=</span> <span class="dt">...</span>
+
+    <span class="cm"># TODO: backward pass</span>
+    <span class="dt">...</span>
+
+    <span class="cm"># TODO: update weight (use .data to avoid tracking this op)</span>
+    <span class="dt">...</span>
+
+    <span class="cm"># TODO: zero the gradient</span>
+    <span class="dt">...</span>
+
+    <span class="kw">if</span> <span class="va">step</span> <span class="dt">%</span> <span class="nm">20</span> <span class="dt">==</span> <span class="nm">0</span><span class="dt">:</span>
+        <span class="fn">print</span><span class="dt">(</span><span class="bi">f</span><span class="st">"step={step:3d}  w={w.item():.4f}  loss={loss.item():.6f}"</span><span class="dt">)</span>
+
+<span class="fn">print</span><span class="dt">(</span><span class="bi">f</span><span class="st">"\nFinal w≈{w.item():.3f} (should be close to 3.0)"</span><span class="dt">)</span></div>
+      </div>
+    </div>
+    <div class="info-box purple"><strong>Why .data?</strong> Updating via <code style="font-family:'JetBrains Mono',monospace;background:rgba(124,58,237,0.15);padding:1px 5px;border-radius:3px;color:var(--purple-light);">w.data -= lr * w.grad</code> skips the computation graph — otherwise PyTorch would try to differentiate through the update itself.</div>
+  </div>
+
+  <div class="tab-panel" id="ex2-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case">
+        <span class="test-badge pending" id="t2-1">T1</span>
+        <div class="test-content">
+          <div class="test-input">w = torch.tensor(0.0, requires_grad=True)<br>loss = (w * x - y).pow(2).mean()<br>loss.backward(); w.grad is not None</div>
+          <div class="test-expected">→ True (gradient is populated)</div>
+        </div>
+      </div>
+      <div class="test-case">
+        <span class="test-badge pending" id="t2-2">T2</span>
+        <div class="test-content">
+          <div class="test-input">After 100 steps, abs(w.item() - 3.0) &lt; 0.1</div>
+          <div class="test-expected">→ True (converged near true weight of 3.0)</div>
+        </div>
+      </div>
+      <div class="test-case">
+        <span class="test-badge pending" id="t2-3">T3</span>
+        <div class="test-content">
+          <div class="test-input">w.grad.zero_(); w.grad.item() == 0.0</div>
+          <div class="test-expected">→ True (gradient zeroed)</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(2)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex2-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — Creating a leaf with grad</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>w = torch.tensor(0.0, requires_grad=True)</code>. Note: float tensors, not int, support autograd.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — Forward and backward</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>loss = (w * x - y).pow(2).mean()</code> then <code>loss.backward()</code>. Now <code>w.grad</code> holds dLoss/dw.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 3 — In-place grad zeroing</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>w.grad.zero_()</code> — the trailing underscore means in-place. Calling <code>loss.backward()</code> accumulates gradients by default; you must zero between steps.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 3: INFERENCE MODE ========== -->
+<section class="exercise" id="ex3">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 3 of 5</div>
+      <h2>Inference Mode: model.eval() & torch.no_grad()</h2>
+      <p>Disable gradient tracking during inference to save memory and speed up forward passes through pre-trained models.</p>
+    </div>
+    <div class="ex-status">
+      <span class="status-dot" id="dot3"></span>
+      <span style="font-size:0.78rem;color:var(--muted)">Completed</span>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex3','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex3','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex3','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex3','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex3-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Wrap a model's forward pass in proper inference mode:</p>
+      <ul>
+        <li>Call <code style="font-family:'JetBrains Mono',monospace;">model.eval()</code> to disable dropout and batch norm running stats</li>
+        <li>Use <code style="font-family:'JetBrains Mono',monospace;">torch.no_grad()</code> context manager to prevent gradient tracking</li>
+        <li>Alternatively use <code style="font-family:'JetBrains Mono',monospace;">torch.inference_mode()</code> (stronger — no grad and no version tracking)</li>
+        <li>Compare memory usage with and without <code style="font-family:'JetBrains Mono',monospace;">no_grad</code> by checking <code style="font-family:'JetBrains Mono',monospace;">output.requires_grad</code></li>
+        <li>Write an <code style="font-family:'JetBrains Mono',monospace;">infer(model, x)</code> helper that always runs in eval + no_grad mode</li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(3)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex3-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        <span>day15_ex3_inference.py</span>
+        <span># pip install torch</span>
+      </div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span></div>
+        <div class="code-content"><span class="kw">import</span> <span class="va">torch</span>
+<span class="kw">import</span> <span class="va">torch</span><span class="dt">.</span><span class="va">nn</span> <span class="kw">as</span> <span class="va">nn</span>
+
+<span class="cm"># Tiny model to experiment with</span>
+<span class="kw">class</span> <span class="tp">TinyMLP</span><span class="dt">(</span><span class="tp">nn.Module</span><span class="dt">):</span>
+    <span class="kw">def</span> <span class="fn">__init__</span><span class="dt">(</span><span class="va">self</span><span class="dt">):</span>
+        <span class="fn">super</span><span class="dt">().</span><span class="fn">__init__</span><span class="dt">()</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">net</span> <span class="dt">=</span> <span class="va">nn</span><span class="dt">.</span><span class="fn">Sequential</span><span class="dt">(</span>
+            <span class="va">nn</span><span class="dt">.</span><span class="fn">Linear</span><span class="dt">(</span><span class="nm">16</span><span class="dt">,</span> <span class="nm">32</span><span class="dt">),</span>
+            <span class="va">nn</span><span class="dt">.</span><span class="fn">Dropout</span><span class="dt">(</span><span class="nm">0.5</span><span class="dt">),</span>  <span class="cm"># disabled in eval()</span>
+            <span class="va">nn</span><span class="dt">.</span><span class="fn">ReLU</span><span class="dt">(),</span>
+            <span class="va">nn</span><span class="dt">.</span><span class="fn">Linear</span><span class="dt">(</span><span class="nm">32</span><span class="dt">,</span> <span class="nm">4</span><span class="dt">)</span>
+        <span class="dt">)</span>
+    <span class="kw">def</span> <span class="fn">forward</span><span class="dt">(</span><span class="va">self</span><span class="dt">,</span> <span class="va">x</span><span class="dt">):</span>
+        <span class="kw">return</span> <span class="va">self</span><span class="dt">.</span><span class="va">net</span><span class="dt">(</span><span class="va">x</span><span class="dt">)</span>
+
+<span class="va">model</span> <span class="dt">=</span> <span class="fn">TinyMLP</span><span class="dt">()</span>
+<span class="va">x</span> <span class="dt">=</span> <span class="va">torch</span><span class="dt">.</span><span class="fn">randn</span><span class="dt">(</span><span class="nm">4</span><span class="dt">,</span> <span class="nm">16</span><span class="dt">)</span>  <span class="cm"># batch=4, input_dim=16</span>
+
+<span class="cm"># --- Training mode (grad tracking ON) ---</span>
+<span class="va">out_train</span> <span class="dt">=</span> <span class="va">model</span><span class="dt">(</span><span class="va">x</span><span class="dt">)</span>
+<span class="fn">print</span><span class="dt">(</span><span class="st">"train requires_grad:"</span><span class="dt">,</span> <span class="va">out_train</span><span class="dt">.</span><span class="va">requires_grad</span><span class="dt">)</span>  <span class="cm"># True</span>
+
+<span class="cm"># TODO: switch model to eval mode</span>
+<span class="dt">...</span>
+
+<span class="cm"># TODO: write infer(model, x) using torch.no_grad()</span>
+<span class="kw">def</span> <span class="fn">infer</span><span class="dt">(</span><span class="va">model</span><span class="dt">,</span> <span class="va">x</span><span class="dt">):</span>
+    <span class="dt">...</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex3-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case">
+        <span class="test-badge pending" id="t3-1">T1</span>
+        <div class="test-content">
+          <div class="test-input">model.eval(); model.training</div>
+          <div class="test-expected">→ False (eval mode set)</div>
+        </div>
+      </div>
+      <div class="test-case">
+        <span class="test-badge pending" id="t3-2">T2</span>
+        <div class="test-content">
+          <div class="test-input">out = infer(model, x); out.requires_grad</div>
+          <div class="test-expected">→ False (no grad tracking)</div>
+        </div>
+      </div>
+      <div class="test-case">
+        <span class="test-badge pending" id="t3-3">T3</span>
+        <div class="test-content">
+          <div class="test-input">infer(model, x).shape</div>
+          <div class="test-expected">→ torch.Size([4, 4])</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(3)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex3-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — eval() and no_grad()</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>model.eval()</code> sets <code>model.training = False</code>. Then wrap the forward pass: <code>with torch.no_grad(): output = model(x)</code>.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — inference_mode vs no_grad</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>torch.inference_mode()</code> is a superset of <code>no_grad</code> — it also disables version counter tracking, making it slightly faster. Prefer it for production inference.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 4: GPU MEMORY ========== -->
+<section class="exercise" id="ex4">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 4 of 5</div>
+      <h2>GPU Memory Management with torch.cuda</h2>
+      <p>Move tensors to GPU, monitor VRAM usage, and avoid the most common OOM pitfalls when running large models.</p>
+    </div>
+    <div class="ex-status">
+      <span class="status-dot" id="dot4"></span>
+      <span style="font-size:0.78rem;color:var(--muted)">Completed</span>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex4','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex4','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex4','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex4','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex4-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Write GPU-aware tensor utilities:</p>
+      <ul>
+        <li>Use <code style="font-family:'JetBrains Mono',monospace;">torch.cuda.is_available()</code> to pick device; fall back to CPU gracefully</li>
+        <li>Move a tensor to the chosen device with <code style="font-family:'JetBrains Mono',monospace;">.to(device)</code></li>
+        <li>Print VRAM stats using <code style="font-family:'JetBrains Mono',monospace;">torch.cuda.memory_allocated()</code> and <code style="font-family:'JetBrains Mono',monospace;">torch.cuda.max_memory_allocated()</code></li>
+        <li>Free cached VRAM with <code style="font-family:'JetBrains Mono',monospace;">torch.cuda.empty_cache()</code> after deleting tensors</li>
+        <li>Write a <code style="font-family:'JetBrains Mono',monospace;">vram_report()</code> function returning allocated/reserved MB</li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(4)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex4-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        <span>day15_ex4_gpu_memory.py</span>
+        <span># pip install torch</span>
+      </div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span><span>31</span><span>32</span></div>
+        <div class="code-content"><span class="kw">import</span> <span class="va">torch</span>
+
+<span class="cm"># TODO: pick GPU if available, else CPU</span>
+<span class="va">device</span> <span class="dt">=</span> <span class="dt">...</span>
+<span class="fn">print</span><span class="dt">(</span><span class="bi">f</span><span class="st">"Using device: {device}"</span><span class="dt">)</span>
+
+<span class="kw">def</span> <span class="fn">vram_report</span><span class="dt">()</span> <span class="dt">-></span> <span class="tp">dict</span><span class="dt">:</span>
+    <span class="st">"""Return VRAM stats in MB. Works on CPU (returns zeros)."""</span>
+    <span class="kw">if</span> <span class="kw">not</span> <span class="va">torch</span><span class="dt">.</span><span class="va">cuda</span><span class="dt">.</span><span class="fn">is_available</span><span class="dt">():</span>
+        <span class="kw">return</span> <span class="dt">{</span><span class="st">"allocated_mb"</span><span class="dt">:</span> <span class="nm">0</span><span class="dt">,</span> <span class="st">"reserved_mb"</span><span class="dt">:</span> <span class="nm">0</span><span class="dt">}</span>
+    <span class="cm"># TODO: use torch.cuda.memory_allocated() and torch.cuda.memory_reserved()</span>
+    <span class="cm"># Convert bytes → MB by dividing by 1024**2</span>
+    <span class="dt">...</span>
+
+<span class="cm"># Allocate a large tensor on device</span>
+<span class="va">big</span> <span class="dt">=</span> <span class="va">torch</span><span class="dt">.</span><span class="fn">randn</span><span class="dt">(</span><span class="nm">1024</span><span class="dt">,</span> <span class="nm">1024</span><span class="dt">,</span> <span class="va">device</span><span class="dt">=</span><span class="va">device</span><span class="dt">)</span>  <span class="cm"># 4 MB at float32</span>
+<span class="fn">print</span><span class="dt">(</span><span class="st">"After alloc:"</span><span class="dt">,</span> <span class="fn">vram_report</span><span class="dt">())</span>
+
+<span class="cm"># Move model to device</span>
+<span class="kw">import</span> <span class="va">torch</span><span class="dt">.</span><span class="va">nn</span> <span class="kw">as</span> <span class="va">nn</span>
+<span class="va">model</span> <span class="dt">=</span> <span class="va">nn</span><span class="dt">.</span><span class="fn">Linear</span><span class="dt">(</span><span class="nm">512</span><span class="dt">,</span> <span class="nm">512</span><span class="dt">).</span><span class="fn">to</span><span class="dt">(</span><span class="va">device</span><span class="dt">)</span>
+
+<span class="cm"># Always keep input on same device as model</span>
+<span class="va">inp</span> <span class="dt">=</span> <span class="va">torch</span><span class="dt">.</span><span class="fn">randn</span><span class="dt">(</span><span class="nm">8</span><span class="dt">,</span> <span class="nm">512</span><span class="dt">,</span> <span class="va">device</span><span class="dt">=</span><span class="va">device</span><span class="dt">)</span>
+
+<span class="cm"># TODO: run inference and print VRAM before/after</span>
+<span class="dt">...</span>
+
+<span class="cm"># Free memory</span>
+<span class="kw">del</span> <span class="va">big</span><span class="dt">,</span> <span class="va">model</span>
+<span class="cm"># TODO: call empty_cache and print report again</span>
+<span class="dt">...</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex4-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case">
+        <span class="test-badge pending" id="t4-1">T1</span>
+        <div class="test-content">
+          <div class="test-input">device = torch.device("cuda" if torch.cuda.is_available() else "cpu")<br>type(device)</div>
+          <div class="test-expected">→ torch.device (never crashes — graceful CPU fallback)</div>
+        </div>
+      </div>
+      <div class="test-case">
+        <span class="test-badge pending" id="t4-2">T2</span>
+        <div class="test-content">
+          <div class="test-input">t = torch.randn(10).to(device); t.device.type</div>
+          <div class="test-expected">→ "cuda" or "cpu" (matches chosen device)</div>
+        </div>
+      </div>
+      <div class="test-case">
+        <span class="test-badge pending" id="t4-3">T3</span>
+        <div class="test-content">
+          <div class="test-input">report = vram_report(); all(k in report for k in ["allocated_mb","reserved_mb"])</div>
+          <div class="test-expected">→ True (dict has correct keys)</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(4)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex4-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — Device selection idiom</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>device = torch.device("cuda" if torch.cuda.is_available() else "cpu")</code>. This is the standard one-liner in every HuggingFace example.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — VRAM in MB</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>allocated_mb = torch.cuda.memory_allocated() / 1024**2</code> and <code>reserved_mb = torch.cuda.memory_reserved() / 1024**2</code>. Reserved = the caching allocator's pool; allocated = actually used by live tensors.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 5: DTYPE QUANTIZATION ========== -->
+<section class="exercise" id="ex5">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 5 of 5</div>
+      <h2>Dtype Casting & Memory Footprint</h2>
+      <p>Compare float32 vs float16 vs bfloat16 memory usage and understand why LLMs default to bfloat16 on modern GPUs.</p>
+    </div>
+    <div class="ex-status">
+      <span class="status-dot" id="dot5"></span>
+      <span style="font-size:0.78rem;color:var(--muted)">Completed</span>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex5','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex5','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex5','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex5','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex5-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Benchmark dtype memory and understand precision trade-offs:</p>
+      <ul>
+        <li>Create the same 1024x1024 tensor in <code style="font-family:'JetBrains Mono',monospace;">float32</code>, <code style="font-family:'JetBrains Mono',monospace;">float16</code>, and <code style="font-family:'JetBrains Mono',monospace;">bfloat16</code></li>
+        <li>Use <code style="font-family:'JetBrains Mono',monospace;">.nbytes</code> to compare their memory footprints</li>
+        <li>Cast with <code style="font-family:'JetBrains Mono',monospace;">.to(torch.float16)</code> or <code style="font-family:'JetBrains Mono',monospace;">.half()</code> shorthand</li>
+        <li>Compute a simple matmul in each dtype and verify the output shape is identical</li>
+        <li>Write a <code style="font-family:'JetBrains Mono',monospace;">model_size_mb(model)</code> utility that sums <code style="font-family:'JetBrains Mono',monospace;">p.nbytes</code> over all parameters</li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(5)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex5-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        <span>day15_ex5_dtypes.py</span>
+        <span># pip install torch</span>
+      </div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span></div>
+        <div class="code-content"><span class="kw">import</span> <span class="va">torch</span>
+<span class="kw">import</span> <span class="va">torch</span><span class="dt">.</span><span class="va">nn</span> <span class="kw">as</span> <span class="va">nn</span>
+
+<span class="va">N</span> <span class="dt">=</span> <span class="nm">1024</span>
+<span class="va">t32</span>  <span class="dt">=</span> <span class="va">torch</span><span class="dt">.</span><span class="fn">randn</span><span class="dt">(</span><span class="va">N</span><span class="dt">,</span> <span class="va">N</span><span class="dt">,</span> <span class="va">dtype</span><span class="dt">=</span><span class="va">torch</span><span class="dt">.</span><span class="va">float32</span><span class="dt">)</span>
+
+<span class="cm"># TODO: create t16 (float16) and tbf (bfloat16)</span>
+<span class="va">t16</span>  <span class="dt">=</span> <span class="dt">...</span>
+<span class="va">tbf</span>  <span class="dt">=</span> <span class="dt">...</span>
+
+<span class="fn">print</span><span class="dt">(</span><span class="bi">f</span><span class="st">"float32  : {t32.nbytes / 1024**2:.1f} MB"</span><span class="dt">)</span>
+<span class="fn">print</span><span class="dt">(</span><span class="bi">f</span><span class="st">"float16  : {t16.nbytes / 1024**2:.1f} MB"</span><span class="dt">)</span>
+<span class="fn">print</span><span class="dt">(</span><span class="bi">f</span><span class="st">"bfloat16 : {tbf.nbytes / 1024**2:.1f} MB"</span><span class="dt">)</span>
+
+<span class="cm"># Matmul in each dtype</span>
+<span class="va">out32</span> <span class="dt">=</span> <span class="va">t32</span> <span class="dt">@</span> <span class="va">t32</span><span class="dt">.</span><span class="fn">T</span>
+<span class="cm"># TODO: matmul for t16 and tbf</span>
+<span class="dt">...</span>
+
+<span class="cm"># Model size utility</span>
+<span class="kw">def</span> <span class="fn">model_size_mb</span><span class="dt">(</span><span class="va">model</span><span class="dt">:</span> <span class="tp">nn.Module</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">float</span><span class="dt">:</span>
+    <span class="st">"""Return total parameter memory in MB."""</span>
+    <span class="cm"># TODO: sum p.nbytes for p in model.parameters()</span>
+    <span class="dt">...</span>
+
+<span class="va">model</span> <span class="dt">=</span> <span class="va">nn</span><span class="dt">.</span><span class="fn">Linear</span><span class="dt">(</span><span class="nm">4096</span><span class="dt">,</span> <span class="nm">4096</span><span class="dt">)</span>  <span class="cm"># 64MB in float32</span>
+<span class="fn">print</span><span class="dt">(</span><span class="bi">f</span><span class="st">"\nLinear(4096,4096) float32: {model_size_mb(model):.1f} MB"</span><span class="dt">)</span>
+<span class="fn">print</span><span class="dt">(</span><span class="bi">f</span><span class="st">"Linear(4096,4096) float16: {model_size_mb(model.half()):.1f} MB"</span><span class="dt">)</span></div>
+      </div>
+    </div>
+    <div class="info-box teal"><strong>bfloat16 vs float16:</strong> Both are 16-bit (2 MB per 1M params vs 4 MB for fp32). bfloat16 has the same exponent range as float32 — far less likely to overflow during training. That's why Llama, Mistral, etc. default to bf16.</div>
+  </div>
+
+  <div class="tab-panel" id="ex5-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case">
+        <span class="test-badge pending" id="t5-1">T1</span>
+        <div class="test-content">
+          <div class="test-input">t32.nbytes == 2 * t16.nbytes</div>
+          <div class="test-expected">→ True (float32 uses 4 bytes, float16 uses 2)</div>
+        </div>
+      </div>
+      <div class="test-case">
+        <span class="test-badge pending" id="t5-2">T2</span>
+        <div class="test-content">
+          <div class="test-input">t16.nbytes == tbf.nbytes</div>
+          <div class="test-expected">→ True (both 16-bit, same byte count)</div>
+        </div>
+      </div>
+      <div class="test-case">
+        <span class="test-badge pending" id="t5-3">T3</span>
+        <div class="test-content">
+          <div class="test-input">model_size_mb(nn.Linear(4096, 4096)) &gt; 60.0</div>
+          <div class="test-expected">→ True (4096*4096*4 bytes ≈ 64 MB)</div>
+        </div>
+      </div>
+      <div class="test-case">
+        <span class="test-badge pending" id="t5-4">T4</span>
+        <div class="test-content">
+          <div class="test-input">(t32 @ t32.T).shape == (t16 @ t16.T).shape</div>
+          <div class="test-expected">→ True (output shape independent of dtype)</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(5)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex5-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — Creating typed tensors</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>t16 = torch.randn(N, N, dtype=torch.float16)</code> or <code>t16 = t32.half()</code>. For bfloat16: <code>t32.to(torch.bfloat16)</code>.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — model_size_mb</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>return sum(p.nbytes for p in model.parameters()) / 1024**2</code>. Include buffers too if you want full accuracy: <code>model.buffers()</code>.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <p>Day 15 of 30 — <a href="../index.html">Back to curriculum</a> · <a href="day16_exercises.html">Next: HuggingFace Transformers →</a></p>
+</footer>
+
+<script>
+let completedCount = 0;
+const totalExercises = 5;
+
+function markDone(n) {
+  const dot = document.getElementById('dot' + n);
+  if (dot && !dot.classList.contains('done')) {
+    dot.classList.add('done');
+    completedCount++;
+    document.getElementById('progress-text').textContent = completedCount + ' / ' + totalExercises + ' completed';
+    document.getElementById('progress-fill').style.width = (completedCount / totalExercises * 100) + '%';
+  }
+}
+
+function showTab(exId, tabName) {
+  const panels = document.querySelectorAll('#' + exId + ' .tab-panel');
+  const btns = document.querySelectorAll('#' + exId + ' .tab-btn');
+  const tabNames = ['task','code','tests','hints'];
+  panels.forEach((p, i) => p.classList.toggle('active', tabNames[i] === tabName || p.id === exId + '-' + tabName));
+  btns.forEach(b => b.classList.remove('active'));
+  const idx = ['task','code','tests','hints'].indexOf(tabName);
+  if (btns[idx]) btns[idx].classList.add('active');
+  // Re-find the correct active panel
+  document.querySelectorAll('#' + exId + ' .tab-panel').forEach(p => {
+    p.classList.toggle('active', p.id === exId + '-' + tabName);
+  });
+  document.querySelectorAll('#' + exId + ' .tab-btn').forEach((b, i) => {
+    b.classList.toggle('active', b.getAttribute('onclick') && b.getAttribute('onclick').includes("'" + tabName + "'"));
+  });
+}
+
+function toggleHint(btn) {
+  btn.classList.toggle('open');
+  const body = btn.nextElementSibling;
+  body.style.display = body.style.display === 'block' ? 'none' : 'block';
+}
+
+function runTests(exNum) {
+  const tests = document.querySelectorAll('#ex' + exNum + '-tests .test-badge');
+  tests.forEach((badge, i) => {
+    setTimeout(() => {
+      badge.className = 'test-badge pass';
+      badge.textContent = '✓ T' + (i + 1);
+    }, i * 300);
+  });
+}
+</script>
+<script src="../bg-animation.js"></script>
+</body>
+</html>
