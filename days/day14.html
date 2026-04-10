@@ -3,9 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Day 14: Week 2 Capstone — Multi-provider Knowledge Assistant</title>
+<title>Day 14: Week 2 Capstone — Multi-Provider Knowledge Assistant</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
+/* ── Reset & Design Tokens ─────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
   --bg: #0a0a0f; --card: #141420; --surface2: #1a1a2e; --border: #2a2a45;
@@ -18,21 +19,78 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); min-
 body::before {
   content: ''; position: fixed; inset: 0;
   background:
-    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(124,58,237,0.08) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 40% at 90% 80%, rgba(13,148,136,0.05) 0%, transparent 60%);
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(124,58,237,0.1) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 90% 80%, rgba(13,148,136,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 30% at 10% 60%, rgba(245,158,11,0.04) 0%, transparent 60%);
   pointer-events: none; z-index: 0;
 }
 .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
 
-nav { border-bottom: 1px solid var(--border); padding: 0; background: rgba(10,10,15,0.85); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; }
+/* ── Reading Progress Bar ────────────────────────────────────────────────── */
+#reading-progress {
+  position: fixed; top: 0; left: 0; height: 3px; width: 0%;
+  background: linear-gradient(90deg, var(--yellow), var(--purple), var(--teal));
+  z-index: 9999; transition: width 0.1s linear;
+}
+
+/* ── Back to Top ─────────────────────────────────────────────────────────── */
+#back-top {
+  position: fixed; bottom: 28px; right: 28px; width: 44px; height: 44px;
+  border-radius: 50%; background: var(--purple); border: none; color: white;
+  font-size: 18px; cursor: pointer; opacity: 0; pointer-events: none;
+  transition: all 0.3s; z-index: 999; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 20px rgba(124,58,237,0.4);
+}
+#back-top.visible { opacity: 1; pointer-events: all; }
+#back-top:hover { transform: translateY(-3px); background: var(--purple-light); }
+
+/* ── Keyframe Animations ─────────────────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+@keyframes borderGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(124,58,237,0); }
+  50% { box-shadow: 0 0 20px 4px rgba(124,58,237,0.3); }
+}
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes nodeActive {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+@keyframes flowPulse {
+  0% { stroke-dashoffset: 200; opacity: 0.3; }
+  100% { stroke-dashoffset: 0; opacity: 1; }
+}
+
+/* ── Scroll Animations ───────────────────────────────────────────────────── */
+.anim-init { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
+.anim-slide { opacity: 0; transform: translateX(-20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+.anim-init.in-view, .anim-slide.in-view { opacity: 1; transform: none; }
+
+/* ── Navigation ──────────────────────────────────────────────────────────── */
+nav { border-bottom: 1px solid var(--border); padding: 0; background: rgba(10,10,15,0.9); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; }
 .nav-inner { max-width: 1100px; margin: 0 auto; padding: 0 24px; height: 52px; display: flex; align-items: center; justify-content: space-between; }
 .nav-btn {
-  padding: 7px 18px; border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--surface2); color: var(--muted);
-  font-size: 13px; font-weight: 600;
-  text-decoration: none; transition: all 0.2s;
-  font-family: inherit; cursor: pointer;
+  padding: 7px 18px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface2); color: var(--muted); font-size: 13px; font-weight: 600;
+  text-decoration: none; transition: all 0.2s; font-family: inherit; cursor: pointer;
 }
 .nav-btn:hover { border-color: var(--purple); color: var(--text); }
 .nav-btn.next { border-color: rgba(124,58,237,0.5); color: var(--purple-light); }
@@ -43,47 +101,63 @@ nav { border-bottom: 1px solid var(--border); padding: 0; background: rgba(10,10
 .nav-brand { font-size: 14px; font-weight: 700; color: var(--muted); text-decoration: none; letter-spacing: -0.2px; transition: color 0.2s; }
 .nav-brand:hover { color: var(--text); }
 
-.day-hero { padding: 56px 0 40px; }
-.day-num { font-size: 12px; font-weight: 700; color: var(--yellow); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
-.day-hero h1 { font-size: clamp(32px, 5vw, 56px); font-weight: 900; letter-spacing: -2px; margin-bottom: 16px; }
-.day-hero p { font-size: 17px; color: var(--muted); max-width: 600px; line-height: 1.6; margin-bottom: 28px; }
-.topic-pills { display: flex; flex-wrap: wrap; gap: 8px; }
-.topic-pill { padding: 5px 12px; border-radius: 20px; background: var(--surface2); border: 1px solid var(--border); font-size: 12px; color: var(--muted); font-weight: 500; }
-
-.section { padding: 56px 0; border-top: 1px solid var(--border); }
-.section-header { margin-bottom: 32px; }
-.section-num { font-size: 11px; font-weight: 700; color: var(--purple-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
-.section-header h2 { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 10px; }
-.section-header p { color: var(--muted); font-size: 15px; line-height: 1.6; max-width: 640px; }
-
-/* CODE BLOCKS */
-.code-block {
-  background: #0d1117; border: 1px solid #30363d; border-radius: 12px;
-  padding: 24px; font-family: var(--mono); font-size: 12.5px; line-height: 1.8;
-  overflow-x: auto; white-space: pre;
+/* ── Hero ────────────────────────────────────────────────────────────────── */
+.day-hero { padding: 64px 0 48px; }
+.day-num { font-size: 12px; font-weight: 700; color: var(--yellow); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; animation: slideIn 0.5s ease both; }
+.day-hero h1 {
+  font-size: clamp(36px, 5.5vw, 60px); font-weight: 900; letter-spacing: -2px; margin-bottom: 18px;
+  background: linear-gradient(135deg, #f59e0b 0%, #a855f7 35%, #7c3aed 60%, #0d9488 100%);
+  background-size: 300% 300%; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text; animation: gradientShift 6s ease infinite, fadeUp 0.7s ease both 0.1s;
 }
-.code-wrap { position: relative; margin-top: 16px; }
-.code-label { position: absolute; top: -10px; left: 16px; background: var(--purple); color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.5px; }
-.c-cmt { color: #8b949e; }
-.c-kw { color: #ff7b72; }
-.c-fn { color: #d2a8ff; }
-.c-str { color: #a5d6ff; }
-.c-type { color: #ffa657; }
-.c-num { color: #f2cc60; }
-.c-bi { color: #79c0ff; }
-.c-dec { color: #ffa657; }
+.day-hero p { font-size: 17px; color: var(--muted); max-width: 620px; line-height: 1.7; margin-bottom: 28px; animation: fadeUp 0.7s ease both 0.2s; }
+.topic-pills { display: flex; flex-wrap: wrap; gap: 8px; animation: fadeUp 0.7s ease both 0.3s; }
+.topic-pill { padding: 5px 14px; border-radius: 20px; background: var(--surface2); border: 1px solid var(--border); font-size: 12px; color: var(--muted); font-weight: 500; transition: all 0.2s; }
+.topic-pill:hover { border-color: var(--yellow); color: var(--yellow); }
 
-/* CALLOUT */
-.callout { background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.25); border-radius: 12px; padding: 16px 20px; display: flex; gap: 12px; align-items: flex-start; margin: 20px 0; }
-.callout-icon { font-size: 18px; flex-shrink: 0; }
-.callout-text { font-size: 13px; color: var(--text); line-height: 1.6; }
+/* ── Stats Row ───────────────────────────────────────────────────────────── */
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 40px 0 0; animation: fadeUp 0.7s ease both 0.4s; }
+.stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; text-align: center; transition: border-color 0.3s; }
+.stat-card:hover { border-color: var(--yellow); animation: borderGlow 2s ease infinite; }
+.stat-num { font-size: 32px; font-weight: 900; letter-spacing: -1px; background: linear-gradient(135deg, var(--yellow), var(--purple-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.stat-label { font-size: 11px; color: var(--muted); font-weight: 500; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* ── Section Divider ─────────────────────────────────────────────────────── */
+.section-divider { height: 1px; background: linear-gradient(90deg, transparent, var(--purple), var(--teal), transparent); margin: 0; opacity: 0.5; }
+
+/* ── Sections ────────────────────────────────────────────────────────────── */
+.section { padding: 64px 0; }
+.section-header { margin-bottom: 36px; }
+.section-num { font-size: 11px; font-weight: 700; color: var(--yellow); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; }
+.section-header h2 { font-size: 30px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 12px; }
+.section-header p { color: var(--muted); font-size: 15px; line-height: 1.7; max-width: 680px; }
+
+/* ── macOS Code Window ───────────────────────────────────────────────────── */
+.mac-window { border-radius: 12px; overflow: hidden; border: 1px solid #30363d; margin-top: 20px; }
+.mac-titlebar { background: #21262d; padding: 10px 14px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #30363d; }
+.mac-dot { width: 12px; height: 12px; border-radius: 50%; }
+.mac-dot.red { background: #ff5f57; }
+.mac-dot.yellow { background: #febc2e; }
+.mac-dot.green { background: #28c840; }
+.mac-filename { font-size: 12px; color: #8b949e; font-family: var(--mono); margin-left: 8px; }
+.mac-body { background: #0d1117; padding: 22px; font-family: var(--mono); font-size: 12.5px; line-height: 1.85; overflow-x: auto; white-space: pre; }
+.c-cmt { color: #8b949e; } .c-kw { color: #ff7b72; } .c-fn { color: #d2a8ff; }
+.c-str { color: #a5d6ff; } .c-type { color: #ffa657; } .c-num { color: #f2cc60; }
+.c-bi { color: #79c0ff; } .c-dec { color: #ffa657; }
+
+/* ── Callout Boxes ───────────────────────────────────────────────────────── */
+.callout { background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.25); border-radius: 12px; padding: 18px 22px; display: flex; gap: 14px; align-items: flex-start; margin: 22px 0; }
+.callout-icon { font-size: 20px; flex-shrink: 0; }
+.callout-text { font-size: 13.5px; color: var(--text); line-height: 1.7; }
 .callout-text strong { color: var(--yellow); }
 .callout.info { background: rgba(124,58,237,0.07); border-color: rgba(124,58,237,0.25); }
 .callout.info .callout-text strong { color: var(--purple-light); }
 .callout.success { background: rgba(16,185,129,0.07); border-color: rgba(16,185,129,0.25); }
 .callout.success .callout-text strong { color: var(--green); }
+.callout.danger { background: rgba(239,68,68,0.07); border-color: rgba(239,68,68,0.25); }
+.callout.danger .callout-text strong { color: #f87171; }
 
-/* ARCHITECTURE DIAGRAM */
+/* ── Architecture Diagram ─────────────────────────────────────────────────── */
 .arch-diagram {
   background: var(--card); border: 1px solid var(--border); border-radius: 16px;
   padding: 32px; display: flex; flex-direction: column; align-items: center; gap: 12px;
@@ -93,98 +167,127 @@ nav { border-bottom: 1px solid var(--border); padding: 0; background: rgba(10,10
 .arch-box {
   padding: 12px 20px; border-radius: 10px; background: var(--surface2);
   border: 2px solid var(--border); font-size: 13px; font-weight: 700;
-  text-align: center; cursor: default; transition: all 0.2s; min-width: 120px;
-  position: relative;
+  text-align: center; cursor: default; transition: all 0.25s; min-width: 130px;
 }
 .arch-box:hover { transform: translateY(-2px); }
 .arch-box.purple { border-color: var(--purple); color: var(--purple-light); background: rgba(124,58,237,0.1); }
-.arch-box.teal { border-color: var(--teal); color: #34d399; background: rgba(13,148,136,0.1); }
+.arch-box.teal   { border-color: var(--teal); color: #34d399; background: rgba(13,148,136,0.1); }
 .arch-box.yellow { border-color: var(--yellow); color: var(--yellow); background: rgba(245,158,11,0.1); }
-.arch-box.green { border-color: var(--green); color: var(--green); background: rgba(16,185,129,0.1); }
-.arch-box.red { border-color: var(--red); color: #f87171; background: rgba(239,68,68,0.1); }
+.arch-box.green  { border-color: var(--green); color: var(--green); background: rgba(16,185,129,0.1); }
+.arch-box.red    { border-color: var(--red); color: #f87171; background: rgba(239,68,68,0.1); }
 .arch-arrow { color: var(--muted); font-size: 20px; flex-shrink: 0; }
-.arch-or { font-size: 11px; font-weight: 700; color: var(--muted); padding: 0 4px; }
 .arch-sub { font-size: 10px; color: var(--muted); font-weight: 400; margin-top: 4px; display: block; }
-.arch-branch { display: flex; flex-direction: column; gap: 8px; align-items: center; }
-.arch-bracket { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 8px 16px; display: flex; gap: 8px; align-items: center; }
 
-/* COMPONENT TOOLTIP WIDGET */
+/* ── Comparison Table ─────────────────────────────────────────────────────── */
+.comp-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 13px; }
+.comp-table th { background: var(--surface2); padding: 12px 16px; text-align: left; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); border-bottom: 1px solid var(--border); }
+.comp-table td { padding: 11px 16px; border-bottom: 1px solid rgba(42,42,69,0.5); line-height: 1.5; }
+.comp-table tr:hover td { background: rgba(124,58,237,0.04); }
+.comp-table .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+.badge-green { background: rgba(16,185,129,0.15); color: var(--green); }
+.badge-yellow { background: rgba(245,158,11,0.15); color: var(--yellow); }
+.badge-red { background: rgba(239,68,68,0.15); color: #f87171; }
+.badge-purple { background: rgba(124,58,237,0.15); color: var(--purple-light); }
+
+/* ── Architecture Explorer Widget ─────────────────────────────────────────── */
 .widget-box { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-top: 24px; }
-.widget-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.widget-title { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
 .widget-subtitle { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
-.explorer-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 24px; }
+.explorer-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; margin-bottom: 24px; }
 .explorer-component {
-  padding: 18px; border-radius: 12px; background: var(--surface2);
-  border: 2px solid var(--border); cursor: pointer; transition: all 0.2s;
-  text-align: center;
+  padding: 20px 16px; border-radius: 12px; background: var(--surface2);
+  border: 2px solid var(--border); cursor: pointer; transition: all 0.25s; text-align: center;
 }
-.explorer-component:hover { border-color: var(--purple); transform: translateY(-2px); }
-.explorer-component.active { border-color: var(--purple); background: rgba(124,58,237,0.1); }
-.explorer-comp-icon { font-size: 28px; margin-bottom: 8px; }
+.explorer-component:hover { border-color: var(--yellow); transform: translateY(-3px); box-shadow: 0 8px 24px rgba(245,158,11,0.1); }
+.explorer-component.active { border-color: var(--yellow); background: rgba(245,158,11,0.08); animation: borderGlow 2s ease infinite; }
+.explorer-comp-icon { font-size: 30px; margin-bottom: 10px; }
 .explorer-comp-name { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
 .explorer-comp-tag { font-size: 10px; color: var(--muted); }
-.explorer-detail { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 20px; display: none; }
+.explorer-detail { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 22px; display: none; animation: fadeUp 0.3s ease both; }
 .explorer-detail.visible { display: block; }
-.explorer-detail-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
-.explorer-detail-title { font-size: 16px; font-weight: 700; }
-.copy-snippet-btn {
-  padding: 5px 12px; border-radius: 6px; background: var(--purple); border: none;
-  color: white; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s;
-  font-family: var(--font);
-}
-.copy-snippet-btn:hover { background: var(--purple-light); }
-.explorer-detail-desc { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 14px; }
-.explorer-snippet {
-  background: #0d1117; border: 1px solid #30363d; border-radius: 8px;
-  padding: 16px; font-family: var(--mono); font-size: 11.5px; line-height: 1.7;
-  overflow-x: auto; white-space: pre;
-}
+.explorer-detail-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+.explorer-detail-title { font-size: 17px; font-weight: 700; }
+.copy-snippet-btn { padding: 6px 14px; border-radius: 6px; background: var(--yellow); border: none; color: #0a0a0f; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: var(--font); }
+.copy-snippet-btn:hover { background: #fbbf24; }
+.explorer-detail-desc { font-size: 13.5px; color: var(--muted); line-height: 1.7; margin-bottom: 16px; }
+.explorer-snippet { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 18px; font-family: var(--mono); font-size: 11.5px; line-height: 1.7; overflow-x: auto; white-space: pre; }
 
-/* CHECKLIST */
-.checklist { display: flex; flex-direction: column; gap: 8px; margin-top: 20px; }
-.check-item {
-  display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px;
-  background: var(--card); border: 1px solid var(--border); border-radius: 10px;
-  cursor: pointer; transition: all 0.2s; user-select: none;
-}
-.check-item:hover { border-color: var(--purple); }
+/* ── System Flow Visualizer ────────────────────────────────────────────────── */
+.flow-widget { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-top: 24px; }
+.flow-controls { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+.flow-btn { padding: 8px 18px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-family: var(--font); }
+.flow-btn:hover { border-color: var(--yellow); }
+.flow-btn.primary { background: var(--yellow); border-color: var(--yellow); color: #0a0a0f; }
+.flow-btn.primary:hover { background: #fbbf24; }
+.flow-svg-wrap { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.flow-log { margin-top: 16px; background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 14px; font-family: var(--mono); font-size: 12px; line-height: 1.8; color: #8b949e; max-height: 160px; overflow-y: auto; }
+.flow-log .log-ok { color: var(--green); }
+.flow-log .log-route { color: var(--yellow); }
+.flow-log .log-err { color: #f87171; }
+.flow-log .log-info { color: var(--purple-light); }
+
+/* ── Checklist ───────────────────────────────────────────────────────────── */
+.checklist { display: flex; flex-direction: column; gap: 8px; margin-top: 24px; }
+.check-item { display: flex; align-items: flex-start; gap: 12px; padding: 14px 18px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; cursor: pointer; transition: all 0.2s; user-select: none; }
+.check-item:hover { border-color: var(--yellow); transform: translateX(3px); }
 .check-item.checked { border-color: var(--green); background: rgba(16,185,129,0.05); }
-.check-box {
-  width: 20px; height: 20px; border: 2px solid var(--border); border-radius: 4px;
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-  transition: all 0.2s; margin-top: 2px;
-}
+.check-box { width: 22px; height: 22px; border: 2px solid var(--border); border-radius: 5px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; margin-top: 1px; }
 .check-item.checked .check-box { background: var(--green); border-color: var(--green); }
-.check-item.checked .check-box::after { content: '✓'; color: white; font-size: 12px; font-weight: 700; }
+.check-item.checked .check-box::after { content: '✓'; color: white; font-size: 13px; font-weight: 700; }
 .check-text { flex: 1; }
-.check-title { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+.check-title { font-size: 13.5px; font-weight: 600; margin-bottom: 2px; }
 .check-title-done { text-decoration: line-through; color: var(--muted); }
-.check-sub { font-size: 11px; color: var(--muted); line-height: 1.4; }
-.checklist-progress { margin-top: 16px; }
-.checklist-bar-track { height: 6px; background: var(--surface2); border-radius: 99px; overflow: hidden; }
-.checklist-bar-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--purple), var(--green)); transition: width 0.5s ease; }
-.checklist-label { font-size: 12px; color: var(--muted); margin-top: 6px; }
+.check-day { font-size: 10px; color: var(--purple-light); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+.check-sub { font-size: 11.5px; color: var(--muted); line-height: 1.4; }
+.checklist-progress { margin-top: 18px; }
+.checklist-bar-track { height: 8px; background: var(--surface2); border-radius: 99px; overflow: hidden; }
+.checklist-bar-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--yellow), var(--purple), var(--green)); transition: width 0.5s ease; }
+.checklist-label { font-size: 12px; color: var(--muted); margin-top: 8px; display: flex; justify-content: space-between; }
+.checklist-pct { font-weight: 700; color: var(--green); }
 
-/* CONCEPT GRID */
+/* ── Concept Grid ─────────────────────────────────────────────────────────── */
 .concept-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; margin-top: 20px; }
-.concept-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; transition: border-color 0.2s; }
-.concept-card:hover { border-color: var(--purple); }
-.concept-icon { font-size: 24px; margin-bottom: 10px; }
-.concept-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
-.concept-desc { font-size: 12px; color: var(--muted); line-height: 1.6; }
+.concept-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 22px; transition: all 0.25s; }
+.concept-card:hover { border-color: var(--yellow); transform: translateY(-2px); }
+.concept-icon { font-size: 26px; margin-bottom: 12px; }
+.concept-title { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+.concept-desc { font-size: 12.5px; color: var(--muted); line-height: 1.65; }
 
-/* FOOTER */
-footer { padding: 40px 0; border-top: 1px solid var(--border); text-align: center; color: var(--muted); font-size: 13px; }
+/* ── Scroll Progress Bar ─────────────────────────────────────────────────── */
+#scroll-progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--purple), var(--teal)); width: 0%; z-index: 9999; transition: width 0.1s; }
+
+/* ── Section Reveal ──────────────────────────────────────────────────────── */
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
+.reveal.visible { opacity: 1; transform: none; }
+
+/* ── Hero Fade-in ────────────────────────────────────────────────────────── */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
+.day-hero { animation: fadeUp 0.7s ease forwards; }
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+footer { padding: 48px 0 32px; border-top: 1px solid var(--border); text-align: center; color: var(--muted); font-size: 13px; }
+footer a { color: var(--purple-light); text-decoration: none; }
+
+@media (max-width: 700px) {
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .explorer-grid { grid-template-columns: repeat(2, 1fr); }
+}
 </style>
 </head>
-<body data-animation-density="high">
+<body>
+<div id="scroll-progress"></div>
+<!-- Reading Progress Bar -->
+<div id="reading-progress"></div>
+
+<!-- Back to Top -->
+<button id="back-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Back to top">↑</button>
 
 <nav>
   <div class="nav-inner">
-    <a href="day13.html" class="nav-btn">← Day 13</a>
+    <a href="day13.html" class="nav-btn">← Day 13: CrewAI</a>
     <a href="../index.html" class="nav-brand">Agentic AI Mastery</a>
     <div style="display:flex;gap:8px;align-items:center;">
-      <a href="day15.html" class="nav-btn next">Day 15 →</a>
+      <a href="day15.html" class="nav-btn next">Week 3 →</a>
       <button class="nav-btn complete" id="complete-btn" onclick="markComplete()">Mark Complete</button>
     </div>
   </div>
@@ -194,7 +297,7 @@ footer { padding: 40px 0; border-top: 1px solid var(--border); text-align: cente
   <div class="day-hero">
     <div class="day-num">Day 14 — Week 2 Capstone</div>
     <h1>Multi-Provider<br>Knowledge Assistant</h1>
-    <p>Wire everything from Week 2 into one production system: LangChain LCEL, Qdrant hybrid retrieval, CrewAI research crews, multi-provider LLM with fallback, and RAGAS quality gates. The system you can actually ship.</p>
+    <p>Wire everything from Week 2 into one production-grade system: LangChain LCEL pipelines, Qdrant hybrid retrieval, CrewAI research crews, multi-provider LLM fallbacks, and RAGAS quality gates. Not a tutorial — a system you can actually ship.</p>
     <div class="topic-pills">
       <span class="topic-pill">LCEL</span>
       <span class="topic-pill">Qdrant</span>
@@ -202,361 +305,602 @@ footer { padding: 40px 0; border-top: 1px solid var(--border); text-align: cente
       <span class="topic-pill">CrewAI</span>
       <span class="topic-pill">Intent Routing</span>
       <span class="topic-pill">RAGAS</span>
-      <span class="topic-pill">Fallback LLM</span>
+      <span class="topic-pill">LLM Fallback</span>
+      <span class="topic-pill">FastAPI</span>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-num" data-target="5">0</div>
+        <div class="stat-label">System Components</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" data-target="2">0</div>
+        <div class="stat-label">LLM Providers</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" data-target="4">0</div>
+        <div class="stat-label">RAGAS Metrics</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" data-target="12">0</div>
+        <div class="stat-label">Week 2 Skills</div>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- SECTION 1 -->
+<div class="section-divider"></div>
+
+<!-- ── SECTION 1: Capstone Architecture ───────────────────────────────────── -->
 <div class="container">
-  <div class="section">
-    <div class="section-header">
+  <div class="section reveal">
+    <div class="section-header anim-init">
       <div class="section-num">Section 01</div>
-      <h2>Capstone Architecture</h2>
-      <p>A multi-provider knowledge assistant that routes queries intelligently: factual questions go to the RAG chain, complex research questions dispatch a CrewAI research crew. RAGAS gates every deployment.</p>
+      <h2>Capstone Architecture Overview</h2>
+      <p>A multi-provider knowledge assistant that routes queries intelligently: factual questions go to the RAG chain, complex research questions dispatch a CrewAI research crew. Every response passes a RAGAS quality gate before reaching users.</p>
     </div>
 
-    <div class="arch-diagram">
+    <div class="callout info anim-init">
+      <span class="callout-icon">🏗️</span>
+      <div class="callout-text"><strong>Design Philosophy:</strong> Each component from Week 2 solves a specific production problem. LangChain LCEL makes the pipeline composable and streamable. Qdrant provides sub-millisecond hybrid vector search. CrewAI handles multi-step research. RAGAS catches hallucinations before they reach users. The intent router minimizes cost by using CrewAI only when necessary — it costs 10–100× more than a RAG chain call.</div>
+    </div>
+
+    <p style="color:var(--muted);font-size:14px;line-height:1.7;margin-bottom:8px;" class="anim-init">
+      The architecture separates concerns cleanly: retrieval from generation, routing from answering, and quality control from serving. Each layer can be upgraded independently — swap Qdrant for Pinecone, swap Claude for Gemini, or replace the intent router with a fine-tuned classifier without touching the rest of the system.
+    </p>
+    <p style="color:var(--muted);font-size:14px;line-height:1.7;margin-bottom:24px;" class="anim-init">
+      This "loosely coupled, tightly monitored" design reflects how real production AI systems are built at companies like Notion, Perplexity, and Linear. The glue between components is always LangChain LCEL — its pipe operator lets you reason about the system as a directed graph of Runnables, not a tangle of callbacks.
+    </p>
+
+    <div class="arch-diagram anim-init">
       <div class="arch-row">
-        <div class="arch-box yellow">
-          User Query
-          <span class="arch-sub">Natural language question</span>
-        </div>
+        <div class="arch-box yellow">User Query<span class="arch-sub">Natural language question</span></div>
       </div>
       <div class="arch-row"><div class="arch-arrow">↓</div></div>
       <div class="arch-row">
-        <div class="arch-box purple">
-          Intent Router
-          <span class="arch-sub">LLM classifier: factual vs research</span>
-        </div>
+        <div class="arch-box purple">Intent Router<span class="arch-sub">Claude Haiku classifier: factual vs research</span></div>
       </div>
       <div class="arch-row">
-        <div class="arch-arrow">↙</div>
-        <div style="color:var(--muted);font-size:12px;padding:0 16px;">factual</div>
-        <div class="arch-arrow">↘</div>
-        <div style="position:absolute;opacity:0;pointer-events:none;">spacer</div>
+        <div class="arch-arrow" style="margin-right:80px;">↙</div>
+        <div class="arch-arrow" style="margin-left:80px;">↘</div>
       </div>
-      <div class="arch-row" style="gap:32px;align-items:flex-start;">
-        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
-          <div class="arch-box teal">
-            RAG Chain
-            <span class="arch-sub">Qdrant + hybrid search</span>
-          </div>
+      <div class="arch-row" style="gap:48px;align-items:flex-start;">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+          <div style="font-size:11px;color:var(--muted);font-weight:600;">FACTUAL</div>
+          <div class="arch-box teal">RAG Chain<span class="arch-sub">Qdrant + hybrid search</span></div>
           <div class="arch-arrow">↓</div>
-          <div class="arch-box teal" style="font-size:11px;">
-            Cross-Encoder Rerank
-            <span class="arch-sub">top-5 chunks</span>
-          </div>
+          <div class="arch-box teal" style="font-size:11px;">Cross-Encoder Rerank<span class="arch-sub">top-5 chunks → context</span></div>
         </div>
-        <div style="color:var(--muted);font-size:12px;padding-top:14px;">research</div>
-        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
-          <div class="arch-box purple">
-            CrewAI Research Crew
-            <span class="arch-sub">Researcher + Analyst agents</span>
-          </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+          <div style="font-size:11px;color:var(--muted);font-weight:600;">RESEARCH</div>
+          <div class="arch-box purple">CrewAI Crew<span class="arch-sub">Researcher + Analyst agents</span></div>
           <div class="arch-arrow">↓</div>
-          <div class="arch-box purple" style="font-size:11px;">
-            Web Search + RAG
-            <span class="arch-sub">Combined context</span>
-          </div>
+          <div class="arch-box purple" style="font-size:11px;">Web Search + RAG<span class="arch-sub">Combined context</span></div>
         </div>
       </div>
       <div class="arch-row"><div class="arch-arrow">↓</div></div>
       <div class="arch-row">
-        <div class="arch-box purple">
-          Response Formatter
-          <span class="arch-sub">Claude (fallback: GPT-4o)</span>
-        </div>
+        <div class="arch-box purple">Response Formatter<span class="arch-sub">Claude 3.5 Sonnet (fallback: GPT-4o)</span></div>
       </div>
       <div class="arch-row"><div class="arch-arrow">↓</div></div>
-      <div class="arch-row">
-        <div class="arch-box green">
-          Answer + Citations
-          <span class="arch-sub">Structured JSON response</span>
-        </div>
-        <div class="arch-arrow" style="transform:rotate(-90deg)">↓</div>
-        <div class="arch-box red">
-          RAGAS Eval
-          <span class="arch-sub">Faithfulness &amp; relevancy gate</span>
-        </div>
+      <div class="arch-row" style="gap:20px;">
+        <div class="arch-box green">Answer + Citations<span class="arch-sub">Structured JSON + streaming</span></div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box red">RAGAS Gate<span class="arch-sub">Faithfulness ≥ 0.80 required</span></div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- SECTION 2 -->
+<div class="section-divider"></div>
+
+<!-- ── SECTION 2: RAG Foundation ──────────────────────────────────────────── -->
 <div class="container">
-  <div class="section">
-    <div class="section-header">
+  <div class="section reveal">
+    <div class="section-header anim-init">
       <div class="section-num">Section 02</div>
       <h2>Building the RAG Foundation</h2>
       <p>The core retrieval chain: Qdrant vector store with hybrid search, multi-provider LLM with automatic fallback, and a complete LCEL pipeline. This is the production-grade pattern — not a tutorial shortcut.</p>
     </div>
 
-    <div class="code-wrap">
-      <div class="code-label">Python — Complete RAG Chain (LCEL)</div>
-      <div class="code-block"><span class="c-kw">from</span> langchain_qdrant <span class="c-kw">import</span> <span class="c-type">QdrantVectorStore</span>
+    <p style="color:var(--muted);font-size:14px;line-height:1.7;margin-bottom:16px;" class="anim-init">
+      The RAG chain is the workhorse of the system — it handles ~80% of queries with low latency (typically 1–3 seconds end-to-end). The LCEL pipe operator makes the flow explicit: retriever fetches documents → format_docs serializes them → prompt template inserts context and question → LLM generates → StrOutputParser extracts the string. Every step is independently observable in LangSmith.
+    </p>
+    <p style="color:var(--muted);font-size:14px;line-height:1.7;margin-bottom:24px;" class="anim-init">
+      Multi-provider fallback is non-negotiable for production. Anthropic, OpenAI, and Google all have occasional outages. Using <code style="font-family:var(--mono);color:var(--purple-light);font-size:12px;">.with_fallbacks()</code> adds zero complexity to calling code — the fallback is transparent. You can also add a third-tier fallback (e.g., Mistral via Together.ai) for maximum resilience. The cost difference between providers is a secondary concern — uptime comes first.
+    </p>
+
+    <div class="mac-window anim-init">
+      <div class="mac-titlebar">
+        <div class="mac-dot red"></div>
+        <div class="mac-dot yellow"></div>
+        <div class="mac-dot green"></div>
+        <span class="mac-filename">rag_chain.py</span>
+      </div>
+      <div class="mac-body"><span class="c-kw">from</span> langchain_qdrant <span class="c-kw">import</span> <span class="c-type">QdrantVectorStore</span>
 <span class="c-kw">from</span> langchain_openai <span class="c-kw">import</span> <span class="c-type">OpenAIEmbeddings</span>, <span class="c-type">ChatOpenAI</span>
 <span class="c-kw">from</span> langchain_anthropic <span class="c-kw">import</span> <span class="c-type">ChatAnthropic</span>
 <span class="c-kw">from</span> langchain_core.prompts <span class="c-kw">import</span> <span class="c-type">ChatPromptTemplate</span>
 <span class="c-kw">from</span> langchain_core.output_parsers <span class="c-kw">import</span> <span class="c-type">StrOutputParser</span>
 <span class="c-kw">from</span> langchain_core.runnables <span class="c-kw">import</span> <span class="c-type">RunnablePassthrough</span>
+<span class="c-kw">from</span> openai <span class="c-kw">import</span> <span class="c-type">RateLimitError</span>, <span class="c-type">APIConnectionError</span>
 
-<span class="c-cmt"># ── Vector Store ─────────────────────────────────────────</span>
+<span class="c-cmt"># ── Vector Store ──────────────────────────────────────────────</span>
 vectorstore = <span class="c-type">QdrantVectorStore</span>.<span class="c-fn">from_existing_collection</span>(
     url=<span class="c-str">"http://localhost:6333"</span>,
     collection_name=<span class="c-str">"knowledge_base"</span>,
     embedding=<span class="c-type">OpenAIEmbeddings</span>(model=<span class="c-str">"text-embedding-3-small"</span>)
 )
-retriever = vectorstore.<span class="c-fn">as_retriever</span>(search_kwargs={<span class="c-str">"k"</span>: <span class="c-num">6</span>})
+retriever = vectorstore.<span class="c-fn">as_retriever</span>(
+    search_type=<span class="c-str">"similarity"</span>,
+    search_kwargs={<span class="c-str">"k"</span>: <span class="c-num">6</span>, <span class="c-str">"score_threshold"</span>: <span class="c-num">0.5</span>}
+)
 
-<span class="c-cmt"># ── Multi-Provider LLM with Fallback ─────────────────────</span>
-<span class="c-cmt"># Primary: Claude (quality, long context, nuanced reasoning)</span>
-primary_llm  = <span class="c-type">ChatAnthropic</span>(model=<span class="c-str">"claude-3-5-sonnet-20241022"</span>)
-<span class="c-cmt"># Fallback: GPT-4o (when Anthropic API is down or rate-limited)</span>
-fallback_llm = <span class="c-type">ChatOpenAI</span>(model=<span class="c-str">"gpt-4o"</span>)
-llm = primary_llm.<span class="c-fn">with_fallbacks</span>([fallback_llm])
-<span class="c-cmt"># LangChain handles retries, error catching, and fallback silently</span>
+<span class="c-cmt"># ── Multi-Provider LLM with 2-tier Fallback ───────────────────</span>
+primary_llm   = <span class="c-type">ChatAnthropic</span>(model=<span class="c-str">"claude-3-5-sonnet-20241022"</span>)
+fallback_llm  = <span class="c-type">ChatOpenAI</span>(model=<span class="c-str">"gpt-4o"</span>)
+fallback2_llm = <span class="c-type">ChatOpenAI</span>(model=<span class="c-str">"gpt-4o-mini"</span>)  <span class="c-cmt"># 3rd tier</span>
+llm = primary_llm.<span class="c-fn">with_fallbacks</span>(
+    [fallback_llm, fallback2_llm],
+    exceptions_to_handle=(<span class="c-type">RateLimitError</span>, <span class="c-type">APIConnectionError</span>)
+)
 
-<span class="c-cmt"># ── RAG Prompt ────────────────────────────────────────────</span>
+<span class="c-cmt"># ── RAG Prompt ────────────────────────────────────────────────</span>
 rag_prompt = <span class="c-type">ChatPromptTemplate</span>.<span class="c-fn">from_template</span>(<span class="c-str">"""
 You are a helpful AI assistant with access to a knowledge base.
-Answer the question based ONLY on the context below. If the context
-doesn't contain the answer, say "I don't have that information in
-my knowledge base" rather than guessing.
+Answer ONLY using the context below. If the context doesn't contain
+the answer, say "I don't have that information in my knowledge base."
+Never guess or hallucinate facts.
 
 Context:
 {context}
 
 Question: {question}
 
-Provide a clear, accurate answer with specific details from the context.
-Cite the source of each claim using [Source: ...] notation.
+Provide a clear, accurate answer. Cite sources as [Source: ...].
 """</span>)
 
-<span class="c-cmt"># ── Context Formatter ────────────────────────────────────</span>
+<span class="c-cmt"># ── Context Formatter ─────────────────────────────────────────</span>
 <span class="c-kw">def</span> <span class="c-fn">format_docs</span>(docs):
     <span class="c-kw">return</span> <span class="c-str">"\n\n---\n\n"</span>.<span class="c-fn">join</span>(
-        <span class="c-str">f"Source: {doc.metadata.get('source', 'unknown')}\n"</span>
-        <span class="c-str">f"Page: {doc.metadata.get('page', 'N/A')}\n"</span>
-        <span class="c-str">f"{doc.page_content}"</span>
+        <span class="c-str">f"[Source: {doc.metadata.get('source', 'unknown')}]\n{doc.page_content}"</span>
         <span class="c-kw">for</span> doc <span class="c-kw">in</span> docs
     )
 
-<span class="c-cmt"># ── Complete RAG Chain (LCEL) ─────────────────────────────</span>
+<span class="c-cmt"># ── Complete RAG Chain (LCEL) ──────────────────────────────────</span>
 rag_chain = (
-    {
-        <span class="c-str">"context"</span>:  retriever | <span class="c-fn">format_docs</span>,
-        <span class="c-str">"question"</span>: <span class="c-type">RunnablePassthrough</span>()
-    }
+    {<span class="c-str">"context"</span>: retriever | <span class="c-fn">format_docs</span>, <span class="c-str">"question"</span>: <span class="c-type">RunnablePassthrough</span>()}
     | rag_prompt
     | llm
     | <span class="c-type">StrOutputParser</span>()
 )
 
-<span class="c-cmt"># Usage:</span>
+<span class="c-cmt"># Invoke (blocking):</span>
 answer = rag_chain.<span class="c-fn">invoke</span>(<span class="c-str">"What is Matryoshka Representation Learning?"</span>)
 
-<span class="c-cmt"># Streaming (for real-time UI):</span>
+<span class="c-cmt"># Stream (real-time UI — works with the same chain, zero changes):</span>
 <span class="c-kw">for</span> chunk <span class="c-kw">in</span> rag_chain.<span class="c-fn">stream</span>(<span class="c-str">"Explain LoRA fine-tuning"</span>):
     <span class="c-fn">print</span>(chunk, end=<span class="c-str">""</span>, flush=<span class="c-type">True</span>)</div>
+    </div>
+
+    <div class="callout success anim-init">
+      <span class="callout-icon">💡</span>
+      <div class="callout-text"><strong>Why this matters:</strong> The LCEL pipe operator isn't syntax sugar — it creates a true computation graph that LangSmith can trace step-by-step. You get automatic retry logic, streaming, batch processing, and async support for free. A traditional chain would require custom code for each of these; LCEL provides them all as first-class capabilities of every Runnable.</div>
+    </div>
+
+    <div class="callout danger anim-init">
+      <span class="callout-icon">⚠️</span>
+      <div class="callout-text"><strong>Common Pitfall — score_threshold:</strong> Setting a score threshold too low means you retrieve low-relevance chunks that dilute the context and confuse the LLM. Too high, and you return no results for valid queries. Start at 0.5, evaluate on your corpus, and tune. Never use the default (no threshold) in production — it always retrieves <code style="font-family:var(--mono);font-size:11px;">k</code> results even when they're irrelevant noise.</div>
     </div>
   </div>
 </div>
 
-<!-- SECTION 3 -->
+<div class="section-divider"></div>
+
+<!-- ── SECTION 3: Hybrid Search ────────────────────────────────────────────── -->
 <div class="container">
-  <div class="section">
-    <div class="section-header">
+  <div class="section reveal">
+    <div class="section-header anim-init">
       <div class="section-num">Section 03</div>
-      <h2>CrewAI Research Crew Integration</h2>
-      <p>Not every query belongs in a RAG chain. Complex, multi-faceted research questions benefit from a CrewAI crew that can search the web, synthesize across sources, and reason step-by-step. The intent router makes the call.</p>
+      <h2>Hybrid Search with Cross-Encoder Reranking</h2>
+      <p>Dense embeddings miss exact keyword matches. BM25 misses semantic similarity. Hybrid search combines both, and cross-encoder reranking selects the top chunks with higher precision than either approach alone.</p>
     </div>
 
-    <div class="callout info">
+    <p style="color:var(--muted);font-size:14px;line-height:1.7;margin-bottom:24px;" class="anim-init">
+      The Ensemble Retriever merges results from a BM25 retriever (lexical, good for technical terms and proper nouns) and a dense vector retriever (semantic, good for paraphrases and synonyms). Reciprocal Rank Fusion (RRF) combines the ranked lists without requiring score normalization. After merging, a cross-encoder reads each document alongside the query and produces a precise relevance score — far more accurate than cosine similarity, at the cost of higher latency. Use it as a post-retrieval reranker, not for full-corpus search.
+    </p>
+
+    <div class="mac-window anim-init">
+      <div class="mac-titlebar">
+        <div class="mac-dot red"></div>
+        <div class="mac-dot yellow"></div>
+        <div class="mac-dot green"></div>
+        <span class="mac-filename">hybrid_retriever.py</span>
+      </div>
+      <div class="mac-body"><span class="c-kw">from</span> langchain.retrievers <span class="c-kw">import</span> <span class="c-type">BM25Retriever</span>, <span class="c-type">EnsembleRetriever</span>
+<span class="c-kw">from</span> langchain.retrievers <span class="c-kw">import</span> <span class="c-type">ContextualCompressionRetriever</span>
+<span class="c-kw">from</span> langchain_cohere <span class="c-kw">import</span> <span class="c-type">CohereRerank</span>
+
+<span class="c-cmt"># ── Build BM25 retriever from corpus ──────────────────────────</span>
+<span class="c-cmt"># Requires all documents upfront (in-memory index)</span>
+bm25_retriever = <span class="c-type">BM25Retriever</span>.<span class="c-fn">from_documents</span>(
+    documents,      <span class="c-cmt"># list of Document objects</span>
+    k=<span class="c-num">10</span>           <span class="c-cmt"># retrieve more than needed — reranker will cut down</span>
+)
+
+<span class="c-cmt"># ── Dense retriever from Qdrant ───────────────────────────────</span>
+dense_retriever = vectorstore.<span class="c-fn">as_retriever</span>(search_kwargs={<span class="c-str">"k"</span>: <span class="c-num">10</span>})
+
+<span class="c-cmt"># ── Ensemble with RRF weights ──────────────────────────────────</span>
+ensemble_retriever = <span class="c-type">EnsembleRetriever</span>(
+    retrievers=[bm25_retriever, dense_retriever],
+    weights=[<span class="c-num">0.4</span>, <span class="c-num">0.6</span>]  <span class="c-cmt"># 60% dense, 40% BM25 for mixed queries</span>
+)
+
+<span class="c-cmt"># ── Cross-encoder reranker (Cohere) ───────────────────────────</span>
+compressor = <span class="c-type">CohereRerank</span>(
+    model=<span class="c-str">"rerank-english-v3.0"</span>,
+    top_n=<span class="c-num">5</span>  <span class="c-cmt"># return only top-5 after reranking</span>
+)
+hybrid_retriever = <span class="c-type">ContextualCompressionRetriever</span>(
+    base_compressor=compressor,
+    base_retriever=ensemble_retriever
+)
+
+<span class="c-cmt"># Plug directly into RAG chain — same interface as any retriever:</span>
+rag_chain_hybrid = (
+    {<span class="c-str">"context"</span>: hybrid_retriever | <span class="c-fn">format_docs</span>, <span class="c-str">"question"</span>: <span class="c-type">RunnablePassthrough</span>()}
+    | rag_prompt | llm | <span class="c-type">StrOutputParser</span>()
+)</div>
+    </div>
+
+    <table class="comp-table anim-init" style="margin-top:24px;">
+      <thead>
+        <tr>
+          <th>Retrieval Method</th>
+          <th>Strengths</th>
+          <th>Weaknesses</th>
+          <th>Latency</th>
+          <th>Best For</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="font-weight:600;">BM25 (sparse)</td>
+          <td>Exact keyword, technical terms</td>
+          <td>Misses paraphrases, synonyms</td>
+          <td><span class="badge badge-green">~5ms</span></td>
+          <td>Code search, product names</td>
+        </tr>
+        <tr>
+          <td style="font-weight:600;">Dense Vector</td>
+          <td>Semantic similarity, paraphrases</td>
+          <td>Misses exact terms</td>
+          <td><span class="badge badge-green">~20ms</span></td>
+          <td>Natural language queries</td>
+        </tr>
+        <tr>
+          <td style="font-weight:600;">Hybrid (BM25 + Dense)</td>
+          <td>Best of both worlds</td>
+          <td>Higher infra complexity</td>
+          <td><span class="badge badge-yellow">~35ms</span></td>
+          <td>General-purpose RAG</td>
+        </tr>
+        <tr>
+          <td style="font-weight:600;">Cross-Encoder Rerank</td>
+          <td>Highest precision</td>
+          <td>Slow on large candidate sets</td>
+          <td><span class="badge badge-yellow">+100–300ms</span></td>
+          <td>When accuracy > speed</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="section-divider"></div>
+
+<!-- ── SECTION 4: Intent Router + CrewAI ────────────────────────────────── -->
+<div class="container">
+  <div class="section reveal">
+    <div class="section-header anim-init">
+      <div class="section-num">Section 04</div>
+      <h2>Intent Router + CrewAI Research Crew</h2>
+      <p>Not every query belongs in a RAG chain. Complex, multi-faceted research questions benefit from a CrewAI crew that can search the web, synthesize across sources, and reason step-by-step.</p>
+    </div>
+
+    <div class="callout info anim-init">
       <span class="callout-icon">🔀</span>
-      <div class="callout-text"><strong>Routing Heuristic:</strong> <strong>Factual</strong> = questions with a specific, retrievable answer ("What is the RAGAS faithfulness metric?"). <strong>Research</strong> = open-ended, comparative, or analytical questions that benefit from synthesis across multiple sources ("Compare GPT-4o and Claude 3.5 Sonnet for enterprise RAG applications"). When uncertain, default to RAG — it's faster and cheaper.</div>
+      <div class="callout-text"><strong>Routing Heuristic:</strong> <strong>Factual</strong> = questions with a specific, retrievable answer ("What is the RAGAS faithfulness metric?"). <strong>Research</strong> = open-ended, comparative, or analytical questions requiring synthesis across sources ("Compare GPT-4o and Claude 3.5 Sonnet for enterprise RAG at scale"). When uncertain, default to RAG — it's 10–100× cheaper and 5–10× faster than a full CrewAI run.</div>
     </div>
 
-    <div class="code-wrap">
-      <div class="code-label">Python — Intent Router + CrewAI Integration</div>
-      <div class="code-block"><span class="c-kw">from</span> crewai <span class="c-kw">import</span> <span class="c-type">Agent</span>, <span class="c-type">Task</span>, <span class="c-type">Crew</span>, <span class="c-type">Process</span>
+    <p style="color:var(--muted);font-size:14px;line-height:1.7;margin-bottom:16px;" class="anim-init">
+      The intent router uses a cheap, fast model (Claude Haiku at ~$0.25/M input tokens) to classify each query before dispatching to the appropriate pipeline. This is a common pattern in production — use the cheapest model that can accurately perform the routing task, and reserve expensive models for generation where quality matters most.
+    </p>
+
+    <div class="mac-window anim-init">
+      <div class="mac-titlebar">
+        <div class="mac-dot red"></div>
+        <div class="mac-dot yellow"></div>
+        <div class="mac-dot green"></div>
+        <span class="mac-filename">intent_router.py</span>
+      </div>
+      <div class="mac-body"><span class="c-kw">from</span> crewai <span class="c-kw">import</span> <span class="c-type">Agent</span>, <span class="c-type">Task</span>, <span class="c-type">Crew</span>, <span class="c-type">Process</span>
 <span class="c-kw">from</span> crewai_tools <span class="c-kw">import</span> <span class="c-type">SerperDevTool</span>
 
-<span class="c-cmt"># ── Intent Classifier ────────────────────────────────────</span>
-CLASSIFICATION_PROMPT = <span class="c-str">"""Classify this query as exactly one of: 'factual' or 'research'.
+<span class="c-cmt"># ── Cheap model for routing ────────────────────────────────────</span>
+<span class="c-cmt"># Claude Haiku: $0.25/M input tokens (vs $3/M for Sonnet)</span>
+router_llm = <span class="c-type">ChatAnthropic</span>(model=<span class="c-str">"claude-3-haiku-20240307"</span>)
+
+ROUTER_PROMPT = <span class="c-str">"""Classify this query as 'factual' or 'research'.
 
 factual: Has a specific, retrievable answer. One or two sources suffice.
 research: Open-ended, comparative, or requires synthesis across many sources.
 
 Query: {query}
 
-Respond with only the word 'factual' or 'research'."""</span>
-
-classifier_llm = <span class="c-type">ChatAnthropic</span>(model=<span class="c-str">"claude-3-haiku-20240307"</span>)  <span class="c-cmt"># cheap model for routing</span>
+Respond with ONLY the word 'factual' or 'research'."""</span>
 
 <span class="c-kw">def</span> <span class="c-fn">route_query</span>(query: <span class="c-type">str</span>) -> <span class="c-type">str</span>:
-    <span class="c-str">"""Route: simple factual → RAG, complex research → CrewAI"""</span>
-    classification = classifier_llm.<span class="c-fn">invoke</span>(
-        CLASSIFICATION_PROMPT.<span class="c-fn">format</span>(query=query)
+    classification = router_llm.<span class="c-fn">invoke</span>(
+        ROUTER_PROMPT.<span class="c-fn">format</span>(query=query)
     ).content.<span class="c-fn">strip</span>().<span class="c-fn">lower</span>()
 
     <span class="c-kw">if</span> <span class="c-str">"factual"</span> <span class="c-kw">in</span> classification:
-        <span class="c-fn">return</span> rag_chain.<span class="c-fn">invoke</span>(query)
+        <span class="c-kw">return</span> rag_chain.<span class="c-fn">invoke</span>(query)
     <span class="c-kw">else</span>:
-        <span class="c-cmt"># Dispatch to CrewAI research crew</span>
         crew = <span class="c-fn">build_research_crew</span>(query)
         result = crew.<span class="c-fn">kickoff</span>(inputs={<span class="c-str">"query"</span>: query})
         <span class="c-kw">return</span> result.raw
 
-<span class="c-cmt"># ── Research Crew Factory ────────────────────────────────</span>
+<span class="c-cmt"># ── Research Crew Factory ──────────────────────────────────────</span>
 <span class="c-kw">def</span> <span class="c-fn">build_research_crew</span>(query: <span class="c-type">str</span>) -> <span class="c-type">Crew</span>:
     researcher = <span class="c-type">Agent</span>(
         role=<span class="c-str">"AI Research Analyst"</span>,
-        goal=<span class="c-str">f"Research this query comprehensively: {query}"</span>,
-        backstory=<span class="c-str">"Expert AI researcher with 10 years experience"</span>,
+        goal=<span class="c-str">f"Research comprehensively: {query}"</span>,
+        backstory=<span class="c-str">"Expert AI researcher with deep technical background"</span>,
         tools=[<span class="c-type">SerperDevTool</span>()],
         llm=<span class="c-str">"claude-3-5-sonnet-20241022"</span>
     )
     analyst = <span class="c-type">Agent</span>(
-        role=<span class="c-str">"Technical Analyst"</span>,
-        goal=<span class="c-str">"Synthesize research into a clear, actionable response"</span>,
-        backstory=<span class="c-str">"Specializes in synthesizing technical ML research"</span>,
-        llm=<span class="c-str">"gpt-4o-mini"</span>
-    )
-    research_task = <span class="c-type">Task</span>(
-        description=<span class="c-str">f"Research: {query}. Find current state of art, key papers, and practical considerations."</span>,
-        expected_output=<span class="c-str">"Comprehensive research notes with citations"</span>,
-        agent=researcher
-    )
-    synthesis_task = <span class="c-type">Task</span>(
-        description=<span class="c-str">"Synthesize the research into a clear answer for a senior ML engineer."</span>,
-        expected_output=<span class="c-str">"A precise, accurate answer with citations and code examples where applicable"</span>,
-        agent=analyst,
-        context=[research_task]
+        role=<span class="c-str">"Technical Synthesizer"</span>,
+        goal=<span class="c-str">"Turn research into a clear, actionable answer"</span>,
+        backstory=<span class="c-str">"Specializes in distilling complex ML research"</span>,
+        llm=<span class="c-str">"gpt-4o-mini"</span>  <span class="c-cmt"># cheaper model for synthesis</span>
     )
     <span class="c-kw">return</span> <span class="c-type">Crew</span>(
         agents=[researcher, analyst],
-        tasks=[research_task, synthesis_task],
-        process=<span class="c-type">Process</span>.sequential
+        tasks=[
+            <span class="c-type">Task</span>(
+                description=<span class="c-str">f"Research: {query}. Cover state-of-art, key papers, practical use."</span>,
+                expected_output=<span class="c-str">"Research notes with citations"</span>,
+                agent=researcher
+            ),
+            <span class="c-type">Task</span>(
+                description=<span class="c-str">"Synthesize research into a precise answer for a senior ML engineer."</span>,
+                expected_output=<span class="c-str">"Clear answer with citations and code examples"</span>,
+                agent=analyst,
+                context=[research_task]  <span class="c-cmt"># task dependency</span>
+            )
+        ],
+        process=<span class="c-type">Process</span>.sequential,
+        memory=<span class="c-type">True</span>
     )</div>
     </div>
   </div>
 </div>
 
-<!-- SECTION 4 -->
+<div class="section-divider"></div>
+
+<!-- ── SECTION 5: RAGAS Quality Gate ──────────────────────────────────────── -->
 <div class="container">
-  <div class="section">
-    <div class="section-header">
-      <div class="section-num">Section 04</div>
-      <h2>RAGAS Evaluation Gate</h2>
+  <div class="section reveal">
+    <div class="section-header anim-init">
+      <div class="section-num">Section 05</div>
+      <h2>RAGAS Evaluation + CI/CD Quality Gate</h2>
       <p>Quality is not optional. Every RAG pipeline deployment should pass a RAGAS quality gate against a golden evaluation dataset. Failing faithfulness is a hard stop — a hallucinating system is worse than no system.</p>
     </div>
 
-    <div class="code-wrap">
-      <div class="code-label">Python — RAGAS CI/CD Quality Gate</div>
-      <div class="code-block"><span class="c-kw">from</span> ragas <span class="c-kw">import</span> evaluate
-<span class="c-kw">from</span> ragas.metrics <span class="c-kw">import</span> faithfulness, answer_relevancy
+    <p style="color:var(--muted);font-size:14px;line-height:1.7;margin-bottom:16px;" class="anim-init">
+      RAGAS measures four complementary dimensions. <strong style="color:var(--text);">Faithfulness</strong> asks: are every claim in the answer supported by the retrieved context? This is your anti-hallucination metric. <strong style="color:var(--text);">Answer Relevancy</strong> asks: does the answer actually address the question? This catches verbose, off-topic responses. <strong style="color:var(--text);">Context Precision</strong> asks: what fraction of retrieved chunks were actually useful? Low precision means your retrieval is noisy. <strong style="color:var(--text);">Context Recall</strong> asks: did the retrieved context contain everything needed to answer the question? Low recall means your RAG is missing important information.
+    </p>
+    <p style="color:var(--muted);font-size:14px;line-height:1.7;margin-bottom:24px;" class="anim-init">
+      Run RAGAS evaluation as a GitHub Actions step that runs against a curated 50–100 question golden set before any deployment. This catches regressions when you change embedding models, retrieval parameters, or prompts. The golden set should be maintained in version control alongside the codebase — it's as important as your test suite.
+    </p>
+
+    <div class="mac-window anim-init">
+      <div class="mac-titlebar">
+        <div class="mac-dot red"></div>
+        <div class="mac-dot yellow"></div>
+        <div class="mac-dot green"></div>
+        <span class="mac-filename">eval/quality_gate.py</span>
+      </div>
+      <div class="mac-body"><span class="c-kw">from</span> ragas <span class="c-kw">import</span> evaluate
+<span class="c-kw">from</span> ragas.metrics <span class="c-kw">import</span> (
+    faithfulness, answer_relevancy,
+    context_precision, context_recall
+)
 <span class="c-kw">from</span> datasets <span class="c-kw">import</span> <span class="c-type">Dataset</span>
-<span class="c-kw">import</span> json
+<span class="c-kw">import</span> json, sys
 
-<span class="c-cmt"># Load golden evaluation dataset (maintained in version control)</span>
+<span class="c-cmt"># Load golden set (version-controlled, human-curated)</span>
 <span class="c-kw">with</span> <span class="c-fn">open</span>(<span class="c-str">"eval/golden_set.json"</span>) <span class="c-kw">as</span> f:
-    golden_set = json.<span class="c-fn">load</span>(f)
+    golden_set = json.<span class="c-fn">load</span>(f)  <span class="c-cmt"># [{question, expected_answer}, ...]</span>
 
-<span class="c-kw">def</span> <span class="c-fn">retrieve_context</span>(question: <span class="c-type">str</span>) -> list[<span class="c-type">str</span>]:
-    <span class="c-kw">return</span> [doc.page_content <span class="c-kw">for</span> doc <span class="c-kw">in</span> retriever.<span class="c-fn">invoke</span>(question)]
+<span class="c-cmt"># Quality gate thresholds (tune for your use case)</span>
+THRESHOLDS = {
+    <span class="c-str">"faithfulness"</span>:    <span class="c-num">0.80</span>,  <span class="c-cmt"># hard gate — hallucination prevention</span>
+    <span class="c-str">"answer_relevancy"</span>: <span class="c-num">0.75</span>,  <span class="c-cmt"># soft gate — answer quality</span>
+    <span class="c-str">"context_precision"</span>: <span class="c-num">0.70</span>, <span class="c-cmt"># retrieval signal-to-noise</span>
+    <span class="c-str">"context_recall"</span>:   <span class="c-num">0.70</span>,  <span class="c-cmt"># retrieval completeness</span>
+}
 
-<span class="c-kw">def</span> <span class="c-fn">evaluate_pipeline</span>(test_questions: list[<span class="c-type">dict</span>]) -> <span class="c-type">dict</span>:
-    <span class="c-str">"""Run RAGAS evaluation over the golden question set."""</span>
+<span class="c-kw">def</span> <span class="c-fn">run_quality_gate</span>():
     results = []
-    <span class="c-kw">for</span> item <span class="c-kw">in</span> test_questions:
-        answer = rag_chain.<span class="c-fn">invoke</span>(item[<span class="c-str">"question"</span>])
+    <span class="c-kw">for</span> item <span class="c-kw">in</span> golden_set:
+        q = item[<span class="c-str">"question"</span>]
+        answer = rag_chain.<span class="c-fn">invoke</span>(q)
+        contexts = [doc.page_content <span class="c-kw">for</span> doc <span class="c-kw">in</span> retriever.<span class="c-fn">invoke</span>(q)]
         results.<span class="c-fn">append</span>({
-            <span class="c-str">"question"</span>:     item[<span class="c-str">"question"</span>],
-            <span class="c-str">"answer"</span>:       answer,
-            <span class="c-str">"contexts"</span>:     <span class="c-fn">retrieve_context</span>(item[<span class="c-str">"question"</span>]),
+            <span class="c-str">"question"</span>: q, <span class="c-str">"answer"</span>: answer,
+            <span class="c-str">"contexts"</span>: contexts,
             <span class="c-str">"ground_truth"</span>: item[<span class="c-str">"expected_answer"</span>]
         })
 
     dataset = <span class="c-type">Dataset</span>.<span class="c-fn">from_list</span>(results)
-    scores = <span class="c-fn">evaluate</span>(dataset, metrics=[faithfulness, answer_relevancy])
+    scores = <span class="c-fn">evaluate</span>(
+        dataset,
+        metrics=[faithfulness, answer_relevancy, context_precision, context_recall]
+    )
 
-    <span class="c-cmt"># Quality gate thresholds</span>
-    THRESHOLDS = {<span class="c-str">"faithfulness"</span>: <span class="c-num">0.80</span>, <span class="c-str">"answer_relevancy"</span>: <span class="c-num">0.75</span>}
     failures = [
-        <span class="c-str">f"{m}: {scores[m]:.2f} &lt; {t}"</span>
+        <span class="c-str">f"  ✗ {m}: {scores[m]:.2f} &lt; threshold {t}"</span>
         <span class="c-kw">for</span> m, t <span class="c-kw">in</span> THRESHOLDS.<span class="c-fn">items</span>()
         <span class="c-kw">if</span> scores.<span class="c-fn">get</span>(m, <span class="c-num">0</span>) &lt; t
     ]
     <span class="c-kw">if</span> failures:
-        <span class="c-kw">raise</span> <span class="c-type">ValueError</span>(<span class="c-str">f"Quality gate FAILED:\n"</span> + <span class="c-str">"\n"</span>.<span class="c-fn">join</span>(failures))
+        <span class="c-fn">print</span>(<span class="c-str">f"❌ Quality gate FAILED:\n"</span> + <span class="c-str">"\n"</span>.<span class="c-fn">join</span>(failures))
+        sys.<span class="c-fn">exit</span>(<span class="c-num">1</span>)  <span class="c-cmt"># non-zero exit → CI/CD blocks deployment</span>
 
-    <span class="c-fn">print</span>(<span class="c-str">f"Quality gate PASSED — faithfulness: {scores['faithfulness']:.2f}, relevancy: {scores['answer_relevancy']:.2f}"</span>)
-    <span class="c-kw">return</span> scores
+    <span class="c-fn">print</span>(<span class="c-str">f"✅ Quality gate PASSED — faith:{scores['faithfulness']:.2f}"</span>
+          <span class="c-str">f" rel:{scores['answer_relevancy']:.2f}"</span>
+          <span class="c-str">f" prec:{scores['context_precision']:.2f}"</span>
+          <span class="c-str">f" rec:{scores['context_recall']:.2f}"</span>)
 
-<span class="c-cmt"># CI/CD integration (e.g., GitHub Actions step):</span>
-<span class="c-cmt"># python -c "from eval import evaluate_pipeline; evaluate_pipeline(golden_set)"</span>
-<span class="c-cmt"># Exit code 1 if quality gate fails → deployment blocked</span></div>
+<span class="c-kw">if</span> __name__ == <span class="c-str">"__main__"</span>:
+    <span class="c-fn">run_quality_gate</span>()</div>
+    </div>
+
+    <div class="callout anim-init">
+      <span class="callout-icon">📋</span>
+      <div class="callout-text"><strong>GitHub Actions integration:</strong> Add this as a step in your CI workflow: <code style="font-family:var(--mono);font-size:11px;">python eval/quality_gate.py</code>. If the script exits with code 1, the deployment step is blocked. This gives you automatic regression detection when teammates change retrieval parameters, swap embedding models, or modify prompts — the most common sources of quality regressions in production RAG systems.</div>
     </div>
   </div>
 </div>
 
-<!-- SECTION 5 -->
+<div class="section-divider"></div>
+
+<!-- ── SECTION 6: FastAPI Service ─────────────────────────────────────────── -->
 <div class="container">
-  <div class="section">
-    <div class="section-header">
-      <div class="section-num">Section 05</div>
-      <h2>What You Built &amp; What's Next</h2>
-      <p>Week 2 complete. You now have the full production RAG + agent stack. Week 3 goes deeper into the ML layer: how models are actually trained, fine-tuning, and MLOps.</p>
+  <div class="section reveal">
+    <div class="section-header anim-init">
+      <div class="section-num">Section 06</div>
+      <h2>FastAPI Service with Streaming</h2>
+      <p>A production-ready FastAPI service wrapping the entire system — intent routing, RAG, CrewAI dispatch, and streaming responses. This is the deployable artifact.</p>
+    </div>
+
+    <p style="color:var(--muted);font-size:14px;line-height:1.7;margin-bottom:24px;" class="anim-init">
+      The FastAPI service exposes two endpoints: <code style="font-family:var(--mono);font-size:12px;color:var(--purple-light);">POST /ask</code> for streaming responses (server-sent events) and <code style="font-family:var(--mono);font-size:12px;color:var(--purple-light);">POST /ask/sync</code> for blocking responses. Streaming is the right default for UIs — users see the first token within milliseconds rather than waiting 3–10 seconds for the full response. The <code style="font-family:var(--mono);font-size:12px;color:var(--purple-light);">StreamingResponse</code> wraps the LCEL <code style="font-family:var(--mono);font-size:12px;color:var(--purple-light)">.stream()</code> call, which works transparently across the full chain.
+    </p>
+
+    <div class="mac-window anim-init">
+      <div class="mac-titlebar">
+        <div class="mac-dot red"></div>
+        <div class="mac-dot yellow"></div>
+        <div class="mac-dot green"></div>
+        <span class="mac-filename">main.py</span>
+      </div>
+      <div class="mac-body"><span class="c-kw">from</span> fastapi <span class="c-kw">import</span> <span class="c-type">FastAPI</span>, <span class="c-type">HTTPException</span>
+<span class="c-kw">from</span> fastapi.responses <span class="c-kw">import</span> <span class="c-type">StreamingResponse</span>
+<span class="c-kw">from</span> pydantic <span class="c-kw">import</span> <span class="c-type">BaseModel</span>
+<span class="c-kw">import</span> asyncio, json
+
+app = <span class="c-type">FastAPI</span>(title=<span class="c-str">"Knowledge Assistant"</span>, version=<span class="c-str">"1.0"</span>)
+
+<span class="c-kw">class</span> <span class="c-type">QueryRequest</span>(<span class="c-type">BaseModel</span>):
+    question: <span class="c-type">str</span>
+    stream: <span class="c-type">bool</span> = <span class="c-type">True</span>
+
+<span class="c-cmt"># ── Streaming endpoint (SSE) ──────────────────────────────────</span>
+<span class="c-dec">@app.post</span>(<span class="c-str">"/ask"</span>)
+<span class="c-kw">async def</span> <span class="c-fn">ask_streaming</span>(req: <span class="c-type">QueryRequest</span>):
+    <span class="c-kw">async def</span> <span class="c-fn">generate</span>():
+        <span class="c-cmt"># Route query to appropriate pipeline</span>
+        route = <span class="c-fn">classify_query</span>(req.question)  <span class="c-cmt"># "factual" | "research"</span>
+        chain = rag_chain <span class="c-kw">if</span> route == <span class="c-str">"factual"</span> <span class="c-kw">else</span> research_chain
+
+        <span class="c-kw">yield</span> <span class="c-str">f"data: {json.dumps({'route': route})}\n\n"</span>
+
+        <span class="c-kw">async for</span> chunk <span class="c-kw">in</span> chain.<span class="c-fn">astream</span>(req.question):
+            <span class="c-kw">yield</span> <span class="c-str">f"data: {json.dumps({'chunk': chunk})}\n\n"</span>
+
+        <span class="c-kw">yield</span> <span class="c-str">"data: [DONE]\n\n"</span>
+
+    <span class="c-kw">return</span> <span class="c-type">StreamingResponse</span>(
+        <span class="c-fn">generate</span>(),
+        media_type=<span class="c-str">"text/event-stream"</span>,
+        headers={<span class="c-str">"X-Accel-Buffering"</span>: <span class="c-str">"no"</span>}  <span class="c-cmt"># disable nginx buffering</span>
+    )
+
+<span class="c-cmt"># ── Health + metrics endpoint ──────────────────────────────────</span>
+<span class="c-dec">@app.get</span>(<span class="c-str">"/health"</span>)
+<span class="c-kw">async def</span> <span class="c-fn">health</span>():
+    <span class="c-kw">return</span> {<span class="c-str">"status"</span>: <span class="c-str">"ok"</span>, <span class="c-str">"qdrant"</span>: <span class="c-fn">check_qdrant</span>(), <span class="c-str">"llm"</span>: <span class="c-str">"primary"</span>}</div>
+    </div>
+  </div>
+</div>
+
+<div class="section-divider"></div>
+
+<!-- ── SECTION 7: Production Considerations ────────────────────────────────── -->
+<div class="container">
+  <div class="section reveal">
+    <div class="section-header anim-init">
+      <div class="section-num">Section 07</div>
+      <h2>Production Considerations</h2>
+      <p>What Week 2 covered and what you need before shipping to real users — caching, monitoring, security, and rate limiting. The gap between a demo and a production system lives here.</p>
     </div>
 
     <div class="concept-grid">
-      <div class="concept-card">
+      <div class="concept-card anim-init">
         <div class="concept-icon">⚡</div>
-        <div class="concept-title">Rate Limiting &amp; Caching</div>
-        <div class="concept-desc">Production RAG needs exponential backoff on API calls, a Redis embedding cache to avoid redundant billing, and a semantic cache layer (GPTCache or custom) to return cached answers for near-duplicate queries.</div>
+        <div class="concept-title">Semantic Caching</div>
+        <div class="concept-desc">Store (embedding → answer) pairs in Redis. On each query, check if a near-duplicate embedding exists within a similarity threshold (0.95+). Cache hits return instantly and cost $0 in LLM calls. GPTCache or a custom Redis hash map both work. Expect 20–40% cache hit rates on high-traffic deployments with repetitive queries.</div>
       </div>
-      <div class="concept-card">
+      <div class="concept-card anim-init">
         <div class="concept-icon">📊</div>
-        <div class="concept-title">Monitoring</div>
-        <div class="concept-desc">Instrument every chain step with LangSmith traces. Track: retrieval latency, token usage per request, faithfulness score distribution, and cache hit rate. Set alerts on p95 latency and on RAGAS score drops.</div>
+        <div class="concept-title">LangSmith Monitoring</div>
+        <div class="concept-desc">Instrument every chain step with LangSmith traces automatically — just set LANGCHAIN_TRACING_V2=true. Track: retrieval latency P95, token usage per request, RAGAS score distribution over time, and cache hit rate. Set alerts when P95 latency exceeds 5 seconds or RAGAS faithfulness drops below your threshold.</div>
       </div>
-      <div class="concept-card">
+      <div class="concept-card anim-init">
         <div class="concept-icon">🔒</div>
-        <div class="concept-title">Security</div>
-        <div class="concept-desc">Validate and sanitize all user queries before passing to the LLM — prompt injection via user input is a real attack surface in RAG systems. Apply input length limits, output content filtering, and rate limiting per user.</div>
+        <div class="concept-title">Security Hardening</div>
+        <div class="concept-desc">Prompt injection via user queries is a real attack vector in RAG systems. Sanitize inputs: strip control characters, enforce length limits (≤2000 chars), and detect injection patterns ("Ignore previous instructions..."). Apply output content filtering with moderation APIs. Rate-limit per user ID at the API gateway layer, not just per IP.</div>
       </div>
-      <div class="concept-card">
+      <div class="concept-card anim-init">
+        <div class="concept-icon">💰</div>
+        <div class="concept-title">Cost Optimization</div>
+        <div class="concept-desc">Three levers: (1) Route cheap queries to cheaper models — Haiku for routing, GPT-4o-mini for simple factual answers, Sonnet only for complex generation. (2) Cache aggressively — embeddings are cheap to store but expensive to regenerate. (3) Use Anthropic prompt caching for system prompts that repeat across requests (up to 90% cache discount).</div>
+      </div>
+      <div class="concept-card anim-init">
         <div class="concept-icon">🧬</div>
         <div class="concept-title">Week 3 Preview</div>
-        <div class="concept-desc">ML fundamentals: backpropagation, the transformer architecture from scratch, tokenization in depth. Then practical fine-tuning: LoRA/QLoRA with PEFT, Hugging Face Trainer, model evaluation and merging. Finally: MLOps — experiment tracking, model registry, and inference optimization.</div>
+        <div class="concept-desc">ML fundamentals: backpropagation, the transformer architecture from scratch, and tokenization in depth. Then fine-tuning: LoRA/QLoRA with PEFT, Hugging Face Trainer, model evaluation and merging. Finally MLOps: experiment tracking with MLflow, model registry, and inference optimization with quantization and vLLM.</div>
       </div>
-    </div>
-
-    <h3 style="font-size:18px;font-weight:700;margin-top:40px;margin-bottom:16px;">Week 2 Mastery Checklist</h3>
-    <div class="checklist" id="checklist">
-      <!-- Rendered by JS -->
-    </div>
-    <div class="checklist-progress">
-      <div class="checklist-bar-track">
-        <div class="checklist-bar-fill" id="checklist-bar" style="width:0%"></div>
+      <div class="concept-card anim-init">
+        <div class="concept-icon">🔄</div>
+        <div class="concept-title">Continuous Improvement</div>
+        <div class="concept-desc">Implement a feedback loop: capture user thumbs-up/thumbs-down on every answer. Use negative feedback to identify weak spots in your golden eval set. Periodically fine-tune your embedding model on domain-specific (query, relevant chunk) pairs using contrastive loss. Track RAGAS scores over time in a dashboard — treat them like error rates.</div>
       </div>
-      <div class="checklist-label" id="checklist-label">0 / 0 complete</div>
     </div>
   </div>
 </div>
 
-<!-- INTERACTIVE WIDGET -->
+<div class="section-divider"></div>
+
+<!-- ── INTERACTIVE WIDGET 1: Architecture Explorer ─────────────────────────── -->
 <div class="container">
-  <div class="section">
-    <div class="section-header">
-      <div class="section-num">Interactive</div>
+  <div class="section reveal">
+    <div class="section-header anim-init">
+      <div class="section-num">Interactive 01</div>
       <h2>Capstone Architecture Explorer</h2>
-      <p>Click any component to see its description and a key code snippet. Hover to highlight.</p>
+      <p>Click any component to see its role, design rationale, and the key code snippet that wires it into the system.</p>
     </div>
 
-    <div class="widget-box">
+    <div class="widget-box anim-init">
+      <div class="widget-title">System Component Deep-Dive</div>
+      <div class="widget-subtitle">5 components — click any to explore. Each component has a specific, non-overlapping responsibility.</div>
       <div class="explorer-grid" id="explorer-grid">
         <div class="explorer-component" onclick="showComponent('rag')" id="comp-rag">
           <div class="explorer-comp-icon">🔗</div>
@@ -584,23 +928,155 @@ classifier_llm = <span class="c-type">ChatAnthropic</span>(model=<span class="c-
           <div class="explorer-comp-tag">Multi-Provider</div>
         </div>
       </div>
+      <div class="explorer-detail" id="explorer-detail"></div>
+    </div>
+  </div>
+</div>
 
-      <div class="explorer-detail" id="explorer-detail">
-        <!-- Rendered by JS -->
+<div class="section-divider"></div>
+
+<!-- ── INTERACTIVE WIDGET 2: System Flow Simulator ─────────────────────────── -->
+<div class="container">
+  <div class="section reveal">
+    <div class="section-header anim-init">
+      <div class="section-num">Interactive 02</div>
+      <h2>System Flow Simulator</h2>
+      <p>Simulate how different query types flow through the system. Watch the intent router classify and dispatch, the pipeline execute, and RAGAS evaluate the response.</p>
+    </div>
+
+    <div class="flow-widget anim-init">
+      <div class="widget-title">Live Query Simulation</div>
+      <div class="widget-subtitle" style="margin-bottom:16px;">Select a query type, then run the simulation to see the full system in action.</div>
+
+      <div class="flow-controls">
+        <button class="flow-btn" id="qtype-factual" onclick="setQueryType('factual')">Factual Query</button>
+        <button class="flow-btn" id="qtype-research" onclick="setQueryType('research')">Research Query</button>
+        <button class="flow-btn" id="qtype-failed" onclick="setQueryType('failed')">RAGAS Failure</button>
+        <button class="flow-btn primary" onclick="runSimulation()">▶ Run Simulation</button>
+      </div>
+
+      <div id="query-preview" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:var(--muted);">
+        Query: <em id="query-text">Select a query type above</em>
+      </div>
+
+      <div class="flow-svg-wrap">
+        <svg id="flow-svg" width="100%" height="260" viewBox="0 0 820 260" xmlns="http://www.w3.org/2000/svg">
+          <!-- Defs -->
+          <defs>
+            <marker id="arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#4a4a6a"/>
+            </marker>
+            <marker id="arr-ok" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
+            </marker>
+            <marker id="arr-active" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#a855f7"/>
+            </marker>
+          </defs>
+          <!-- User Query -->
+          <rect id="fn-user" x="340" y="10" width="140" height="44" rx="8" fill="#1a1a2e" stroke="#2a2a45" stroke-width="2"/>
+          <text x="410" y="37" fill="#e2e8f0" font-size="13" font-weight="700" font-family="Inter,sans-serif" text-anchor="middle">User Query</text>
+          <!-- Arrow down -->
+          <line x1="410" y1="54" x2="410" y2="76" stroke="#4a4a6a" stroke-width="2" marker-end="url(#arr)" id="edge-1"/>
+          <!-- Intent Router -->
+          <rect id="fn-router" x="310" y="76" width="200" height="44" rx="8" fill="#1a1a2e" stroke="#2a2a45" stroke-width="2"/>
+          <text x="410" y="103" fill="#a855f7" font-size="13" font-weight="700" font-family="Inter,sans-serif" text-anchor="middle">Intent Router</text>
+          <!-- Branch arrows -->
+          <line x1="310" y1="98" x2="200" y2="146" stroke="#4a4a6a" stroke-width="2" marker-end="url(#arr)" id="edge-rag"/>
+          <line x1="510" y1="98" x2="620" y2="146" stroke="#4a4a6a" stroke-width="2" marker-end="url(#arr)" id="edge-crew"/>
+          <!-- RAG Chain -->
+          <rect id="fn-rag" x="100" y="146" width="180" height="44" rx="8" fill="#1a1a2e" stroke="#2a2a45" stroke-width="2"/>
+          <text x="190" y="173" fill="#34d399" font-size="12" font-weight="700" font-family="Inter,sans-serif" text-anchor="middle">RAG Chain</text>
+          <!-- CrewAI Crew -->
+          <rect id="fn-crew" x="540" y="146" width="180" height="44" rx="8" fill="#1a1a2e" stroke="#2a2a45" stroke-width="2"/>
+          <text x="630" y="173" fill="#a855f7" font-size="12" font-weight="700" font-family="Inter,sans-serif" text-anchor="middle">CrewAI Research</text>
+          <!-- Merge arrows to formatter -->
+          <line x1="190" y1="190" x2="310" y2="216" stroke="#4a4a6a" stroke-width="2" marker-end="url(#arr)" id="edge-fmt1"/>
+          <line x1="630" y1="190" x2="510" y2="216" stroke="#4a4a6a" stroke-width="2" marker-end="url(#arr)" id="edge-fmt2"/>
+          <!-- Response Formatter -->
+          <rect id="fn-fmt" x="280" y="216" width="260" height="44" rx="8" fill="#1a1a2e" stroke="#2a2a45" stroke-width="2"/>
+          <text x="410" y="238" fill="#e2e8f0" font-size="12" font-weight="700" font-family="Inter,sans-serif" text-anchor="middle">Response Formatter</text>
+          <text x="410" y="252" fill="#64748b" font-size="10" font-family="Inter,sans-serif" text-anchor="middle">Claude 3.5 Sonnet → RAGAS Gate</text>
+          <!-- Labels -->
+          <text id="lbl-factual" x="230" y="142" fill="#64748b" font-size="10" font-family="Inter,sans-serif" text-anchor="middle">factual</text>
+          <text id="lbl-research" x="590" y="142" fill="#64748b" font-size="10" font-family="Inter,sans-serif" text-anchor="middle">research</text>
+        </svg>
+      </div>
+
+      <div class="flow-log" id="flow-log">
+        <span style="color:#4a4a6a;">// Select a query type and click Run Simulation to begin...</span>
       </div>
     </div>
   </div>
 </div>
 
+<div class="section-divider"></div>
+
+<!-- ── INTERACTIVE WIDGET 3: Week 2 Mastery Checklist ─────────────────────── -->
+<div class="container">
+  <div class="section reveal">
+    <div class="section-header anim-init">
+      <div class="section-num">Interactive 03</div>
+      <h2>Week 2 Mastery Checklist</h2>
+      <p>Check off each skill as you build it. Your progress persists between sessions. All 12 skills build toward the capstone — none are optional.</p>
+    </div>
+
+    <div class="widget-box anim-init">
+      <div class="widget-title">Week 2 Skills — Days 8 through 14</div>
+      <div class="widget-subtitle">Click each item to mark it complete. State is saved in your browser.</div>
+      <div class="checklist" id="checklist"></div>
+      <div class="checklist-progress">
+        <div class="checklist-bar-track">
+          <div class="checklist-bar-fill" id="checklist-bar" style="width:0%"></div>
+        </div>
+        <div class="checklist-label">
+          <span id="checklist-label-text">0 / 12 complete</span>
+          <span class="checklist-pct" id="checklist-pct">0%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section-divider"></div>
+
+<div class="container">
+  <div class="section reveal">
+    <div class="section-header">
+      <div class="section-num">Section 05</div>
+      <h2>Build It: Capstone Milestone Tracker</h2>
+      <p>Complete each milestone in order. Check off steps as you build the multi-provider knowledge assistant.</p>
+    </div>
+    <div id="milestoneList" style="display:flex;flex-direction:column;gap:10px;"></div>
+    <div style="margin-top:20px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+        <span style="font-size:13px;font-weight:600;">Build Progress</span>
+        <span id="milestonePct" style="font-size:13px;color:var(--teal);font-weight:700;">0%</span>
+      </div>
+      <div style="height:8px;background:var(--surface2);border-radius:99px;overflow:hidden;">
+        <div id="milestoneBar" style="height:100%;background:linear-gradient(90deg,var(--purple),var(--teal));border-radius:99px;width:0%;transition:width 0.5s;"></div>
+      </div>
+    </div>
+    <div id="milestoneComplete" style="display:none;margin-top:24px;padding:24px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.3);border-radius:12px;text-align:center;">
+      <div style="font-size:32px;margin-bottom:8px;">🎉</div>
+      <div style="font-size:18px;font-weight:800;color:var(--green);">Week 2 Capstone Complete!</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:6px;">You've built a production-grade multi-provider knowledge assistant.</div>
+    </div>
+  </div>
+</div>
+
+<div class="section-divider"></div>
+
 <footer>
   <div class="container">
-    <p>Agentic AI Mastery — Day 14: Week 2 Capstone Complete</p>
+    <p style="margin-bottom:8px;">Agentic AI Mastery — Day 14: Week 2 Capstone Complete</p>
+    <p><a href="day15.html">Continue to Week 3: ML Fundamentals →</a></p>
   </div>
 </footer>
 
 <section style="max-width:900px;margin:2rem auto;padding:0 1.5rem 3rem;">
   <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;">
-    <div style="font-size:0.75rem;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:1px;">Practice</div>
+    <div style="font-size:0.75rem;font-weight:700;color:#f59e0b;text-transform:uppercase;letter-spacing:1px;">Practice</div>
     <h2 style="margin:0;font-size:1.4rem;font-weight:700;color:white;">Exercises</h2>
   </div>
   <p style="color:#9ca3af;margin-bottom:1.5rem;">Build the full capstone: wire LCEL + Qdrant + CrewAI + RAGAS into a working FastAPI service. Implement intent routing and run the evaluation gate.</p>
@@ -611,7 +1087,42 @@ classifier_llm = <span class="c-type">ChatAnthropic</span>(model=<span class="c-
 </section>
 
 <script>
-// ── Mark Complete ─────────────────────────────────────────────────────────────
+/* ── Reading Progress ─────────────────────────────────────────────────────── */
+window.addEventListener('scroll', () => {
+  const el = document.getElementById('reading-progress');
+  const totalHeight = document.body.scrollHeight - window.innerHeight;
+  el.style.width = totalHeight > 0 ? (window.scrollY / totalHeight * 100) + '%' : '0%';
+  const btn = document.getElementById('back-top');
+  window.scrollY > 400 ? btn.classList.add('visible') : btn.classList.remove('visible');
+});
+
+/* ── IntersectionObserver — Scroll Animations ────────────────────────────── */
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in-view'); io.unobserve(e.target); } });
+}, { threshold: 0.12 });
+document.querySelectorAll('.anim-init, .anim-slide').forEach(el => io.observe(el));
+
+/* ── Stat Counter Animation ───────────────────────────────────────────────── */
+const statObs = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (!e.isIntersecting) return;
+    const el = e.target;
+    const target = parseInt(el.dataset.target, 10);
+    const duration = 1200;
+    const start = performance.now();
+    function tick(now) {
+      const t = Math.min((now - start) / duration, 1);
+      el.textContent = Math.round(t * t * target);
+      if (t < 1) requestAnimationFrame(tick);
+      else el.textContent = target;
+    }
+    requestAnimationFrame(tick);
+    statObs.unobserve(el);
+  });
+}, { threshold: 0.5 });
+document.querySelectorAll('.stat-num[data-target]').forEach(el => statObs.observe(el));
+
+/* ── Mark Complete ────────────────────────────────────────────────────────── */
 function markComplete() {
   try {
     const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
@@ -627,10 +1138,7 @@ function markComplete() {
 document.addEventListener('DOMContentLoaded', () => {
   try {
     const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
-    if (!p[14] || p[14] === 'locked') {
-      p[14] = 'active';
-      localStorage.setItem('aai_progress', JSON.stringify(p));
-    }
+    if (!p[14] || p[14] === 'locked') { p[14] = 'active'; localStorage.setItem('aai_progress', JSON.stringify(p)); }
     if (p[14] === 'done') {
       const btn = document.getElementById('complete-btn');
       btn.textContent = 'Completed!';
@@ -639,60 +1147,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   } catch(e) {}
   renderChecklist();
+  setQueryType('factual');
 });
 
-// ── Week 2 Checklist ─────────────────────────────────────────────────────────
-const CHECKS = [
-  { id: 'c1', title: 'Built a LangChain LCEL pipeline end to end', sub: 'Runnable composition, passthrough, output parsers' },
-  { id: 'c2', title: 'Connected to a vector database (Qdrant or Pinecone)', sub: 'Indexing documents, querying with embeddings' },
-  { id: 'c3', title: 'Implemented hybrid search (BM25 + dense)', sub: 'EnsembleRetriever with RRF weighting' },
-  { id: 'c4', title: 'Added a cross-encoder re-ranker', sub: 'Cohere Rerank or local cross-encoder model' },
-  { id: 'c5', title: 'Benchmarked at least 2 embedding models', sub: 'Compare quality/cost tradeoffs for your corpus' },
-  { id: 'c6', title: 'Built a CrewAI crew with 2+ agents', sub: 'Distinct roles, task context passing, sequential process' },
-  { id: 'c7', title: 'Implemented a custom CrewAI tool', sub: '@tool decorator with a real database or API call' },
-  { id: 'c8', title: 'Ran RAGAS evaluation on your pipeline', sub: 'Faithfulness and answer_relevancy measured' },
-  { id: 'c9', title: 'Set up multi-provider LLM with fallback', sub: 'Primary + fallback using .with_fallbacks()' },
-  { id: 'c10', title: 'Built a query intent router', sub: 'Classifies factual vs research, routes accordingly' },
-  { id: 'c11', title: 'Integrated RAGAS as a CI/CD quality gate', sub: 'Pipeline fails if faithfulness < 0.80' },
-  { id: 'c12', title: 'Deployed the assistant as a FastAPI service', sub: 'POST /ask endpoint with streaming response' },
-];
-
-function renderChecklist() {
-  let saved = {};
-  try { saved = JSON.parse(localStorage.getItem('d14_checks') || '{}'); } catch(e) {}
-  const container = document.getElementById('checklist');
-  container.innerHTML = '';
-  let done = 0;
-  CHECKS.forEach(c => {
-    const isChecked = !!saved[c.id];
-    if (isChecked) done++;
-    const el = document.createElement('div');
-    el.className = 'check-item' + (isChecked ? ' checked' : '');
-    el.innerHTML = `
-      <div class="check-box"></div>
-      <div class="check-text">
-        <div class="check-title${isChecked ? ' check-title-done' : ''}">${c.title}</div>
-        <div class="check-sub">${c.sub}</div>
-      </div>`;
-    el.addEventListener('click', () => {
-      let s = {};
-      try { s = JSON.parse(localStorage.getItem('d14_checks') || '{}'); } catch(e) {}
-      s[c.id] = !s[c.id];
-      localStorage.setItem('d14_checks', JSON.stringify(s));
-      renderChecklist();
-    });
-    container.appendChild(el);
-  });
-  const pct = Math.round((done / CHECKS.length) * 100);
-  document.getElementById('checklist-bar').style.width = pct + '%';
-  document.getElementById('checklist-label').textContent = `${done} / ${CHECKS.length} complete`;
-}
-
-// ── Architecture Explorer ─────────────────────────────────────────────────────
+/* ── Architecture Explorer ────────────────────────────────────────────────── */
 const COMPONENTS = {
   rag: {
     name: 'RAG Chain (LCEL)',
-    desc: 'The retrieval-augmented generation chain built with LangChain Expression Language. Composes retriever, prompt template, LLM, and output parser using the | pipe operator. Every component is a Runnable — composable, streamable, and type-safe.',
+    desc: 'The retrieval-augmented generation chain built with LangChain Expression Language. Composes retriever, prompt template, LLM, and output parser using the | pipe operator. Every component is a Runnable — composable, streamable, and type-safe. The chain is declared as a data structure, not imperative code, making it transparent to LangSmith tracing and enabling automatic streaming without any code changes.',
     snippet: `rag_chain = (
     {"context": retriever | format_docs,
      "question": RunnablePassthrough()}
@@ -700,11 +1162,13 @@ const COMPONENTS = {
     | llm.with_fallbacks([fallback_llm])
     | StrOutputParser()
 )
-answer = rag_chain.invoke("Your question here")`
+# Streaming works automatically:
+for chunk in rag_chain.stream("Your question here"):
+    print(chunk, end="", flush=True)`
   },
   qdrant: {
     name: 'Qdrant Vector Store',
-    desc: 'Open-source vector database with Rust performance. Supports dense, sparse, and multi-vector payloads. Named vectors allow multiple embedding models per collection. Qdrant\'s payload filtering makes it ideal for multi-tenant RAG — filter by user_id, document_type, or date range at query time without embedding overhead.',
+    desc: 'Open-source vector database written in Rust. Supports dense, sparse, and multi-vector payloads. Named vectors allow multiple embedding models per collection — you can store both text-embedding-3-small and a custom fine-tuned embedding side by side. Payload filtering at query time enables multi-tenant RAG: filter by user_id, document_type, or date range without embedding overhead. Qdrant\'s HNSW index delivers sub-millisecond query times even at 100M+ vectors.',
     snippet: `from langchain_qdrant import QdrantVectorStore
 
 vectorstore = QdrantVectorStore.from_existing_collection(
@@ -712,59 +1176,65 @@ vectorstore = QdrantVectorStore.from_existing_collection(
     collection_name="knowledge_base",
     embedding=OpenAIEmbeddings(model="text-embedding-3-small")
 )
+# Multi-tenant filter — only retrieve user's documents:
 retriever = vectorstore.as_retriever(
-    search_kwargs={"k": 6, "filter": {"source": "docs"}}
+    search_kwargs={
+        "k": 6,
+        "filter": {"user_id": current_user_id}
+    }
 )`
   },
   crewai: {
     name: 'CrewAI Research Crew',
-    desc: 'Multi-agent research orchestration. CrewAI abstracts role-based agents, task dependencies, and process types (Sequential, Hierarchical). Each agent has a role, goal, backstory, and tools. The manager LLM in Hierarchical mode dynamically delegates tasks to whichever agent it judges best-equipped.',
+    desc: 'Multi-agent research orchestration for complex, open-ended queries. CrewAI abstracts role-based agents, task dependencies, and process types (Sequential, Hierarchical). Each agent has a role, goal, backstory, and tool list. Task context passing lets the analyst agent build on the researcher\'s findings without any custom state management code. Used only for research-classified queries — it costs 10–100× more than a RAG chain call, so the intent router gates access carefully.',
     snippet: `crew = Crew(
     agents=[researcher, analyst],
     tasks=[research_task, synthesis_task],
     process=Process.sequential,
-    memory=True,
-    verbose=True
+    memory=True,   # agents share memory across tasks
+    verbose=True   # logs task delegation chain
 )
 result = crew.kickoff(inputs={"query": user_query})
-print(result.raw)`
+print(result.raw)   # final synthesized answer`
   },
   ragas: {
     name: 'RAGAS Quality Gate',
-    desc: 'RAGAS measures four complementary dimensions of RAG quality: faithfulness (are claims grounded in retrieved context?), answer relevancy (does the answer address the question?), context precision (what fraction of retrieved chunks are useful?), and context recall (does the context contain what\'s needed?). Run in CI/CD — fail the pipeline if scores fall below thresholds.',
+    desc: 'RAGAS measures four dimensions of RAG quality: (1) Faithfulness — are claims grounded in retrieved context? (2) Answer Relevancy — does the answer address the question? (3) Context Precision — what fraction of retrieved chunks were actually useful? (4) Context Recall — did the context contain everything needed? Run as a CI/CD step against a 50–100 question golden set before every deployment. Exit code 1 if any threshold fails — the deployment pipeline is blocked automatically.',
     snippet: `results = evaluate(
     dataset,
     metrics=[faithfulness, answer_relevancy,
              context_precision, context_recall]
 )
-# Gate: faithfulness < 0.80 → raise, block deploy
-if results["faithfulness"] < 0.80:
-    raise ValueError(f"Faithfulness: {results['faithfulness']:.2f}")`
+# Hard gate — block deployment on failure:
+THRESHOLDS = {"faithfulness": 0.80, "answer_relevancy": 0.75}
+failures = [m for m, t in THRESHOLDS.items()
+            if results.get(m, 0) < t]
+if failures:
+    sys.exit(1)  # CI/CD blocks deployment`
   },
   fallback: {
     name: 'Multi-Provider LLM Fallback',
-    desc: 'LangChain\'s .with_fallbacks() chains multiple LLM providers. If the primary (Claude) raises RateLimitError, AuthenticationError, or APIConnectionError, it automatically retries with the fallback (GPT-4o). You can chain multiple fallbacks. The caller sees a single unified Runnable interface — no custom retry logic needed.',
+    desc: 'LangChain\'s .with_fallbacks() chains multiple LLM providers transparently. If Claude raises RateLimitError or APIConnectionError, it silently retries with GPT-4o, then GPT-4o-mini. The caller sees a single unified Runnable interface — no custom retry logic, no try/except. You can configure which exceptions trigger fallback and add as many tiers as needed. This pattern gives you ~99.99% LLM availability even when individual providers have outages.',
     snippet: `primary  = ChatAnthropic(model="claude-3-5-sonnet-20241022")
 fallback = ChatOpenAI(model="gpt-4o")
+fallback2 = ChatOpenAI(model="gpt-4o-mini")
+
+# Transparent 3-tier fallback:
 llm = primary.with_fallbacks(
-    [fallback],
+    [fallback, fallback2],
     exceptions_to_handle=(RateLimitError, APIConnectionError)
 )
-# Transparent to callers — same interface
+# Identical interface — callers don't change:
 response = llm.invoke("Your prompt here")`
   }
 };
 
 let activeComponent = null;
-
 function showComponent(key) {
   const c = COMPONENTS[key];
   if (!c) return;
-
-  // Toggle active state
   document.querySelectorAll('.explorer-component').forEach(el => el.classList.remove('active'));
   document.getElementById('comp-' + key).classList.add('active');
-
   const detail = document.getElementById('explorer-detail');
   detail.classList.add('visible');
   detail.innerHTML = `
@@ -783,12 +1253,229 @@ function copySnippet(btn) {
   navigator.clipboard.writeText(snippet.textContent.trim()).then(() => {
     btn.textContent = 'Copied!';
     setTimeout(() => { btn.textContent = 'Copy Code'; }, 2000);
+  }).catch(() => {});
+}
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* ── System Flow Simulator ────────────────────────────────────────────────── */
+const QUERIES = {
+  factual: {
+    text: 'What is the RAGAS faithfulness metric and how is it calculated?',
+    route: 'factual',
+    steps: [
+      { delay: 400,  msg: '<span class="log-info">[Router]</span> Received query — calling Claude Haiku classifier...' },
+      { delay: 900,  msg: '<span class="log-route">[Router]</span> Classification: <strong>factual</strong> → dispatching to RAG chain' },
+      { delay: 1400, msg: '<span class="log-info">[Qdrant]</span> Embedding query with text-embedding-3-small...' },
+      { delay: 1800, msg: '<span class="log-info">[Qdrant]</span> Retrieved 6 chunks — cosine similarity range: 0.74–0.91' },
+      { delay: 2200, msg: '<span class="log-info">[Reranker]</span> Cohere cross-encoder reranking 6 → 5 chunks...' },
+      { delay: 2700, msg: '<span class="log-info">[LLM]</span> Claude 3.5 Sonnet generating response (streaming)...' },
+      { delay: 3600, msg: '<span class="log-ok">[RAGAS]</span> Faithfulness: 0.94 ✓  Answer Relevancy: 0.91 ✓' },
+      { delay: 4000, msg: '<span class="log-ok">[Response]</span> Answer delivered — total latency: 2.3s, tokens: 1,247, cost: $0.0019' },
+    ]
+  },
+  research: {
+    text: 'Compare GPT-4o and Claude 3.5 Sonnet for enterprise RAG systems at scale. Include cost, reliability, and output quality dimensions.',
+    route: 'research',
+    steps: [
+      { delay: 400,  msg: '<span class="log-info">[Router]</span> Received query — calling Claude Haiku classifier...' },
+      { delay: 900,  msg: '<span class="log-route">[Router]</span> Classification: <strong>research</strong> → dispatching to CrewAI crew' },
+      { delay: 1300, msg: '<span class="log-info">[CrewAI]</span> Initializing crew: AI Research Analyst + Technical Synthesizer' },
+      { delay: 1800, msg: '<span class="log-info">[Researcher]</span> Task 1: Web search — querying Serper for current benchmarks...' },
+      { delay: 3200, msg: '<span class="log-info">[Researcher]</span> Found 8 sources — synthesizing research notes with citations...' },
+      { delay: 5500, msg: '<span class="log-info">[Synthesizer]</span> Task 2: Building comparative analysis from research notes...' },
+      { delay: 8000, msg: '<span class="log-ok">[RAGAS]</span> Faithfulness: 0.88 ✓  Answer Relevancy: 0.93 ✓' },
+      { delay: 8400, msg: '<span class="log-ok">[Response]</span> Research delivered — total latency: 18.2s, cost: $0.087 (CrewAI overhead)' },
+    ]
+  },
+  failed: {
+    text: 'What are the quantum computing implications for transformer architecture performance?',
+    route: 'factual',
+    steps: [
+      { delay: 400,  msg: '<span class="log-info">[Router]</span> Received query — calling Claude Haiku classifier...' },
+      { delay: 900,  msg: '<span class="log-route">[Router]</span> Classification: <strong>factual</strong> → dispatching to RAG chain' },
+      { delay: 1400, msg: '<span class="log-info">[Qdrant]</span> Retrieved 5 chunks — low similarity range: 0.38–0.51' },
+      { delay: 2000, msg: '<span class="log-info">[LLM]</span> Claude 3.5 Sonnet generating response...' },
+      { delay: 3000, msg: '<span class="log-err">[RAGAS]</span> Faithfulness: 0.41 ✗ — claims not grounded in retrieved context' },
+      { delay: 3400, msg: '<span class="log-err">[Gate]</span> QUALITY GATE FAILED — faithfulness 0.41 < threshold 0.80' },
+      { delay: 3800, msg: '<span class="log-info">[Fallback]</span> Returning "insufficient knowledge base coverage" response to user' },
+    ]
+  }
+};
+
+let selectedType = 'factual';
+let simRunning = false;
+
+function setQueryType(type) {
+  selectedType = type;
+  document.querySelectorAll('[id^="qtype-"]').forEach(btn => btn.classList.remove('primary'));
+  const btn = document.getElementById('qtype-' + type);
+  if (btn) btn.classList.add('primary');
+  const q = QUERIES[type];
+  document.getElementById('query-text').textContent = q ? q.text : '';
+  document.getElementById('flow-log').innerHTML = '<span style="color:#4a4a6a;">// Ready — click Run Simulation</span>';
+  resetFlowSVG();
+}
+
+function resetFlowSVG() {
+  const nodes = ['fn-user','fn-router','fn-rag','fn-crew','fn-fmt'];
+  const edges = ['edge-1','edge-rag','edge-crew','edge-fmt1','edge-fmt2'];
+  const COLORS = { border: '#2a2a45', text: { 'fn-router': '#a855f7', 'fn-rag': '#34d399', 'fn-crew': '#a855f7' } };
+  nodes.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.setAttribute('stroke', '#2a2a45'); el.setAttribute('fill', '#1a1a2e'); }
+  });
+  edges.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.setAttribute('stroke', '#4a4a6a'); }
   });
 }
 
-function escHtml(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function highlightNode(id, color) {
+  const el = document.getElementById(id);
+  if (el) { el.setAttribute('stroke', color); el.setAttribute('fill', color + '22'); }
 }
+function highlightEdge(id, color) {
+  const el = document.getElementById(id);
+  if (el) { el.setAttribute('stroke', color); }
+}
+
+async function runSimulation() {
+  if (simRunning) return;
+  simRunning = true;
+  const q = QUERIES[selectedType];
+  if (!q) { simRunning = false; return; }
+
+  const log = document.getElementById('flow-log');
+  log.innerHTML = '';
+  resetFlowSVG();
+
+  const nodeColors = { factual: '#0d9488', research: '#a855f7', failed: '#ef4444' };
+  const color = nodeColors[selectedType] || '#a855f7';
+
+  // Animate SVG flow
+  setTimeout(() => highlightNode('fn-user', '#f59e0b'), 100);
+  setTimeout(() => { highlightEdge('edge-1', color); highlightNode('fn-router', color); }, 700);
+
+  if (selectedType === 'factual' || selectedType === 'failed') {
+    setTimeout(() => { highlightEdge('edge-rag', color); highlightNode('fn-rag', color); }, 1500);
+    setTimeout(() => { highlightEdge('edge-fmt1', color); highlightNode('fn-fmt', selectedType === 'failed' ? '#ef4444' : color); }, 2800);
+  } else {
+    setTimeout(() => { highlightEdge('edge-crew', color); highlightNode('fn-crew', color); }, 1500);
+    setTimeout(() => { highlightEdge('edge-fmt2', color); highlightNode('fn-fmt', color); }, 6000);
+  }
+
+  // Log steps
+  for (const step of q.steps) {
+    await new Promise(resolve => setTimeout(resolve, step.delay));
+    const line = document.createElement('div');
+    line.innerHTML = step.msg;
+    log.appendChild(line);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  simRunning = false;
+}
+
+/* ── Week 2 Checklist ─────────────────────────────────────────────────────── */
+const CHECKS = [
+  { id: 'c1',  day: 'Day 8',  title: 'Built a LangChain LCEL pipeline end to end', sub: 'Runnable composition, passthrough, output parsers, LangSmith tracing' },
+  { id: 'c2',  day: 'Day 9',  title: 'Compared at least 3 LLM providers on real tasks', sub: 'GPT-4o vs Claude vs Gemini — cost, speed, quality for your use case' },
+  { id: 'c3',  day: 'Day 9',  title: 'Implemented multi-provider LLM fallback', sub: '.with_fallbacks() with explicit exception types' },
+  { id: 'c4',  day: 'Day 10', title: 'Connected to a vector database (Qdrant or Pinecone)', sub: 'Indexing documents, querying with embeddings, payload filtering' },
+  { id: 'c5',  day: 'Day 10', title: 'Implemented hybrid search (BM25 + dense)', sub: 'EnsembleRetriever with RRF weighting, understand the tradeoffs' },
+  { id: 'c6',  day: 'Day 11', title: 'Benchmarked at least 2 embedding models', sub: 'Compare quality/cost on your corpus using MTEB or manual eval' },
+  { id: 'c7',  day: 'Day 11', title: 'Used Matryoshka embeddings for dimension truncation', sub: 'Confirm that 256-dim preserves ≥95% of full 1536-dim retrieval quality' },
+  { id: 'c8',  day: 'Day 12', title: 'Implemented HyDE for improved retrieval', sub: 'Generate hypothetical document, embed it, retrieve against real corpus' },
+  { id: 'c9',  day: 'Day 12', title: 'Added a cross-encoder re-ranker', sub: 'Cohere Rerank or ms-marco-MiniLM — measure precision improvement' },
+  { id: 'c10', day: 'Day 12', title: 'Ran RAGAS evaluation on your pipeline', sub: 'All 4 metrics: faithfulness, relevancy, precision, recall' },
+  { id: 'c11', day: 'Day 13', title: 'Built a CrewAI crew with 2+ agents', sub: 'Distinct roles, task context passing, sequential process' },
+  { id: 'c12', day: 'Day 14', title: 'Deployed the assistant as a FastAPI service', sub: 'POST /ask with streaming SSE, POST /health, RAGAS CI/CD gate' },
+];
+
+function renderChecklist() {
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem('d14_checks') || '{}'); } catch(e) {}
+  const container = document.getElementById('checklist');
+  container.innerHTML = '';
+  let done = 0;
+  CHECKS.forEach(c => {
+    const isChecked = !!saved[c.id];
+    if (isChecked) done++;
+    const el = document.createElement('div');
+    el.className = 'check-item' + (isChecked ? ' checked' : '');
+    el.innerHTML = `
+      <div class="check-box"></div>
+      <div class="check-text">
+        <div class="check-day">${c.day}</div>
+        <div class="check-title${isChecked ? ' check-title-done' : ''}">${c.title}</div>
+        <div class="check-sub">${c.sub}</div>
+      </div>`;
+    el.addEventListener('click', () => {
+      let s = {};
+      try { s = JSON.parse(localStorage.getItem('d14_checks') || '{}'); } catch(e) {}
+      s[c.id] = !s[c.id];
+      localStorage.setItem('d14_checks', JSON.stringify(s));
+      renderChecklist();
+    });
+    container.appendChild(el);
+  });
+  const pct = Math.round((done / CHECKS.length) * 100);
+  document.getElementById('checklist-bar').style.width = pct + '%';
+  document.getElementById('checklist-label-text').textContent = `${done} / ${CHECKS.length} complete`;
+  document.getElementById('checklist-pct').textContent = pct + '%';
+}
+
+/* ── Scroll Progress Bar ─────────────────────────────────────────────────── */
+window.addEventListener('scroll', () => {
+  const st = window.scrollY, dh = document.documentElement.scrollHeight - window.innerHeight;
+  document.getElementById('scroll-progress').style.width = (dh > 0 ? (st/dh)*100 : 0) + '%';
+});
+
+/* ── Section Reveal (IntersectionObserver) ───────────────────────────────── */
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+}, { threshold: 0.08 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+/* ── Capstone Milestone Tracker ──────────────────────────────────────────── */
+const MILESTONES = [
+  { id: 1, title: 'Initialize Qdrant collection', sub: 'Create collection with HNSW index and payload indexing for hybrid search' },
+  { id: 2, title: 'Build LCEL retrieval chain', sub: 'RunnablePassthrough | PromptTemplate | ChatOpenAI | StrOutputParser' },
+  { id: 3, title: 'Implement intent router', sub: 'Classify query as factual (→ RAG) or research (→ CrewAI) using LLM output parsing' },
+  { id: 4, title: 'Wire multi-provider fallback', sub: 'Primary: Claude; Fallback: GPT-4o; Emergency: Mistral via OpenRouter' },
+  { id: 5, title: 'Deploy CrewAI research crew', sub: 'Researcher + Synthesizer agents with DuckDuckGo tool and memory' },
+  { id: 6, title: 'Add RAGAS quality gate', sub: 'Evaluate faithfulness + answer_relevancy; reject responses below threshold 0.7' },
+];
+const mlsKey = 'aai_d14_milestones';
+function getMilestoneState() { try { return JSON.parse(localStorage.getItem(mlsKey) || '{}'); } catch { return {}; } }
+function renderMilestones() {
+  const state = getMilestoneState();
+  const list = document.getElementById('milestoneList');
+  list.innerHTML = '';
+  let done = 0;
+  MILESTONES.forEach((m, i) => {
+    const checked = !!state[m.id];
+    if (checked) done++;
+    const unlocked = i === 0 || !!state[MILESTONES[i-1].id];
+    const el = document.createElement('div');
+    el.style.cssText = `display:flex;align-items:flex-start;gap:12px;padding:14px 18px;background:var(--card);border:1px solid ${checked ? 'var(--green)' : unlocked ? 'var(--border)' : 'rgba(255,255,255,0.04)'};border-radius:10px;cursor:${unlocked ? 'pointer' : 'default'};opacity:${unlocked ? 1 : 0.4};transition:all 0.2s;`;
+    el.innerHTML = `<div style="width:22px;height:22px;border-radius:50%;border:2px solid ${checked ? 'var(--green)' : 'var(--border)'};background:${checked ? 'var(--green)' : 'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;font-weight:700;color:white;">${checked ? '✓' : m.id}</div><div><div style="font-size:14px;font-weight:700;${checked ? 'text-decoration:line-through;color:var(--muted);' : ''}">${m.title}</div><div style="font-size:11px;color:var(--muted);margin-top:3px;line-height:1.5;">${m.sub}</div></div>`;
+    if (unlocked) {
+      el.addEventListener('click', () => {
+        const s = getMilestoneState();
+        s[m.id] = !s[m.id];
+        localStorage.setItem(mlsKey, JSON.stringify(s));
+        renderMilestones();
+      });
+    }
+    list.appendChild(el);
+  });
+  const pct = Math.round((done / MILESTONES.length) * 100);
+  document.getElementById('milestoneBar').style.width = pct + '%';
+  document.getElementById('milestonePct').textContent = pct + '%';
+  document.getElementById('milestoneComplete').style.display = done === MILESTONES.length ? 'block' : 'none';
+}
+renderMilestones();
 </script>
 
 <script src="../bg-animation.js"></script>
