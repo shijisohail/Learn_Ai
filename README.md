@@ -1,6 +1,6 @@
 # 30-Day Agentic AI Mastery
 
-![30 days](https://img.shields.io/badge/curriculum-30%20days-7c3aed) ![203 terms](https://img.shields.io/badge/glossary-203%20terms-0d9488) ![116 Q&A](https://img.shields.io/badge/interview-116%20Q%26A-f59e0b) ![No build tools](https://img.shields.io/badge/build-none-10b981)
+![30 days](https://img.shields.io/badge/curriculum-30%20days-7c3aed) ![203 terms](https://img.shields.io/badge/glossary-203%20terms-0d9488) ![116 Q&A](https://img.shields.io/badge/interview-116%20Q%26A-f59e0b) ![11 deep dives](https://img.shields.io/badge/beyond%2030-11%20deep%20dives-6366f1) ![No build tools](https://img.shields.io/badge/build-none-10b981)
 
 ## What This Is
 
@@ -25,13 +25,14 @@ No dependencies. No npm install. No build step.
 ### With AI Coach (FastAPI)
 
 ```bash
-pip install -r requirements.txt
-export OPENROUTER_API_KEY=sk-or-...
+pip install fastapi uvicorn httpx python-dotenv
+# Either export the key or create a .env file:
+echo "OPENROUTER_API_KEY=sk-or-..." > .env
 uvicorn server:app --reload --port 8000
 # Then open index.html or ai.html in your browser
 ```
 
-The AI Coach provides contextual guidance, concept explanations, and coding help — powered by OpenRouter with SSE streaming.
+The AI Coach provides contextual guidance, concept explanations, and coding help — powered by OpenRouter with SSE streaming. The server automatically tries a chain of free Google Gemma 3 models (`gemma-3-27b-it`, `gemma-3-12b-it`, `gemma-3-4b-it`, `gemma-3n-e4b-it`) before falling back to `arcee-ai/trinity-mini`. You can override the model per request.
 
 ## Curriculum Map
 
@@ -49,13 +50,16 @@ The AI Coach provides contextual guidance, concept explanations, and coding help
 learn-ai/
 ├── index.html              # Main dashboard with week-grouped progress tracker
 ├── glossary.html           # 203-term glossary with category filtering
+├── glossary.md             # Markdown source for the glossary
 ├── interview.html          # 116 Q&A + 20 comparisons + 40 flashcards
+├── interview.md            # Markdown source for interview prep
 ├── ai.html                 # AI Coach interface (connects to FastAPI backend)
-├── server.py               # FastAPI backend — OpenRouter API, SSE streaming
+├── server.py               # FastAPI backend — OpenRouter API, SSE streaming, Gemma fallback chain
 ├── bg-animation.js         # Neural network canvas animation (shared across pages)
 │
 ├── days/                   # 30 individual lesson pages
 │   ├── day1.html           # How LLMs Work + The API
+│   ├── day1.md             # (+ day2.md–day7.md) Markdown notes for Week 1 lessons
 │   ├── day2.html           # Tool Use & ReAct
 │   ├── day3.html           # Memory & RAG
 │   ├── day4.html           # LangGraph: Stateful Agents
@@ -89,22 +93,56 @@ learn-ai/
 ├── exercises/              # Hands-on coding exercises
 │   ├── index.html          # Exercises dashboard with progress tracking
 │   ├── day1_exercises.html
-│   └── ...                 # day2_exercises.html through day30_exercises.html
+│   ├── ...                 # day2_exercises.html through day30_exercises.html
+│   ├── 01_basic_completion.py      # Python: basic API completion
+│   ├── 02_conversation_memory.py   # Python: conversation memory
+│   ├── 03_streaming.py             # Python: SSE streaming
+│   ├── 04_structured_output.py     # Python: structured output / tool use
+│   └── 05_tool_use_intro.py        # Python: multi-tool agent intro
 │
-└── weeks/                  # Week overview pages
-    ├── week1.html          # Week 1 overview: Core Foundations
-    ├── week2.html          # Week 2 overview: Frameworks & Models
-    ├── week3.html          # Week 3 overview: ML & Fine-Tuning
-    ├── week4.html          # Week 4 overview: Prompt Eng & Cloud
-    └── week5.html          # Week 5 overview: Final Capstone
+├── day1/                   # Day 1 standalone Python workspace
+│   ├── 01_basic_completion.py
+│   ├── 02_conversation_memory.py
+│   ├── 03_streaming.py
+│   ├── 04_structured_output.py
+│   ├── 05_tool_use_intro.py
+│   └── activities/
+│       ├── index.html                      # Activity launcher
+│       ├── activity1_token_tracker.py
+│       ├── activity2_system_prompt_engineer.py
+│       ├── activity3_cv_extractor.py
+│       └── activity4_multi_tool_agent.py
+│
+├── weeks/                  # Week overview pages
+│   ├── week1.html          # Week 1 overview: Core Foundations
+│   ├── week2.html          # Week 2 overview: Frameworks & Models
+│   ├── week3.html          # Week 3 overview: ML & Fine-Tuning
+│   ├── week4.html          # Week 4 overview: Prompt Eng & Cloud
+│   └── week5.html          # Week 5 overview: Final Capstone
+│
+└── next/                   # "What's Next" deep-dive topic pages (beyond Day 30)
+    ├── a2a.html            # Agent-to-Agent (A2A) Protocol
+    ├── mcp.html            # Model Context Protocol (MCP)
+    ├── computer_use.html   # Computer Use API
+    ├── evals.html          # Agent Evaluation at Scale
+    ├── finetune.html       # Fine-tuning & Model Customization
+    ├── constitutional.html # Constitutional AI & Alignment
+    ├── agent_frameworks.html # Agentic AI Frameworks Landscape
+    ├── llmstack.html       # Building Your Own LLM Stack
+    ├── mixture.html        # Mixture-of-Agents
+    ├── multimodal.html     # Multimodal Agents
+    └── neural_networks.html # Neural Networks Deep Dive
 ```
 
 ## Features
 
 - **30 interactive day lessons** with live widgets, code samples, and concept checks
+- **11 "What's Next" deep-dive pages** (`next/`) covering A2A, MCP, Computer Use, Evals, Fine-tuning, Constitutional AI, and more — for going beyond Day 30
 - **203-term glossary** with category filtering (models, frameworks, concepts, tools)
 - **116 Q&A + 20 comparisons + 40 flashcards** for interview preparation
-- **AI Coach** powered by FastAPI + OpenRouter with SSE streaming responses
+- **Python exercises** — runnable scripts alongside each HTML lesson (basic completion, memory, streaming, structured output, tool use)
+- **Day 1 activity workspace** (`day1/activities/`) — 4 guided hands-on activities with an activity launcher
+- **AI Coach** powered by FastAPI + OpenRouter with SSE streaming — free Gemma 3 fallback chain, no paid key required to get started
 - **Neural network canvas animation** (`bg-animation.js`) shared across all pages
 - **localStorage progress tracking** — your completion state persists across sessions
 - **Week-grouped collapsible dashboard** — collapse/expand weeks on the main index
@@ -148,23 +186,49 @@ Maps common Senior/Staff AI Engineer job description requirements to specific cu
 
 ## Running the AI Coach
 
-1. Get an API key from [openrouter.ai](https://openrouter.ai)
-2. Set the environment variable:
+1. Get a free API key from [openrouter.ai](https://openrouter.ai)
+2. Set the key — either export it or drop it in a `.env` file (auto-loaded by `python-dotenv`):
    ```bash
+   # Option A: shell export
    export OPENROUTER_API_KEY=sk-or-your-key-here
+   # Option B: .env file in the project root
+   echo "OPENROUTER_API_KEY=sk-or-your-key-here" > .env
    ```
-3. Start the FastAPI server:
+3. Install dependencies and start the server:
    ```bash
+   pip install fastapi uvicorn httpx python-dotenv
    uvicorn server:app --reload --port 8000
    ```
 4. Open `ai.html` in your browser — the coach connects automatically to `localhost:8000`
+
+The server tries free models in order: `google/gemma-3-27b-it:free` → `gemma-3-12b-it:free` → `gemma-3-4b-it:free` → `gemma-3n-e4b-it:free` → `arcee-ai/trinity-mini:free`. The first available model wins. You can override the model per request via the `model` field in the JSON body.
 
 **Troubleshooting:**
 
 - **Port conflict**: Change `--port 8000` to another port and update the `BASE_URL` constant in `ai.html`
 - **CORS errors**: The server includes `CORSMiddleware` allowing all origins; check that `server.py` is running
-- **API key errors**: Verify `OPENROUTER_API_KEY` is set in the same shell session as uvicorn
-- **Model not available**: Edit `server.py` to change the `model` parameter to any OpenRouter-supported model
+- **API key errors**: Verify `OPENROUTER_API_KEY` is set — check both the shell environment and the `.env` file
+- **Model not available**: The fallback chain handles this automatically; or edit `FALLBACK_MODELS` in `server.py` to add/swap models
+
+## Beyond Day 30 — "What's Next" Deep Dives
+
+The `next/` folder contains 11 standalone topic pages for engineers who want to go deeper after completing the 30-day curriculum:
+
+| Page | Topic |
+|------|-------|
+| `next/a2a.html` | Agent-to-Agent (A2A) Protocol |
+| `next/mcp.html` | Model Context Protocol (MCP) |
+| `next/computer_use.html` | Computer Use API |
+| `next/evals.html` | Agent Evaluation at Scale |
+| `next/finetune.html` | Fine-tuning & Model Customization |
+| `next/constitutional.html` | Constitutional AI & Alignment |
+| `next/agent_frameworks.html` | Agentic AI Frameworks Landscape |
+| `next/llmstack.html` | Building Your Own LLM Stack |
+| `next/mixture.html` | Mixture-of-Agents |
+| `next/multimodal.html` | Multimodal Agents |
+| `next/neural_networks.html` | Neural Networks Deep Dive |
+
+These pages follow the same no-build, open-in-browser format as the day lessons.
 
 ## Progress System
 
