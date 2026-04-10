@@ -544,5 +544,157 @@ function selectStage(stage) {
 }
 selectStage('none');
 </script>
+
+<!-- Section 04: Hyperparameter Search & W&B Comparison -->
+<section class="section animate-on-scroll">
+  <div class="section-header">
+    <span class="section-num">04</span>
+    <h2 class="section-title">Hyperparameter Search & Experiment Tracking Alternatives</h2>
+  </div>
+  <p>MLflow integrates with Optuna for hyperparameter search. The combination is powerful: Optuna suggests parameter combinations using Bayesian optimization (TPE sampler), each trial runs a training job, and MLflow records every trial as a run. After the search, you can query the MLflow tracking server to find the Pareto-optimal configuration across multiple metrics.</p>
+  <p>The key advantage of MLflow over pure Optuna is persistence — if your search crashes after 50 trials, MLflow has logged all 50 results. Optuna's in-memory storage would lose them. Always use MLflow as the backing store for production hyperparameter searches.</p>
+
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">hparam_search.py</span>
+    </div>
+    <pre><code><span class="c-kw">import</span> optuna
+<span class="c-kw">import</span> mlflow
+
+<span class="c-kw">def</span> <span class="c-fn">objective</span>(trial):
+    <span class="c-kw">with</span> mlflow.<span class="c-fn">start_run</span>(nested=<span class="c-kw">True</span>):  <span class="c-cmt"># nested under search run</span>
+        lr = trial.<span class="c-fn">suggest_float</span>(<span class="c-str">"lr"</span>, <span class="c-fn">1e-5</span>, <span class="c-fn">1e-3</span>, log=<span class="c-kw">True</span>)
+        rank = trial.<span class="c-fn">suggest_categorical</span>(<span class="c-str">"rank"</span>, [<span class="c-fn">8</span>, <span class="c-fn">16</span>, <span class="c-fn">32</span>, <span class="c-fn">64</span>])
+        dropout = trial.<span class="c-fn">suggest_float</span>(<span class="c-str">"dropout"</span>, <span class="c-fn">0.0</span>, <span class="c-fn">0.3</span>)
+
+        mlflow.<span class="c-fn">log_params</span>({<span class="c-str">"lr"</span>: lr, <span class="c-str">"rank"</span>: rank, <span class="c-str">"dropout"</span>: dropout})
+
+        <span class="c-cmt"># Train model with these hyperparameters</span>
+        val_loss = <span class="c-fn">train_and_evaluate</span>(lr=lr, rank=rank, dropout=dropout)
+
+        mlflow.<span class="c-fn">log_metric</span>(<span class="c-str">"val_loss"</span>, val_loss)
+        <span class="c-kw">return</span> val_loss
+
+<span class="c-cmt"># Parent run wraps the entire search</span>
+<span class="c-kw">with</span> mlflow.<span class="c-fn">start_run</span>(run_name=<span class="c-str">"hparam_search_v1"</span>):
+    study = optuna.<span class="c-fn">create_study</span>(direction=<span class="c-str">"minimize"</span>,
+                                  sampler=optuna.samplers.<span class="c-fn">TPESampler</span>(seed=<span class="c-fn">42</span>))
+    study.<span class="c-fn">optimize</span>(objective, n_trials=<span class="c-fn">50</span>, n_jobs=<span class="c-fn">4</span>)  <span class="c-cmt"># 4 parallel trials</span>
+
+    <span class="c-fn">print</span>(<span class="c-fn">f"Best: {study.best_params} → val_loss={study.best_value:.4f}"</span>)</code></pre>
+  </div>
+
+  <div class="why-matters">
+    <strong>Why this matters:</strong> Bayesian optimization (Optuna's TPE sampler) typically finds better hyperparameters than grid search with 5-10× fewer trials. For LoRA fine-tuning, the rank and learning rate interact strongly — Bayesian search discovers this interaction while grid search treats them independently.
+  </div>
+
+  <h3 style="color:var(--purple);margin:2rem 0 1rem;">MLflow vs W&B vs Neptune vs ClearML</h3>
+  <table class="comparison-table">
+    <thead><tr><th>Tool</th><th>Self-hostable</th><th>Free Tier</th><th>LLM Support</th><th>Best Feature</th></tr></thead>
+    <tbody>
+      <tr><td>MLflow</td><td style="color:var(--teal);font-weight:700">Yes (open source)</td><td>Unlimited (local)</td><td>Prompt tracking</td><td>Model Registry + open standard</td></tr>
+      <tr><td>Weights & Biases</td><td>Enterprise only</td><td>100GB storage</td><td>Weave LLM obs</td><td>Media logging, rich UI</td></tr>
+      <tr><td>Neptune.ai</td><td>Enterprise only</td><td>200h compute</td><td>Limited</td><td>Metadata management</td></tr>
+      <tr><td>ClearML</td><td style="color:var(--teal);font-weight:700">Yes</td><td>Generous</td><td>LLMOps add-on</td><td>Pipeline orchestration</td></tr>
+      <tr><td>LangSmith</td><td>Enterprise only</td><td>5000 traces/mo</td><td>Native LangChain</td><td>LLM trace visualization</td></tr>
+    </tbody>
+  </table>
+
+  <h3 style="color:var(--purple);margin:2rem 0 1rem;">Custom MLflow Flavors</h3>
+  <p>MLflow's built-in flavors (sklearn, pytorch, transformers) cover most use cases, but you can register custom model flavors for bespoke architectures. A custom flavor defines how to save and load your model, enabling consistent deployment across mlflow serve, SageMaker, and other targets.</p>
+
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">custom_flavor.py</span>
+    </div>
+    <pre><code><span class="c-kw">import</span> mlflow.pyfunc
+
+<span class="c-kw">class</span> <span class="c-fn">LoRAWrapper</span>(mlflow.pyfunc.PythonModel):
+    <span class="c-kw">def</span> <span class="c-fn">load_context</span>(self, context):
+        <span class="c-kw">from</span> peft <span class="c-kw">import</span> PeftModel
+        <span class="c-kw">from</span> transformers <span class="c-kw">import</span> AutoModelForCausalLM, AutoTokenizer
+        model_path = context.artifacts[<span class="c-str">"model_path"</span>]
+        self.tokenizer = AutoTokenizer.<span class="c-fn">from_pretrained</span>(model_path)
+        base = AutoModelForCausalLM.<span class="c-fn">from_pretrained</span>(model_path)
+        self.model = PeftModel.<span class="c-fn">from_pretrained</span>(base, model_path)
+
+    <span class="c-kw">def</span> <span class="c-fn">predict</span>(self, context, model_input):
+        <span class="c-kw">import</span> pandas <span class="c-kw">as</span> pd
+        prompts = model_input[<span class="c-str">"prompt"</span>].<span class="c-fn">tolist</span>()
+        results = []
+        <span class="c-kw">for</span> prompt <span class="c-kw">in</span> prompts:
+            inputs = self.tokenizer.<span class="c-fn">encode</span>(prompt, return_tensors=<span class="c-str">"pt"</span>)
+            out = self.model.<span class="c-fn">generate</span>(inputs, max_new_tokens=<span class="c-fn">256</span>)
+            results.<span class="c-fn">append</span>(self.tokenizer.<span class="c-fn">decode</span>(out[<span class="c-fn">0</span>], skip_special_tokens=<span class="c-kw">True</span>))
+        <span class="c-kw">return</span> pd.<span class="c-fn">Series</span>(results)
+
+<span class="c-kw">with</span> mlflow.<span class="c-fn">start_run</span>():
+    mlflow.pyfunc.<span class="c-fn">log_model</span>(
+        artifact_path=<span class="c-str">"lora-model"</span>,
+        python_model=<span class="c-fn">LoRAWrapper</span>(),
+        artifacts={<span class="c-str">"model_path"</span>: <span class="c-str">"./lora-output"</span>},
+        pip_requirements=[<span class="c-str">"transformers"</span>, <span class="c-str">"peft"</span>, <span class="c-str">"torch"</span>]
+    )</code></pre>
+  </div>
+
+  <div class="pitfall">
+    <strong>Common pitfall:</strong> When logging large LLM artifacts to MLflow, avoid storing model weights as MLflow artifacts if using a shared tracking server — each run would duplicate gigabytes of data. Instead, log the model path or HuggingFace Hub URL as a parameter, and only store the adapter weights (which are small) as artifacts.
+  </div>
+</section>
+
+<!-- Section 05: Advanced Metrics & Alerting -->
+<section class="section animate-on-scroll">
+  <div class="section-header">
+    <span class="section-num">05</span>
+    <h2 class="section-title">Advanced Metrics Logging & Alerting</h2>
+  </div>
+  <p>MLflow's <code>log_metric()</code> accepts a <code>step</code> parameter, enabling time-series tracking of training metrics. You can log multiple metrics per step, and MLflow's UI renders them as interactive line charts. For LLM training, log both loss curves and downstream task metrics (BLEU, ROUGE, exact match) to catch cases where loss improves but task quality degrades.</p>
+
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">advanced_logging.py</span>
+    </div>
+    <pre><code><span class="c-kw">import</span> mlflow
+<span class="c-kw">from</span> mlflow.tracking <span class="c-kw">import</span> MlflowClient
+
+<span class="c-kw">with</span> mlflow.<span class="c-fn">start_run</span>() <span class="c-kw">as</span> run:
+    <span class="c-kw">for</span> step, batch <span class="c-kw">in</span> <span class="c-fn">enumerate</span>(train_loader):
+        loss = <span class="c-fn">train_step</span>(batch)
+
+        <span class="c-cmt"># Log multiple metrics atomically at each step</span>
+        mlflow.<span class="c-fn">log_metrics</span>({
+            <span class="c-str">"train_loss"</span>: loss.item(),
+            <span class="c-str">"lr"</span>: scheduler.<span class="c-fn">get_last_lr</span>()[<span class="c-fn">0</span>],
+            <span class="c-str">"grad_norm"</span>: grad_norm,
+            <span class="c-str">"gpu_memory_gb"</span>: torch.cuda.<span class="c-fn">memory_allocated</span>() / <span class="c-fn">1e9</span>,
+        }, step=step)
+
+        <span class="c-cmt"># System tags for filtering runs</span>
+        <span class="c-kw">if</span> step == <span class="c-fn">0</span>:
+            mlflow.<span class="c-fn">set_tags</span>({
+                <span class="c-str">"mlflow.note.content"</span>: <span class="c-str">"QLoRA run with cosine LR schedule"</span>,
+                <span class="c-str">"gpu_type"</span>: <span class="c-str">"A100-80GB"</span>,
+                <span class="c-str">"dataset_version"</span>: <span class="c-str">"v2.1"</span>
+            })
+
+<span class="c-cmt"># Query best run programmatically</span>
+client = <span class="c-fn">MlflowClient</span>()
+best_run = client.<span class="c-fn">search_runs</span>(
+    experiment_ids=[<span class="c-str">"0"</span>],
+    filter_string=<span class="c-str">"metrics.val_loss < 0.5 AND tags.gpu_type = 'A100-80GB'"</span>,
+    order_by=[<span class="c-str">"metrics.val_loss ASC"</span>],
+    max_results=<span class="c-fn">1</span>
+)[<span class="c-fn">0</span>]
+<span class="c-fn">print</span>(<span class="c-fn">f"Best run: {best_run.info.run_id}, loss={best_run.data.metrics['val_loss']}"</span>)</code></pre>
+  </div>
+
+  <div class="why-matters">
+    <strong>Why this matters:</strong> The <code>filter_string</code> in <code>search_runs()</code> uses SQL-like syntax, making it trivial to find the best run across hundreds of experiments programmatically. This is how you build automated training pipelines that compare new runs against production baselines before promoting to the Model Registry.
+  </div>
+</section>
+
 </body>
 </html>

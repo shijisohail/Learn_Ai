@@ -602,5 +602,236 @@ function updateStepInfo() {
 renderPipeline();
 selectNode('data');
 </script>
+
+<!-- Section 05: Docker Compose & Kubernetes Deployment -->
+<section class="section animate-on-scroll">
+  <div class="section-header">
+    <span class="section-num">05</span>
+    <h2 class="section-title">Containerization & Kubernetes Deployment</h2>
+  </div>
+  <p>Containerizing your ML system ensures reproducibility: the same Docker image runs on your laptop, CI/CD, and production Kubernetes cluster. The Dockerfile must handle GPU drivers (use NVIDIA's base images), Python dependencies, and model artifacts. For LLM serving, use multi-stage builds to minimize image size — your final production image should contain only the serving code and dependencies, not training-time packages like PEFT or datasets.</p>
+  <p>Kubernetes provides self-healing (restarts crashed pods), horizontal scaling, rolling deployments, and resource quotas. For GPU workloads, the NVIDIA Device Plugin exposes GPU resources to Kubernetes, enabling <code>resources.limits: nvidia.com/gpu: 1</code> in pod specs. Use node selectors or taints/tolerations to ensure GPU pods land on GPU nodes.</p>
+
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">Dockerfile</span>
+    </div>
+    <pre><code><span class="c-cmt"># Stage 1: Builder — install all deps</span>
+FROM nvidia/cuda:12.1-devel-ubuntu22.04 AS builder
+WORKDIR /app
+
+RUN pip install torch==2.3.0 transformers==4.44.0 \
+    fastapi uvicorn peft bitsandbytes safetensors
+
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+<span class="c-cmt"># Stage 2: Runtime — minimal image</span>
+FROM nvidia/cuda:12.1-runtime-ubuntu22.04
+WORKDIR /app
+
+<span class="c-cmt"># Copy only installed packages from builder</span>
+COPY --from=builder /usr/local/lib/python3.10 /usr/local/lib/python3.10
+COPY --from=builder /usr/local/bin /usr/local/bin
+
+COPY serve.py .
+COPY model_config.yaml .
+
+<span class="c-cmt"># Health check for Kubernetes readiness probe</span>
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s \
+  CMD curl -f http://localhost:8000/health || exit 1
+
+ENV MODEL_PATH=/models/mistral-7b-lora
+EXPOSE 8000
+CMD ["uvicorn", "serve:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]</code></pre>
+  </div>
+
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">docker-compose.yml</span>
+    </div>
+    <pre><code>version: '3.8'
+
+services:
+  llm-api:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/models  <span class="c-cmt"># Mount model artifacts</span>
+    environment:
+      - MODEL_PATH=/models/mistral-7b-lora
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    depends_on:
+      - mlflow
+      - prometheus
+
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.16.2
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlruns:/mlruns
+    command: mlflow server --host 0.0.0.0 --port 5000
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./grafana/dashboards:/var/lib/grafana/dashboards</code></pre>
+  </div>
+
+  <div class="why-matters">
+    <strong>Why this matters:</strong> The Docker Compose stack above runs your entire Week 3 capstone locally with one command: <code>docker compose up --build</code>. This is also what your CI/CD pipeline runs for integration tests — the same containers, the same network topology, the same environment variables. "Works on my machine" becomes "works in the compose stack."
+  </div>
+
+  <h3 style="color:var(--purple);margin:2rem 0 1rem;">Kubernetes Deployment Manifest</h3>
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">k8s/deployment.yaml</span>
+    </div>
+    <pre><code>apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llm-api
+  labels:
+    app: llm-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: llm-api
+  template:
+    metadata:
+      labels:
+        app: llm-api
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
+      containers:
+        - name: llm-api
+          image: registry/llm-api:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: MODEL_PATH
+              valueFrom:
+                configMapKeyRef:
+                  name: llm-config
+                  key: model_path
+          resources:
+            requests:
+              memory: "16Gi"
+              cpu: "4"
+              nvidia.com/gpu: "1"
+            limits:
+              memory: "32Gi"
+              cpu: "8"
+              nvidia.com/gpu: "1"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 10</code></pre>
+  </div>
+
+  <div class="pitfall">
+    <strong>Common pitfall:</strong> Setting <code>resources.requests</code> too low causes your pod to be evicted under memory pressure — Kubernetes gives priority to pods with resource guarantees. Always set <code>requests == limits</code> for GPU pods (Guaranteed QoS class). If your model OOMs, Kubernetes will kill the container and restart it, causing request failures without a clear error message in your application logs.
+  </div>
+</section>
+
+<!-- Section 06: Week 3 Retrospective & Week 4 Preview -->
+<section class="section animate-on-scroll">
+  <div class="section-header">
+    <span class="section-num">06</span>
+    <h2 class="section-title">Week 3 Retrospective & Week 4 Preview</h2>
+  </div>
+  <p>Week 3 took you from raw tensor operations to a production-grade LLM system. You built every layer: PyTorch custom components, HuggingFace model loading with quantization, LoRA fine-tuning with QLoRA, MLflow experiment tracking, Kubeflow/BentoML pipelines, canary deployment strategies, RAGAS quality evaluation, and Prometheus-based observability. Each layer is independently deployable and replaceable.</p>
+
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin:2rem 0;">
+    <div class="card">
+      <div style="font-size:2rem;margin-bottom:0.5rem;">15</div>
+      <div style="font-weight:700;color:var(--purple);margin-bottom:0.25rem;">PyTorch Internals</div>
+      <div style="font-size:13px;color:var(--muted);">Tensors, autograd, custom layers, GPU optimization</div>
+    </div>
+    <div class="card">
+      <div style="font-size:2rem;margin-bottom:0.5rem;">16</div>
+      <div style="font-weight:700;color:var(--purple);margin-bottom:0.25rem;">HuggingFace Ecosystem</div>
+      <div style="font-size:13px;color:var(--muted);">AutoModel, pipelines, quantization, streaming</div>
+    </div>
+    <div class="card">
+      <div style="font-size:2rem;margin-bottom:0.5rem;">17</div>
+      <div style="font-weight:700;color:var(--purple);margin-bottom:0.25rem;">LoRA & PEFT</div>
+      <div style="font-size:13px;color:var(--muted);">Fine-tuning math, QLoRA, DoRA, IA³</div>
+    </div>
+    <div class="card">
+      <div style="font-size:2rem;margin-bottom:0.5rem;">18</div>
+      <div style="font-weight:700;color:var(--purple);margin-bottom:0.25rem;">MLflow & Tracking</div>
+      <div style="font-size:13px;color:var(--muted);">Experiments, Model Registry, LangSmith</div>
+    </div>
+    <div class="card">
+      <div style="font-size:2rem;margin-bottom:0.5rem;">19</div>
+      <div style="font-weight:700;color:var(--purple);margin-bottom:0.25rem;">MLOps Pipelines</div>
+      <div style="font-size:13px;color:var(--muted);">KFP, BentoML, canary deploys, GitOps</div>
+    </div>
+    <div class="card">
+      <div style="font-size:2rem;margin-bottom:0.5rem;">20</div>
+      <div style="font-weight:700;color:var(--purple);margin-bottom:0.25rem;">Observability</div>
+      <div style="font-size:13px;color:var(--muted);">RAGAS, Prometheus, drift detection, OTel</div>
+    </div>
+  </div>
+
+  <h3 style="color:var(--teal);margin:2rem 0 1rem;">Week 4: Agentic AI Systems (Days 22-28)</h3>
+  <table class="comparison-table">
+    <thead><tr><th>Day</th><th>Topic</th><th>Key Skill</th></tr></thead>
+    <tbody>
+      <tr><td>22</td><td>Agent Architectures</td><td>ReAct, Plan-and-Execute, AutoGPT patterns</td></tr>
+      <tr><td>23</td><td>Tool Use & Function Calling</td><td>OpenAI tools API, LangChain tool nodes</td></tr>
+      <tr><td>24</td><td>LangGraph Stateful Agents</td><td>State graphs, conditional edges, human-in-the-loop</td></tr>
+      <tr><td>25</td><td>Memory Systems</td><td>Short-term (context), long-term (vector/graph), episodic</td></tr>
+      <tr><td>26</td><td>Multi-Agent Coordination</td><td>CrewAI, AutoGen, agent communication protocols</td></tr>
+      <tr><td>27</td><td>Agent Safety & Guardrails</td><td>Constitutional AI, output validation, sandboxing</td></tr>
+      <tr><td>28</td><td>Week 4 Capstone</td><td>Production multi-agent system with full observability</td></tr>
+    </tbody>
+  </table>
+
+  <div class="why-matters">
+    <strong>Week 4 focus shift:</strong> You've been building the infrastructure for individual model calls. Week 4 is about orchestrating multiple models and tools into autonomous systems that reason, plan, and act. The observability and MLOps skills from Week 3 become critical — agents fail in complex, non-obvious ways, and you need comprehensive logging to diagnose them.
+  </div>
+</section>
+
 </body>
 </html>

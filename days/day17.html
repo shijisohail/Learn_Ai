@@ -656,5 +656,244 @@ function animateLoss() {
   frame();
 }
 </script>
+
+<!-- Section 05: Instruction Tuning & Data Quality -->
+<section class="section animate-on-scroll">
+  <div class="section-header">
+    <span class="section-num">05</span>
+    <h2 class="section-title">Instruction Tuning & Data Quality</h2>
+  </div>
+  <p>LoRA fine-tuning is only as good as your training data. Instruction tuning requires (instruction, response) pairs where the instruction is diverse, the response is high quality, and the format matches your target chat template. A critical insight from the Alpaca and LIMA papers: 1000 carefully curated examples often outperform 50,000 noisy ones. Data quality dominates data quantity for fine-tuning.</p>
+  <p>The instruction tuning pipeline: collect raw data → format to ShareGPT or ChatML → deduplicate → filter by length and quality → apply chat template → train. Each step is a potential failure point. Many practitioners spend 80% of their time on data preparation and 20% on training configuration.</p>
+
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">data_preparation.py</span>
+    </div>
+    <pre><code><span class="c-kw">from</span> datasets <span class="c-kw">import</span> load_dataset, Dataset
+<span class="c-kw">from</span> transformers <span class="c-kw">import</span> AutoTokenizer
+
+tokenizer = AutoTokenizer.<span class="c-fn">from_pretrained</span>(<span class="c-str">"mistralai/Mistral-7B-Instruct-v0.3"</span>)
+
+<span class="c-kw">def</span> <span class="c-fn">format_chatml</span>(example):
+    <span class="c-str">"""Convert raw instruction-response to chat template."""</span>
+    messages = [
+        {<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: example[<span class="c-str">"instruction"</span>]},
+        {<span class="c-str">"role"</span>: <span class="c-str">"assistant"</span>, <span class="c-str">"content"</span>: example[<span class="c-str">"response"</span>]},
+    ]
+    text = tokenizer.<span class="c-fn">apply_chat_template</span>(
+        messages, tokenize=<span class="c-kw">False</span>, add_generation_prompt=<span class="c-kw">False</span>
+    )
+    <span class="c-kw">return</span> {<span class="c-str">"text"</span>: text}
+
+<span class="c-kw">def</span> <span class="c-fn">quality_filter</span>(example):
+    <span class="c-str">"""Remove low-quality samples."""</span>
+    tokens = tokenizer.<span class="c-fn">encode</span>(example[<span class="c-str">"text"</span>])
+    response_len = <span class="c-fn">len</span>(tokenizer.<span class="c-fn">encode</span>(example[<span class="c-str">"response"</span>]))
+    <span class="c-kw">return</span> (
+        <span class="c-fn">100</span> <= <span class="c-fn">len</span>(tokens) <= <span class="c-fn">2048</span>  <span class="c-cmt"># length bounds</span>
+        <span class="c-kw">and</span> response_len >= <span class="c-fn">30</span>          <span class="c-cmt"># response must have substance</span>
+        <span class="c-kw">and</span> <span class="c-str">"As an AI"</span> <span class="c-kw">not in</span> example[<span class="c-str">"response"</span>]  <span class="c-cmt"># filter GPT artifacts</span>
+    )
+
+dataset = <span class="c-fn">load_dataset</span>(<span class="c-str">"json"</span>, data_files=<span class="c-str">"raw_data.jsonl"</span>)[<span class="c-str">"train"</span>]
+dataset = dataset.<span class="c-fn">map</span>(format_chatml).<span class="c-fn">filter</span>(quality_filter)
+dataset.<span class="c-fn">save_to_disk</span>(<span class="c-str">"./processed_dataset"</span>)</code></pre>
+  </div>
+
+  <div class="why-matters">
+    <strong>Why this matters:</strong> Filtering out "As an AI" responses from GPT-generated datasets removes the characteristic disclaimers that make fine-tuned models sound robotic and over-cautious. The LIMA paper showed that 1000 carefully human-curated examples produced instruction-following quality competitive with models trained on millions of RLHF examples.
+  </div>
+
+  <h3 style="color:var(--purple);margin:2rem 0 1rem;">DoRA & Advanced PEFT Techniques</h3>
+  <p>DoRA (Weight-Decomposed Low-Rank Adaptation) decomposes pretrained weights into magnitude and direction components, then applies LoRA only to the direction component while training the magnitude separately. This achieves better performance than LoRA at the same parameter count, particularly for tasks requiring precise numerical outputs. IA³ (Infused Adapter by Inhibiting and Amplifying Inner Activations) is even more parameter-efficient, adding only 0.01% extra parameters by rescaling key, value, and feed-forward activations.</p>
+
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">dora_config.py</span>
+    </div>
+    <pre><code><span class="c-kw">from</span> peft <span class="c-kw">import</span> LoraConfig, IA3Config, get_peft_model
+
+<span class="c-cmt"># DoRA — same API as LoRA, just set use_dora=True</span>
+dora_config = <span class="c-fn">LoraConfig</span>(
+    r=<span class="c-fn">16</span>,
+    lora_alpha=<span class="c-fn">32</span>,
+    target_modules=[<span class="c-str">"q_proj"</span>, <span class="c-str">"v_proj"</span>, <span class="c-str">"k_proj"</span>, <span class="c-str">"o_proj"</span>],
+    use_dora=<span class="c-kw">True</span>,      <span class="c-cmt"># The only change from standard LoRA</span>
+    lora_dropout=<span class="c-fn">0.05</span>,
+    bias=<span class="c-str">"none"</span>
+)
+
+<span class="c-cmt"># IA³ — ultra low parameter count (0.01% of model)</span>
+ia3_config = <span class="c-fn">IA3Config</span>(
+    target_modules=[<span class="c-str">"k_proj"</span>, <span class="c-str">"v_proj"</span>, <span class="c-str">"down_proj"</span>],
+    feedforward_modules=[<span class="c-str">"down_proj"</span>],
+    <span class="c-cmt"># No rank! IA³ adds scalar multipliers, not low-rank matrices</span>
+)
+
+model = <span class="c-fn">get_peft_model</span>(base_model, dora_config)
+model.<span class="c-fn">print_trainable_parameters</span>()
+<span class="c-cmt"># trainable params: 20,971,520 || all params: 3,773,071,616 || 0.56%</span></code></pre>
+  </div>
+
+  <div class="pitfall">
+    <strong>Common pitfall:</strong> When using <code>merge_and_unload()</code> after training, the merged model has slightly different numerical properties than the PEFT model. Always benchmark the merged model separately before deployment — occasionally merging introduces instability in long-context tasks that wasn't present during training.
+  </div>
+
+  <h3 style="color:var(--purple);margin:2rem 0 1rem;">PEFT Methods Comparison</h3>
+  <table class="comparison-table">
+    <thead><tr><th>Method</th><th>Trainable Params</th><th>Memory vs Full FT</th><th>Quality</th><th>Best For</th></tr></thead>
+    <tbody>
+      <tr><td>LoRA (r=16)</td><td>~0.5-2%</td><td>~60% less</td><td>Excellent</td><td>General fine-tuning</td></tr>
+      <tr><td>QLoRA (4-bit)</td><td>~0.5-2%</td><td>~80% less</td><td>Very Good</td><td>Consumer GPU fine-tuning</td></tr>
+      <tr><td>DoRA</td><td>~0.5-2%</td><td>~60% less</td><td>Better than LoRA</td><td>Numerical/reasoning tasks</td></tr>
+      <tr><td>IA³</td><td>~0.01%</td><td>~90% less</td><td>Good</td><td>Task-specific adaptation</td></tr>
+      <tr><td>Prefix Tuning</td><td>~0.1%</td><td>~85% less</td><td>Moderate</td><td>Style/tone control</td></tr>
+      <tr><td>Full Fine-Tuning</td><td>100%</td><td>Baseline</td><td>Best (if data sufficient)</td><td>>100K high-quality samples</td></tr>
+    </tbody>
+  </table>
+
+  <h3 style="color:var(--purple);margin:2rem 0 1rem;">QLoRA Optimizer Configuration</h3>
+  <p>QLoRA uses paged AdamW optimizers — a feature unique to bitsandbytes that pages optimizer states to CPU RAM when GPU memory is insufficient. This prevents OOM crashes during training on consumer GPUs. Combined with gradient checkpointing, you can fine-tune a 70B model on a single A100 (80GB). The paging adds ~15% overhead vs standard AdamW but is far better than the alternative (OOM).</p>
+
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">qlora_trainer.py</span>
+    </div>
+    <pre><code><span class="c-kw">from</span> transformers <span class="c-kw">import</span> TrainingArguments
+<span class="c-kw">from</span> trl <span class="c-kw">import</span> SFTTrainer
+
+training_args = <span class="c-fn">TrainingArguments</span>(
+    output_dir=<span class="c-str">"./qlora-output"</span>,
+    num_train_epochs=<span class="c-fn">3</span>,
+    per_device_train_batch_size=<span class="c-fn">1</span>,
+    gradient_accumulation_steps=<span class="c-fn">16</span>,   <span class="c-cmt"># effective batch = 16</span>
+    warmup_ratio=<span class="c-fn">0.03</span>,
+    learning_rate=<span class="c-fn">2e-4</span>,
+    fp16=<span class="c-kw">False</span>,
+    bf16=<span class="c-kw">True</span>,
+    logging_steps=<span class="c-fn">25</span>,
+    optim=<span class="c-str">"paged_adamw_32bit"</span>,        <span class="c-cmt"># pages optimizer states to CPU</span>
+    lr_scheduler_type=<span class="c-str">"cosine"</span>,
+    save_strategy=<span class="c-str">"epoch"</span>,
+    max_grad_norm=<span class="c-fn">0.3</span>,
+    group_by_length=<span class="c-kw">True</span>,             <span class="c-cmt"># pack similar lengths → less padding</span>
+)
+
+trainer = <span class="c-fn">SFTTrainer</span>(
+    model=model,
+    args=training_args,
+    train_dataset=dataset,
+    dataset_text_field=<span class="c-str">"text"</span>,
+    max_seq_length=<span class="c-fn">2048</span>,
+    peft_config=lora_config,
+)
+trainer.<span class="c-fn">train</span>()</code></pre>
+  </div>
+</section>
+
+<!-- Section 06: DPO & RLHF for Alignment -->
+<section class="section animate-on-scroll">
+  <div class="section-header">
+    <span class="section-num">06</span>
+    <h2 class="section-title">DPO & RLHF for Alignment</h2>
+  </div>
+  <p>After SFT (Supervised Fine-Tuning), you have a model that follows instructions but may produce harmful, biased, or low-quality outputs. Alignment techniques teach the model human preferences. RLHF (Reinforcement Learning from Human Feedback) uses a separate reward model trained on human comparisons; DPO (Direct Preference Optimization) eliminates the reward model entirely by optimizing directly on preference pairs, making it 2-3× cheaper to implement.</p>
+  <p>DPO training data is (prompt, chosen_response, rejected_response) triples — pairs where a human preferred <code>chosen</code> over <code>rejected</code>. The DPO loss increases the probability of chosen responses and decreases rejected ones, relative to a frozen reference model (the original SFT checkpoint). The reference model prevents the model from diverging too far from its SFT initialization — a critical stability mechanism.</p>
+
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">dpo_training.py</span>
+    </div>
+    <pre><code><span class="c-kw">from</span> trl <span class="c-kw">import</span> DPOTrainer, DPOConfig
+<span class="c-kw">from</span> datasets <span class="c-kw">import</span> load_dataset
+
+<span class="c-cmt"># Dataset format: prompt + chosen + rejected</span>
+dataset = <span class="c-fn">load_dataset</span>(<span class="c-str">"HuggingFaceH4/ultrafeedback_binarized"</span>, split=<span class="c-str">"train"</span>)
+<span class="c-cmt"># Each example: {"prompt": "...", "chosen": [...], "rejected": [...]}</span>
+
+dpo_config = <span class="c-fn">DPOConfig</span>(
+    output_dir=<span class="c-str">"./dpo-output"</span>,
+    beta=<span class="c-fn">0.1</span>,                    <span class="c-cmt"># KL penalty — lower = more aggressive</span>
+    learning_rate=<span class="c-fn">5e-7</span>,          <span class="c-cmt"># much lower than SFT</span>
+    per_device_train_batch_size=<span class="c-fn">2</span>,
+    gradient_accumulation_steps=<span class="c-fn">8</span>,
+    num_train_epochs=<span class="c-fn">1</span>,           <span class="c-cmt"># DPO needs less — 1-3 epochs typical</span>
+    bf16=<span class="c-kw">True</span>,
+    optim=<span class="c-str">"paged_adamw_32bit"</span>,
+    max_length=<span class="c-fn">1024</span>,
+    max_prompt_length=<span class="c-fn">512</span>,
+)
+
+trainer = <span class="c-fn">DPOTrainer</span>(
+    model=sft_model,           <span class="c-cmt"># fine-tuned SFT model (policy)</span>
+    ref_model=ref_model,       <span class="c-cmt"># frozen SFT checkpoint (reference)</span>
+    args=dpo_config,
+    train_dataset=dataset,
+    tokenizer=tokenizer,
+)
+trainer.<span class="c-fn">train</span>()</code></pre>
+  </div>
+
+  <div class="why-matters">
+    <strong>Why this matters:</strong> DPO is how most modern open-source instruction-following models are aligned — Zephyr-7B, Mistral-Instruct, and many others use DPO on top of SFT. The <code>beta</code> parameter controls how strongly to enforce human preferences vs. staying close to the original model. Too low (beta=0.01) causes reward hacking; too high (beta=0.5) causes the model to barely change.
+  </div>
+
+  <h3 style="color:var(--purple);margin:2rem 0 1rem;">Evaluating Fine-Tuned Models</h3>
+  <p>Perplexity on a held-out set is necessary but not sufficient. Low perplexity doesn't guarantee good instruction-following. You need task-specific evaluation: run the model on a benchmark relevant to your use case, measure exact match or semantic similarity, and compare against the baseline. For chat models, use MT-Bench or AlpacaEval. For code, use HumanEval. For RAG, use RAGAS metrics on your domain dataset.</p>
+
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">evaluation.py</span>
+    </div>
+    <pre><code><span class="c-kw">from</span> evaluate <span class="c-kw">import</span> load
+<span class="c-kw">import</span> torch
+
+<span class="c-cmt"># 1. Perplexity on held-out test split</span>
+<span class="c-kw">def</span> <span class="c-fn">compute_perplexity</span>(model, tokenizer, texts):
+    total_loss = <span class="c-fn">0</span>
+    <span class="c-kw">for</span> text <span class="c-kw">in</span> texts:
+        inputs = tokenizer(text, return_tensors=<span class="c-str">"pt"</span>).<span class="c-fn">to</span>(model.device)
+        <span class="c-kw">with</span> torch.<span class="c-fn">no_grad</span>():
+            loss = model(**inputs, labels=inputs.input_ids).loss
+        total_loss += loss.<span class="c-fn">item</span>()
+    <span class="c-kw">return</span> torch.<span class="c-fn">exp</span>(torch.<span class="c-fn">tensor</span>(total_loss / <span class="c-fn">len</span>(texts)))
+
+<span class="c-cmt"># 2. ROUGE for summarization tasks</span>
+rouge = <span class="c-fn">load</span>(<span class="c-str">"rouge"</span>)
+results = rouge.<span class="c-fn">compute</span>(predictions=model_outputs, references=ground_truth)
+<span class="c-fn">print</span>(<span class="c-fn">f"ROUGE-L: {results['rougeL']:.3f}"</span>)
+
+<span class="c-cmt"># 3. BERTScore for semantic similarity</span>
+bertscore = <span class="c-fn">load</span>(<span class="c-str">"bertscore"</span>)
+results = bertscore.<span class="c-fn">compute</span>(
+    predictions=model_outputs, references=ground_truth, lang=<span class="c-str">"en"</span>
+)
+<span class="c-fn">print</span>(<span class="c-fn">f"BERTScore F1: {sum(results['f1'])/len(results['f1']):.3f}"</span>)</code></pre>
+  </div>
+
+  <div class="pitfall">
+    <strong>Common pitfall:</strong> Evaluating on training data or on data generated by the same model used to create training data (data contamination) gives artificially high scores. Always hold out an evaluation set before any fine-tuning, and ensure it comes from a different source than your training data. For LLM-as-judge evaluations, don't use the same model you're evaluating as the judge.
+  </div>
+
+  <h3 style="color:var(--purple);margin:2rem 0 1rem;">Fine-Tuning Decision Tree</h3>
+  <table class="comparison-table">
+    <thead><tr><th>Scenario</th><th>Recommended Approach</th><th>Data Needed</th></tr></thead>
+    <tbody>
+      <tr><td>Change output format/style</td><td>LoRA SFT, rank 8-16</td><td>500-2000 examples</td></tr>
+      <tr><td>Teach new domain knowledge</td><td>LoRA SFT + RAG</td><td>1000-10000 examples</td></tr>
+      <tr><td>Reduce harmful outputs</td><td>DPO on preference pairs</td><td>1000-5000 pairs</td></tr>
+      <tr><td>Optimize specific task (SQL, code)</td><td>LoRA SFT, rank 32-64</td><td>5000-50000 examples</td></tr>
+      <tr><td>Full capability change</td><td>Full fine-tuning or CPT</td><td>>100000 examples</td></tr>
+      <tr><td>Style control only</td><td>Prefix tuning or IA³</td><td>200-1000 examples</td></tr>
+    </tbody>
+  </table>
+</section>
+
 </body>
 </html>

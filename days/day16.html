@@ -655,6 +655,311 @@ function showQuant(id) {
   document.getElementById('quant-' + id).classList.add('active');
 }
 </script>
+
+<!-- Section 05: Streaming & Advanced Deployment -->
+<section class="section animate-on-scroll">
+  <div class="section-header">
+    <span class="section-num">05</span>
+    <h2 class="section-title">Streaming Inference & Production Patterns</h2>
+  </div>
+  <p>Streaming token generation transforms user experience by printing tokens as they are produced rather than waiting for the full response. <code>TextIteratorStreamer</code> runs generation in a background thread and yields tokens to your response stream, enabling Server-Sent Events (SSE) for real-time output. This is the exact pattern used by HuggingFace's chat interfaces and most production LLM APIs.</p>
+  <p>The critical design insight: your FastAPI event loop must never block. Model generation is CPU/GPU-bound and can take seconds. Always run it in a thread pool. The streamer acts as a producer-consumer queue between the generation thread and your response coroutine.</p>
+
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">streaming_api.py</span>
+    </div>
+    <pre><code><span class="c-kw">from</span> fastapi <span class="c-kw">import</span> FastAPI
+<span class="c-kw">from</span> fastapi.responses <span class="c-kw">import</span> StreamingResponse
+<span class="c-kw">from</span> transformers <span class="c-kw">import</span> AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
+<span class="c-kw">import</span> threading, torch
+
+app = <span class="c-fn">FastAPI</span>()
+model = AutoModelForCausalLM.<span class="c-fn">from_pretrained</span>(
+    <span class="c-str">"mistralai/Mistral-7B-Instruct-v0.3"</span>,
+    torch_dtype=torch.bfloat16, device_map=<span class="c-str">"auto"</span>
+)
+tokenizer = AutoTokenizer.<span class="c-fn">from_pretrained</span>(<span class="c-str">"mistralai/Mistral-7B-Instruct-v0.3"</span>)
+
+<span class="c-kw">@app.post</span>(<span class="c-str">"/generate"</span>)
+<span class="c-kw">async def</span> <span class="c-fn">generate</span>(prompt: str, max_tokens: int = <span class="c-fn">512</span>):
+    inputs = tokenizer.<span class="c-fn">apply_chat_template</span>(
+        [{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: prompt}],
+        return_tensors=<span class="c-str">"pt"</span>, add_generation_prompt=<span class="c-kw">True</span>
+    ).<span class="c-fn">to</span>(model.device)
+
+    streamer = <span class="c-fn">TextIteratorStreamer</span>(tokenizer, skip_prompt=<span class="c-kw">True</span>, skip_special_tokens=<span class="c-kw">True</span>)
+    gen_kwargs = dict(input_ids=inputs, streamer=streamer,
+                      max_new_tokens=max_tokens, do_sample=<span class="c-kw">True</span>, temperature=<span class="c-fn">0.7</span>)
+
+    <span class="c-cmt"># Non-blocking: generation runs in background thread</span>
+    thread = threading.<span class="c-fn">Thread</span>(target=model.generate, kwargs=gen_kwargs)
+    thread.<span class="c-fn">start</span>()
+
+    <span class="c-kw">def</span> <span class="c-fn">token_stream</span>():
+        <span class="c-kw">for</span> token <span class="c-kw">in</span> streamer:
+            <span class="c-kw">yield</span> <span class="c-fn">f"data: {token}\n\n"</span>  <span class="c-cmt"># SSE format</span>
+        <span class="c-kw">yield</span> <span class="c-str">"data: [DONE]\n\n"</span>
+
+    <span class="c-kw">return</span> <span class="c-fn">StreamingResponse</span>(<span class="c-fn">token_stream</span>(), media_type=<span class="c-str">"text/event-stream"</span>)</code></pre>
+  </div>
+
+  <div class="why-matters">
+    <strong>Why this matters:</strong> Time To First Token (TTFT) is the critical UX metric, not total generation time. Users tolerate slow generation if text appears immediately. Streaming also enables client-side early stopping — if the user sees the answer, they can cancel the request and save compute cost.
+  </div>
+
+  <h3 style="color:var(--purple);margin:2rem 0 1rem;">GPTQ Quantization</h3>
+  <p>GPTQ uses second-order Hessian approximation to find optimal quantization points per weight matrix. Unlike BitsAndBytes which quantizes naively, GPTQ minimizes the quantization error per layer by solving a small optimization problem, resulting in significantly better quality at 4-bit precision. The trade-off is quantization time (15-60 minutes for 7B models) vs. BitsAndBytes' on-the-fly approach.</p>
+
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">gptq_quantize.py</span>
+    </div>
+    <pre><code><span class="c-kw">from</span> auto_gptq <span class="c-kw">import</span> AutoGPTQForCausalLM, BaseQuantizeConfig
+<span class="c-kw">from</span> datasets <span class="c-kw">import</span> load_dataset
+
+<span class="c-cmt"># Prepare calibration data (128 samples typical)</span>
+dataset = <span class="c-fn">load_dataset</span>(<span class="c-str">"wikitext"</span>, <span class="c-str">"wikitext-2-raw-v1"</span>, split=<span class="c-str">"train"</span>)
+calibration = [tokenizer(<span class="c-fn">text</span>, return_tensors=<span class="c-str">"pt"</span>)
+               <span class="c-kw">for</span> text <span class="c-kw">in</span> dataset[<span class="c-str">"text"</span>][:<span class="c-fn">128</span>] <span class="c-kw">if</span> <span class="c-fn">len</span>(text) > <span class="c-fn">50</span>]
+
+quantize_config = <span class="c-fn">BaseQuantizeConfig</span>(
+    bits=<span class="c-fn">4</span>,
+    group_size=<span class="c-fn">128</span>,
+    desc_act=<span class="c-kw">True</span>,    <span class="c-cmt"># activation ordering — better quality</span>
+    damp_percent=<span class="c-fn">0.01</span> <span class="c-cmt"># Hessian damping factor</span>
+)
+model = AutoGPTQForCausalLM.<span class="c-fn">from_pretrained</span>(
+    <span class="c-str">"mistralai/Mistral-7B-v0.3"</span>, quantize_config
+)
+model.<span class="c-fn">quantize</span>(calibration)
+model.<span class="c-fn">save_quantized</span>(<span class="c-str">"./mistral-7b-gptq-4bit"</span>, use_safetensors=<span class="c-kw">True</span>)</code></pre>
+  </div>
+
+  <div class="pitfall">
+    <strong>Common pitfall:</strong> GPTQ with <code>desc_act=True</code> (activation ordering) gives better quality but is incompatible with some inference backends. Check your serving framework's GPTQ support before quantizing — vLLM requires <code>desc_act=False</code> for maximum throughput.
+  </div>
+</section>
+
+<!-- Section 06: Safetensors & Model Hub Best Practices -->
+<section class="section animate-on-scroll">
+  <div class="section-header">
+    <span class="section-num">06</span>
+    <h2 class="section-title">Safetensors & Model Hub Best Practices</h2>
+  </div>
+  <p>Safetensors is HuggingFace's secure replacement for pickle-based <code>.bin</code> files. Pickle can execute arbitrary Python code on load — a critical supply chain security risk. Safetensors is a flat binary format: the header is a JSON dict mapping tensor names to byte offsets, then raw binary data. It supports zero-copy memory mapping and partial tensor loading, which means you can inspect a model's architecture without loading all weights into RAM.</p>
+
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">safetensors_patterns.py</span>
+    </div>
+    <pre><code><span class="c-kw">from</span> safetensors <span class="c-kw">import</span> safe_open
+<span class="c-kw">from</span> safetensors.torch <span class="c-kw">import</span> save_file, load_file
+
+<span class="c-cmt"># Save model weights securely</span>
+tensors = {k: v.<span class="c-fn">cpu</span>() <span class="c-kw">for</span> k, v <span class="c-kw">in</span> model.<span class="c-fn">state_dict</span>().<span class="c-fn">items</span>()}
+<span class="c-fn">save_file</span>(tensors, <span class="c-str">"model.safetensors"</span>)
+
+<span class="c-cmt"># Inspect model without loading weights</span>
+<span class="c-kw">with</span> <span class="c-fn">safe_open</span>(<span class="c-str">"model.safetensors"</span>, framework=<span class="c-str">"pt"</span>) <span class="c-kw">as</span> f:
+    <span class="c-fn">print</span>(f.<span class="c-fn">keys</span>())       <span class="c-cmt"># All tensor names — no data loaded</span>
+    <span class="c-fn">print</span>(f.<span class="c-fn">metadata</span>())   <span class="c-cmt"># JSON header metadata</span>
+
+<span class="c-cmt"># Partial load — only one layer (great for debugging)</span>
+<span class="c-kw">with</span> <span class="c-fn">safe_open</span>(<span class="c-str">"model.safetensors"</span>, framework=<span class="c-str">"pt"</span>, device=<span class="c-str">"cuda"</span>) <span class="c-kw">as</span> f:
+    q_proj = f.<span class="c-fn">get_tensor</span>(<span class="c-str">"model.layers.0.self_attn.q_proj.weight"</span>)
+
+<span class="c-cmt"># Upload to Hub with access control</span>
+<span class="c-kw">from</span> huggingface_hub <span class="c-kw">import</span> HfApi
+api = <span class="c-fn">HfApi</span>()
+api.<span class="c-fn">upload_folder</span>(
+    folder_path=<span class="c-str">"./my-fine-tuned-model"</span>,
+    repo_id=<span class="c-str">"username/my-model"</span>,
+    repo_type=<span class="c-str">"model"</span>,
+    private=<span class="c-kw">True</span>  <span class="c-cmt"># Gate access until ready</span>
+)</code></pre>
+  </div>
+
+  <div class="why-matters">
+    <strong>Why this matters:</strong> Never load <code>.bin</code> or <code>.pt</code> files from untrusted sources — they can execute code that exfiltrates your API keys, installs backdoors, or corrupts your system. When you see <code>trust_remote_code=True</code>, you are executing Python from the Hub. Only use it for models from trusted organizations (Mistral, Meta, Google, EleutherAI).
+  </div>
+
+  <h3 style="color:var(--purple);margin:2rem 0 1rem;">Model Format Comparison</h3>
+  <table class="comparison-table">
+    <thead><tr><th>Format</th><th>Safe</th><th>Zero-copy mmap</th><th>Partial Load</th><th>Quantized</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Safetensors (.safetensors)</td>
+        <td style="color:var(--teal);font-weight:700">Yes</td>
+        <td style="color:var(--teal);font-weight:700">Yes</td>
+        <td style="color:var(--teal);font-weight:700">Yes</td>
+        <td>No (full precision)</td>
+      </tr>
+      <tr>
+        <td>PyTorch Pickle (.bin/.pt)</td>
+        <td style="color:#ef4444;font-weight:700">No</td>
+        <td style="color:#ef4444;font-weight:700">No</td>
+        <td style="color:#ef4444;font-weight:700">No</td>
+        <td>No</td>
+      </tr>
+      <tr>
+        <td>GGUF (llama.cpp)</td>
+        <td style="color:var(--teal);font-weight:700">Yes</td>
+        <td style="color:var(--teal);font-weight:700">Yes</td>
+        <td style="color:var(--teal);font-weight:700">Yes</td>
+        <td style="color:var(--teal);font-weight:700">Yes (Q2-Q8)</td>
+      </tr>
+      <tr>
+        <td>ONNX</td>
+        <td style="color:var(--teal);font-weight:700">Yes</td>
+        <td>Partial</td>
+        <td>Partial</td>
+        <td>Partial</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3 style="color:var(--purple);margin:2rem 0 1rem;">Model Merging with SLERP</h3>
+  <p>SLERP (Spherical Linear Interpolation) combines two fine-tuned models without training by interpolating weights on a hypersphere rather than linearly. This preserves more of each model's "directional" information in weight space. Top-ranked models on the Open LLM Leaderboard are often merges — combining a coding model with an instruction-following model creates a hybrid that excels at both.</p>
+
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">merge_config.yaml</span>
+    </div>
+    <pre><code><span class="c-cmt"># mergekit configuration — pip install mergekit</span>
+models:
+  - model: mistralai/Mistral-7B-Instruct-v0.3
+    parameters:
+      weight: <span class="c-fn">0.6</span>
+  - model: HuggingFaceH4/zephyr-7b-beta
+    parameters:
+      weight: <span class="c-fn">0.4</span>
+merge_method: slerp
+base_model: mistralai/Mistral-7B-v0.3
+parameters:
+  t: <span class="c-fn">0.5</span>   <span class="c-cmt"># interpolation coefficient [0=model1, 1=model2]</span>
+dtype: bfloat16
+
+<span class="c-cmt"># Run: mergekit-yaml merge_config.yaml ./merged-model --cuda</span></code></pre>
+  </div>
+</section>
+
+<!-- Section 07: Chat Templates, Tokenizer Deep Dive & Pipeline Internals -->
+<section class="section animate-on-scroll">
+  <div class="section-header">
+    <span class="section-num">07</span>
+    <h2 class="section-title">Chat Templates & Tokenizer Internals</h2>
+  </div>
+  <p>Chat templates are Jinja2 templates that convert a list of message dicts into the model's expected prompt format. Every model family uses a different format: Mistral uses <code>[INST] ... [/INST]</code>, Llama-3 uses <code>&lt;|start_header_id|&gt;user&lt;|end_header_id|&gt;</code>, Phi-3 uses <code>&lt;|user|&gt;</code>, and ChatML (used by Qwen, OpenChat) uses <code>&lt;|im_start|&gt;user</code>. Using the wrong format is the most common cause of degraded instruction-following after fine-tuning.</p>
+  <p>The HuggingFace tokenizer stores the chat template in its config and applies it automatically via <code>apply_chat_template()</code>. You can inspect, modify, and override the template. This matters when you fine-tune on one format and deploy on another — the model learned to associate template tokens with roles, and changing those tokens breaks the association.</p>
+
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">chat_templates.py</span>
+    </div>
+    <pre><code><span class="c-kw">from</span> transformers <span class="c-kw">import</span> AutoTokenizer
+
+tokenizer = AutoTokenizer.<span class="c-fn">from_pretrained</span>(<span class="c-str">"mistralai/Mistral-7B-Instruct-v0.3"</span>)
+
+<span class="c-cmt"># Inspect the raw Jinja2 template</span>
+<span class="c-fn">print</span>(tokenizer.chat_template)
+<span class="c-cmt"># {{ bos_token }}{% for message in messages %}...{% endfor %}</span>
+
+messages = [
+    {<span class="c-str">"role"</span>: <span class="c-str">"system"</span>, <span class="c-str">"content"</span>: <span class="c-str">"You are a helpful Python expert."</span>},
+    {<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: <span class="c-str">"Explain list comprehensions."</span>},
+    {<span class="c-str">"role"</span>: <span class="c-str">"assistant"</span>, <span class="c-str">"content"</span>: <span class="c-str">"List comprehensions are..."</span>},
+    {<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: <span class="c-str">"Give me an example."</span>},
+]
+
+<span class="c-cmt"># Training: include full conversation (don't add generation prompt)</span>
+training_text = tokenizer.<span class="c-fn">apply_chat_template</span>(
+    messages, tokenize=<span class="c-kw">False</span>, add_generation_prompt=<span class="c-kw">False</span>
+)
+
+<span class="c-cmt"># Inference: add generation prompt so model knows to continue</span>
+inference_text = tokenizer.<span class="c-fn">apply_chat_template</span>(
+    messages[:<span class="c-fn">-1</span>], tokenize=<span class="c-kw">False</span>, add_generation_prompt=<span class="c-kw">True</span>
+)
+
+<span class="c-cmt"># For datasets: only compute loss on assistant turns</span>
+<span class="c-kw">def</span> <span class="c-fn">mask_user_turns</span>(input_ids, labels, tokenizer):
+    <span class="c-str">"""Set user turn labels to -100 (ignored by CrossEntropyLoss)."""</span>
+    user_start = tokenizer.<span class="c-fn">encode</span>(<span class="c-str">"[INST]"</span>, add_special_tokens=<span class="c-kw">False</span>)[<span class="c-fn">0</span>]
+    user_end = tokenizer.<span class="c-fn">encode</span>(<span class="c-str">"[/INST]"</span>, add_special_tokens=<span class="c-kw">False</span>)[<span class="c-fn">0</span>]
+    in_user = <span class="c-kw">False</span>
+    <span class="c-kw">for</span> i, tok <span class="c-kw">in</span> <span class="c-fn">enumerate</span>(input_ids):
+        <span class="c-kw">if</span> tok == user_start: in_user = <span class="c-kw">True</span>
+        <span class="c-kw">if</span> in_user: labels[i] = -<span class="c-fn">100</span>  <span class="c-cmt"># ignore in loss</span>
+        <span class="c-kw">if</span> tok == user_end: in_user = <span class="c-kw">False</span>
+    <span class="c-kw">return</span> labels</code></pre>
+  </div>
+
+  <div class="why-matters">
+    <strong>Why this matters:</strong> Training on the full conversation including user turns (without masking) teaches the model to generate both user and assistant text, which causes the model to continue generating new "user" questions after an answer instead of stopping. Always mask user turns to <code>-100</code> so loss is computed only on assistant responses.
+  </div>
+
+  <h3 style="color:var(--purple);margin:2rem 0 1rem;">BPE Tokenization Internals</h3>
+  <p>Byte Pair Encoding builds a vocabulary by iteratively merging the most frequent byte pairs in the training corpus. The vocabulary size (typically 32K-200K tokens) controls the trade-off between sequence length (more tokens = longer sequences = more compute) and coverage (more tokens = better subword handling). LLaMA-3's 128K vocabulary significantly improves multilingual performance compared to LLaMA-2's 32K vocabulary.</p>
+
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">tokenizer_analysis.py</span>
+    </div>
+    <pre><code><span class="c-kw">from</span> transformers <span class="c-kw">import</span> AutoTokenizer
+
+tok = AutoTokenizer.<span class="c-fn">from_pretrained</span>(<span class="c-str">"meta-llama/Meta-Llama-3-8B"</span>)
+
+<span class="c-cmt"># Vocabulary size matters for multilingual support</span>
+<span class="c-fn">print</span>(<span class="c-fn">f"Vocab size: {tok.vocab_size}"</span>)  <span class="c-cmt"># 128,256 for Llama-3</span>
+
+<span class="c-cmt"># Inspect tokenization of different text types</span>
+texts = {
+    <span class="c-str">"English"</span>: <span class="c-str">"The quick brown fox"</span>,
+    <span class="c-str">"Arabic"</span>: <span class="c-str">"الذكاء الاصطناعي"</span>,
+    <span class="c-str">"Code"</span>: <span class="c-str">"def fibonacci(n): return n if n <= 1 else fibonacci(n-1) + fibonacci(n-2)"</span>,
+    <span class="c-str">"Numbers"</span>: <span class="c-str">"1234567890.001"</span>,  <span class="c-cmt"># each digit often separate token!</span>
+}
+<span class="c-kw">for</span> name, text <span class="c-kw">in</span> texts.<span class="c-fn">items</span>():
+    tokens = tok.<span class="c-fn">tokenize</span>(text)
+    <span class="c-fn">print</span>(<span class="c-fn">f"{name}: {len(tokens)} tokens → {tokens}"</span>)
+
+<span class="c-cmt"># Left-padding for batched inference</span>
+tok.padding_side = <span class="c-str">"left"</span>  <span class="c-cmt"># CRITICAL for causal LM inference</span>
+batch = tok(
+    [<span class="c-str">"Short prompt"</span>, <span class="c-str">"A much longer prompt that needs more tokens"</span>],
+    padding=<span class="c-kw">True</span>, return_tensors=<span class="c-str">"pt"</span>
+)
+<span class="c-cmt"># Left-padded: padding tokens are at the beginning, not end</span>
+<span class="c-cmt"># This ensures the attention mask correctly covers actual tokens</span></code></pre>
+  </div>
+
+  <div class="pitfall">
+    <strong>Common pitfall:</strong> Using <code>padding_side="right"</code> (the default) for batched inference causes wrong outputs. In decoder-only models, the position embeddings of real tokens are affected by padding position. Left-padding puts real tokens at the end where the model generates from, right-padding puts them in the middle. Always set <code>tokenizer.padding_side = "left"</code> before batched inference and <code>"right"</code> before training.
+  </div>
+
+  <h3 style="color:var(--purple);margin:2rem 0 1rem;">HuggingFace Ecosystem Map</h3>
+  <table class="comparison-table">
+    <thead><tr><th>Library</th><th>Purpose</th><th>Key Classes</th></tr></thead>
+    <tbody>
+      <tr><td>transformers</td><td>Model + tokenizer loading</td><td>AutoModel, AutoTokenizer, pipeline()</td></tr>
+      <tr><td>datasets</td><td>Data loading + processing</td><td>load_dataset(), Dataset.map()</td></tr>
+      <tr><td>peft</td><td>Parameter-efficient fine-tuning</td><td>LoraConfig, get_peft_model()</td></tr>
+      <tr><td>trl</td><td>RLHF + SFT training</td><td>SFTTrainer, PPOTrainer, DPOTrainer</td></tr>
+      <tr><td>accelerate</td><td>Distributed training abstraction</td><td>Accelerator, launch_command()</td></tr>
+      <tr><td>evaluate</td><td>Metric computation</td><td>load("rouge"), load("bertscore")</td></tr>
+      <tr><td>safetensors</td><td>Secure model serialization</td><td>save_file(), load_file(), safe_open()</td></tr>
+      <tr><td>huggingface_hub</td><td>Hub API client</td><td>HfApi, snapshot_download()</td></tr>
+    </tbody>
+  </table>
+</section>
+
 </body>
 </html>
 

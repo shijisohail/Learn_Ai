@@ -1147,6 +1147,103 @@ model <span class="c-kw">=</span> <span class="c-fn">FSDP</span>(
     </table>
   </section>
 
+  <!-- Section 08: Production Inference Patterns -->
+  <section class="section animate-on-scroll">
+    <div class="section-header">
+      <span class="section-num">08</span>
+      <h2 class="section-title">Production Inference Patterns</h2>
+    </div>
+    <p>Deploying PyTorch models into production requires more than just <code>model.eval()</code>. You need deterministic outputs, reproducible batching, graceful error handling, and resource isolation. The patterns below are used by companies serving billions of daily inferences.</p>
+    <p>A critical insight: production inference is fundamentally different from training. You're optimizing for latency percentiles (P50, P95, P99), not throughput. A single slow request that blocks a batch is far more damaging than lower average throughput. Design your serving infrastructure accordingly.</p>
+
+    <div class="code-window">
+      <div class="code-toolbar">
+        <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+        <span class="code-file">inference_server.py</span>
+      </div>
+      <pre><code><span class="c-kw">import</span> torch
+<span class="c-kw">import</span> torch.nn <span class="c-kw">as</span> nn
+<span class="c-kw">from</span> contextlib <span class="c-kw">import</span> contextmanager
+<span class="c-kw">from</span> typing <span class="c-kw">import</span> Optional
+<span class="c-kw">import</span> threading
+
+<span class="c-kw">class</span> <span class="c-fn">InferenceEngine</span>:
+    <span class="c-str">"""Thread-safe inference engine with dynamic batching."""</span>
+
+    <span class="c-kw">def</span> <span class="c-fn">__init__</span>(self, model: nn.Module, device: str = <span class="c-str">"cuda"</span>):
+        self.model = model.to(device).eval()
+        self.device = device
+        self._lock = threading.Lock()
+        <span class="c-cmt"># Compile once at startup — amortize JIT cost</span>
+        self.model = torch.<span class="c-fn">compile</span>(self.model, mode=<span class="c-str">"reduce-overhead"</span>)
+
+    <span class="c-kw">@contextmanager</span>
+    <span class="c-kw">def</span> <span class="c-fn">inference_context</span>(self):
+        <span class="c-str">"""Disable grad + enable AMP for every forward pass."""</span>
+        <span class="c-kw">with</span> torch.<span class="c-fn">no_grad</span>(), torch.cuda.<span class="c-fn">amp.autocast</span>(dtype=torch.bfloat16):
+            <span class="c-kw">yield</span>
+
+    <span class="c-kw">def</span> <span class="c-fn">predict_batch</span>(self, inputs: list[dict]) -> list:
+        <span class="c-str">"""Dynamic batching with padding."""</span>
+        <span class="c-kw">with</span> self.<span class="c-fn">inference_context</span>():
+            input_ids = torch.<span class="c-fn">nn.utils.rnn.pad_sequence</span>(
+                [torch.<span class="c-fn">tensor</span>(x[<span class="c-str">"input_ids"</span>]) <span class="c-kw">for</span> x <span class="c-kw">in</span> inputs],
+                batch_first=<span class="c-kw">True</span>, padding_value=<span class="c-fn">0</span>
+            ).<span class="c-fn">to</span>(self.device)
+            outputs = self.<span class="c-fn">model</span>(input_ids)
+            <span class="c-kw">return</span> outputs.<span class="c-fn">cpu</span>().<span class="c-fn">tolist</span>()</code></pre>
+    </div>
+
+    <div class="why-matters">
+      <strong>Why this matters:</strong> The <code>threading.Lock()</code> prevents race conditions when multiple worker threads share one GPU. Combined with <code>torch.compile(mode="reduce-overhead")</code> and bfloat16 AMP, this pattern achieves near-optimal GPU utilization without requiring TensorRT or ONNX conversion.
+    </div>
+
+    <h3 style="color:var(--purple);margin:2rem 0 1rem;">Benchmarking Your Model</h3>
+    <p>Always profile before optimizing. PyTorch provides <code>torch.profiler</code> which integrates with Chrome's trace viewer and TensorBoard. The key metrics to capture are: GPU kernel time, memory bandwidth utilization, CPU-GPU synchronization overhead, and Python overhead (the "idle" time when the GPU waits for CPU to prepare the next batch).</p>
+
+    <div class="code-window">
+      <div class="code-toolbar">
+        <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+        <span class="code-file">profiler_example.py</span>
+      </div>
+      <pre><code><span class="c-kw">from</span> torch.profiler <span class="c-kw">import</span> profile, record_function, ProfilerActivity
+
+<span class="c-kw">with</span> <span class="c-fn">profile</span>(
+    activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
+    schedule=torch.profiler.<span class="c-fn">schedule</span>(wait=1, warmup=1, active=3),
+    on_trace_ready=torch.profiler.<span class="c-fn">tensorboard_trace_handler</span>(<span class="c-str">"./tb_logs"</span>),
+    record_shapes=<span class="c-kw">True</span>,
+    profile_memory=<span class="c-kw">True</span>,
+    with_stack=<span class="c-kw">True</span>
+) <span class="c-kw">as</span> prof:
+    <span class="c-kw">for</span> step, batch <span class="c-kw">in</span> <span class="c-fn">enumerate</span>(dataloader):
+        <span class="c-kw">with</span> <span class="c-fn">record_function</span>(<span class="c-str">"forward_pass"</span>):
+            outputs = <span class="c-fn">model</span>(batch)
+        <span class="c-kw">with</span> <span class="c-fn">record_function</span>(<span class="c-str">"backward_pass"</span>):
+            loss.<span class="c-fn">backward</span>()
+        prof.<span class="c-fn">step</span>()
+
+<span class="c-cmt"># Print top 10 operations by CUDA time</span>
+<span class="c-fn">print</span>(prof.<span class="c-fn">key_averages</span>().<span class="c-fn">table</span>(sort_by=<span class="c-str">"cuda_time_total"</span>, row_limit=10))</code></pre>
+    </div>
+
+    <div class="pitfall">
+      <strong>Common pitfall:</strong> Profiling with <code>record_shapes=True</code> adds overhead — only use it during dedicated profiling runs, not in your training loop. Also, the first 1-2 batches include CUDA kernel compilation time; always use <code>schedule(wait=1, warmup=1)</code> to skip them.
+    </div>
+
+    <h3 style="color:var(--purple);margin:2rem 0 1rem;">Memory Management Patterns</h3>
+    <table class="comparison-table">
+      <thead><tr><th>Technique</th><th>When to Use</th><th>Memory Saved</th><th>Speed Impact</th></tr></thead>
+      <tbody>
+        <tr><td><code>del tensor; torch.cuda.empty_cache()</code></td><td>After large intermediate tensors</td><td>Variable</td><td>Minimal</td></tr>
+        <tr><td><code>torch.cuda.memory_stats()</code></td><td>Debugging OOM errors</td><td>N/A (diagnostic)</td><td>None</td></tr>
+        <tr><td>Gradient accumulation</td><td>Large effective batch with small GPU</td><td>Up to 8× batch reduction</td><td>~Same throughput</td></tr>
+        <tr><td>CPU offloading (DeepSpeed ZeRO-3)</td><td>Models > GPU VRAM</td><td>10-100×</td><td>3-5× slower</td></tr>
+        <tr><td>Activation recomputation</td><td>Fitting larger models</td><td>Up to 60%</td><td>~33% slower forward</td></tr>
+      </tbody>
+    </table>
+  </section>
+
 </div>
 </body>
 </html>

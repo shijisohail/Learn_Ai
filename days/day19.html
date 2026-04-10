@@ -596,5 +596,134 @@ function updateCanary() {
   }
 }
 </script>
+
+<!-- Section 05: GitOps for ML & Argo Rollouts -->
+<section class="section animate-on-scroll">
+  <div class="section-header">
+    <span class="section-num">05</span>
+    <h2 class="section-title">GitOps for ML & CI/CD Pipelines</h2>
+  </div>
+  <p>GitOps applies Git-native workflows to ML deployment: your model configuration, serving specs, and rollout policies live in Git. Every merge to main triggers a deployment pipeline. Rollbacks are git reverts. Audit trails are commit histories. This eliminates the "who deployed what when" problem that plagues teams with manual deployments.</p>
+  <p>The ML-specific challenge is that model artifacts are too large for Git. The pattern is to track model references (MLflow run ID, HuggingFace Hub tag, or S3 URI) in Git, while the artifacts live in external storage. Your CD pipeline reads the reference from Git, pulls the artifact, and deploys it.</p>
+
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">.github/workflows/deploy_model.yml</span>
+    </div>
+    <pre><code>name: Deploy Model
+on:
+  push:
+    branches: [main]
+    paths: [<span class="c-str">'model_config.yaml'</span>]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read model config
+        id: config
+        run: |
+          echo "run_id=$(yq .mlflow_run_id model_config.yaml)" >> $GITHUB_OUTPUT
+          echo "stage=$(yq .stage model_config.yaml)" >> $GITHUB_OUTPUT
+
+      - name: Download model artifact
+        run: |
+          mlflow artifacts download \
+            --run-id ${{ steps.config.outputs.run_id }} \
+            --artifact-path model/ \
+            --dst-path ./model/
+
+      - name: Build & push Docker image
+        run: |
+          docker build -t registry/llm-api:${{ github.sha }} .
+          docker push registry/llm-api:${{ github.sha }}
+
+      - name: Update Kubernetes manifest
+        run: |
+          sed -i "s|IMAGE_TAG|${{ github.sha }}|g" k8s/deployment.yaml
+          kubectl apply -f k8s/deployment.yaml</code></pre>
+  </div>
+
+  <div class="why-matters">
+    <strong>Why this matters:</strong> This pipeline takes a model from MLflow to Kubernetes in one git push. The <code>model_config.yaml</code> acts as the single source of truth — to rollback, you git revert to a previous version of that file. No manual steps, no "it works on my machine" issues.
+  </div>
+
+  <h3 style="color:var(--purple);margin:2rem 0 1rem;">Argo Rollouts Progressive Delivery</h3>
+  <p>Argo Rollouts extends Kubernetes Deployments with progressive delivery strategies. Unlike vanilla Kubernetes (which does immediate rolling updates), Argo supports canary steps with analysis templates — automated metric checks that gate each traffic increase. If P99 latency exceeds threshold during a canary step, Argo automatically rolls back without human intervention.</p>
+
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">k8s/rollout.yaml</span>
+    </div>
+    <pre><code>apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: llm-api
+spec:
+  replicas: 10
+  strategy:
+    canary:
+      steps:
+        - setWeight: 10      # 10% canary traffic
+        - pause: {duration: 5m}
+        - analysis:          # automated gate
+            templates:
+              - templateName: latency-check
+        - setWeight: 50      # 50% if analysis passed
+        - pause: {duration: 10m}
+        - analysis:
+            templates:
+              - templateName: error-rate-check
+        - setWeight: 100     # full rollout
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: latency-check
+spec:
+  metrics:
+    - name: p99-latency
+      provider:
+        prometheus:
+          address: http://prometheus:9090
+          query: histogram_quantile(0.99, rate(request_duration_seconds_bucket[5m]))
+      successCondition: result < 2.0   # must be under 2s P99
+      failureLimit: 3</code></pre>
+  </div>
+
+  <div class="pitfall">
+    <strong>Common pitfall:</strong> Argo analysis templates query Prometheus metrics from the canary pods, not the entire deployment. Ensure your Prometheus scrape config labels canary pods with a <code>rollout-pod-template-hash</code> selector, otherwise your analysis queries will include traffic from stable pods and mask canary regressions.
+  </div>
+
+  <h3 style="color:var(--purple);margin:2rem 0 1rem;">Cost Optimization Patterns</h3>
+  <table class="comparison-table">
+    <thead><tr><th>Pattern</th><th>Savings</th><th>Complexity</th><th>Best For</th></tr></thead>
+    <tbody>
+      <tr><td>Spot/Preemptible instances for training</td><td>60-90%</td><td>Medium</td><td>Fault-tolerant training jobs</td></tr>
+      <tr><td>Scale-to-zero inference (serverless)</td><td>Up to 100% idle</td><td>Low</td><td>Low-traffic APIs</td></tr>
+      <tr><td>Batch inference instead of real-time</td><td>50-70%</td><td>Low</td><td>Non-latency-sensitive tasks</td></tr>
+      <tr><td>Model quantization (INT4/GPTQ)</td><td>30-50% GPU cost</td><td>Low</td><td>All inference workloads</td></tr>
+      <tr><td>Request caching (semantic cache)</td><td>10-40%</td><td>Medium</td><td>Repeated query patterns</td></tr>
+      <tr><td>Multi-tenant GPU sharing</td><td>40-60%</td><td>High</td><td>Many small models</td></tr>
+    </tbody>
+  </table>
+
+  <h3 style="color:var(--purple);margin:2rem 0 1rem;">Blue-Green vs Canary vs Rolling</h3>
+  <p>Each deployment strategy has different risk/cost trade-offs. Blue-green maintains a complete duplicate environment — instant rollback but 2× infrastructure cost. Canary is incremental and cost-efficient but requires robust observability. Rolling updates are Kubernetes-native and simple but offer no traffic control during rollout.</p>
+
+  <table class="comparison-table">
+    <thead><tr><th>Strategy</th><th>Rollback Speed</th><th>Infra Cost</th><th>Traffic Control</th><th>Complexity</th></tr></thead>
+    <tbody>
+      <tr><td>Blue-Green</td><td>Instant (DNS flip)</td><td>2× (both envs live)</td><td>Binary (0% or 100%)</td><td>Low</td></tr>
+      <tr><td>Canary</td><td>Minutes (weight to 0%)</td><td>1.x× (small canary)</td><td>Granular (0-100%)</td><td>High (needs observability)</td></tr>
+      <tr><td>Rolling</td><td>Slow (reverse deploy)</td><td>1× + surge</td><td>None</td><td>Low (built into K8s)</td></tr>
+      <tr><td>A/B Test</td><td>Minutes</td><td>1.x×</td><td>By user segment</td><td>High (needs routing logic)</td></tr>
+    </tbody>
+  </table>
+</section>
+
 </body>
 </html>

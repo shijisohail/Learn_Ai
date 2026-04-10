@@ -574,5 +574,142 @@ function resetDrift() {
   runDriftTest();
 }
 </script>
+
+<!-- Section 05: OpenTelemetry & Distributed Tracing -->
+<section class="section animate-on-scroll">
+  <div class="section-header">
+    <span class="section-num">05</span>
+    <h2 class="section-title">OpenTelemetry & Distributed Tracing for LLMs</h2>
+  </div>
+  <p>OpenTelemetry (OTel) is the CNCF standard for distributed observability: traces, metrics, and logs with a vendor-neutral API. For LLM applications, OTel traces show the full request journey — from HTTP ingress through retrieval, embedding generation, LLM API call, and response formatting. Each span captures duration, token counts, and model parameters, enabling you to identify where latency comes from and where costs accumulate.</p>
+  <p>The LLM-specific OTel conventions (OpenTelemetry Semantic Conventions for Gen AI) standardize span names like <code>gen_ai.chat</code>, attributes like <code>gen_ai.request.model</code> and <code>gen_ai.usage.input_tokens</code>, enabling consistent dashboards across different model providers and frameworks.</p>
+
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">otel_instrumentation.py</span>
+    </div>
+    <pre><code><span class="c-kw">from</span> opentelemetry <span class="c-kw">import</span> trace
+<span class="c-kw">from</span> opentelemetry.sdk.trace <span class="c-kw">import</span> TracerProvider
+<span class="c-kw">from</span> opentelemetry.sdk.trace.export <span class="c-kw">import</span> BatchSpanProcessor
+<span class="c-kw">from</span> opentelemetry.exporter.otlp.proto.grpc.trace_exporter <span class="c-kw">import</span> OTLPSpanExporter
+
+<span class="c-cmt"># Initialize tracing — typically in app startup</span>
+provider = <span class="c-fn">TracerProvider</span>()
+provider.<span class="c-fn">add_span_processor</span>(
+    <span class="c-fn">BatchSpanProcessor</span>(<span class="c-fn">OTLPSpanExporter</span>(endpoint=<span class="c-str">"http://jaeger:4317"</span>))
+)
+trace.<span class="c-fn">set_tracer_provider</span>(provider)
+tracer = trace.<span class="c-fn">get_tracer</span>(<span class="c-str">"llm-service"</span>)
+
+<span class="c-kw">async def</span> <span class="c-fn">rag_pipeline</span>(query: str) -> str:
+    <span class="c-kw">with</span> tracer.<span class="c-fn">start_as_current_span</span>(<span class="c-str">"rag_pipeline"</span>) <span class="c-kw">as</span> root_span:
+        root_span.<span class="c-fn">set_attribute</span>(<span class="c-str">"query.length"</span>, <span class="c-fn">len</span>(query))
+
+        <span class="c-kw">with</span> tracer.<span class="c-fn">start_as_current_span</span>(<span class="c-str">"retrieval"</span>) <span class="c-kw">as</span> span:
+            docs = <span class="c-kw">await</span> <span class="c-fn">retrieve_documents</span>(query)
+            span.<span class="c-fn">set_attribute</span>(<span class="c-str">"retrieval.doc_count"</span>, <span class="c-fn">len</span>(docs))
+
+        <span class="c-kw">with</span> tracer.<span class="c-fn">start_as_current_span</span>(<span class="c-str">"gen_ai.chat"</span>) <span class="c-kw">as</span> span:
+            span.<span class="c-fn">set_attribute</span>(<span class="c-str">"gen_ai.request.model"</span>, <span class="c-str">"mistral-7b"</span>)
+            span.<span class="c-fn">set_attribute</span>(<span class="c-str">"gen_ai.request.temperature"</span>, <span class="c-fn">0.7</span>)
+            response = <span class="c-kw">await</span> <span class="c-fn">llm_call</span>(query, docs)
+            span.<span class="c-fn">set_attribute</span>(<span class="c-str">"gen_ai.usage.input_tokens"</span>, response.usage.prompt_tokens)
+            span.<span class="c-fn">set_attribute</span>(<span class="c-str">"gen_ai.usage.output_tokens"</span>, response.usage.completion_tokens)
+
+        <span class="c-kw">return</span> response.content</code></pre>
+  </div>
+
+  <div class="why-matters">
+    <strong>Why this matters:</strong> Without distributed traces, you can see that P99 latency is 4 seconds, but not that 3.2 seconds of that is in retrieval and only 0.8 seconds is LLM generation. Traces tell you exactly where to optimize. In one real-world case, OTel tracing revealed that 80% of latency was a missing database index on the vector store — the LLM was barely the bottleneck.
+  </div>
+
+  <h3 style="color:var(--purple);margin:2rem 0 1rem;">SLO Definition & Error Budget</h3>
+  <p>An SLO (Service Level Objective) is a measurable target for service reliability. Error budgets are the acceptable failure allowance — if your SLO is 99.9% uptime, your monthly error budget is 44 minutes. When the error budget is depleted, you stop shipping features and focus only on reliability. This creates an organizational mechanism to balance innovation speed with reliability.</p>
+
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">slo_definitions.yaml</span>
+    </div>
+    <pre><code><span class="c-cmt"># SLO definitions for LLM API service</span>
+slos:
+  - name: availability
+    target: 99.9%
+    window: 30d
+    metric: |
+      sum(rate(http_requests_total{status!~"5.."}[30d])) /
+      sum(rate(http_requests_total[30d]))
+    error_budget_minutes: 43.8   <span class="c-cmt"># 0.1% of 30 days</span>
+
+  - name: latency_p99
+    target: 95%  <span class="c-cmt"># 95% of requests under threshold</span>
+    window: 7d
+    metric: |
+      histogram_quantile(0.99, rate(request_duration_seconds_bucket[7d])) < 5.0
+    alert: |
+      error_budget_remaining < 20%  → page oncall
+      error_budget_remaining < 5%   → freeze deployments
+
+  - name: ragas_faithfulness
+    target: 85%
+    window: 24h
+    metric: avg(ragas_faithfulness_score)
+    alert: score < 0.75 → alert + investigation</code></pre>
+  </div>
+
+  <h3 style="color:var(--purple);margin:2rem 0 1rem;">Alert Runbook Pattern</h3>
+  <p>Every alert should have a runbook — a step-by-step guide for the on-call engineer. Without runbooks, alerts at 3am lead to panicked, inconsistent responses. The runbook links from the Grafana alert panel directly to a document describing what the metric means, common causes, diagnostic commands to run, and remediation steps.</p>
+
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">alert_rules.yaml</span>
+    </div>
+    <pre><code>groups:
+  - name: llm_api_alerts
+    rules:
+      - alert: HighP99Latency
+        expr: histogram_quantile(0.99, rate(request_duration_seconds_bucket[5m])) > 5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "P99 latency {{ $value | humanizeDuration }} exceeds 5s SLO"
+          runbook: "https://runbooks.internal/llm-api/high-latency"
+          description: |
+            Common causes:
+            1. GPU memory pressure → check nvidia-smi
+            2. Retrieval slowdown → check vector store latency
+            3. Context window overflow → check input token distribution
+
+      - alert: RAGASFaithfulnessDrop
+        expr: avg_over_time(ragas_faithfulness_score[1h]) < 0.75
+        for: 30m
+        labels:
+          severity: critical
+        annotations:
+          summary: "RAGAS faithfulness score {{ $value | humanizePercentage }} below threshold"
+          runbook: "https://runbooks.internal/llm-api/faithfulness-drop"</code></pre>
+  </div>
+
+  <div class="pitfall">
+    <strong>Common pitfall:</strong> Alert fatigue — too many non-actionable alerts trains engineers to ignore them. Every alert must be: (1) actionable (someone can do something), (2) urgent (requires action now vs. during business hours), and (3) symptom-based not cause-based. Alert on "P99 latency > 5s" (user impact), not "CPU > 80%" (internal state).
+  </div>
+
+  <h3 style="color:var(--purple);margin:2rem 0 1rem;">Observability Stack Comparison</h3>
+  <table class="comparison-table">
+    <thead><tr><th>Tool</th><th>Type</th><th>LLM Native</th><th>Self-hostable</th><th>Cost</th></tr></thead>
+    <tbody>
+      <tr><td>Prometheus + Grafana</td><td>Metrics + dashboards</td><td>Via custom metrics</td><td style="color:var(--teal);font-weight:700">Yes</td><td>Free + infra</td></tr>
+      <tr><td>LangSmith</td><td>LLM trace + evals</td><td style="color:var(--teal);font-weight:700">Native</td><td>Enterprise only</td><td>$39/mo+</td></tr>
+      <tr><td>RAGAS</td><td>LLM eval metrics</td><td style="color:var(--teal);font-weight:700">Native</td><td style="color:var(--teal);font-weight:700">Yes (library)</td><td>Free</td></tr>
+      <tr><td>Jaeger / Tempo</td><td>Distributed traces</td><td>Via OTel spans</td><td style="color:var(--teal);font-weight:700">Yes</td><td>Free + infra</td></tr>
+      <tr><td>Datadog LLM Obs</td><td>Full stack + LLM</td><td style="color:var(--teal);font-weight:700">Native</td><td>SaaS only</td><td>$15/host/mo+</td></tr>
+      <tr><td>Arize Phoenix</td><td>LLM trace + evals</td><td style="color:var(--teal);font-weight:700">Native</td><td style="color:var(--teal);font-weight:700">Yes</td><td>Free (OSS)</td></tr>
+    </tbody>
+  </table>
+</section>
+
 </body>
 </html>
