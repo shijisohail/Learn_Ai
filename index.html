@@ -703,6 +703,25 @@
   .week-sub { color: var(--muted); font-size: 0.8rem; white-space: nowrap; }
   .week-prog-wrap { width: 100px; height: 5px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; flex-shrink: 0; }
   .week-prog-fill { height: 100%; background: linear-gradient(90deg, var(--purple), var(--teal)); border-radius: 3px; transition: width 0.5s ease; width: 0%; }
+  /* ── Learning Ramp ──────────────────────────────── */
+  .ramp-container { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px 28px; overflow-x: auto; }
+  .ramp-labels { display: flex; justify-content: space-between; margin-bottom: 12px; }
+  .ramp-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+  .ramp-track { position: relative; height: 64px; }
+  .ramp-dots { display: flex; align-items: flex-end; gap: 6px; height: 64px; padding-bottom: 4px; min-width: 700px; }
+  .ramp-dot { flex: 1; min-width: 18px; border-radius: 4px 4px 0 0; cursor: pointer; transition: opacity 0.2s, transform 0.15s; position: relative; }
+  .ramp-dot:hover { opacity: 0.85; transform: scaleY(1.05); transform-origin: bottom; }
+  .ramp-dot-tip { display: none; position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); background: #1e1e35; border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; font-size: 0.68rem; color: var(--text); white-space: nowrap; z-index: 10; }
+  .ramp-dot:hover .ramp-dot-tip { display: block; }
+  .ramp-weeks { display: flex; margin-top: 8px; gap: 6px; min-width: 700px; }
+  .ramp-week-span { text-align: center; font-size: 0.68rem; color: var(--muted); font-weight: 600; }
+  /* ── Level badges ───────────────────────────────── */
+  .level-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 20px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+  .level-1 { background: rgba(16,185,129,0.12); color: #34d399; border: 1px solid rgba(16,185,129,0.25); }
+  .level-2 { background: rgba(59,130,246,0.12); color: #60a5fa; border: 1px solid rgba(59,130,246,0.25); }
+  .level-3 { background: rgba(168,85,247,0.12); color: #c084fc; border: 1px solid rgba(168,85,247,0.25); }
+  .level-4 { background: rgba(245,158,11,0.12); color: #fbbf24; border: 1px solid rgba(245,158,11,0.25); }
+  .level-5 { background: rgba(239,68,68,0.12); color: #f87171; border: 1px solid rgba(239,68,68,0.25); }
   .week-overview-link {
     margin-left: auto; font-size: 0.75rem; color: var(--teal);
     text-decoration: none; white-space: nowrap; flex-shrink: 0;
@@ -908,8 +927,13 @@
 
     </div>
 
+    <!-- LEARNING RAMP -->
+    <div class="section-title" style="margin-top:2rem;">Learning Journey</div>
+    <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.5rem;">Every day builds on the last — from your first API call to a production AI system.</p>
+    <div class="ramp-container" id="rampViz"></div>
+
     <!-- CURRICULUM (week-grouped) -->
-    <div class="section-title">Curriculum</div>
+    <div class="section-title" style="margin-top:2.5rem;">Curriculum</div>
     <div class="curriculum-section" id="curriculumContainer"></div>
 
   </div>
@@ -926,45 +950,45 @@
 
 <script>
 const DAYS = [
-  // Week 1 — Core Foundations
-  { num:1, week:1, title:'LLMs & The API', subtitle:'Transformer internals & the Messages API', topics:['Transformer architecture & attention','Tokenization & BPE encoding','Messages API schema design','Stateless vs stateful memory','Tool use introduction'], time:'8h', tags:['Claude API','Transformers','Tokenization'], file:'days/day1.html' },
-  { num:2, week:1, title:'Tool Use & ReAct', subtitle:'Function calling & reasoning loops', topics:['JSON schema for tool definitions','Tool result handling patterns','ReAct reasoning loop','Multi-step tool chaining','Error recovery in tool use'], time:'8h', tags:['Tool Use','ReAct','Function Calling'], file:'days/day2.html' },
-  { num:3, week:1, title:'Memory & RAG', subtitle:'Embedding spaces & retrieval pipelines', topics:['Embedding spaces & similarity','Vector database fundamentals','RAG pipeline architecture','Chunking & indexing strategies','Hybrid search basics'], time:'8h', tags:['RAG','Embeddings','Vector DB'], file:'days/day3.html' },
-  { num:4, week:1, title:'LangGraph: Stateful Agents', subtitle:'Graph-based orchestration & state machines', topics:['Graph nodes & edges','State management with TypedDict','Conditional routing','Human-in-the-loop patterns','Persistence & checkpointing'], time:'8h', tags:['LangGraph','State Machine','Agents'], file:'days/day4.html' },
-  { num:5, week:1, title:'Multi-Agent Systems', subtitle:'Orchestrator/worker patterns & handoffs', topics:['Orchestrator/worker architecture','Agent handoff protocols','Parallel fan-out/fan-in','Shared state management','Agent communication patterns'], time:'8h', tags:['Multi-Agent','Orchestration'], file:'days/day5.html' },
-  { num:6, week:1, title:'Production Engineering', subtitle:'Cost, observability & security', topics:['Token cost optimization','Prompt caching strategies','LLM observability & tracing','Evaluation frameworks','Security & prompt injection defense'], time:'8h', tags:['Production','Cost','Security'], file:'days/day6.html' },
-  { num:7, week:1, title:'Capstone Project', subtitle:'Autonomous code review agent', topics:['Full multi-agent architecture','Tool integration at scale','Production deployment patterns','Performance benchmarking','Hardening & reliability'], time:'8h', tags:['Capstone','Full-Stack'], file:'days/day7.html' },
+  // Week 1 — Core Foundations (Beginner → Intermediate)
+  { num:1,  week:1, level:1, title:'LLMs & The API',                    subtitle:'Transformer internals & the Messages API',                       topics:['Transformer architecture & attention','Tokenization & BPE encoding','Messages API schema design','Stateless vs stateful memory','Temperature & sampling basics'],          time:'8h', tags:['LLM Basics','Transformers','API'],          file:'days/day1.html' },
+  { num:2,  week:1, level:1, title:'Tool Use & ReAct',                  subtitle:'Function calling & reasoning loops',                              topics:['JSON schema for tool definitions','Tool result handling patterns','ReAct reasoning loop','Multi-step tool chaining','Error recovery in tool use'],               time:'8h', tags:['Tool Use','ReAct','Function Calling'],    file:'days/day2.html' },
+  { num:3,  week:1, level:2, title:'Memory & RAG',                      subtitle:'Embedding spaces & retrieval pipelines',                          topics:['Embedding spaces & similarity','Vector database fundamentals','RAG pipeline architecture','Chunking & indexing strategies','Hybrid search basics'],             time:'8h', tags:['RAG','Embeddings','Vector DB'],            file:'days/day3.html' },
+  { num:4,  week:1, level:2, title:'LangGraph: Stateful Agents',        subtitle:'Graph-based orchestration & state machines',                      topics:['Graph nodes & edges','State management with TypedDict','Conditional routing','Human-in-the-loop patterns','Persistence & checkpointing'],                  time:'8h', tags:['LangGraph','State Machine','Agents'],      file:'days/day4.html' },
+  { num:5,  week:1, level:2, title:'Multi-Agent Systems',               subtitle:'Orchestrator/worker patterns & handoffs',                         topics:['Orchestrator/worker architecture','Agent handoff protocols','Parallel fan-out/fan-in','Shared state management','Agent communication patterns'],           time:'8h', tags:['Multi-Agent','Orchestration'],             file:'days/day5.html' },
+  { num:6,  week:1, level:3, title:'Production Engineering',            subtitle:'Cost, observability & security fundamentals',                     topics:['Token cost optimization','Prompt caching strategies','LLM observability & tracing','Evaluation frameworks','Security & prompt injection defense'],          time:'8h', tags:['Production','Cost','Security'],            file:'days/day6.html' },
+  { num:7,  week:1, level:3, title:'Week 1 Capstone',                   subtitle:'Build an autonomous code review agent end-to-end',               topics:['Full multi-agent architecture','Tool integration at scale','Production deployment patterns','Performance benchmarking','Hardening & reliability'],         time:'8h', tags:['Capstone','Full-Stack'],                    file:'days/day7.html' },
 
-  // Week 2 — Frameworks, Models & Embeddings
-  { num:8, week:2, title:'LangChain Deep-Dive', subtitle:'LCEL, chains & LangSmith tracing', topics:['LCEL (LangChain Expression Language)','Chain composition patterns','LangSmith tracing & debugging','Callbacks and streaming','LangChain vs LangGraph decision tree'], time:'8h', tags:['LangChain','LCEL','Tracing'], file:'days/day8.html' },
-  { num:9, week:2, title:'LLM Provider Landscape', subtitle:'OpenAI, Claude, Gemini, Mistral & Llama 3', topics:['OpenAI GPT-4o & structured outputs','Anthropic Claude API & extended context','Google Gemini 1.5 Pro capabilities','Mistral & open-weight models','Multi-provider cost & latency comparison'], time:'8h', tags:['OpenAI','Claude','Gemini','Mistral'], file:'days/day9.html' },
-  { num:10, week:2, title:'Vector Databases in Depth', subtitle:'FAISS, Chroma, Pinecone, Weaviate & Qdrant', topics:['FAISS local indexing (HNSW/IVF)','Chroma for development & prototyping','Pinecone serverless architecture','Weaviate GraphQL & hybrid search','Qdrant Rust-native performance & filtering'], time:'8h', tags:['FAISS','Pinecone','Weaviate','Qdrant','Chroma'], file:'days/day10.html' },
-  { num:11, week:2, title:'Embedding Models', subtitle:'Dense vectors, model selection & production patterns', topics:['OpenAI text-embedding-3-small/large','Cohere Embed v3 multilingual','BGE-M3 & sentence-transformers','Dimensionality, truncation & batching','Embedding drift detection & re-indexing'], time:'8h', tags:['Embeddings','sentence-transformers','BGE-M3'], file:'days/day11.html' },
-  { num:12, week:2, title:'Advanced RAG Patterns', subtitle:'Hybrid search, HyDE, re-ranking & RAGAS', topics:['Hybrid search: BM25 + dense retrieval','HyDE (Hypothetical Document Embeddings)','Parent-document & contextual compression','Cross-encoder re-ranking (Cohere/BGE)','RAGAS evaluation: faithfulness, relevancy'], time:'8h', tags:['RAG','HyDE','RAGAS','Reranking'], file:'days/day12.html' },
-  { num:13, week:2, title:'CrewAI & Role-Based Agents', subtitle:'Crews, tasks, tools & hierarchical processes', topics:['Agent roles, goals & backstory design','Task dependencies & delegation','Sequential vs hierarchical crew process','Custom tool integration','YAML-driven crew configuration'], time:'8h', tags:['CrewAI','Role-Based Agents','Multi-Agent'], file:'days/day13.html' },
-  { num:14, week:2, title:'Week 2 Capstone', subtitle:'Multi-provider knowledge assistant', topics:['LangChain LCEL pipeline architecture','Qdrant vector store integration','Claude + GPT-4o provider fallback','CrewAI researcher + writer crew','RAGAS evaluation of the full system'], time:'8h', tags:['Capstone','LangChain','CrewAI','Qdrant'], file:'days/day14.html' },
+  // Week 2 — Frameworks, Models & Embeddings (Intermediate)
+  { num:8,  week:2, level:3, title:'LangChain Deep-Dive',               subtitle:'LCEL, chains, callbacks & LangSmith tracing',                    topics:['LCEL (LangChain Expression Language)','Chain composition patterns','LangSmith tracing & debugging','Callbacks and streaming','LangChain vs LangGraph decision tree'], time:'8h', tags:['LangChain','LCEL','Tracing'],             file:'days/day8.html' },
+  { num:9,  week:2, level:3, title:'LLM Provider Landscape',            subtitle:'OpenAI, Claude, Gemini, Mistral & Llama 3 compared',             topics:['OpenAI GPT-4o & structured outputs','Anthropic Claude API & extended context','Google Gemini 1.5 Pro capabilities','Mistral & open-weight models','Multi-provider cost & latency comparison'], time:'8h', tags:['OpenAI','Claude','Gemini','Mistral'],   file:'days/day9.html' },
+  { num:10, week:2, level:3, title:'Vector Databases in Depth',         subtitle:'FAISS, Chroma, Pinecone, Weaviate & Qdrant',                     topics:['FAISS local indexing (HNSW/IVF)','Chroma for development & prototyping','Pinecone serverless architecture','Weaviate GraphQL & hybrid search','Qdrant Rust-native performance & filtering'], time:'8h', tags:['FAISS','Pinecone','Qdrant','Chroma'],     file:'days/day10.html' },
+  { num:11, week:2, level:3, title:'Embedding Models',                  subtitle:'Dense vectors, model selection & production patterns',            topics:['OpenAI text-embedding-3-small/large','Cohere Embed v3 multilingual','BGE-M3 & sentence-transformers','Dimensionality, truncation & batching','Embedding drift detection & re-indexing'], time:'8h', tags:['Embeddings','sentence-transformers','BGE'], file:'days/day11.html' },
+  { num:12, week:2, level:4, title:'Advanced RAG Patterns',             subtitle:'Hybrid search, HyDE, re-ranking & RAGAS evaluation',             topics:['Hybrid search: BM25 + dense retrieval','HyDE (Hypothetical Document Embeddings)','Parent-document & contextual compression','Cross-encoder re-ranking (Cohere/BGE)','RAGAS evaluation: faithfulness, relevancy'], time:'8h', tags:['RAG','HyDE','RAGAS','Reranking'],          file:'days/day12.html' },
+  { num:13, week:2, level:4, title:'CrewAI & Role-Based Agents',        subtitle:'Crews, tasks, tools & hierarchical processes',                   topics:['Agent roles, goals & backstory design','Task dependencies & delegation','Sequential vs hierarchical crew process','Custom tool integration','YAML-driven crew configuration'], time:'8h', tags:['CrewAI','Role-Based Agents','Multi-Agent'], file:'days/day13.html' },
+  { num:14, week:2, level:4, title:'Week 2 Capstone',                   subtitle:'Multi-provider knowledge assistant with RAGAS evaluation',       topics:['LangChain LCEL pipeline architecture','Qdrant vector store integration','Claude + GPT-4o provider fallback','CrewAI researcher + writer crew','RAGAS evaluation of the full system'], time:'8h', tags:['Capstone','LangChain','CrewAI','Qdrant'],  file:'days/day14.html' },
 
-  // Week 3 — ML Fundamentals, Fine-Tuning & MLOps
-  { num:15, week:3, title:'PyTorch for LLM Engineers', subtitle:'Tensors, autograd & model inference', topics:['Tensor operations & GPU memory management','Autograd & the computation graph','Loading & running pre-trained models','Inference optimization techniques','Memory profiling for large models'], time:'8h', tags:['PyTorch','Tensors','GPU'], file:'days/day15.html' },
-  { num:16, week:3, title:'HuggingFace Transformers', subtitle:'Pipeline API, model hub & local inference', topics:['pipeline() API for rapid prototyping','AutoModel & AutoTokenizer patterns','HuggingFace Hub: finding & loading models','Running Llama 3 locally with Ollama','GGUF quantized models & llama.cpp'], time:'8h', tags:['HuggingFace','Transformers','Ollama','Llama'], file:'days/day16.html' },
-  { num:17, week:3, title:'Fine-Tuning with LoRA/PEFT', subtitle:'QLoRA, SFTTrainer & adapter merging', topics:['When to fine-tune vs prompt engineer','LoRA mathematics: rank, alpha & scaling','QLoRA: 4-bit quantization + LoRA','Dataset preparation (Alpaca/chat format)','SFTTrainer, adapter merging & evaluation'], time:'8h', tags:['LoRA','QLoRA','PEFT','Fine-tuning'], file:'days/day17.html' },
-  { num:18, week:3, title:'MLflow & Experiment Tracking', subtitle:'Runs, registry & LangSmith integration', topics:['MLflow tracking: runs, metrics, artifacts','Model registry & lifecycle stages','Comparing experiments across runs','LangSmith for LLM evaluation tracking','Integrating MLflow with training pipelines'], time:'8h', tags:['MLflow','Experiment Tracking','MLOps'], file:'days/day18.html' },
-  { num:19, week:3, title:'MLOps Pipelines', subtitle:'Kubeflow, SageMaker, Vertex AI & BentoML', topics:['ML pipeline stages & orchestration patterns','Kubeflow Pipelines & Argo Workflows','AWS SageMaker Pipelines & endpoints','GCP Vertex AI Pipelines & Model Garden','BentoML for model serving & packaging'], time:'8h', tags:['MLOps','SageMaker','Vertex AI','BentoML'], file:'days/day19.html' },
-  { num:20, week:3, title:'AI System Observability', subtitle:'RAGAS, LangSmith, Prometheus & drift detection', topics:['Key metrics: latency, tokens, cost, quality','RAGAS: faithfulness & answer relevancy','LangSmith tracing for production LLMs','Prometheus + Grafana for LLM metrics','Model drift detection & continuous learning'], time:'8h', tags:['Observability','RAGAS','Monitoring','Drift'], file:'days/day20.html' },
-  { num:21, week:3, title:'Week 3 Capstone', subtitle:'Fine-tune → MLflow → FastAPI → RAGAS eval', topics:['QLoRA fine-tune a domain-specific model','Track training experiments with MLflow','Serve fine-tuned model with FastAPI','Evaluate system quality with RAGAS','Close the continuous learning loop'], time:'8h', tags:['Capstone','LoRA','MLflow','RAGAS'], file:'days/day21.html' },
+  // Week 3 — ML Fundamentals, Fine-Tuning & MLOps (Advanced)
+  { num:15, week:3, level:4, title:'PyTorch for LLM Engineers',         subtitle:'Tensors, autograd, inference & GPU memory',                      topics:['Tensor operations & GPU memory management','Autograd & the computation graph','Loading & running pre-trained models','Inference optimization techniques','Memory profiling for large models'], time:'8h', tags:['PyTorch','Tensors','GPU'],                file:'days/day15.html' },
+  { num:16, week:3, level:4, title:'HuggingFace Transformers',          subtitle:'Pipeline API, model hub & local inference with Ollama',          topics:['pipeline() API for rapid prototyping','AutoModel & AutoTokenizer patterns','HuggingFace Hub: finding & loading models','Running Llama 3 locally with Ollama','GGUF quantized models & llama.cpp'], time:'8h', tags:['HuggingFace','Transformers','Ollama'],      file:'days/day16.html' },
+  { num:17, week:3, level:4, title:'Fine-Tuning with LoRA/PEFT',        subtitle:'QLoRA, SFTTrainer & adapter merging',                            topics:['When to fine-tune vs prompt engineer','LoRA mathematics: rank, alpha & scaling','QLoRA: 4-bit quantization + LoRA','Dataset preparation (Alpaca/chat format)','SFTTrainer, adapter merging & evaluation'], time:'8h', tags:['LoRA','QLoRA','PEFT','Fine-tuning'],       file:'days/day17.html' },
+  { num:18, week:3, level:4, title:'MLflow & Experiment Tracking',      subtitle:'Runs, model registry & LangSmith integration',                  topics:['MLflow tracking: runs, metrics, artifacts','Model registry & lifecycle stages','Comparing experiments across runs','LangSmith for LLM evaluation tracking','Integrating MLflow with training pipelines'], time:'8h', tags:['MLflow','Experiment Tracking','MLOps'],   file:'days/day18.html' },
+  { num:19, week:3, level:5, title:'MLOps Pipelines',                   subtitle:'Kubeflow, SageMaker, Vertex AI & BentoML serving',              topics:['ML pipeline stages & orchestration patterns','Kubeflow Pipelines & Argo Workflows','AWS SageMaker Pipelines & endpoints','GCP Vertex AI Pipelines & Model Garden','BentoML for model serving & packaging'], time:'8h', tags:['MLOps','SageMaker','Vertex AI','BentoML'], file:'days/day19.html' },
+  { num:20, week:3, level:5, title:'AI System Observability',           subtitle:'RAGAS, LangSmith, Prometheus & drift detection',                 topics:['Key metrics: latency, tokens, cost, quality','RAGAS: faithfulness & answer relevancy','LangSmith tracing for production LLMs','Prometheus + Grafana for LLM metrics','Model drift detection & continuous learning'], time:'8h', tags:['Observability','RAGAS','Monitoring','Drift'], file:'days/day20.html' },
+  { num:21, week:3, level:5, title:'Week 3 Capstone',                   subtitle:'Fine-tune → MLflow → FastAPI → RAGAS evaluation loop',          topics:['QLoRA fine-tune a domain-specific model','Track training experiments with MLflow','Serve fine-tuned model with FastAPI','Evaluate system quality with RAGAS','Close the continuous learning loop'], time:'8h', tags:['Capstone','LoRA','MLflow','RAGAS'],         file:'days/day21.html' },
 
-  // Week 4 — Prompt Engineering, Safety & Cloud/DevOps
-  { num:22, week:4, title:'Advanced Prompt Engineering', subtitle:'ToT, self-consistency, HyDE & Instructor', topics:['Chain-of-thought & tree-of-thought patterns','Self-consistency for reliable outputs','HyDE for retrieval augmentation','Instructor library for structured extraction','Prompt compression & context efficiency'], time:'8h', tags:['Prompt Engineering','ToT','Instructor','HyDE'], file:'days/day22.html' },
-  { num:23, week:4, title:'AI Guardrails & Safety', subtitle:'Prompt injection, constitutional AI & approval gates', topics:['Prompt injection taxonomy & defense','Indirect prompt injection vectors','Constitutional AI critique-revision loop','NeMo Guardrails vs Guardrails AI','Human-in-the-loop approval gate patterns'], time:'8h', tags:['Safety','Guardrails','Constitutional AI','HITL'], file:'days/day23.html' },
-  { num:24, week:4, title:'Structured Outputs & Determinism', subtitle:'JSON mode, Pydantic validation & retry loops', topics:['The determinism problem in production AI','JSON mode & function-call response schemas','Pydantic models for output validation','Instructor library: constrained generation','Retry-with-feedback & canonical data models'], time:'8h', tags:['Structured Output','Pydantic','Instructor','JSON'], file:'days/day24.html' },
-  { num:25, week:4, title:'Auth, Tenancy & Authorization-Aware AI', subtitle:'JWT scopes, per-tenant namespaces & RBAC in tools', topics:['JWT scopes in agent context','Per-tenant vector namespaces (Pinecone/Qdrant)','RBAC enforcement inside tool calls','Data isolation patterns for multi-tenant SaaS','Audit logging & compliance for AI actions'], time:'8h', tags:['Security','Multi-tenant','RBAC','Auth'], file:'days/day25.html' },
-  { num:26, week:4, title:'Cloud AI Services', subtitle:'AWS Bedrock, Vertex AI & Azure AI Studio', topics:['AWS Bedrock: Nova, Titan & Claude on AWS','GCP Vertex AI: Gemini API & Agent Builder','Azure AI Studio & OpenAI on Azure','Managed vs self-hosted: decision framework','Cost, compliance & latency comparison'], time:'8h', tags:['AWS Bedrock','Vertex AI','Azure','Cloud'], file:'days/day26.html' },
-  { num:27, week:4, title:'Docker & Kubernetes for AI', subtitle:'Containerization, GPU scheduling & Helm charts', topics:['Containerizing FastAPI + model servers','GPU node selectors & resource limits','Helm charts for multi-service AI stacks','K8s Job queue for batch inference','Health checks, readiness probes & rolling updates'], time:'8h', tags:['Docker','Kubernetes','Helm','GPU'], file:'days/day27.html' },
-  { num:28, week:4, title:'RL & Self-Improving Agents', subtitle:'RLHF, DPO & LLM-as-judge feedback loops', topics:['RLHF: three stages (SFT, reward model, PPO)','DPO: simpler preference optimization','Constitutional AI self-critique loop','LLM-as-judge for scalable evaluation','Closing the loop: eval → fine-tune pipeline'], time:'8h', tags:['RLHF','DPO','RL','Self-Improvement'], file:'days/day28.html' },
+  // Week 4 — Prompt Engineering, Safety & Cloud/DevOps (Expert)
+  { num:22, week:4, level:5, title:'Advanced Prompt Engineering',       subtitle:'ToT, self-consistency, HyDE & Instructor library',              topics:['Chain-of-thought & tree-of-thought patterns','Self-consistency for reliable outputs','HyDE for retrieval augmentation','Instructor library for structured extraction','Prompt compression & context efficiency'], time:'8h', tags:['Prompt Engineering','ToT','Instructor'],    file:'days/day22.html' },
+  { num:23, week:4, level:5, title:'AI Guardrails & Safety',            subtitle:'Prompt injection defense, Constitutional AI & approval gates',  topics:['Prompt injection taxonomy & defense','Indirect prompt injection vectors','Constitutional AI critique-revision loop','NeMo Guardrails vs Guardrails AI','Human-in-the-loop approval gate patterns'], time:'8h', tags:['Safety','Guardrails','Constitutional AI'],  file:'days/day23.html' },
+  { num:24, week:4, level:5, title:'Structured Outputs & Determinism',  subtitle:'JSON mode, Pydantic validation & retry-with-feedback',          topics:['The determinism problem in production AI','JSON mode & function-call response schemas','Pydantic models for output validation','Instructor library: constrained generation','Retry-with-feedback & canonical data models'], time:'8h', tags:['Structured Output','Pydantic','JSON'],      file:'days/day24.html' },
+  { num:25, week:4, level:5, title:'Auth, Tenancy & RBAC',              subtitle:'JWT scopes, per-tenant namespaces & RBAC in tools',             topics:['JWT scopes in agent context','Per-tenant vector namespaces (Pinecone/Qdrant)','RBAC enforcement inside tool calls','Data isolation patterns for multi-tenant SaaS','Audit logging & compliance for AI actions'], time:'8h', tags:['Security','Multi-tenant','RBAC','Auth'],   file:'days/day25.html' },
+  { num:26, week:4, level:5, title:'Cloud AI Services',                 subtitle:'AWS Bedrock, Vertex AI & Azure AI Studio compared',             topics:['AWS Bedrock: Nova, Titan & Claude on AWS','GCP Vertex AI: Gemini API & Agent Builder','Azure AI Studio & OpenAI on Azure','Managed vs self-hosted: decision framework','Cost, compliance & latency comparison'], time:'8h', tags:['AWS Bedrock','Vertex AI','Azure','Cloud'],  file:'days/day26.html' },
+  { num:27, week:4, level:5, title:'Docker & Kubernetes for AI',        subtitle:'Containerization, GPU scheduling & Helm charts',                topics:['Containerizing FastAPI + model servers','GPU node selectors & resource limits','Helm charts for multi-service AI stacks','K8s Job queue for batch inference','Health checks, readiness probes & rolling updates'], time:'8h', tags:['Docker','Kubernetes','Helm','GPU'],         file:'days/day27.html' },
+  { num:28, week:4, level:5, title:'RL & Self-Improving Agents',        subtitle:'RLHF, DPO & LLM-as-judge feedback loops',                       topics:['RLHF: three stages (SFT, reward model, PPO)','DPO: simpler preference optimization','Constitutional AI self-critique loop','LLM-as-judge for scalable evaluation','Closing the loop: eval → fine-tune pipeline'], time:'8h', tags:['RLHF','DPO','RL','Self-Improvement'],      file:'days/day28.html' },
 
-  // Week 5 — Final Capstone
-  { num:29, week:5, title:'AI Copilot Architecture', subtitle:'Intent routing, workflow state machine & approval flows', topics:['Intent classification & command routing','Conversational workflow state machine','Intent-to-command backend contracts','Context model: tenant, role, workflow stage','Approval, confirmation & escalation flows'], time:'8h', tags:['Copilot','Architecture','Intent Routing','Enterprise'], file:'days/day29.html' },
-  { num:30, week:5, title:'30-Day Final Capstone', subtitle:'Full-stack AI copilot: FastAPI + LangGraph + Qdrant + Guardrails + Docker', topics:['Full-stack copilot architecture assembly','JWT auth + per-tenant Qdrant namespaces','LangGraph orchestrator with approval gates','Guardrails middleware layer','MLflow tracking + RAGAS evaluation + Docker'], time:'8h', tags:['Capstone','Full-Stack','Production','Enterprise'], file:'days/day30.html' }
+  // Week 5 — Final Capstone (Expert)
+  { num:29, week:5, level:5, title:'AI Copilot Architecture',           subtitle:'Intent routing, LangGraph state machine & approval flows',      topics:['Intent classification & command routing','Conversational workflow state machine','Intent-to-command backend contracts','Context model: tenant, role, workflow stage','Approval, confirmation & escalation flows'], time:'8h', tags:['Copilot','Architecture','Intent Routing'],   file:'days/day29.html' },
+  { num:30, week:5, level:5, title:'30-Day Final Capstone',             subtitle:'Full-stack AI copilot: FastAPI + LangGraph + Qdrant + Docker', topics:['Full-stack copilot architecture assembly','JWT auth + per-tenant Qdrant namespaces','LangGraph orchestrator with approval gates','Guardrails middleware layer','MLflow tracking + RAGAS evaluation + Docker'], time:'8h', tags:['Capstone','Full-Stack','Production','Enterprise'], file:'days/day30.html' }
 ];
 
 const WEEK_META = {
@@ -995,6 +1019,7 @@ function getDayStatus(day) {
 function resetProgress() {
   if (confirm('Reset all progress?')) {
     localStorage.removeItem('aai_progress');
+    renderRampViz();
     renderCurriculum();
     updateStats(0);
     renderProgressSteps();
@@ -1048,6 +1073,58 @@ function renderProgressSteps() {
   });
 }
 
+const LEVEL_LABELS = {1:'Beginner',2:'Foundational',3:'Intermediate',4:'Advanced',5:'Expert'};
+const LEVEL_COLORS = {1:'#34d399',2:'#60a5fa',3:'#c084fc',4:'#fbbf24',5:'#f87171'};
+const LEVEL_HEIGHTS = {1:12,2:24,3:38,4:52,5:64};
+
+function renderRampViz() {
+  const container = document.getElementById('rampViz');
+  if (!container) return;
+
+  // Week color bands
+  const weekColors = {1:'#7c3aed',2:'#0ea5e9',3:'#f59e0b',4:'#ef4444',5:'#0d9488'};
+  const weekDays = {1:7,2:7,3:7,4:7,5:2};
+
+  let html = `
+    <div class="ramp-labels">
+      <span class="ramp-label" style="color:${LEVEL_COLORS[1]}">Beginner</span>
+      <span class="ramp-label" style="color:${LEVEL_COLORS[3]}">Intermediate</span>
+      <span class="ramp-label" style="color:${LEVEL_COLORS[5]}">Expert</span>
+    </div>
+    <div class="ramp-dots" id="rampDots">`;
+
+  const progress = getProgress();
+  DAYS.forEach(day => {
+    const h = LEVEL_HEIGHTS[day.level];
+    const col = LEVEL_COLORS[day.level];
+    const status = progress[day.num] || 'locked';
+    const opacity = status === 'complete' ? 1 : status === 'active' ? 0.8 : 0.35;
+    const ring = status === 'complete' ? `box-shadow:0 0 0 2px ${col}40;` : '';
+    html += `<div class="ramp-dot level-${day.level}"
+      style="height:${h}px;background:${col};opacity:${opacity};${ring}"
+      onclick="window.location='${day.file}'"
+      title="Day ${day.num}">
+        <div class="ramp-dot-tip">Day ${day.num}: ${day.title}<br><span style="color:${col}">${LEVEL_LABELS[day.level]}</span></div>
+      </div>`;
+  });
+
+  html += `</div><div class="ramp-weeks">`;
+
+  // Week spans — proportional flex widths
+  [1,2,3,4,5].forEach(w => {
+    const cnt = weekDays[w];
+    const col = weekColors[w];
+    html += `<div class="ramp-week-span" style="flex:${cnt};color:${col}">W${w} (${cnt}d)</div>`;
+  });
+
+  html += `</div>
+    <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap;">
+      ${[1,2,3,4,5].map(l=>`<span style="display:inline-flex;align-items:center;gap:5px;font-size:0.7rem;color:${LEVEL_COLORS[l]}"><span style="width:8px;height:8px;border-radius:2px;background:${LEVEL_COLORS[l]};display:inline-block;"></span>${LEVEL_LABELS[l]}</span>`).join('')}
+    </div>`;
+
+  container.innerHTML = html;
+}
+
 function renderCurriculum() {
   const container = document.getElementById('curriculumContainer');
   container.innerHTML = '';
@@ -1067,9 +1144,7 @@ function renderCurriculum() {
     section.className = 'week-section' + (isCollapsed ? ' collapsed' : '');
     section.dataset.week = w;
 
-    const overviewLink = w > 1
-      ? `<a class="week-overview-link" href="weeks/week${w}.html" onclick="event.stopPropagation()">Overview →</a>`
-      : '';
+    const overviewLink = `<a class="week-overview-link" href="weeks/week${w}.html" onclick="event.stopPropagation()">Overview →</a>`;
     section.innerHTML = `
       <div class="week-header" onclick="toggleWeek(${w})">
         <span class="week-badge">Week ${w}</span>
@@ -1093,7 +1168,10 @@ function renderCurriculum() {
           <span class="day-num">Day ${day.num}</span>
           <span class="day-status-badge">${status === 'complete' ? '✓ Done' : status === 'active' ? '▶ Active' : '🔒 Locked'}</span>
         </div>
-        <h3 class="day-title">${day.title}</h3>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <h3 class="day-title" style="margin-bottom:0;">${day.title}</h3>
+          <span class="level-badge level-${day.level}">${LEVEL_LABELS[day.level]}</span>
+        </div>
         <p class="day-subtitle">${day.subtitle}</p>
         <ul class="day-topics">${day.topics.slice(0, 3).map(t => '<li>' + t + '</li>').join('')}</ul>
         <div class="day-footer-row">
@@ -1138,6 +1216,7 @@ if (!localStorage.getItem('aai_progress')) {
   setDayStatus(1, 'active');
 }
 
+renderRampViz();
 renderCurriculum();
 renderProgressSteps();
 </script>
