@@ -696,5 +696,431 @@ best_run = client.<span class="c-fn">search_runs</span>(
   </div>
 </section>
 
+<!-- Section 06: CI/CD Integration & Automated Model Promotion -->
+<section class="section animate-on-scroll">
+  <div class="section-header">
+    <span class="section-num">06</span>
+    <h2 class="section-title">CI/CD Integration & Automated Model Promotion</h2>
+  </div>
+  <p>The real power of MLflow's Model Registry emerges when you integrate it with CI/CD. An automated pipeline can: (1) trigger a training job on new data, (2) log the run to MLflow, (3) compare metrics against the current production model, (4) automatically promote to Staging if the new model is better, and (5) require a human approval before Production promotion. This eliminates manual model management while maintaining safety gates.</p>
+  <p>The comparison must be done carefully — a model with lower validation loss might have higher latency, larger memory footprint, or worse performance on edge cases. A robust promotion gate checks multiple criteria simultaneously.</p>
+
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">promotion_pipeline.py</span>
+    </div>
+    <pre><code><span class="c-kw">import</span> mlflow
+<span class="c-kw">from</span> mlflow.tracking <span class="c-kw">import</span> MlflowClient
+
+client = <span class="c-fn">MlflowClient</span>()
+
+<span class="c-kw">def</span> <span class="c-fn">should_promote</span>(new_run_id: str, model_name: str) -> bool:
+    <span class="c-str">"""Compare new run against current production model."""</span>
+    <span class="c-cmt"># Get current production model's run</span>
+    prod_versions = client.<span class="c-fn">get_latest_versions</span>(model_name, stages=[<span class="c-str">"Production"</span>])
+    <span class="c-kw">if not</span> prod_versions:
+        <span class="c-kw">return</span> <span class="c-kw">True</span>  <span class="c-cmt"># No production model — always promote first</span>
+
+    prod_run = client.<span class="c-fn">get_run</span>(prod_versions[<span class="c-fn">0</span>].run_id)
+    new_run = client.<span class="c-fn">get_run</span>(new_run_id)
+
+    prod_metrics = prod_run.data.metrics
+    new_metrics = new_run.data.metrics
+
+    <span class="c-cmt"># Multi-criteria gate: must improve on all dimensions</span>
+    criteria = [
+        new_metrics[<span class="c-str">"val_loss"</span>] < prod_metrics[<span class="c-str">"val_loss"</span>] * <span class="c-fn">0.98</span>,  <span class="c-cmt"># 2% better</span>
+        new_metrics[<span class="c-str">"p99_latency_ms"</span>] <= prod_metrics[<span class="c-str">"p99_latency_ms"</span>] * <span class="c-fn">1.1</span>,  <span class="c-cmt"># max 10% slower</span>
+        new_metrics[<span class="c-str">"ragas_faithfulness"</span>] >= <span class="c-fn">0.85</span>,  <span class="c-cmt"># absolute floor</span>
+    ]
+    <span class="c-kw">return</span> <span class="c-fn">all</span>(criteria)
+
+<span class="c-kw">def</span> <span class="c-fn">promote_model</span>(run_id: str, model_name: str):
+    <span class="c-cmt"># Register new version</span>
+    mv = mlflow.<span class="c-fn">register_model</span>(<span class="c-fn">f"runs:/{run_id}/model"</span>, model_name)
+    <span class="c-cmt"># Transition to Staging (automated)</span>
+    client.<span class="c-fn">transition_model_version_stage</span>(
+        name=model_name, version=mv.version, stage=<span class="c-str">"Staging"</span>,
+        archive_existing_versions=<span class="c-kw">False</span>
+    )
+    <span class="c-cmt"># Human approval required for Production (enforced by process)</span>
+    <span class="c-fn">print</span>(<span class="c-fn">f"Model v{mv.version} in Staging — awaiting approval for Production"</span>)
+
+<span class="c-cmt"># Run as part of CI/CD</span>
+NEW_RUN_ID = os.<span class="c-fn">environ</span>[<span class="c-str">"MLFLOW_RUN_ID"</span>]
+<span class="c-kw">if</span> <span class="c-fn">should_promote</span>(NEW_RUN_ID, <span class="c-str">"llm-rag-api"</span>):
+    <span class="c-fn">promote_model</span>(NEW_RUN_ID, <span class="c-str">"llm-rag-api"</span>)
+<span class="c-kw">else</span>:
+    <span class="c-fn">print</span>(<span class="c-str">"New model did not pass promotion gate — staying in None stage"</span>)</code></pre>
+  </div>
+
+  <div class="why-matters">
+    <strong>Why this matters:</strong> The 2% improvement threshold prevents meaningless promotions caused by random variation. Without it, models that are statistically equivalent (within noise) would constantly replace each other. The latency gate prevents a model that's 2% better on quality but 50% slower from reaching production and causing SLA violations.
+  </div>
+
+  <h3 style="color:var(--purple);margin:2rem 0 1rem;">MLflow Recipes (Pipelines)</h3>
+  <p>MLflow Recipes (formerly MLflow Pipelines) provides opinionated, templated ML workflows for classification, regression, and custom tasks. Instead of writing training scripts from scratch, you define configuration YAML files and implement a few Python functions (data loading, feature engineering, model evaluation). Recipes handle the boilerplate: data splitting, metric logging, artifact management, and model registration.</p>
+
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">recipe.yaml</span>
+    </div>
+    <pre><code><span class="c-cmt"># MLflow Recipe configuration</span>
+recipe: regression/v1
+
+target_col: quality_score
+primary_metric: root_mean_squared_error
+
+steps:
+  ingest:
+    using: custom
+    location: steps/ingest.py
+  split:
+    split_ratios: [0.75, 0.125, 0.125]  <span class="c-cmt"># train/val/test</span>
+  transform:
+    using: custom
+    location: steps/transform.py
+  train:
+    using: custom
+    location: steps/train.py
+    tuning:
+      enabled: true
+      algorithm: optuna
+      sample_fraction: 0.5
+      parameters:
+        learning_rate:
+          distribution: log_uniform
+          low: 1e-5
+          high: 1e-2
+  evaluate:
+    validation_thresholds:
+      root_mean_squared_error:
+        threshold: 0.25
+  register:
+    model_name: "llm_quality_scorer"
+    allow_non_validated_model: false</code></pre>
+  </div>
+
+  <div class="pitfall">
+    <strong>Common pitfall:</strong> MLflow Recipes are designed for tabular ML, not LLM fine-tuning. Use them for auxiliary models (quality scorers, classifiers, embedding rerankers) that support your LLM system. For the LLM itself, use the standard <code>mlflow.start_run()</code> API with <code>log_params/log_metrics/log_model</code>.
+  </div>
+
+  <h3 style="color:var(--purple);margin:2rem 0 1rem;">Experiment Organization Best Practices</h3>
+  <table class="comparison-table">
+    <thead><tr><th>Practice</th><th>Implementation</th><th>Why It Matters</th></tr></thead>
+    <tbody>
+      <tr><td>One experiment per objective</td><td>Create experiments by task, not date</td><td>Easy comparison within task</td></tr>
+      <tr><td>Tag every run</td><td>Set author, git_hash, dataset_version tags</td><td>Reproducibility audit trail</td></tr>
+      <tr><td>Log system metrics</td><td>GPU utilization, memory, training time</td><td>Cost analysis per run</td></tr>
+      <tr><td>Save requirements.txt</td><td><code>mlflow.log_artifact("requirements.txt")</code></td><td>Exact environment reproduction</td></tr>
+      <tr><td>Nested runs for HPO</td><td>Parent run = search, child runs = trials</td><td>Clear search hierarchy</td></tr>
+      <tr><td>Version your datasets</td><td>Log dataset hash or S3 ETag</td><td>Detect silent data changes</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- Section 07: MLflow for LLM Applications & Tracing -->
+<section class="section animate-on-scroll">
+  <div class="section-header">
+    <span class="section-num">07</span>
+    <h2 class="section-title">MLflow for LLM Applications & Tracing</h2>
+  </div>
+  <p>MLflow 2.x introduced native LLM tracking capabilities: prompt logging, trace capture, LLM evaluation datasets, and integration with LangChain/LlamaIndex. The <code>mlflow.llm.log_predictions()</code> function stores (inputs, outputs, ground_truths) for batch evaluation. MLflow Tracing (GA in 2.14) captures full LLM call graphs including retrieval steps, tool calls, and agent reasoning chains with zero code changes for LangChain users.</p>
+  <p>MLflow's model evaluation framework provides a standardized interface to run ROUGE, BLEU, exact match, and custom metrics across any model or API endpoint. You can compare a fine-tuned local model against an OpenAI API baseline using the same evaluation harness — critical for making deployment decisions based on quality vs. cost vs. latency trade-offs.</p>
+
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">mlflow_llm_eval.py</span>
+    </div>
+    <pre><code><span class="c-kw">import</span> mlflow
+<span class="c-kw">from</span> mlflow.models <span class="c-kw">import</span> infer_signature
+<span class="c-kw">import</span> pandas <span class="c-kw">as</span> pd
+
+<span class="c-cmt"># Evaluation dataset — question + ground truth answer pairs</span>
+eval_data = pd.<span class="c-fn">DataFrame</span>({
+    <span class="c-str">"inputs"</span>: [
+        <span class="c-str">"What is LoRA fine-tuning?"</span>,
+        <span class="c-str">"Explain gradient checkpointing."</span>,
+        <span class="c-str">"What is the KL divergence in DPO?"</span>,
+    ],
+    <span class="c-str">"ground_truth"</span>: [
+        <span class="c-str">"LoRA adds low-rank adapter matrices to frozen model weights..."</span>,
+        <span class="c-str">"Gradient checkpointing saves memory by recomputing activations..."</span>,
+        <span class="c-str">"KL divergence in DPO penalizes deviation from the reference model..."</span>,
+    ]
+})
+
+<span class="c-kw">with</span> mlflow.<span class="c-fn">start_run</span>():
+    <span class="c-cmt"># Evaluate a local model endpoint</span>
+    results = mlflow.<span class="c-fn">evaluate</span>(
+        model=<span class="c-str">"runs:/abc123/model"</span>,           <span class="c-cmt"># or function, or REST endpoint</span>
+        data=eval_data,
+        targets=<span class="c-str">"ground_truth"</span>,
+        model_type=<span class="c-str">"text"</span>,
+        evaluators=<span class="c-str">"default"</span>,
+        extra_metrics=[
+            mlflow.metrics.<span class="c-fn">rouge1</span>(),
+            mlflow.metrics.<span class="c-fn">rougeL</span>(),
+            mlflow.metrics.genai.<span class="c-fn">relevance</span>(model=<span class="c-str">"openai:/gpt-4o-mini"</span>),
+            mlflow.metrics.genai.<span class="c-fn">faithfulness</span>(model=<span class="c-str">"openai:/gpt-4o-mini"</span>),
+        ]
+    )
+    <span class="c-fn">print</span>(results.metrics)
+    <span class="c-cmt"># {'mean/rouge1': 0.42, 'mean/rougeL': 0.38, 'mean/relevance': 4.2, ...}</span></code></pre>
+  </div>
+
+  <div class="why-matters">
+    <strong>Why this matters:</strong> <code>mlflow.evaluate()</code> creates a standardized, logged benchmark. When you update your model next month, you run the same evaluation code against the same dataset and compare logged metrics side by side. This prevents the "it feels better" deployment decision — you have numbers.
+  </div>
+
+  <h3 style="color:var(--purple);margin:2rem 0 1rem;">Auto-Tracing LangChain Applications</h3>
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">langchain_tracing.py</span>
+    </div>
+    <pre><code><span class="c-kw">import</span> mlflow
+<span class="c-kw">from</span> langchain_openai <span class="c-kw">import</span> ChatOpenAI
+<span class="c-kw">from</span> langchain_core.prompts <span class="c-kw">import</span> ChatPromptTemplate
+
+<span class="c-cmt"># Enable MLflow auto-tracing — zero additional code needed!</span>
+mlflow.<span class="c-fn">langchain.autolog</span>()
+
+<span class="c-cmt"># Every LangChain call is now automatically traced and logged</span>
+model = <span class="c-fn">ChatOpenAI</span>(model=<span class="c-str">"gpt-4o-mini"</span>)
+prompt = ChatPromptTemplate.<span class="c-fn">from_messages</span>([
+    (<span class="c-str">"system"</span>, <span class="c-str">"You are a helpful ML expert."</span>),
+    (<span class="c-str">"user"</span>, <span class="c-str">"{question}"</span>)
+])
+chain = prompt | model
+
+<span class="c-kw">with</span> mlflow.<span class="c-fn">start_run</span>():
+    <span class="c-kmt"># MLflow captures: prompt, response, token usage, latency, model params</span>
+    result = chain.<span class="c-fn">invoke</span>({<span class="c-str">"question"</span>: <span class="c-str">"What is Flash Attention?"</span>})
+    <span class="c-cmt"># Check the MLflow UI — the full trace is logged automatically</span></code></pre>
+  </div>
+
+  <div class="pitfall">
+    <strong>Common pitfall:</strong> <code>mlflow.langchain.autolog()</code> logs every LangChain call, including during development. In production, this creates enormous trace volumes. Use <code>mlflow.langchain.autolog(log_traces=False)</code> and selectively enable tracing for sampled requests using <code>mlflow.start_run()</code> as a context manager around specific operations.
+  </div>
+</section>
+
+<!-- Section 08: MLflow Server Configuration & Production Deployment -->
+<section class="section animate-on-scroll">
+  <div class="section-header">
+    <span class="section-num">08</span>
+    <h2 class="section-title">MLflow Server Configuration & Production Deployment</h2>
+  </div>
+  <p>The default MLflow tracking server stores data in a local SQLite file — fine for personal use but unsuitable for teams. Production MLflow requires: a PostgreSQL backend for metadata (runs, experiments, metrics), an S3/GCS artifact store for model files, and a dedicated server process. Many teams run MLflow in Kubernetes with Horizontal Pod Autoscaling on the tracking server, load balancing across multiple server replicas.</p>
+  <p>Authentication is critical — MLflow 2.x introduced built-in auth with user management, but many teams use nginx as a reverse proxy with Basic Auth or integrate with their organization's SSO (Okta, Azure AD) using OAuth2 proxies. Ensure the MLflow tracking URI is accessible only from within your VPC, not exposed to the public internet.</p>
+
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">mlflow_server_start.sh</span>
+    </div>
+    <pre><code><span class="c-cmt"># Production MLflow server with PostgreSQL + S3</span>
+mlflow server \
+  --backend-store-uri postgresql://mlflow:password@postgres:5432/mlflow \
+  --default-artifact-root s3://my-mlflow-bucket/artifacts \
+  --host 0.0.0.0 \
+  --port 5000 \
+  --workers 4 \            <span class="c-cmt"># gunicorn workers</span>
+  --gunicorn-opts "--timeout 120 --keep-alive 5"
+
+<span class="c-cmt"># Client configuration</span>
+export MLFLOW_TRACKING_URI=https://mlflow.internal.example.com
+export MLFLOW_TRACKING_USERNAME=your-username
+export MLFLOW_TRACKING_PASSWORD=your-token
+export AWS_DEFAULT_REGION=us-east-1  <span class="c-cmt"># for S3 artifact access</span></code></pre>
+  </div>
+
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">k8s/mlflow_deployment.yaml</span>
+    </div>
+    <pre><code>apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mlflow-server
+spec:
+  replicas: 2
+  template:
+    spec:
+      containers:
+        - name: mlflow
+          image: ghcr.io/mlflow/mlflow:v2.16.2
+          command:
+            - mlflow
+            - server
+            - --backend-store-uri
+            - postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres:5432/mlflow
+            - --default-artifact-root
+            - s3://$(S3_BUCKET)/artifacts
+            - --host
+            - "0.0.0.0"
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mlflow-secrets
+                  key: postgres-user
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mlflow-secrets
+                  key: postgres-password
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "2Gi"
+              cpu: "1"</code></pre>
+  </div>
+
+  <div class="why-matters">
+    <strong>Why this matters:</strong> A single MLflow server with SQLite can handle one person's experiments. When 10 engineers run parallel training jobs, SQLite's file locking causes write contention and data loss. PostgreSQL handles thousands of concurrent metric writes without contention, and S3 artifact storage scales to petabytes of model files with no capacity planning required.
+  </div>
+
+  <h3 style="color:var(--purple);margin:2rem 0 1rem;">Model Serving with MLflow</h3>
+  <p>MLflow provides <code>mlflow models serve</code> — a REST API server that wraps any logged model. It supports single-model serving (one model per endpoint) and works with all MLflow flavors (sklearn, pytorch, transformers, pyfunc). For production LLM serving, use vLLM or TGI instead — MLflow serving doesn't support streaming, batching, or continuous batching optimizations. Use MLflow serving for auxiliary models (classifiers, rankers, quality scorers) that complement your LLM.</p>
+
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">model_serving.sh</span>
+    </div>
+    <pre><code><span class="c-cmt"># Serve a logged model via REST</span>
+mlflow models serve \
+  --model-uri models:/llm-rag-api/Production \
+  --host 0.0.0.0 \
+  --port 8080 \
+  --env-manager conda  <span class="c-cmt"># or virtualenv</span>
+
+<span class="c-cmt"># Call the served model</span>
+curl -X POST http://localhost:8080/invocations \
+  -H "Content-Type: application/json" \
+  -d '{"dataframe_records": [{"prompt": "What is LoRA?"}]}'
+
+<span class="c-cmt"># Or build a Docker container for the model</span>
+mlflow models build-docker \
+  --model-uri models:/llm-rag-api/Production \
+  --name llm-rag-api:latest
+
+<span class="c-cmt"># Deploy to AWS SageMaker directly from MLflow</span>
+mlflow deployments create \
+  -t sagemaker \
+  --name llm-rag-endpoint \
+  -m models:/llm-rag-api/Production \
+  -C instance-type=ml.g5.2xlarge \
+  -C region=us-east-1</code></pre>
+  </div>
+
+  <div class="pitfall">
+    <strong>Common pitfall:</strong> When using <code>mlflow models serve</code> in production, the conda environment rebuild on startup takes 2-5 minutes — causing Kubernetes readiness probe failures and pod restarts. Use <code>--env-manager local</code> to skip environment management (your Docker image should have all dependencies pre-installed) and set <code>initialDelaySeconds: 300</code> on your readiness probe to account for model loading time.
+  </div>
+</section>
+
+<!-- Section 09: LangSmith vs MLflow — LLM Tracing Comparison -->
+<section class="section animate-on-scroll">
+  <div class="section-header">
+    <span class="section-num">09</span>
+    <h2 class="section-title">LangSmith Tracing & Comparison with MLflow</h2>
+  </div>
+  <p>LangSmith is LangChain's hosted tracing and evaluation platform. It captures every LangChain call — LLM inputs/outputs, tool invocations, retrieval results, token counts, and latency — as structured traces without any code changes. The trade-off vs. MLflow: LangSmith is LangChain-native and provides richer LLM-specific visualization, while MLflow supports any ML framework and integrates with your existing infrastructure.</p>
+  <p>For agentic systems (Week 4), LangSmith's trace visualization is uniquely valuable — it shows the full agent reasoning loop, each tool call, intermediate thoughts, and final output as a tree. When an agent produces a wrong answer, you can trace exactly which step introduced the error: bad retrieval, wrong tool selection, or LLM reasoning failure.</p>
+
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">langsmith_setup.py</span>
+    </div>
+    <pre><code><span class="c-kw">import</span> os
+os.environ[<span class="c-str">"LANGCHAIN_TRACING_V2"</span>] = <span class="c-str">"true"</span>
+os.environ[<span class="c-str">"LANGCHAIN_API_KEY"</span>] = <span class="c-str">"your-langsmith-api-key"</span>
+os.environ[<span class="c-str">"LANGCHAIN_PROJECT"</span>] = <span class="c-str">"my-rag-system"</span>
+
+<span class="c-cmt"># That's it — all LangChain calls are now traced</span>
+<span class="c-kw">from</span> langchain_openai <span class="c-kw">import</span> ChatOpenAI
+<span class="c-kw">from</span> langchain_core.prompts <span class="c-kw">import</span> ChatPromptTemplate
+
+chain = <span class="c-fn">ChatPromptTemplate</span>.<span class="c-fn">from_messages</span>([
+    (<span class="c-str">"system"</span>, <span class="c-str">"You are a helpful assistant."</span>),
+    (<span class="c-str">"user"</span>, <span class="c-str">"{input}"</span>)
+]) | <span class="c-fn">ChatOpenAI</span>(model=<span class="c-str">"gpt-4o-mini"</span>)
+
+result = chain.<span class="c-fn">invoke</span>({<span class="c-str">"input"</span>: <span class="c-str">"Explain LoRA"</span>})
+<span class="c-cmt"># Check app.langchain.com — trace appears within seconds</span>
+
+<span class="c-cmt"># Tag runs for filtering in LangSmith</span>
+<span class="c-kw">from</span> langchain_core.tracers.langchain <span class="c-kw">import</span> wait_for_all_tracers
+
+result = chain.<span class="c-fn">invoke</span>(
+    {<span class="c-str">"input"</span>: <span class="c-str">"Production query"</span>},
+    config={<span class="c-str">"metadata"</span>: {<span class="c-str">"user_id"</span>: <span class="c-str">"user_123"</span>, <span class="c-str">"feature"</span>: <span class="c-str">"search"</span>},
+            <span class="c-str">"tags"</span>: [<span class="c-str">"production"</span>, <span class="c-str">"v2.1"</span>]}
+)</code></pre>
+  </div>
+
+  <div class="why-matters">
+    <strong>Why this matters:</strong> When a user reports "the AI gave me wrong information," LangSmith lets you find that exact trace in seconds by filtering on user_id and timestamp. You can see every document retrieved, the full prompt sent to the LLM, and the response — making debugging LLM applications as easy as reading server logs for traditional APIs.
+  </div>
+
+  <h3 style="color:var(--purple);margin:2rem 0 1rem;">LangSmith Dataset-Based Evaluation</h3>
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">langsmith_eval.py</span>
+    </div>
+    <pre><code><span class="c-kw">from</span> langsmith <span class="c-kw">import</span> Client
+<span class="c-kw">from</span> langsmith.evaluation <span class="c-kw">import</span> evaluate, LangChainStringEvaluator
+
+client = <span class="c-fn">Client</span>()
+
+<span class="c-cmt"># Create or reference a dataset</span>
+dataset = client.<span class="c-fn">create_dataset</span>(<span class="c-str">"rag-eval-v1"</span>)
+client.<span class="c-fn">create_examples</span>(
+    inputs=[{<span class="c-str">"question"</span>: <span class="c-str">"What is Flash Attention?"</span>}],
+    outputs=[{<span class="c-str">"answer"</span>: <span class="c-str">"Flash Attention is an algorithm that..."</span>}],
+    dataset_id=dataset.id
+)
+
+<span class="c-cmt"># Evaluators: built-in + custom</span>
+evaluators = [
+    <span class="c-fn">LangChainStringEvaluator</span>(<span class="c-str">"correctness"</span>),
+    <span class="c-fn">LangChainStringEvaluator</span>(<span class="c-str">"helpfulness"</span>),
+    <span class="c-fn">LangChainStringEvaluator</span>(<span class="c-str">"conciseness"</span>),
+]
+
+<span class="c-kw">def</span> <span class="c-fn">rag_target</span>(inputs: dict) -> dict:
+    <span class="c-kw">return</span> {<span class="c-str">"answer"</span>: <span class="c-fn">rag_chain</span>(inputs[<span class="c-str">"question"</span>])}
+
+results = <span class="c-fn">evaluate</span>(
+    rag_target,
+    data=<span class="c-str">"rag-eval-v1"</span>,
+    evaluators=evaluators,
+    experiment_prefix=<span class="c-str">"baseline"</span>
+)</code></pre>
+  </div>
+
+  <h3 style="color:var(--purple);margin:2rem 0 1rem;">MLflow vs LangSmith Decision Matrix</h3>
+  <table class="comparison-table">
+    <thead><tr><th>Need</th><th>Choose</th><th>Reason</th></tr></thead>
+    <tbody>
+      <tr><td>LangChain + agent tracing</td><td>LangSmith</td><td>Zero config, native visualization</td></tr>
+      <tr><td>Framework-agnostic experiment tracking</td><td>MLflow</td><td>Works with any Python code</td></tr>
+      <tr><td>Model Registry + staged promotion</td><td>MLflow</td><td>Only MLflow has this feature</td></tr>
+      <tr><td>Dataset management + versioned evals</td><td>LangSmith</td><td>First-class dataset CRUD</td></tr>
+      <tr><td>Self-hosted / on-premises</td><td>MLflow</td><td>Fully open source</td></tr>
+      <tr><td>Human annotation / feedback collection</td><td>LangSmith</td><td>Annotation queues built-in</td></tr>
+    </tbody>
+  </table>
+</section>
+
 </body>
 </html>

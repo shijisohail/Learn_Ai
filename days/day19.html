@@ -725,5 +725,418 @@ spec:
   </table>
 </section>
 
+<!-- Section 06: Feature Stores & Data Versioning -->
+<section class="section animate-on-scroll">
+  <div class="section-header">
+    <span class="section-num">06</span>
+    <h2 class="section-title">Feature Stores & ML Data Versioning</h2>
+  </div>
+  <p>In traditional ML, feature stores cache computed features to avoid recomputation across experiments. For LLM systems, the equivalent is embedding caches and retrieved document stores. A semantic cache stores (query, embedding, response) triples — when a new query arrives with high cosine similarity to a cached query, serve the cached response without an LLM call. This can reduce costs by 30-60% for applications with repetitive queries.</p>
+  <p>Data versioning with DVC (Data Version Control) applies Git-like versioning to datasets and model artifacts. DVC tracks file hashes in Git while storing actual data in S3/GCS/Azure. This means your Git history records exactly which dataset version produced which model — critical for regulatory compliance and debugging.</p>
+
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">semantic_cache.py</span>
+    </div>
+    <pre><code><span class="c-kw">from</span> redis <span class="c-kw">import</span> Redis
+<span class="c-kw">import</span> numpy <span class="c-kw">as</span> np
+<span class="c-kw">from</span> sentence_transformers <span class="c-kw">import</span> SentenceTransformer
+
+<span class="c-kw">class</span> <span class="c-fn">SemanticCache</span>:
+    <span class="c-str">"""Cache LLM responses by semantic query similarity."""</span>
+
+    <span class="c-kw">def</span> <span class="c-fn">__init__</span>(self, threshold: float = <span class="c-fn">0.95</span>):
+        self.redis = <span class="c-fn">Redis</span>(host=<span class="c-str">"localhost"</span>, port=<span class="c-fn">6379</span>)
+        self.embedder = <span class="c-fn">SentenceTransformer</span>(<span class="c-str">"all-MiniLM-L6-v2"</span>)
+        self.threshold = threshold
+        self.cache = {}  <span class="c-cmt"># In-memory for small caches</span>
+
+    <span class="c-kw">def</span> <span class="c-fn">_embed</span>(self, text: str) -> np.ndarray:
+        <span class="c-kw">return</span> self.embedder.<span class="c-fn">encode</span>(text, normalize_embeddings=<span class="c-kw">True</span>)
+
+    <span class="c-kw">def</span> <span class="c-fn">get</span>(self, query: str) -> str | <span class="c-kw">None</span>:
+        q_emb = self.<span class="c-fn">_embed</span>(query)
+        <span class="c-kw">for</span> cached_query, (emb, response) <span class="c-kw">in</span> self.cache.<span class="c-fn">items</span>():
+            similarity = np.<span class="c-fn">dot</span>(q_emb, emb)  <span class="c-cmt"># cosine sim (normalized)</span>
+            <span class="c-kw">if</span> similarity >= self.threshold:
+                <span class="c-fn">print</span>(<span class="c-fn">f"Cache hit: similarity={similarity:.3f}"</span>)
+                <span class="c-kw">return</span> response
+        <span class="c-kw">return</span> <span class="c-kw">None</span>
+
+    <span class="c-kw">def</span> <span class="c-fn">set</span>(self, query: str, response: str):
+        emb = self.<span class="c-fn">_embed</span>(query)
+        self.cache[query] = (emb, response)
+
+cache = <span class="c-fn">SemanticCache</span>(threshold=<span class="c-fn">0.95</span>)
+
+<span class="c-kw">async def</span> <span class="c-fn">cached_llm_call</span>(query: str) -> str:
+    cached = cache.<span class="c-fn">get</span>(query)
+    <span class="c-kw">if</span> cached: <span class="c-kw">return</span> cached
+    response = <span class="c-kw">await</span> <span class="c-fn">llm_api_call</span>(query)
+    cache.<span class="c-fn">set</span>(query, response)
+    <span class="c-kw">return</span> response</code></pre>
+  </div>
+
+  <div class="why-matters">
+    <strong>Why this matters:</strong> A semantic cache with threshold=0.95 catches near-identical queries without serving stale responses to meaningfully different ones. For a customer support bot with 1000 common questions, this can eliminate 40-60% of API calls. Combined with response streaming, cached hits appear instantaneous — a significant UX win.
+  </div>
+
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">dvc_commands.sh</span>
+    </div>
+    <pre><code><span class="c-cmt"># Initialize DVC in your ML repo</span>
+dvc init
+git add .dvc .gitignore
+git commit -m "Initialize DVC"
+
+<span class="c-cmt"># Configure remote storage (S3 example)</span>
+dvc remote add -d myremote s3://my-ml-bucket/dvc
+dvc remote modify myremote region us-east-1
+
+<span class="c-cmt"># Track a dataset</span>
+dvc add data/training_data.jsonl
+git add data/training_data.jsonl.dvc data/.gitignore
+git commit -m "Add training dataset v1"
+dvc push  <span class="c-cmt"># Upload to S3</span>
+
+<span class="c-cmt"># Version a new dataset</span>
+<span class="c-cmt"># Replace data/training_data.jsonl with new version</span>
+dvc add data/training_data.jsonl
+git add data/training_data.jsonl.dvc
+git commit -m "Update training dataset v2: added 5000 code examples"
+dvc push
+
+<span class="c-cmt"># Reproduce exact experiment from git history</span>
+git checkout abc123  <span class="c-cmt"># commit with dataset v1</span>
+dvc checkout         <span class="c-cmt"># restore dataset v1 files</span>
+<span class="c-cmt"># Now you have the exact dataset that produced that model</span></code></pre>
+  </div>
+
+  <div class="pitfall">
+    <strong>Common pitfall:</strong> Storing model weights in Git LFS instead of DVC. Git LFS charges per-bandwidth and has limits on storage. DVC stores weights in your own S3/GCS at storage rates, with no bandwidth fees. For a 7B model (14GB in BF16), Git LFS would incur significant costs per clone; DVC makes it nearly free.
+  </div>
+
+  <h3 style="color:var(--purple);margin:2rem 0 1rem;">MLOps Maturity Model</h3>
+  <table class="comparison-table">
+    <thead><tr><th>Level</th><th>Characteristics</th><th>Automation</th><th>Team Size</th></tr></thead>
+    <tbody>
+      <tr><td>Level 0 — Manual</td><td>Notebooks, manual deploy, no versioning</td><td>None</td><td>1-3 people</td></tr>
+      <tr><td>Level 1 — ML Pipeline</td><td>Automated training, model registry, basic CI</td><td>Training only</td><td>3-10 people</td></tr>
+      <tr><td>Level 2 — CI/CD for ML</td><td>Automated testing, staged promotion, monitoring</td><td>Training + deploy</td><td>5-20 people</td></tr>
+      <tr><td>Level 3 — Automated Retraining</td><td>Drift-triggered retraining, auto-promotion gates</td><td>Full pipeline</td><td>10-50 people</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- Section 07: Drift-Triggered Retraining & Feedback Loops -->
+<section class="section animate-on-scroll">
+  <div class="section-header">
+    <span class="section-num">07</span>
+    <h2 class="section-title">Drift-Triggered Retraining & Feedback Loops</h2>
+  </div>
+  <p>Level 3 MLOps (automated retraining) requires a mechanism to detect when model quality has degraded and automatically trigger retraining. The trigger can be metric-based (RAGAS faithfulness drops below threshold), data drift-based (embedding distribution KS test detects significant shift), or time-based (retrain weekly regardless). Each strategy has different trade-offs: metric-based is reactive (quality is already degraded before retraining triggers), time-based is proactive but may retrain unnecessarily.</p>
+  <p>The feedback loop is the most powerful MLOps pattern: user interactions generate labeled data. A thumbs down on a RAG response is an implicit negative example. If you store the query, retrieved context, response, and negative label, you can periodically fine-tune on real user feedback — continuously improving the system without expensive human labeling pipelines.</p>
+
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">drift_triggered_retrain.py</span>
+    </div>
+    <pre><code><span class="c-kw">import</span> asyncio
+<span class="c-kw">from</span> scipy.stats <span class="c-kw">import</span> ks_2samp
+<span class="c-kw">import</span> numpy <span class="c-kw">as</span> np
+
+<span class="c-kw">class</span> <span class="c-fn">DriftMonitor</span>:
+    <span class="c-str">"""Monitor embedding drift and trigger retraining."""</span>
+
+    <span class="c-kw">def</span> <span class="c-fn">__init__</span>(self, ks_threshold: float = <span class="c-fn">0.1</span>, min_samples: int = <span class="c-fn">1000</span>):
+        self.ks_threshold = ks_threshold
+        self.min_samples = min_samples
+        self.reference_embeddings = []  <span class="c-cmt"># from training data</span>
+        self.current_embeddings = []    <span class="c-cmt"># from production queries</span>
+
+    <span class="c-kw">def</span> <span class="c-fn">add_sample</span>(self, embedding: np.ndarray):
+        self.current_embeddings.<span class="c-fn">append</span>(embedding)
+
+    <span class="c-kw">def</span> <span class="c-fn">check_drift</span>(self) -> dict:
+        <span class="c-kw">if</span> <span class="c-fn">len</span>(self.current_embeddings) < self.min_samples:
+            <span class="c-kw">return</span> {<span class="c-str">"status"</span>: <span class="c-str">"insufficient_samples"</span>}
+
+        <span class="c-cmt"># Compare each embedding dimension with KS test</span>
+        ref = np.<span class="c-fn">array</span>(self.reference_embeddings)
+        cur = np.<span class="c-fn">array</span>(self.current_embeddings)
+        ks_stats = []
+        <span class="c-kw">for</span> dim <span class="c-kw">in</span> <span class="c-fn">range</span>(ref.shape[<span class="c-fn">1</span>]):
+            stat, _ = <span class="c-fn">ks_2samp</span>(ref[:, dim], cur[:, dim])
+            ks_stats.<span class="c-fn">append</span>(stat)
+
+        max_ks = <span class="c-fn">max</span>(ks_stats)
+        drifted = max_ks > self.ks_threshold
+        <span class="c-kw">return</span> {<span class="c-str">"drifted"</span>: drifted, <span class="c-str">"max_ks_stat"</span>: max_ks,
+                <span class="c-str">"drift_dim"</span>: <span class="c-fn">np.argmax</span>(ks_stats)}
+
+<span class="c-kw">async def</span> <span class="c-fn">retraining_trigger_loop</span>(monitor: DriftMonitor, interval: int = <span class="c-fn">3600</span>):
+    <span class="c-str">"""Check for drift hourly and trigger retraining if detected."""</span>
+    <span class="c-kw">while True</span>:
+        <span class="c-kw">await</span> asyncio.<span class="c-fn">sleep</span>(interval)
+        result = monitor.<span class="c-fn">check_drift</span>()
+        <span class="c-kw">if</span> result.<span class="c-fn">get</span>(<span class="c-str">"drifted"</span>):
+            <span class="c-fn">print</span>(<span class="c-fn">f"Drift detected (KS={result['max_ks_stat']:.3f}) — triggering retrain"</span>)
+            <span class="c-kw">await</span> <span class="c-fn">trigger_retraining_pipeline</span>()
+            monitor.current_embeddings.<span class="c-fn">clear</span>()</code></pre>
+  </div>
+
+  <div class="why-matters">
+    <strong>Why this matters:</strong> This is the difference between a stale model that silently degrades and a living system that adapts. In fast-moving domains (breaking news, stock market, product catalog updates), data distribution shifts within hours. Without automated drift detection and retraining, your model's quality curve is monotonically declining from the day of deployment.
+  </div>
+
+  <h3 style="color:var(--purple);margin:2rem 0 1rem;">Complete MLOps Architecture</h3>
+  <table class="comparison-table">
+    <thead><tr><th>Component</th><th>Tool</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td>Data versioning</td><td>DVC + S3</td><td>Reproducible experiments</td></tr>
+      <tr><td>Experiment tracking</td><td>MLflow</td><td>Metric logging, run comparison</td></tr>
+      <tr><td>Model registry</td><td>MLflow Model Registry</td><td>Staged promotion workflow</td></tr>
+      <tr><td>Training pipeline</td><td>Kubeflow / SageMaker</td><td>Automated, reproducible training</td></tr>
+      <tr><td>CI/CD</td><td>GitHub Actions</td><td>Auto-deploy on merge</td></tr>
+      <tr><td>Serving</td><td>BentoML / vLLM</td><td>Production inference</td></tr>
+      <tr><td>Progressive delivery</td><td>Argo Rollouts</td><td>Canary + automatic rollback</td></tr>
+      <tr><td>Monitoring</td><td>Prometheus + Grafana</td><td>Metrics, alerts, dashboards</td></tr>
+      <tr><td>Drift detection</td><td>Custom (KS test) or Evidently</td><td>Data/model drift detection</td></tr>
+      <tr><td>LLM observability</td><td>RAGAS + Arize Phoenix</td><td>Quality metrics, trace analysis</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- Section 08: Cloud ML Platforms Deep Dive -->
+<section class="section animate-on-scroll">
+  <div class="section-header">
+    <span class="section-num">08</span>
+    <h2 class="section-title">Cloud ML Platforms Deep Dive</h2>
+  </div>
+  <p>AWS SageMaker, Google Vertex AI, and Azure ML each offer managed pipeline orchestration, training job scheduling, model registries, and serving endpoints. The key value proposition is elimination of infrastructure management — you describe your training job in Python, the platform provisions the GPU instances, runs your code, stores artifacts, and shuts down instances when done. You pay only for compute time, not idle reservation.</p>
+  <p>SageMaker Pipelines uses a DAG of steps (processing, training, evaluation, register, deploy) defined in Python SDK. Each step runs as an isolated container on managed compute. The pipeline is versioned and replayable — critical for audit trails in regulated industries. Vertex AI Pipelines uses the Kubeflow Pipelines SDK as its interface, making pipelines portable between local Kubeflow and Vertex AI.</p>
+
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">sagemaker_pipeline.py</span>
+    </div>
+    <pre><code><span class="c-kw">from</span> sagemaker.workflow.pipeline <span class="c-kw">import</span> Pipeline
+<span class="c-kw">from</span> sagemaker.workflow.steps <span class="c-kw">import</span> TrainingStep, ProcessingStep
+<span class="c-kw">from</span> sagemaker.huggingface <span class="c-kw">import</span> HuggingFace
+<span class="c-kw">from</span> sagemaker.processing <span class="c-kw">import</span> ScriptProcessor
+<span class="c-kw">import</span> sagemaker
+
+session = sagemaker.<span class="c-fn">Session</span>()
+
+<span class="c-cmt"># Step 1: Data processing</span>
+processor = <span class="c-fn">ScriptProcessor</span>(
+    image_uri=<span class="c-str">"763104351884.dkr.ecr.us-east-1.amazonaws.com/pytorch-training:2.1.0-gpu-py310"</span>,
+    instance_type=<span class="c-str">"ml.m5.xlarge"</span>,
+    instance_count=<span class="c-fn">1</span>,
+    role=session.<span class="c-fn">get_execution_role</span>()
+)
+process_step = <span class="c-fn">ProcessingStep</span>(
+    name=<span class="c-str">"PrepareData"</span>,
+    processor=processor,
+    code=<span class="c-str">"scripts/process_data.py"</span>
+)
+
+<span class="c-cmt"># Step 2: Fine-tuning with HuggingFace estimator</span>
+hf_estimator = <span class="c-fn">HuggingFace</span>(
+    entry_point=<span class="c-str">"train.py"</span>,
+    instance_type=<span class="c-str">"ml.g5.2xlarge"</span>,  <span class="c-cmt"># A10G GPU</span>
+    instance_count=<span class="c-fn">1</span>,
+    transformers_version=<span class="c-str">"4.44.0"</span>,
+    pytorch_version=<span class="c-str">"2.1.0"</span>,
+    py_version=<span class="c-str">"py310"</span>,
+    hyperparameters={<span class="c-str">"lr"</span>: <span class="c-fn">2e-4</span>, <span class="c-str">"rank"</span>: <span class="c-fn">16</span>, <span class="c-str">"epochs"</span>: <span class="c-fn">3</span>}
+)
+train_step = <span class="c-fn">TrainingStep</span>(
+    name=<span class="c-str">"FineTuneModel"</span>,
+    estimator=hf_estimator,
+    depends_on=[process_step]
+)
+
+pipeline = <span class="c-fn">Pipeline</span>(
+    name=<span class="c-str">"LLMFineTuningPipeline"</span>,
+    steps=[process_step, train_step],
+    sagemaker_session=session
+)
+pipeline.<span class="c-fn">upsert</span>(role_arn=session.<span class="c-fn">get_execution_role</span>())
+execution = pipeline.<span class="c-fn">start</span>()</code></pre>
+  </div>
+
+  <div class="why-matters">
+    <strong>Why this matters:</strong> SageMaker Pipelines eliminates the "it was running fine on my laptop" problem. The pipeline runs identically every time, on managed infrastructure, with full logging and cost tracking. When you need to reproduce an experiment from 6 months ago, you run the same pipeline step with the same dataset version — the result is deterministic.
+  </div>
+
+  <h3 style="color:var(--purple);margin:2rem 0 1rem;">Cloud Platform Comparison</h3>
+  <table class="comparison-table">
+    <thead><tr><th>Platform</th><th>Pipeline SDK</th><th>GPU Options</th><th>Best For</th><th>Pricing Model</th></tr></thead>
+    <tbody>
+      <tr><td>AWS SageMaker</td><td>Python SDK</td><td>ml.g5 (A10G), ml.p4d (A100)</td><td>AWS-heavy orgs, MLOps teams</td><td>Per-second instance + storage</td></tr>
+      <tr><td>Google Vertex AI</td><td>KFP v2</td><td>T4, V100, A100, TPU v4</td><td>Portable KFP pipelines, GCP orgs</td><td>Per-second compute + storage</td></tr>
+      <tr><td>Azure ML</td><td>Python SDK v2</td><td>NC (T4), ND (A100)</td><td>Azure/enterprise orgs</td><td>Per-minute compute + storage</td></tr>
+      <tr><td>Lambda Labs</td><td>None (raw VMs)</td><td>A10, A100, H100</td><td>GPU cost optimization</td><td>Per-hour (50-70% cheaper)</td></tr>
+      <tr><td>RunPod</td><td>None (containers)</td><td>A40, A100, H100</td><td>Spot/preemptible GPU compute</td><td>Spot pricing (80% cheaper)</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- Section 09: vLLM Production Serving Deep Dive -->
+<section class="section animate-on-scroll">
+  <div class="section-header">
+    <span class="section-num">09</span>
+    <h2 class="section-title">vLLM Production Serving Deep Dive</h2>
+  </div>
+  <p>vLLM is the leading open-source LLM inference engine, developed at UC Berkeley. Its key innovation is PagedAttention — a KV cache management algorithm inspired by OS virtual memory paging. Instead of pre-allocating a contiguous GPU memory block for each request's KV cache (which wastes memory on unused sequence length), PagedAttention allocates KV cache in fixed-size blocks (pages) that can be shared, copied-on-write for parallel sampling, and freed immediately after generation completes.</p>
+  <p>The practical result: vLLM serves 3-10× more concurrent requests than naive HuggingFace generation on the same GPU. Throughput scales near-linearly with batch size because PagedAttention eliminates memory fragmentation — the primary throughput bottleneck in standard implementations.</p>
+
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">vllm_server.sh</span>
+    </div>
+    <pre><code><span class="c-cmt"># Start vLLM OpenAI-compatible server</span>
+python -m vllm.entrypoints.openai.api_server \
+  --model mistralai/Mistral-7B-Instruct-v0.3 \
+  --dtype bfloat16 \
+  --max-model-len 8192 \
+  --gpu-memory-utilization 0.90 \  <span class="c-cmt"># Use 90% of GPU VRAM</span>
+  --max-num-seqs 256 \             <span class="c-cmt"># Max concurrent requests</span>
+  --quantization awq \             <span class="c-cmt"># AWQ 4-bit quantization</span>
+  --served-model-name mistral-7b \
+  --port 8000
+
+<span class="c-cmt"># Call via OpenAI SDK (drop-in compatible)</span>
+python -c "
+from openai import OpenAI
+client = OpenAI(base_url='http://localhost:8000/v1', api_key='dummy')
+response = client.chat.completions.create(
+    model='mistral-7b',
+    messages=[{'role': 'user', 'content': 'Explain LoRA'}],
+    max_tokens=512
+)
+print(response.choices[0].message.content)
+"</code></pre>
+  </div>
+
+  <div class="why-matters">
+    <strong>Why this matters:</strong> vLLM's OpenAI-compatible API means you can migrate from OpenAI to self-hosted inference by changing one line of code: the <code>base_url</code>. No SDK changes, no prompt reformatting — just point your OpenAI client at your vLLM server. This enables cost arbitrage: use OpenAI for development, switch to self-hosted vLLM in production and save 80-90%.
+  </div>
+
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">vllm_benchmark.py</span>
+    </div>
+    <pre><code><span class="c-kw">from</span> vllm <span class="c-kw">import</span> LLM, SamplingParams
+<span class="c-kw">import</span> time
+
+<span class="c-cmt"># Offline batch inference — maximum throughput mode</span>
+llm = <span class="c-fn">LLM</span>(
+    model=<span class="c-str">"mistralai/Mistral-7B-Instruct-v0.3"</span>,
+    dtype=<span class="c-str">"bfloat16"</span>,
+    max_model_len=<span class="c-fn">4096</span>,
+    gpu_memory_utilization=<span class="c-fn">0.90</span>
+)
+sampling_params = <span class="c-fn">SamplingParams</span>(temperature=<span class="c-fn">0.7</span>, max_tokens=<span class="c-fn">256</span>)
+
+prompts = [<span class="c-fn">f"Question {i}: Explain concept {i}"</span> <span class="c-kw">for</span> i <span class="c-kw">in</span> <span class="c-fn">range</span>(<span class="c-fn">100</span>)]
+
+start = time.<span class="c-fn">time</span>()
+outputs = llm.<span class="c-fn">generate</span>(prompts, sampling_params)
+elapsed = time.<span class="c-fn">time</span>() - start
+
+total_tokens = <span class="c-fn">sum</span>(<span class="c-fn">len</span>(o.outputs[<span class="c-fn">0</span>].token_ids) <span class="c-kw">for</span> o <span class="c-kw">in</span> outputs)
+<span class="c-fn">print</span>(<span class="c-fn">f"Throughput: {total_tokens/elapsed:.0f} tokens/sec"</span>)
+<span class="c-fn">print</span>(<span class="c-fn">f"Requests/sec: {len(prompts)/elapsed:.1f}"</span>)
+<span class="c-cmt"># Typical: 2000-4000 tokens/sec on A100 with Mistral-7B</span></code></pre>
+  </div>
+
+  <div class="pitfall">
+    <strong>Common pitfall:</strong> Setting <code>gpu_memory_utilization=0.95</code> or higher causes OOM during inference spikes when many long requests arrive simultaneously. Leave 10% headroom (<code>0.90</code> is a good default). The remaining 10% absorbs KV cache pressure from concurrent long-context requests. Exceeding the limit causes vLLM to abort requests rather than OOM-crash the server.
+  </div>
+
+  <h3 style="color:var(--purple);margin:2rem 0 1rem;">Inference Optimization Summary</h3>
+  <table class="comparison-table">
+    <thead><tr><th>Optimization</th><th>Throughput Gain</th><th>Latency Gain</th><th>Implementation</th></tr></thead>
+    <tbody>
+      <tr><td>vLLM PagedAttention</td><td>3-10×</td><td>Moderate</td><td>Use vLLM instead of transformers generate()</td></tr>
+      <tr><td>Continuous batching</td><td>2-4×</td><td>None (may increase)</td><td>Built into vLLM</td></tr>
+      <tr><td>AWQ/GPTQ quantization</td><td>1.5-2×</td><td>1.5-2×</td><td>Load quantized model</td></tr>
+      <tr><td>Flash Attention 2</td><td>1.5-2× (long ctx)</td><td>1.5-3× (long ctx)</td><td><code>attn_implementation="flash_attention_2"</code></td></tr>
+      <tr><td>Speculative decoding</td><td>Neutral</td><td>2-3× TTFT</td><td>Draft model + target model</td></tr>
+      <tr><td>KV Cache prefix sharing</td><td>1.2-1.5×</td><td>1.2-1.5×</td><td>vLLM prefix caching flag</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- Section 10: MLOps Checklist & Day 19 Summary -->
+<section class="section animate-on-scroll">
+  <div class="section-header">
+    <span class="section-num">10</span>
+    <h2 class="section-title">Production MLOps Checklist & Day 19 Summary</h2>
+  </div>
+  <p>Before deploying any ML model to production, validate each layer of the MLOps stack. Missing any of these items creates technical debt that compounds under production load. The checklist below represents the accumulated lessons from teams that have experienced outages, data loss, and model quality regressions in production — each item was added after a real incident.</p>
+
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">mlops_checklist.sh</span>
+    </div>
+    <pre><code><span class="c-cmt">#!/bin/bash
+# MLOps production readiness checklist</span>
+
+<span class="c-cmt"># 1. Reproducibility</span>
+<span class="c-kw">echo</span> <span class="c-str">"Checking reproducibility..."</span>
+[ -f dvc.lock ] <span class="c-kw">&&</span> <span class="c-kw">echo</span> <span class="c-str">"✓ Dataset versioned with DVC"</span>
+[ -f requirements.txt ] <span class="c-kw">&&</span> <span class="c-kw">echo</span> <span class="c-str">"✓ Dependencies pinned"</span>
+[ -n "$MLFLOW_RUN_ID" ] <span class="c-kw">&&</span> <span class="c-kw">echo</span> <span class="c-str">"✓ MLflow run ID recorded"</span>
+
+<span class="c-cmt"># 2. Pipeline validation</span>
+<span class="c-kw">echo</span> <span class="c-str">"Validating pipeline..."</span>
+python -m pytest tests/integration/ -v <span class="c-kw">||</span> <span class="c-kw">exit</span> 1
+<span class="c-kw">echo</span> <span class="c-str">"✓ Integration tests passing"</span>
+
+<span class="c-cmt"># 3. Model quality gate</span>
+<span class="c-kw">echo</span> <span class="c-str">"Running quality evaluation..."</span>
+VAL_LOSS=$(mlflow runs get --run-id $MLFLOW_RUN_ID --artifact-path metrics | jq '.val_loss')
+[ $(echo "$VAL_LOSS < 0.5" | bc) -eq 1 ] <span class="c-kw">||</span> { <span class="c-kw">echo</span> <span class="c-str">"FAIL: val_loss too high"</span>; <span class="c-kw">exit</span> 1; }
+<span class="c-kw">echo</span> <span class="c-str">"✓ Quality gate passed (val_loss=$VAL_LOSS)"</span>
+
+<span class="c-cmt"># 4. Serving readiness</span>
+<span class="c-kw">echo</span> <span class="c-str">"Checking serving..."</span>
+curl -sf http://localhost:8000/health <span class="c-kw">||</span> { <span class="c-kw">echo</span> <span class="c-str">"FAIL: health endpoint"</span>; <span class="c-kw">exit</span> 1; }
+curl -sf http://localhost:8000/metrics | grep request_duration <span class="c-kw">||</span> <span class="c-kw">exit</span> 1
+<span class="c-kw">echo</span> <span class="c-str">"✓ Health + metrics endpoints healthy"</span>
+
+<span class="c-kw">echo</span> <span class="c-str">"All checks passed — ready for production deployment"</span></code></pre>
+  </div>
+
+  <div class="why-matters">
+    <strong>Why this matters:</strong> Automating your production readiness checklist means it runs on every CI pipeline — not just when an engineer remembers to check. When this script fails, it blocks deployment automatically, without relying on human review to catch the failure. This is the MLOps equivalent of a pre-flight checklist for pilots — it runs before every flight, not just when something feels wrong.
+  </div>
+
+  <h3 style="color:var(--purple);margin:2rem 0 1rem;">Day 19 Key Concepts Recap</h3>
+  <table class="comparison-table">
+    <thead><tr><th>Concept</th><th>Key Insight</th><th>Production Impact</th></tr></thead>
+    <tbody>
+      <tr><td>KFP Components</td><td>Containerized steps = reproducible, portable pipeline</td><td>Same pipeline runs locally and in cloud</td></tr>
+      <tr><td>BentoML Service</td><td>Deployment abstraction from serving logic</td><td>Deploy to Docker, K8s, or cloud with one command</td></tr>
+      <tr><td>Canary Deployment</td><td>Traffic splitting enables risk-free rollouts</td><td>Catch regressions before full exposure</td></tr>
+      <tr><td>GitOps</td><td>Git as source of truth for deployments</td><td>Audit trail, instant rollback via git revert</td></tr>
+      <tr><td>DVC</td><td>Dataset versioning alongside code</td><td>Reproduce any experiment from any point in history</td></tr>
+      <tr><td>vLLM</td><td>PagedAttention enables 3-10× more concurrency</td><td>Serve more users on same GPU budget</td></tr>
+      <tr><td>Semantic Cache</td><td>Skip LLM for similar queries</td><td>30-60% cost reduction on repetitive traffic</td></tr>
+    </tbody>
+  </table>
+</section>
+
 </body>
 </html>

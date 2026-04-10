@@ -960,6 +960,197 @@ batch = tok(
   </table>
 </section>
 
+<!-- Section 08: Vision Models, Embeddings & Multimodal Pipelines -->
+<section class="section animate-on-scroll">
+  <div class="section-header">
+    <span class="section-num">08</span>
+    <h2 class="section-title">Vision Models, Embeddings & Multimodal Pipelines</h2>
+  </div>
+  <p>HuggingFace supports vision-language models (VLMs) like LLaVA, Qwen-VL, and PaliGemma through the same AutoModel interface. You pass images alongside text, and the model reasons across both modalities. Embedding models (sentence-transformers, BGE, E5) are the backbone of RAG systems — they convert text to dense vectors that support semantic similarity search.</p>
+  <p>The embedding quality fundamentally determines RAG system quality. An embedding model that represents "coronary artery disease" and "myocardial infarction" as similar vectors will retrieve relevant documents even when the query uses different terminology than the documents. Domain-specific embedding models (fine-tuned on medical, legal, or code corpora) significantly outperform general-purpose models for specialized applications.</p>
+
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">multimodal_pipeline.py</span>
+    </div>
+    <pre><code><span class="c-kw">from</span> transformers <span class="c-kw">import</span> AutoProcessor, LlavaNextForConditionalGeneration
+<span class="c-kw">from</span> PIL <span class="c-kw">import</span> Image
+<span class="c-kw">import</span> torch, requests
+
+<span class="c-cmt"># Load vision-language model</span>
+processor = AutoProcessor.<span class="c-fn">from_pretrained</span>(<span class="c-str">"llava-hf/llava-v1.6-mistral-7b-hf"</span>)
+model = LlavaNextForConditionalGeneration.<span class="c-fn">from_pretrained</span>(
+    <span class="c-str">"llava-hf/llava-v1.6-mistral-7b-hf"</span>,
+    torch_dtype=torch.bfloat16, device_map=<span class="c-str">"auto"</span>
+)
+
+<span class="c-kw">def</span> <span class="c-fn">analyze_image</span>(image_url: str, question: str) -> str:
+    image = Image.<span class="c-fn">open</span>(requests.<span class="c-fn">get</span>(image_url, stream=<span class="c-kw">True</span>).raw)
+    conversation = [{
+        <span class="c-str">"role"</span>: <span class="c-str">"user"</span>,
+        <span class="c-str">"content"</span>: [{<span class="c-str">"type"</span>: <span class="c-str">"image"</span>}, {<span class="c-str">"type"</span>: <span class="c-str">"text"</span>, <span class="c-str">"text"</span>: question}]
+    }]
+    prompt = processor.<span class="c-fn">apply_chat_template</span>(conversation, add_generation_prompt=<span class="c-kw">True</span>)
+    inputs = processor.<span class="c-fn">__call__</span>(text=prompt, images=image, return_tensors=<span class="c-str">"pt"</span>).<span class="c-fn">to</span>(model.device)
+
+    <span class="c-kw">with</span> torch.<span class="c-fn">no_grad</span>():
+        output = model.<span class="c-fn">generate</span>(**inputs, max_new_tokens=<span class="c-fn">256</span>)
+
+    <span class="c-kw">return</span> processor.<span class="c-fn">decode</span>(output[<span class="c-fn">0</span>][inputs.input_ids.shape[<span class="c-fn">1</span>]:], skip_special_tokens=<span class="c-kw">True</span>)
+
+result = <span class="c-fn">analyze_image</span>(<span class="c-str">"https://example.com/chart.png"</span>, <span class="c-str">"What trends does this chart show?"</span>)</code></pre>
+  </div>
+
+  <h3 style="color:var(--purple);margin:2rem 0 1rem;">Embedding Models for RAG</h3>
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">embedding_pipeline.py</span>
+    </div>
+    <pre><code><span class="c-kw">from</span> sentence_transformers <span class="c-kw">import</span> SentenceTransformer
+<span class="c-kw">from</span> transformers <span class="c-kw">import</span> AutoTokenizer, AutoModel
+<span class="c-kw">import</span> torch, torch.nn.functional <span class="c-kw">as</span> F
+
+<span class="c-cmt"># sentence-transformers: easiest API</span>
+model = <span class="c-fn">SentenceTransformer</span>(<span class="c-str">"BAAI/bge-large-en-v1.5"</span>)
+embeddings = model.<span class="c-fn">encode</span>(
+    [<span class="c-str">"Document 1"</span>, <span class="c-str">"Document 2"</span>],
+    normalize_embeddings=<span class="c-kw">True</span>,   <span class="c-cmt"># normalize for cosine similarity</span>
+    batch_size=<span class="c-fn">32</span>,
+    show_progress_bar=<span class="c-kw">True</span>
+)
+
+<span class="c-cmt"># Manual HuggingFace approach — mean pooling</span>
+tokenizer = AutoTokenizer.<span class="c-fn">from_pretrained</span>(<span class="c-str">"BAAI/bge-large-en-v1.5"</span>)
+embed_model = AutoModel.<span class="c-fn">from_pretrained</span>(<span class="c-str">"BAAI/bge-large-en-v1.5"</span>)
+
+<span class="c-kw">def</span> <span class="c-fn">mean_pool</span>(model_output, attention_mask):
+    token_embeddings = model_output.last_hidden_state
+    mask_expanded = attention_mask.<span class="c-fn">unsqueeze</span>(-<span class="c-fn">1</span>).<span class="c-fn">expand</span>(token_embeddings.<span class="c-fn">size</span>()).<span class="c-fn">float</span>()
+    <span class="c-kw">return</span> torch.<span class="c-fn">sum</span>(token_embeddings * mask_expanded, <span class="c-fn">1</span>) / torch.<span class="c-fn">clamp</span>(mask_expanded.<span class="c-fn">sum</span>(<span class="c-fn">1</span>), min=<span class="c-fn">1e-9</span>)
+
+inputs = tokenizer([<span class="c-str">"BGE requires this prefix for queries: "</span> + q <span class="c-kw">for</span> q <span class="c-kw">in</span> queries],
+                   padding=<span class="c-kw">True</span>, truncation=<span class="c-kw">True</span>, return_tensors=<span class="c-str">"pt"</span>)
+<span class="c-kw">with</span> torch.<span class="c-fn">no_grad</span>():
+    outputs = <span class="c-fn">embed_model</span>(**inputs)
+embeddings = F.<span class="c-fn">normalize</span>(<span class="c-fn">mean_pool</span>(outputs, inputs.attention_mask), p=<span class="c-fn">2</span>, dim=<span class="c-fn">1</span>)</code></pre>
+  </div>
+
+  <div class="why-matters">
+    <strong>Why this matters:</strong> BGE (BAAI General Embeddings) requires query-side instruction prefixes for optimal performance: <code>"Represent this sentence for searching relevant passages: "</code> for queries but no prefix for documents. Omitting this prefix can degrade retrieval quality by 10-20%. Always read the model card for embedding models — they frequently have required prompt templates.
+  </div>
+
+  <h3 style="color:var(--purple);margin:2rem 0 1rem;">Embedding Model Comparison</h3>
+  <table class="comparison-table">
+    <thead><tr><th>Model</th><th>Dimensions</th><th>MTEB Score</th><th>Size</th><th>Best For</th></tr></thead>
+    <tbody>
+      <tr><td>bge-large-en-v1.5</td><td>1024</td><td>64.2</td><td>335M params</td><td>High-quality English RAG</td></tr>
+      <tr><td>bge-m3</td><td>1024</td><td>~66</td><td>570M params</td><td>Multilingual + long documents</td></tr>
+      <tr><td>all-MiniLM-L6-v2</td><td>384</td><td>56.3</td><td>22M params</td><td>Fast inference / resource constrained</td></tr>
+      <tr><td>e5-large-v2</td><td>1024</td><td>62.2</td><td>335M params</td><td>Strong baseline, well-studied</td></tr>
+      <tr><td>text-embedding-3-large</td><td>3072</td><td>64.6</td><td>API only</td><td>No GPU, OpenAI ecosystem</td></tr>
+      <tr><td>nomic-embed-text-v1.5</td><td>768</td><td>62.4</td><td>137M params</td><td>Open weights, Matryoshka support</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- Section 09: Rerankers & Advanced RAG Retrieval -->
+<section class="section animate-on-scroll">
+  <div class="section-header">
+    <span class="section-num">09</span>
+    <h2 class="section-title">Rerankers & Advanced RAG Retrieval</h2>
+  </div>
+  <p>A two-stage retrieval pipeline dramatically improves RAG quality: first retrieve a large candidate set (top-50 documents) using fast approximate nearest neighbor search, then rerank the candidates using a cross-encoder model that reads the query and each document together (instead of independently). Cross-encoders (like BGE-Reranker, Cohere Rerank) achieve much higher precision because they model query-document interaction directly, rather than comparing independent embeddings.</p>
+  <p>The trade-off: bi-encoders (embedding models) encode query and documents independently — O(1) for retrieval after pre-encoding. Cross-encoders encode query+document together — O(N) for N documents, making them too slow for full corpus search. The two-stage approach combines both: fast bi-encoder recall, precise cross-encoder precision.</p>
+
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">two_stage_retrieval.py</span>
+    </div>
+    <pre><code><span class="c-kw">from</span> sentence_transformers <span class="c-kw">import</span> SentenceTransformer, CrossEncoder
+<span class="c-kw">import</span> numpy <span class="c-kw">as</span> np
+
+<span class="c-cmt"># Stage 1: Fast approximate retrieval (bi-encoder)</span>
+bi_encoder = <span class="c-fn">SentenceTransformer</span>(<span class="c-str">"BAAI/bge-large-en-v1.5"</span>)
+
+<span class="c-cmt"># Stage 2: Precise reranking (cross-encoder)</span>
+cross_encoder = <span class="c-fn">CrossEncoder</span>(<span class="c-str">"BAAI/bge-reranker-large"</span>)
+
+<span class="c-kw">def</span> <span class="c-fn">two_stage_retrieve</span>(query: str, corpus: list[str],
+                       first_k: int = <span class="c-fn">50</span>, final_k: int = <span class="c-fn">5</span>) -> list[str]:
+    <span class="c-str">"""Two-stage retrieval: recall + precision."""</span>
+    <span class="c-cmt"># Stage 1: Get top-50 candidates via embedding similarity</span>
+    query_emb = bi_encoder.<span class="c-fn">encode</span>([query], normalize_embeddings=<span class="c-kw">True</span>)
+    corpus_embs = bi_encoder.<span class="c-fn">encode</span>(corpus, normalize_embeddings=<span class="c-kw">True</span>)
+    scores = (query_emb @ corpus_embs.T)[<span class="c-fn">0</span>]
+    top_50_idx = np.<span class="c-fn">argsort</span>(scores)[::-<span class="c-fn">1</span>][:first_k]
+    candidates = [corpus[i] <span class="c-kw">for</span> i <span class="c-kw">in</span> top_50_idx]
+
+    <span class="c-cmt"># Stage 2: Rerank top-50 with cross-encoder</span>
+    pairs = [[query, doc] <span class="c-kw">for</span> doc <span class="c-kw">in</span> candidates]
+    rerank_scores = cross_encoder.<span class="c-fn">predict</span>(pairs)
+    reranked = sorted(<span class="c-fn">zip</span>(candidates, rerank_scores),
+                      key=<span class="c-kw">lambda</span> x: x[<span class="c-fn">1</span>], reverse=<span class="c-kw">True</span>)
+    <span class="c-kw">return</span> [doc <span class="c-kw">for</span> doc, _ <span class="c-kw">in</span> reranked[:final_k]]</code></pre>
+  </div>
+
+  <div class="why-matters">
+    <strong>Why this matters:</strong> In internal benchmarks, adding a reranker consistently improves RAG faithfulness by 10-20% with minimal latency cost (reranking 50 documents adds ~100ms). The bi-encoder recall at 50 candidates is typically 90%+ for the relevant document; the cross-encoder then correctly identifies which of those 50 is truly most relevant. This is the most cost-effective quality improvement for any RAG system.
+  </div>
+
+  <h3 style="color:var(--purple);margin:2rem 0 1rem;">Matryoshka Embeddings & Adaptive Retrieval</h3>
+  <p>Matryoshka Representation Learning (MRL) trains embedding models so that truncating the embedding vector to smaller dimensions still produces high-quality representations. A 1024D Matryoshka embedding truncated to 256D gives 80-90% of full-dimension quality at 4× less memory and compute. This enables tiered retrieval: use 256D for fast candidate retrieval, then 1024D for precise reranking within that set.</p>
+
+  <div class="code-window">
+    <div class="code-toolbar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span class="code-file">matryoshka_retrieval.py</span>
+    </div>
+    <pre><code><span class="c-kw">from</span> sentence_transformers <span class="c-kw">import</span> SentenceTransformer
+<span class="c-kw">import</span> numpy <span class="c-kw">as</span> np
+
+<span class="c-cmt"># nomic-embed-text-v1.5 supports Matryoshka dimensions</span>
+model = <span class="c-fn">SentenceTransformer</span>(<span class="c-str">"nomic-ai/nomic-embed-text-v1.5"</span>, trust_remote_code=<span class="c-kw">True</span>)
+
+docs = [<span class="c-str">"Document about Python..."</span>, <span class="c-str">"Document about PyTorch..."</span>]
+
+<span class="c-cmt"># Encode at full 768D</span>
+full_embs = model.<span class="c-fn">encode</span>(docs, normalize_embeddings=<span class="c-kw">True</span>)  <span class="c-cmt"># shape: (N, 768)</span>
+
+<span class="c-cmt"># Truncate + renormalize for fast 128D retrieval</span>
+fast_embs = full_embs[:, :<span class="c-fn">128</span>]
+fast_embs = fast_embs / np.<span class="c-fn">linalg.norm</span>(fast_embs, axis=<span class="c-fn">1</span>, keepdims=<span class="c-kw">True</span>)
+
+<span class="c-cmt"># Store both: fast_embs in HNSW index, full_embs for reranking</span>
+<span class="c-cmt"># Retrieval: query 128D → top 50 → rerank with full 768D</span>
+
+<span class="c-fn">print</span>(<span class="c-fn">f"Memory: 768D={full_embs.nbytes//1024}KB, 128D={fast_embs.nbytes//1024}KB"</span>)
+<span class="c-cmt"># Typical output: 768D=192KB, 128D=32KB for 1000 documents</span></code></pre>
+  </div>
+
+  <div class="pitfall">
+    <strong>Common pitfall:</strong> Not normalizing after truncation. When you slice the embedding vector, the L2 norm changes. If you compute cosine similarity without renormalizing, you'll get incorrect similarity scores that don't correspond to the true angular distance between embeddings. Always apply <code>vec / np.linalg.norm(vec)</code> after truncation.
+  </div>
+</section>
+
+
+<div class="container">
+  <section class="section" style="padding:40px 0 20px;">
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--purple-light);margin-bottom:12px;">Deep Dive</div>
+    <a href="../next/multimodal.html" style="display:flex;align-items:center;gap:20px;padding:24px;background:var(--card);border:1px solid rgba(124,58,237,0.3);border-radius:16px;text-decoration:none;color:inherit;transition:border-color 0.2s,transform 0.2s;" onmouseover="this.style.borderColor='var(--purple-light)';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='rgba(124,58,237,0.3)';this.style.transform=''">
+      <div style="width:56px;height:56px;border-radius:14px;background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.3);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">👁️</div>
+      <div style="flex:1;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--purple-light);margin-bottom:5px;">Extended Reading</div>
+        <div style="font-size:19px;font-weight:800;letter-spacing:-0.3px;margin-bottom:6px;">Multimodal Agents</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.55;">Vision-language models, image/audio inputs, CLIP embeddings, and how to build agents that can see — including OCR pipelines, chart understanding, and multimodal RAG over image collections.</div>
+      </div>
+      <div style="font-size:22px;color:var(--purple-light);flex-shrink:0;padding-left:12px;">→</div>
+    </a>
+  </section>
+</div>
+
 </body>
 </html>
 
