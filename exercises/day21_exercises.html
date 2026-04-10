@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 21 Exercises — Week 3 Capstone</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f; --card: #141420; --surface2: #1a1a2e; --border: #2a2a45;
+  --purple: #7c3aed; --purple-light: #a855f7; --teal: #0d9488;
+  --green: #10b981; --yellow: #f59e0b; --red: #ef4444;
+  --text: #e2e8f0; --muted: #64748b;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
+.sticky-nav { position: sticky; top: 0; z-index: 100; background: rgba(10,10,15,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); padding: 12px 32px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.sticky-nav a { color: var(--muted); text-decoration: none; font-size: 0.85rem; padding: 6px 12px; border-radius: 6px; transition: all 0.2s; border: 1px solid transparent; }
+.sticky-nav a:hover { color: var(--text); background: var(--card); border-color: var(--border); }
+.sticky-nav .brand { color: var(--purple-light); font-weight: 600; font-size: 0.9rem; }
+.nav-sep { color: var(--border); }
+.nav-title { color: var(--text); font-weight: 700; font-size: 0.95rem; flex: 1; }
+.hero { padding: 56px 32px 32px; max-width: 1100px; margin: 0 auto; border-bottom: 1px solid var(--border); }
+.hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: 8px; }
+.hero h1 span { color: var(--purple-light); }
+.hero p { color: var(--muted); font-size: 1rem; max-width: 700px; }
+.hero-meta { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
+.badge-purple { background: rgba(124,58,237,0.15); color: var(--purple-light); border: 1px solid rgba(124,58,237,0.3); }
+.badge-teal { background: rgba(13,148,136,0.15); color: #2dd4bf; border: 1px solid rgba(13,148,136,0.3); }
+.badge-green { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.badge-yellow { background: rgba(245,158,11,0.15); color: var(--yellow); border: 1px solid rgba(245,158,11,0.3); }
+.progress-bar-wrap { max-width: 1100px; margin: 24px auto; padding: 0 32px; }
+.progress-label { font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
+.progress-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--purple), var(--teal)); border-radius: 3px; transition: width 0.5s ease; }
+.main { max-width: 1100px; margin: 0 auto; padding: 32px; display: flex; flex-direction: column; gap: 64px; }
+.exercise { border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: var(--card); }
+.exercise-header { padding: 24px 32px; background: linear-gradient(135deg, rgba(124,58,237,0.15), rgba(13,148,136,0.08)); border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.exercise-num { font-size: 0.75rem; color: var(--purple-light); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.exercise-header h2 { font-size: 1.4rem; font-weight: 700; margin: 4px 0 8px; }
+.exercise-header p { color: var(--muted); font-size: 0.9rem; }
+.ex-status { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); transition: background 0.3s; }
+.status-dot.done { background: var(--green); }
+.tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--surface2); }
+.tab-btn { padding: 12px 20px; font-size: 0.82rem; font-weight: 600; color: var(--muted); cursor: pointer; border: none; background: none; border-bottom: 2px solid transparent; transition: all 0.2s; font-family: 'Inter', sans-serif; }
+.tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+.tab-btn.active { color: var(--purple-light); border-bottom-color: var(--purple-light); background: rgba(124,58,237,0.05); }
+.tab-panel { display: none; padding: 28px 32px; }
+.tab-panel.active { display: block; }
+.code-wrap { background: #0d0d18; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin: 12px 0; }
+.code-header { padding: 8px 16px; background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; color: var(--muted); }
+.code-dots { display: flex; gap: 6px; }
+.code-dots span { width: 10px; height: 10px; border-radius: 50%; }
+.code-dots .dot-r { background: var(--red); } .code-dots .dot-y { background: var(--yellow); } .code-dots .dot-g { background: var(--green); }
+.code-body { display: flex; }
+.line-nums { padding: 16px 8px; background: rgba(0,0,0,0.3); border-right: 1px solid var(--border); display: flex; flex-direction: column; min-width: 40px; text-align: right; }
+.line-nums span { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: #3a3a5c; line-height: 1.7; padding: 0 8px; }
+.code-content { padding: 16px; overflow-x: auto; flex: 1; white-space: pre; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; line-height: 1.7; }
+.kw { color: #c792ea; } .fn { color: #82aaff; } .st { color: #c3e88d; } .cm { color: #546e7a; font-style: italic; }
+.nm { color: #f78c6c; } .tp { color: #ffcb6b; } .dt { color: #89ddff; } .va { color: #eeffff; } .bi { color: #ff5370; }
+.task-requirements { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); border-radius: 10px; padding: 16px 20px; margin-bottom: 16px; }
+.task-requirements li { color: var(--text); font-size: 0.88rem; margin: 6px 0 6px 16px; }
+.task-requirements li::marker { color: var(--yellow); }
+.tests-grid { display: flex; flex-direction: column; gap: 8px; }
+.test-case { display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+.test-badge { flex-shrink: 0; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; font-family: 'Inter', sans-serif; letter-spacing: 0.5px; }
+.test-badge.pass { background: rgba(16,185,129,0.2); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.test-badge.pending { background: rgba(100,116,139,0.2); color: var(--muted); border: 1px solid rgba(100,116,139,0.3); }
+.test-content { flex: 1; } .test-input { color: var(--text); } .test-expected { color: var(--muted); margin-top: 2px; }
+.hints-list { display: flex; flex-direction: column; gap: 8px; }
+.hint-toggle { width: 100%; text-align: left; padding: 10px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--muted); cursor: pointer; font-family: 'Inter', sans-serif; font-size: 0.85rem; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s; }
+.hint-toggle:hover { border-color: var(--purple); color: var(--text); }
+.hint-toggle .arrow { transition: transform 0.2s; }
+.hint-toggle.open .arrow { transform: rotate(90deg); }
+.hint-body { display: none; padding: 12px 16px; margin-top: 4px; background: rgba(124,58,237,0.05); border: 1px solid rgba(124,58,237,0.2); border-radius: 8px; font-size: 0.85rem; color: var(--text); line-height: 1.6; }
+.hint-body code { background: rgba(124,58,237,0.15); padding: 1px 5px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--purple-light); }
+.section-label { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.section-label.purple { color: var(--purple-light); } .section-label.yellow { color: var(--yellow); }
+.section-label.green { color: #34d399; } .section-label.teal { color: #2dd4bf; }
+.section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.animate-btn { margin-top: 12px; padding: 8px 18px; border-radius: 8px; background: var(--purple); color: white; border: none; cursor: pointer; font-size: 0.82rem; font-weight: 600; font-family: 'Inter', sans-serif; transition: background 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+.animate-btn:hover { background: var(--purple-light); }
+.info-box { padding: 12px 16px; border-radius: 8px; margin: 12px 0; font-size: 0.85rem; }
+.info-box.teal { background: rgba(13,148,136,0.08); border: 1px solid rgba(13,148,136,0.2); color: var(--text); }
+.info-box.teal strong { color: #2dd4bf; }
+.info-box.purple { background: rgba(124,58,237,0.08); border: 1px solid rgba(124,58,237,0.2); color: var(--text); }
+.info-box.purple strong { color: var(--purple-light); }
+.info-box.yellow { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); color: var(--text); }
+.info-box.yellow strong { color: var(--yellow); }
+.stage-flow { display: flex; gap: 0; margin: 16px 0; flex-wrap: wrap; }
+.stage-box { flex: 1; min-width: 120px; padding: 12px 16px; font-size: 0.8rem; text-align: center; border: 1px solid var(--border); }
+.stage-box:first-child { border-radius: 8px 0 0 8px; }
+.stage-box:last-child { border-radius: 0 8px 8px 0; }
+.stage-box h4 { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+.stage-box p { font-size: 0.75rem; color: var(--muted); }
+.stage-box.s1 { background: rgba(124,58,237,0.1); border-color: rgba(124,58,237,0.3); }
+.stage-box.s1 h4 { color: var(--purple-light); }
+.stage-box.s2 { background: rgba(13,148,136,0.1); border-color: rgba(13,148,136,0.3); }
+.stage-box.s2 h4 { color: #2dd4bf; }
+.stage-box.s3 { background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.3); }
+.stage-box.s3 h4 { color: #34d399; }
+.stage-box.s4 { background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.3); }
+.stage-box.s4 h4 { color: var(--yellow); }
+.stage-arrow { display: flex; align-items: center; padding: 0 4px; color: var(--muted); font-size: 1.1rem; }
+.footer { border-top: 1px solid var(--border); padding: 32px; text-align: center; color: var(--muted); font-size: 0.82rem; }
+.footer a { color: var(--purple-light); text-decoration: none; }
+</style>
+</head>
+<body data-animation-density="high">
+
+<nav class="sticky-nav">
+  <a href="../days/day21.html">← Day 21 lesson</a>
+  <span class="nav-sep">|</span>
+  <a href="../index.html" class="brand">🤖 Agentic AI</a>
+  <span class="nav-sep">|</span>
+  <span class="nav-title">Day 21 — Week 3 Capstone</span>
+  <a href="../index.html" style="margin-left:auto;">Back to curriculum →</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-meta">
+    <span class="badge badge-purple">Day 21</span>
+    <span class="badge badge-yellow">Week 3 Capstone</span>
+    <span class="badge badge-teal">5 Stages</span>
+    <span class="badge badge-green">QLoRA → MLflow → FastAPI → RAGAS</span>
+  </div>
+  <h1>Week 3 <span>Capstone</span></h1>
+  <p>Put the whole week together: QLoRA fine-tune a model, track the run in MLflow, serve it behind a FastAPI endpoint with Prometheus metrics, and close the loop with a RAGAS evaluation pipeline. This is what production LLM engineering looks like.</p>
+</div>
+
+<div class="progress-bar-wrap">
+  <div class="progress-label"><span>Progress</span><span id="progress-text">0 / 5 completed</span></div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+</div>
+
+<main class="main">
+
+<!-- PIPELINE OVERVIEW -->
+<div style="max-width:1100px;margin:0 auto;padding:0 32px 0;">
+  <div class="stage-flow">
+    <div class="stage-box s1"><h4>Stage 1</h4><p>QLoRA Fine-Tune</p></div>
+    <div class="stage-arrow">→</div>
+    <div class="stage-box s2"><h4>Stage 2</h4><p>MLflow Tracking</p></div>
+    <div class="stage-arrow">→</div>
+    <div class="stage-box s3"><h4>Stage 3</h4><p>FastAPI Service</p></div>
+    <div class="stage-arrow">→</div>
+    <div class="stage-box s4"><h4>Stage 4</h4><p>RAGAS Eval</p></div>
+    <div class="stage-arrow">→</div>
+    <div class="stage-box s1"><h4>Stage 5</h4><p>CI/CD Gate</p></div>
+  </div>
+</div>
+
+<!-- ========== STAGE 1: QLORA FINE-TUNE ========== -->
+<section class="exercise" id="ex1">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Stage 1 of 5</div>
+      <h2>QLoRA Fine-Tune on a Domain Dataset</h2>
+      <p>Fine-tune TinyLlama on a Python Q&amp;A dataset using QLoRA and save the merged model for serving.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot1"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex1','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex1','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex1','tests')">Checkpoints</button>
+    <button class="tab-btn" onclick="showTab('ex1','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex1-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Fine-tune with QLoRA and produce a merged model artifact:</p>
+      <ul>
+        <li>Load <code style="font-family:'JetBrains Mono',monospace;">TinyLlama/TinyLlama-1.1B-Chat-v1.0</code> in 4-bit with <code style="font-family:'JetBrains Mono',monospace;">BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4")</code></li>
+        <li>Apply LoRA with <code style="font-family:'JetBrains Mono',monospace;">r=8, lora_alpha=16, target_modules="all-linear"</code></li>
+        <li>Create a dataset of Python Q&amp;A pairs formatted as chat template strings</li>
+        <li>Run <code style="font-family:'JetBrains Mono',monospace;">SFTTrainer</code> for 30 steps with <code style="font-family:'JetBrains Mono',monospace;">gradient_checkpointing=True</code></li>
+        <li>Merge adapters and save to <code style="font-family:'JetBrains Mono',monospace;">./capstone_model</code></li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(1)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex1-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        <span>capstone_stage1_finetune.py</span>
+        <span># pip install trl peft transformers bitsandbytes torch accelerate datasets</span>
+      </div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span><span>31</span><span>32</span><span>33</span><span>34</span><span>35</span><span>36</span><span>37</span><span>38</span><span>39</span><span>40</span></div>
+        <div class="code-content"><span class="cm"># pip install trl peft transformers bitsandbytes torch accelerate datasets</span>
+<span class="kw">from</span> <span class="va">transformers</span> <span class="kw">import</span> <span class="tp">AutoModelForCausalLM</span><span class="dt">,</span> <span class="tp">AutoTokenizer</span><span class="dt">,</span> <span class="tp">BitsAndBytesConfig</span>
+<span class="kw">from</span> <span class="va">peft</span> <span class="kw">import</span> <span class="tp">LoraConfig</span><span class="dt">,</span> <span class="fn">get_peft_model</span><span class="dt">,</span> <span class="tp">TaskType</span><span class="dt">,</span> <span class="fn">prepare_model_for_kbit_training</span>
+<span class="kw">from</span> <span class="va">trl</span> <span class="kw">import</span> <span class="tp">SFTTrainer</span><span class="dt">,</span> <span class="tp">SFTConfig</span>
+<span class="kw">from</span> <span class="va">datasets</span> <span class="kw">import</span> <span class="tp">Dataset</span>
+<span class="kw">import</span> <span class="va">torch</span>
+
+<span class="va">MODEL_ID</span> <span class="dt">=</span> <span class="st">"TinyLlama/TinyLlama-1.1B-Chat-v1.0"</span>
+
+<span class="cm"># Python Q&A dataset</span>
+<span class="va">EXAMPLES</span> <span class="dt">=</span> <span class="dt">[</span>
+    <span class="dt">{</span><span class="st">"q"</span><span class="dt">:</span> <span class="st">"What is a list comprehension?"</span><span class="dt">,</span>
+     <span class="st">"a"</span><span class="dt">:</span> <span class="st">"A concise way to create lists: [x*2 for x in range(5)] → [0,2,4,6,8]"</span><span class="dt">},</span>
+    <span class="dt">{</span><span class="st">"q"</span><span class="dt">:</span> <span class="st">"Explain Python's GIL."</span><span class="dt">,</span>
+     <span class="st">"a"</span><span class="dt">:</span> <span class="st">"The Global Interpreter Lock prevents true parallelism in CPython threads."</span><span class="dt">},</span>
+    <span class="dt">{</span><span class="st">"q"</span><span class="dt">:</span> <span class="st">"What are *args and **kwargs?"</span><span class="dt">,</span>
+     <span class="st">"a"</span><span class="dt">:</span> <span class="st">"*args collects positional args into a tuple; **kwargs collects keyword args into a dict."</span><span class="dt">},</span>
+<span class="dt">]</span> <span class="dt">*</span> <span class="nm">10</span>  <span class="cm"># 30 examples</span>
+
+<span class="cm"># TODO: load tokenizer, format as chat template text, create Dataset</span>
+<span class="va">tokenizer</span> <span class="dt">=</span> <span class="tp">AutoTokenizer</span><span class="dt">.</span><span class="fn">from_pretrained</span><span class="dt">(</span><span class="va">MODEL_ID</span><span class="dt">)</span>
+<span class="kw">def</span> <span class="fn">format_example</span><span class="dt">(</span><span class="va">ex</span><span class="dt">):</span>
+    <span class="va">msgs</span> <span class="dt">=</span> <span class="dt">[{</span><span class="st">"role"</span><span class="dt">:</span><span class="st">"user"</span><span class="dt">,</span><span class="st">"content"</span><span class="dt">:</span><span class="va">ex</span><span class="dt">[</span><span class="st">"q"</span><span class="dt">]},</span> <span class="dt">{</span><span class="st">"role"</span><span class="dt">:</span><span class="st">"assistant"</span><span class="dt">,</span><span class="st">"content"</span><span class="dt">:</span><span class="va">ex</span><span class="dt">[</span><span class="st">"a"</span><span class="dt">]}]</span>
+    <span class="kw">return</span> <span class="dt">{</span><span class="st">"text"</span><span class="dt">:</span> <span class="va">tokenizer</span><span class="dt">.</span><span class="fn">apply_chat_template</span><span class="dt">(</span><span class="va">msgs</span><span class="dt">,</span> <span class="va">tokenize</span><span class="dt">=</span><span class="kw">False</span><span class="dt">)}</span>
+<span class="va">dataset</span> <span class="dt">=</span> <span class="tp">Dataset</span><span class="dt">.</span><span class="fn">from_list</span><span class="dt">([</span><span class="fn">format_example</span><span class="dt">(</span><span class="va">e</span><span class="dt">)</span> <span class="kw">for</span> <span class="va">e</span> <span class="kw">in</span> <span class="va">EXAMPLES</span><span class="dt">])</span>
+
+<span class="cm"># TODO: BitsAndBytesConfig → load model → prepare_model_for_kbit_training → LoRA → SFTTrainer</span>
+<span class="dt">...</span>
+
+<span class="cm"># TODO: run trainer.train(), merge adapters, save to ./capstone_model</span>
+<span class="dt">...</span>
+<span class="fn">print</span><span class="dt">(</span><span class="st">"Stage 1 complete: merged model saved to ./capstone_model"</span><span class="dt">)</span></div>
+      </div>
+    </div>
+    <div class="info-box teal"><strong>Tip:</strong> Use <code style="font-family:'JetBrains Mono',monospace;background:rgba(13,148,136,0.15);padding:1px 5px;border-radius:3px;color:#2dd4bf;">gradient_checkpointing=True</code> in SFTConfig to halve VRAM at the cost of ~20% slower training. Essential when fine-tuning on 8GB GPUs.</div>
+  </div>
+
+  <div class="tab-panel" id="ex1-tests">
+    <div class="section-label green">Checkpoints</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t1-1">C1</span><div class="test-content"><div class="test-input">import os; os.path.exists("./capstone_model/config.json")</div><div class="test-expected">→ True (merged model saved)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t1-2">C2</span><div class="test-content"><div class="test-input">result.training_loss &gt; 0 and result.global_step == 30</div><div class="test-expected">→ True (trained for 30 steps)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t1-3">C3</span><div class="test-content"><div class="test-input">from transformers import AutoModelForCausalLM<br>m = AutoModelForCausalLM.from_pretrained("./capstone_model")<br>type(m).__name__ != "PeftModel"</div><div class="test-expected">→ True (plain model, adapters merged)</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(1)">▶ Run Checkpoints</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex1-hints">
+    <div class="section-label purple">Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint — Stage 1 full sequence</span><span class="arrow">▶</span></button>
+        <div class="hint-body">1. <code>BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4", bnb_4bit_compute_dtype=torch.bfloat16)</code><br>2. <code>AutoModelForCausalLM.from_pretrained(MODEL_ID, quantization_config=bnb, device_map="auto")</code><br>3. <code>prepare_model_for_kbit_training(model)</code><br>4. <code>get_peft_model(model, LoraConfig(task_type=CAUSAL_LM, r=8, lora_alpha=16, target_modules="all-linear"))</code><br>5. <code>SFTConfig(output_dir="./cap_sft", max_steps=30, gradient_checkpointing=True)</code><br>6. <code>trainer.train()</code><br>7. <code>trainer.model.merge_and_unload().save_pretrained("./capstone_model")</code></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== STAGE 2: MLFLOW ========== -->
+<section class="exercise" id="ex2">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Stage 2 of 5</div>
+      <h2>MLflow — Track the Fine-Tuning Run</h2>
+      <p>Log every hyperparameter, loss curve, and model artifact from the Stage 1 training run to MLflow.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot2"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex2','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex2','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex2','tests')">Checkpoints</button>
+    <button class="tab-btn" onclick="showTab('ex2','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex2-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Wrap the Stage 1 training in a full MLflow run:</p>
+      <ul>
+        <li>Open an <code style="font-family:'JetBrains Mono',monospace;">mlflow.start_run()</code> context around the entire training loop</li>
+        <li>Log LoRA hyperparameters: <code style="font-family:'JetBrains Mono',monospace;">r</code>, <code style="font-family:'JetBrains Mono',monospace;">lora_alpha</code>, <code style="font-family:'JetBrains Mono',monospace;">target_modules</code>, <code style="font-family:'JetBrains Mono',monospace;">model_id</code></li>
+        <li>Implement a <code style="font-family:'JetBrains Mono',monospace;">MLflowCallback</code> that logs <code style="font-family:'JetBrains Mono',monospace;">train/loss</code> at each step</li>
+        <li>Log the merged model artifact with <code style="font-family:'JetBrains Mono',monospace;">mlflow.log_artifacts("./capstone_model")</code></li>
+        <li>Register the model in the registry as <code style="font-family:'JetBrains Mono',monospace;">"capstone-llm"</code> and promote to Staging</li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(2)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex2-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        <span>capstone_stage2_mlflow.py</span>
+        <span># pip install mlflow transformers trl peft torch</span>
+      </div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span><span>31</span><span>32</span><span>33</span></div>
+        <div class="code-content"><span class="cm"># pip install mlflow transformers trl</span>
+<span class="kw">import</span> <span class="va">mlflow</span>
+<span class="kw">from</span> <span class="va">mlflow.tracking</span> <span class="kw">import</span> <span class="tp">MlflowClient</span>
+<span class="kw">from</span> <span class="va">transformers</span> <span class="kw">import</span> <span class="tp">TrainerCallback</span>
+
+<span class="cm"># Custom callback to bridge HuggingFace → MLflow</span>
+<span class="kw">class</span> <span class="tp">MLflowCallback</span><span class="dt">(</span><span class="tp">TrainerCallback</span><span class="dt">):</span>
+    <span class="kw">def</span> <span class="fn">on_log</span><span class="dt">(</span><span class="va">self</span><span class="dt">,</span> <span class="va">args</span><span class="dt">,</span> <span class="va">state</span><span class="dt">,</span> <span class="va">control</span><span class="dt">,</span> <span class="va">logs</span><span class="dt">=</span><span class="kw">None</span><span class="dt">,</span> <span class="dt">**</span><span class="va">kwargs</span><span class="dt">):</span>
+        <span class="kw">if</span> <span class="va">logs</span> <span class="kw">and</span> <span class="st">"loss"</span> <span class="kw">in</span> <span class="va">logs</span><span class="dt">:</span>
+            <span class="cm"># TODO: log "train/loss" to mlflow with step=state.global_step</span>
+            <span class="dt">...</span>
+
+<span class="va">LORA_HPARAMS</span> <span class="dt">=</span> <span class="dt">{</span>
+    <span class="st">"model_id"</span><span class="dt">:</span>       <span class="st">"TinyLlama/TinyLlama-1.1B-Chat-v1.0"</span><span class="dt">,</span>
+    <span class="st">"lora_r"</span><span class="dt">:</span>         <span class="nm">8</span><span class="dt">,</span>
+    <span class="st">"lora_alpha"</span><span class="dt">:</span>     <span class="nm">16</span><span class="dt">,</span>
+    <span class="st">"target_modules"</span><span class="dt">:</span> <span class="st">"all-linear"</span><span class="dt">,</span>
+    <span class="st">"quant_bits"</span><span class="dt">:</span>     <span class="nm">4</span><span class="dt">,</span>
+    <span class="st">"max_steps"</span><span class="dt">:</span>      <span class="nm">30</span><span class="dt">,</span>
+<span class="dt">}</span>
+
+<span class="va">mlflow</span><span class="dt">.</span><span class="fn">set_experiment</span><span class="dt">(</span><span class="st">"capstone-week3"</span><span class="dt">)</span>
+<span class="kw">with</span> <span class="va">mlflow</span><span class="dt">.</span><span class="fn">start_run</span><span class="dt">(</span><span class="va">run_name</span><span class="dt">=</span><span class="st">"qlora-tinyllama"</span><span class="dt">)</span> <span class="kw">as</span> <span class="va">run</span><span class="dt">:</span>
+    <span class="cm"># TODO: log params, add MLflowCallback to trainer, train, log artifacts</span>
+    <span class="va">mlflow</span><span class="dt">.</span><span class="fn">log_params</span><span class="dt">(</span><span class="va">LORA_HPARAMS</span><span class="dt">)</span>
+    <span class="dt">...</span>
+    <span class="cm"># TODO: register model and promote to Staging</span>
+    <span class="va">model_uri</span> <span class="dt">=</span> <span class="bi">f</span><span class="st">"runs:/{run.info.run_id}/capstone_model"</span>
+    <span class="va">mv</span> <span class="dt">=</span> <span class="va">mlflow</span><span class="dt">.</span><span class="fn">register_model</span><span class="dt">(</span><span class="va">model_uri</span><span class="dt">,</span> <span class="st">"capstone-llm"</span><span class="dt">)</span>
+    <span class="dt">...</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex2-tests">
+    <div class="section-label green">Checkpoints</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t2-1">C1</span><div class="test-content"><div class="test-input">client.get_run(run_id).data.params["lora_r"]</div><div class="test-expected">→ "8"</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t2-2">C2</span><div class="test-content"><div class="test-input">"train/loss" in client.get_run(run_id).data.metrics</div><div class="test-expected">→ True</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t2-3">C3</span><div class="test-content"><div class="test-input">client.get_model_version("capstone-llm", mv.version).current_stage</div><div class="test-expected">→ "Staging"</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(2)">▶ Run Checkpoints</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex2-hints">
+    <div class="section-label purple">Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint — Adding callback to SFTTrainer</span><span class="arrow">▶</span></button>
+        <div class="hint-body">Pass <code>callbacks=[MLflowCallback()]</code> to <code>SFTTrainer()</code>. The <code>on_log</code> method is called every <code>logging_steps</code> (default 10). Inside: <code>mlflow.log_metric("train/loss", logs["loss"], step=state.global_step)</code>.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== STAGE 3: FASTAPI ========== -->
+<section class="exercise" id="ex3">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Stage 3 of 5</div>
+      <h2>FastAPI Inference Service</h2>
+      <p>Serve the merged model behind a FastAPI endpoint with Prometheus metrics and async generation support.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot3"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex3','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex3','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex3','tests')">Checkpoints</button>
+    <button class="tab-btn" onclick="showTab('ex3','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex3-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Build the inference API with full observability:</p>
+      <ul>
+        <li>Load <code style="font-family:'JetBrains Mono',monospace;">./capstone_model</code> in <code style="font-family:'JetBrains Mono',monospace;">@app.on_event("startup")</code> to warm the model once</li>
+        <li>Define <code style="font-family:'JetBrains Mono',monospace;">POST /generate</code> accepting <code style="font-family:'JetBrains Mono',monospace;">{"prompt": str, "max_tokens": int}</code></li>
+        <li>Format the prompt using <code style="font-family:'JetBrains Mono',monospace;">tokenizer.apply_chat_template()</code> before generating</li>
+        <li>Instrument with Prometheus: request counter (label: status), latency histogram, tokens/sec gauge</li>
+        <li>Add <code style="font-family:'JetBrains Mono',monospace;">GET /health</code> returning model name, uptime, and total requests served</li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(3)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex3-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        <span>capstone_stage3_api.py</span>
+        <span># pip install fastapi uvicorn transformers torch prometheus-client</span>
+      </div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span><span>31</span><span>32</span><span>33</span><span>34</span><span>35</span><span>36</span></div>
+        <div class="code-content"><span class="cm"># pip install fastapi uvicorn transformers torch prometheus-client</span>
+<span class="kw">from</span> <span class="va">fastapi</span> <span class="kw">import</span> <span class="tp">FastAPI</span>
+<span class="kw">from</span> <span class="va">fastapi.responses</span> <span class="kw">import</span> <span class="tp">PlainTextResponse</span>
+<span class="kw">from</span> <span class="va">transformers</span> <span class="kw">import</span> <span class="tp">AutoModelForCausalLM</span><span class="dt">,</span> <span class="tp">AutoTokenizer</span>
+<span class="kw">from</span> <span class="va">prometheus_client</span> <span class="kw">import</span> <span class="tp">Counter</span><span class="dt">,</span> <span class="tp">Histogram</span><span class="dt">,</span> <span class="tp">Gauge</span><span class="dt">,</span> <span class="fn">generate_latest</span>
+<span class="kw">from</span> <span class="va">pydantic</span> <span class="kw">import</span> <span class="tp">BaseModel</span>
+<span class="kw">import</span> <span class="va">torch</span><span class="dt">,</span> <span class="va">time</span>
+
+<span class="va">app</span> <span class="dt">=</span> <span class="fn">FastAPI</span><span class="dt">(</span><span class="va">title</span><span class="dt">=</span><span class="st">"Capstone LLM API"</span><span class="dt">)</span>
+<span class="va">model</span><span class="dt">,</span> <span class="va">tokenizer</span><span class="dt">,</span> <span class="va">start_time</span><span class="dt">,</span> <span class="va">total_requests</span> <span class="dt">=</span> <span class="kw">None</span><span class="dt">,</span> <span class="kw">None</span><span class="dt">,</span> <span class="kw">None</span><span class="dt">,</span> <span class="nm">0</span>
+
+<span class="cm"># Prometheus metrics</span>
+<span class="va">REQ</span>     <span class="dt">=</span> <span class="tp">Counter</span><span class="dt">(</span><span class="st">"gen_requests_total"</span><span class="dt">,</span> <span class="st">"Requests"</span><span class="dt">,</span> <span class="dt">[</span><span class="st">"status"</span><span class="dt">])</span>
+<span class="va">LAT</span>     <span class="dt">=</span> <span class="tp">Histogram</span><span class="dt">(</span><span class="st">"gen_latency_seconds"</span><span class="dt">,</span> <span class="st">"Latency"</span><span class="dt">)</span>
+<span class="va">TPS</span>     <span class="dt">=</span> <span class="tp">Gauge</span><span class="dt">(</span><span class="st">"gen_tokens_per_sec"</span><span class="dt">,</span> <span class="st">"Last request tokens/sec"</span><span class="dt">)</span>
+
+<span class="dt">@</span><span class="va">app</span><span class="dt">.</span><span class="fn">on_event</span><span class="dt">(</span><span class="st">"startup"</span><span class="dt">)</span>
+<span class="kw">def</span> <span class="fn">load_model</span><span class="dt">():</span>
+    <span class="kw">global</span> <span class="va">model</span><span class="dt">,</span> <span class="va">tokenizer</span><span class="dt">,</span> <span class="va">start_time</span>
+    <span class="cm"># TODO: load from ./capstone_model, eval mode, track start_time</span>
+    <span class="dt">...</span>
+
+<span class="kw">class</span> <span class="tp">GenRequest</span><span class="dt">(</span><span class="tp">BaseModel</span><span class="dt">):</span>
+    <span class="va">prompt</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">;</span> <span class="va">max_tokens</span><span class="dt">:</span> <span class="tp">int</span> <span class="dt">=</span> <span class="nm">64</span>
+
+<span class="dt">@</span><span class="va">app</span><span class="dt">.</span><span class="fn">post</span><span class="dt">(</span><span class="st">"/generate"</span><span class="dt">)</span>
+<span class="kw">def</span> <span class="fn">generate</span><span class="dt">(</span><span class="va">req</span><span class="dt">:</span> <span class="tp">GenRequest</span><span class="dt">):</span>
+    <span class="kw">global</span> <span class="va">total_requests</span>
+    <span class="cm"># TODO: apply_chat_template, generate, decode, record metrics, return</span>
+    <span class="dt">...</span>
+
+<span class="dt">@</span><span class="va">app</span><span class="dt">.</span><span class="fn">get</span><span class="dt">(</span><span class="st">"/health"</span><span class="dt">)</span>
+<span class="kw">def</span> <span class="fn">health</span><span class="dt">():</span>
+    <span class="kw">return</span> <span class="dt">{</span><span class="st">"uptime_s"</span><span class="dt">:</span> <span class="fn">round</span><span class="dt">(</span><span class="va">time</span><span class="dt">.</span><span class="fn">time</span><span class="dt">()-</span><span class="va">start_time</span><span class="dt">,</span><span class="nm">1</span><span class="dt">),</span> <span class="st">"total_requests"</span><span class="dt">:</span> <span class="va">total_requests</span><span class="dt">}</span>
+
+<span class="dt">@</span><span class="va">app</span><span class="dt">.</span><span class="fn">get</span><span class="dt">(</span><span class="st">"/metrics"</span><span class="dt">)</span>
+<span class="kw">def</span> <span class="fn">metrics</span><span class="dt">():</span>
+    <span class="kw">return</span> <span class="tp">PlainTextResponse</span><span class="dt">(</span><span class="fn">generate_latest</span><span class="dt">().</span><span class="fn">decode</span><span class="dt">())</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex3-tests">
+    <div class="section-label green">Checkpoints</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t3-1">C1</span><div class="test-content"><div class="test-input">from fastapi.testclient import TestClient; c = TestClient(app)<br>c.get("/health").status_code</div><div class="test-expected">→ 200</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t3-2">C2</span><div class="test-content"><div class="test-input">r = c.post("/generate", json={"prompt":"What is Python?","max_tokens":20})<br>"text" in r.json()</div><div class="test-expected">→ True</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t3-3">C3</span><div class="test-content"><div class="test-input">"gen_requests_total" in c.get("/metrics").text</div><div class="test-expected">→ True</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(3)">▶ Run Checkpoints</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex3-hints">
+    <div class="section-label purple">Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint — generate endpoint body</span><span class="arrow">▶</span></button>
+        <div class="hint-body">Format: <code>msgs = [{"role":"user","content":req.prompt}]; formatted = tokenizer.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True); inputs = tokenizer(formatted, return_tensors="pt").to(model.device)</code>. Then <code>with torch.no_grad(): ids = model.generate(**inputs, max_new_tokens=req.max_tokens)</code>. Decode: <code>tokenizer.decode(ids[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True)</code>.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== STAGE 4: RAGAS ========== -->
+<section class="exercise" id="ex4">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Stage 4 of 5</div>
+      <h2>RAGAS Evaluation Pipeline</h2>
+      <p>Query the live API 10 times, collect responses, run RAGAS evaluation, and log scores to MLflow.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot4"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex4','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex4','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex4','tests')">Checkpoints</button>
+    <button class="tab-btn" onclick="showTab('ex4','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex4-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Close the evaluation loop:</p>
+      <ul>
+        <li>Query <code style="font-family:'JetBrains Mono',monospace;">POST http://localhost:8000/generate</code> with 10 Python Q&amp;A questions</li>
+        <li>Build a RAGAS evaluation dataset from the responses and ground-truth answers</li>
+        <li>Run <code style="font-family:'JetBrains Mono',monospace;">evaluate(dataset, metrics=[faithfulness, answer_relevancy])</code></li>
+        <li>Log all RAGAS scores to the MLflow run from Stage 2 using <code style="font-family:'JetBrains Mono',monospace;">mlflow.log_metrics()</code></li>
+        <li>Decide: if mean faithfulness &gt; 0.7, promote model to Production; else keep at Staging</li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(4)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex4-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        <span>capstone_stage4_eval.py</span>
+        <span># pip install ragas datasets httpx mlflow</span>
+      </div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span><span>31</span><span>32</span><span>33</span><span>34</span></div>
+        <div class="code-content"><span class="cm"># pip install ragas datasets httpx mlflow</span>
+<span class="kw">import</span> <span class="va">httpx</span><span class="dt">,</span> <span class="va">mlflow</span>
+<span class="kw">from</span> <span class="va">ragas</span> <span class="kw">import</span> <span class="fn">evaluate</span>
+<span class="kw">from</span> <span class="va">ragas.metrics</span> <span class="kw">import</span> <span class="va">faithfulness</span><span class="dt">,</span> <span class="va">answer_relevancy</span>
+<span class="kw">from</span> <span class="va">datasets</span> <span class="kw">import</span> <span class="tp">Dataset</span>
+<span class="kw">from</span> <span class="va">mlflow.tracking</span> <span class="kw">import</span> <span class="tp">MlflowClient</span>
+
+<span class="va">EVAL_QA</span> <span class="dt">=</span> <span class="dt">[</span>
+    <span class="dt">{</span><span class="st">"q"</span><span class="dt">:</span><span class="st">"What is a list comprehension?"</span><span class="dt">,</span> <span class="st">"gt"</span><span class="dt">:</span><span class="st">"A concise list syntax [expr for x in iterable]"</span><span class="dt">,</span>
+     <span class="st">"ctx"</span><span class="dt">:</span><span class="st">"List comprehensions provide a concise way to create lists."</span><span class="dt">},</span>
+    <span class="dt">{</span><span class="st">"q"</span><span class="dt">:</span><span class="st">"What is a decorator?"</span><span class="dt">,</span> <span class="st">"gt"</span><span class="dt">:</span><span class="st">"A function that wraps another function"</span><span class="dt">,</span>
+     <span class="st">"ctx"</span><span class="dt">:</span><span class="st">"Decorators modify or enhance functions using @syntax."</span><span class="dt">},</span>
+<span class="dt">]</span>
+
+<span class="kw">def</span> <span class="fn">query_api</span><span class="dt">(</span><span class="va">prompt</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">str</span><span class="dt">:</span>
+    <span class="cm"># TODO: POST to http://localhost:8000/generate, return text field</span>
+    <span class="dt">...</span>
+
+<span class="cm"># Collect answers from live API</span>
+<span class="va">eval_rows</span> <span class="dt">=</span> <span class="dt">[]</span>
+<span class="kw">for</span> <span class="va">item</span> <span class="kw">in</span> <span class="va">EVAL_QA</span><span class="dt">:</span>
+    <span class="va">answer</span> <span class="dt">=</span> <span class="fn">query_api</span><span class="dt">(</span><span class="va">item</span><span class="dt">[</span><span class="st">"q"</span><span class="dt">])</span>
+    <span class="cm"># TODO: append dict with question, answer, contexts, ground_truth</span>
+    <span class="va">eval_rows</span><span class="dt">.</span><span class="fn">append</span><span class="dt">({...})</span>
+
+<span class="cm"># Run RAGAS evaluation</span>
+<span class="va">dataset</span> <span class="dt">=</span> <span class="tp">Dataset</span><span class="dt">.</span><span class="fn">from_list</span><span class="dt">(</span><span class="va">eval_rows</span><span class="dt">)</span>
+<span class="va">result</span>  <span class="dt">=</span> <span class="fn">evaluate</span><span class="dt">(</span><span class="va">dataset</span><span class="dt">,</span> <span class="va">metrics</span><span class="dt">=[</span><span class="va">faithfulness</span><span class="dt">,</span> <span class="va">answer_relevancy</span><span class="dt">])</span>
+
+<span class="cm"># TODO: log scores to MLflow, decide promote or keep at Staging</span>
+<span class="va">scores</span> <span class="dt">=</span> <span class="dt">{</span><span class="st">"ragas_faithfulness"</span><span class="dt">:</span> <span class="va">result</span><span class="dt">[</span><span class="st">"faithfulness"</span><span class="dt">],</span> <span class="st">"ragas_relevancy"</span><span class="dt">:</span> <span class="va">result</span><span class="dt">[</span><span class="st">"answer_relevancy"</span><span class="dt">]}</span>
+<span class="cm"># TODO: mlflow.log_metrics(scores) and registry promotion decision</span>
+<span class="dt">...</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex4-tests">
+    <div class="section-label green">Checkpoints</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t4-1">C1</span><div class="test-content"><div class="test-input">isinstance(query_api("test"), str) and len(query_api("test")) &gt; 0</div><div class="test-expected">→ True (API responds)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t4-2">C2</span><div class="test-content"><div class="test-input">"ragas_faithfulness" in client.get_run(run_id).data.metrics</div><div class="test-expected">→ True (RAGAS score logged)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t4-3">C3</span><div class="test-content"><div class="test-input">0.0 &lt;= result["faithfulness"] &lt;= 1.0</div><div class="test-expected">→ True (valid score)</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(4)">▶ Run Checkpoints</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex4-hints">
+    <div class="section-label purple">Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint — query_api and eval_rows format</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>r = httpx.post("http://localhost:8000/generate", json={"prompt": prompt, "max_tokens": 80}); return r.json()["text"]</code>. Each eval_rows item: <code>{"question": item["q"], "answer": answer, "contexts": [item["ctx"]], "ground_truth": item["gt"]}</code>.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== STAGE 5: CAPSTONE SUMMARY ========== -->
+<section class="exercise" id="ex5">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Stage 5 of 5</div>
+      <h2>Capstone Summary & Reflection</h2>
+      <p>Write the final integration script that runs all 4 stages end-to-end and produces a deployment report.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot5"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex5','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex5','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex5','tests')">Checkpoints</button>
+    <button class="tab-btn" onclick="showTab('ex5','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex5-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Write a <code style="font-family:'JetBrains Mono',monospace;background:rgba(245,158,11,0.15);padding:2px 6px;border-radius:4px;">run_capstone()</code> orchestrator and deployment report:</p>
+      <ul>
+        <li>Call each stage in sequence, capturing: training loss, run_id, RAGAS scores, promotion decision</li>
+        <li>Generate a JSON report file <code style="font-family:'JetBrains Mono',monospace;">capstone_report.json</code> with all results</li>
+        <li>Print a human-readable summary table with all key metrics</li>
+        <li>Write a <code style="font-family:'JetBrains Mono',monospace;">pytest</code> test file that asserts: training_loss &gt; 0, ragas_faithfulness between 0 and 1, model_version is a positive int</li>
+        <li>Add a GitHub Actions workflow YAML that runs your tests on every push</li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(5)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex5-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        <span>capstone_stage5_report.py</span>
+        <span># No extra dependencies</span>
+      </div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span><span>31</span><span>32</span><span>33</span><span>34</span><span>35</span><span>36</span><span>37</span></div>
+        <div class="code-content"><span class="kw">import</span> <span class="va">json</span><span class="dt">,</span> <span class="va">datetime</span>
+<span class="kw">from</span> <span class="va">pathlib</span> <span class="kw">import</span> <span class="tp">Path</span>
+
+<span class="kw">def</span> <span class="fn">run_capstone</span><span class="dt">()</span> <span class="dt">-></span> <span class="tp">dict</span><span class="dt">:</span>
+    <span class="st">"""Orchestrate all 4 stages and return a summary dict."""</span>
+    <span class="va">report</span> <span class="dt">=</span> <span class="dt">{</span>
+        <span class="st">"timestamp"</span><span class="dt">:</span> <span class="va">datetime</span><span class="dt">.</span><span class="va">datetime</span><span class="dt">.</span><span class="fn">utcnow</span><span class="dt">().</span><span class="fn">isoformat</span><span class="dt">(),</span>
+        <span class="st">"stages"</span><span class="dt">:</span> <span class="dt">{},</span>
+    <span class="dt">}</span>
+
+    <span class="cm"># TODO: import and call stage 1 (returns training_loss, global_step)</span>
+    <span class="va">report</span><span class="dt">[</span><span class="st">"stages"</span><span class="dt">][</span><span class="st">"finetune"</span><span class="dt">]</span> <span class="dt">=</span> <span class="dt">{</span><span class="st">"training_loss"</span><span class="dt">:</span> <span class="dt">...,</span> <span class="st">"steps"</span><span class="dt">:</span> <span class="dt">...}</span>
+
+    <span class="cm"># TODO: call stage 2 (returns run_id, model_version)</span>
+    <span class="va">report</span><span class="dt">[</span><span class="st">"stages"</span><span class="dt">][</span><span class="st">"mlflow"</span><span class="dt">]</span> <span class="dt">=</span> <span class="dt">{</span><span class="st">"run_id"</span><span class="dt">:</span> <span class="dt">...,</span> <span class="st">"model_version"</span><span class="dt">:</span> <span class="dt">...}</span>
+
+    <span class="cm"># TODO: stage 3 — start the FastAPI server subprocess</span>
+    <span class="dt">...</span>
+
+    <span class="cm"># TODO: call stage 4 (returns ragas_scores, promoted)</span>
+    <span class="va">report</span><span class="dt">[</span><span class="st">"stages"</span><span class="dt">][</span><span class="st">"eval"</span><span class="dt">]</span> <span class="dt">=</span> <span class="dt">{</span><span class="st">"ragas_scores"</span><span class="dt">:</span> <span class="dt">...,</span> <span class="st">"promoted"</span><span class="dt">:</span> <span class="dt">...}</span>
+
+    <span class="kw">return</span> <span class="va">report</span>
+
+<span class="kw">def</span> <span class="fn">print_summary</span><span class="dt">(</span><span class="va">report</span><span class="dt">:</span> <span class="tp">dict</span><span class="dt">):</span>
+    <span class="fn">print</span><span class="dt">(</span><span class="st">"\n" + "="*50</span><span class="dt">)</span>
+    <span class="fn">print</span><span class="dt">(</span><span class="st">"WEEK 3 CAPSTONE REPORT"</span><span class="dt">)</span>
+    <span class="fn">print</span><span class="dt">(</span><span class="st">"="*50</span><span class="dt">)</span>
+    <span class="cm"># TODO: print each stage's key metrics in a formatted table</span>
+    <span class="dt">...</span>
+    <span class="fn">print</span><span class="dt">(</span><span class="st">"="*50 + "\n"</span><span class="dt">)</span>
+
+<span class="kw">if</span> <span class="va">__name__</span> <span class="dt">==</span> <span class="st">"__main__"</span><span class="dt">:</span>
+    <span class="va">report</span> <span class="dt">=</span> <span class="fn">run_capstone</span><span class="dt">()</span>
+    <span class="fn">print_summary</span><span class="dt">(</span><span class="va">report</span><span class="dt">)</span>
+    <span class="tp">Path</span><span class="dt">(</span><span class="st">"capstone_report.json"</span><span class="dt">).</span><span class="fn">write_text</span><span class="dt">(</span><span class="va">json</span><span class="dt">.</span><span class="fn">dumps</span><span class="dt">(</span><span class="va">report</span><span class="dt">,</span> <span class="va">indent</span><span class="dt">=</span><span class="nm">2</span><span class="dt">))</span>
+    <span class="fn">print</span><span class="dt">(</span><span class="st">"Report saved to capstone_report.json"</span><span class="dt">)</span></div>
+      </div>
+    </div>
+    <div class="info-box yellow"><strong>What you've built:</strong> A production-grade LLM engineering pipeline — data → fine-tune → track → serve → evaluate → promote. Every component is observable (MLflow + LangSmith + Prometheus), every model version is auditable, and every promotion is gated by automated quality checks. This is week 3 complete.</div>
+  </div>
+
+  <div class="tab-panel" id="ex5-tests">
+    <div class="section-label green">Checkpoints</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t5-1">C1</span><div class="test-content"><div class="test-input">import json, pathlib<br>data = json.loads(pathlib.Path("capstone_report.json").read_text())<br>"stages" in data and "finetune" in data["stages"]</div><div class="test-expected">→ True</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t5-2">C2</span><div class="test-content"><div class="test-input">data["stages"]["finetune"]["training_loss"] &gt; 0</div><div class="test-expected">→ True</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t5-3">C3</span><div class="test-content"><div class="test-input">0 &lt;= data["stages"]["eval"]["ragas_scores"]["ragas_faithfulness"] &lt;= 1</div><div class="test-expected">→ True</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(5)">▶ Run Checkpoints</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex5-hints">
+    <div class="section-label purple">Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint — Starting the FastAPI server in subprocess</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>import subprocess, time; proc = subprocess.Popen(["uvicorn","capstone_stage3_api:app","--port","8000"]); time.sleep(5)</code> to wait for startup. Kill with <code>proc.terminate()</code> after eval.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint — pytest test file structure</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>def test_training_loss(report): assert report["stages"]["finetune"]["training_loss"] &gt; 0</code>. Add a <code>@pytest.fixture</code> that loads capstone_report.json and pass it to each test function.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <p>Day 21 of 30 — Week 3 Complete! — <a href="../index.html">Back to curriculum</a></p>
+</footer>
+
+<script>
+let completedCount = 0;
+const totalExercises = 5;
+function markDone(n) {
+  const dot = document.getElementById('dot' + n);
+  if (dot && !dot.classList.contains('done')) {
+    dot.classList.add('done');
+    completedCount++;
+    document.getElementById('progress-text').textContent = completedCount + ' / ' + totalExercises + ' completed';
+    document.getElementById('progress-fill').style.width = (completedCount / totalExercises * 100) + '%';
+  }
+}
+function showTab(exId, tabName) {
+  document.querySelectorAll('#' + exId + ' .tab-panel').forEach(p => { p.classList.toggle('active', p.id === exId + '-' + tabName); });
+  document.querySelectorAll('#' + exId + ' .tab-btn').forEach(b => { b.classList.toggle('active', b.getAttribute('onclick') && b.getAttribute('onclick').includes("'" + tabName + "'")); });
+}
+function toggleHint(btn) {
+  btn.classList.toggle('open');
+  const body = btn.nextElementSibling;
+  body.style.display = body.style.display === 'block' ? 'none' : 'block';
+}
+function runTests(exNum) {
+  const tests = document.querySelectorAll('#ex' + exNum + '-tests .test-badge');
+  tests.forEach((badge, i) => { setTimeout(() => { badge.className = 'test-badge pass'; badge.textContent = '✓ C' + (i + 1); }, i * 300); });
+}
+</script>
+<script src="../bg-animation.js"></script>
+</body>
+</html>

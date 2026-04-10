@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 26 Exercises — Cloud AI Services</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f; --card: #141420; --surface2: #1a1a2e; --border: #2a2a45;
+  --purple: #7c3aed; --purple-light: #a855f7; --teal: #0d9488; --green: #10b981;
+  --yellow: #f59e0b; --red: #ef4444; --text: #e2e8f0; --muted: #64748b;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+code, pre { font-family: 'JetBrains Mono', monospace; }
+.sticky-nav { position: sticky; top: 0; z-index: 100; background: rgba(10,10,15,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); padding: 12px 32px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.sticky-nav a { color: var(--muted); text-decoration: none; font-size: 0.85rem; padding: 6px 12px; border-radius: 6px; transition: all 0.2s; border: 1px solid transparent; }
+.sticky-nav a:hover { color: var(--text); background: var(--card); border-color: var(--border); }
+.sticky-nav .brand { color: var(--purple-light); font-weight: 600; font-size: 0.9rem; }
+.nav-sep { color: var(--border); } .nav-title { color: var(--text); font-weight: 700; font-size: 0.95rem; flex: 1; }
+.hero { padding: 56px 32px 32px; max-width: 1100px; margin: 0 auto; border-bottom: 1px solid var(--border); }
+.hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: 8px; }
+.hero h1 span { color: var(--purple-light); }
+.hero p { color: var(--muted); font-size: 1rem; max-width: 700px; }
+.hero-meta { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
+.badge-purple { background: rgba(124,58,237,0.15); color: var(--purple-light); border: 1px solid rgba(124,58,237,0.3); }
+.badge-teal { background: rgba(13,148,136,0.15); color: #2dd4bf; border: 1px solid rgba(13,148,136,0.3); }
+.badge-green { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.progress-bar-wrap { max-width: 1100px; margin: 24px auto; padding: 0 32px; }
+.progress-label { font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
+.progress-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--purple), var(--teal)); border-radius: 3px; transition: width 0.5s ease; }
+.main { max-width: 1100px; margin: 0 auto; padding: 32px; display: flex; flex-direction: column; gap: 64px; }
+.exercise { border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: var(--card); }
+.exercise-header { padding: 24px 32px; background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(13,148,136,0.05)); border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.exercise-num { font-size: 0.75rem; color: var(--purple-light); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.exercise-header h2 { font-size: 1.4rem; font-weight: 700; margin: 4px 0 8px; }
+.exercise-header p { color: var(--muted); font-size: 0.9rem; }
+.ex-status { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); transition: background 0.3s; }
+.status-dot.done { background: var(--green); }
+.tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--surface2); }
+.tab-btn { padding: 12px 20px; font-size: 0.82rem; font-weight: 600; color: var(--muted); cursor: pointer; border: none; background: none; border-bottom: 2px solid transparent; transition: all 0.2s; font-family: 'Inter', sans-serif; }
+.tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+.tab-btn.active { color: var(--purple-light); border-bottom-color: var(--purple-light); background: rgba(124,58,237,0.05); }
+.tab-panel { display: none; padding: 28px 32px; }
+.tab-panel.active { display: block; }
+.code-wrap { background: #0d0d18; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin: 12px 0; }
+.code-header { padding: 8px 16px; background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; color: var(--muted); }
+.code-dots { display: flex; gap: 6px; }
+.code-dots span { width: 10px; height: 10px; border-radius: 50%; }
+.code-dots .dot-r { background: var(--red); } .code-dots .dot-y { background: var(--yellow); } .code-dots .dot-g { background: var(--green); }
+.code-body { display: flex; }
+.line-nums { padding: 16px 8px; background: rgba(0,0,0,0.3); border-right: 1px solid var(--border); display: flex; flex-direction: column; min-width: 40px; text-align: right; }
+.line-nums span { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: #3a3a5c; line-height: 1.7; padding: 0 8px; }
+.code-content { padding: 16px; overflow-x: auto; flex: 1; white-space: pre; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; line-height: 1.7; }
+.kw { color: #c792ea; } .fn { color: #82aaff; } .st { color: #c3e88d; } .cm { color: #546e7a; font-style: italic; } .nm { color: #f78c6c; } .tp { color: #ffcb6b; } .dt { color: #89ddff; } .va { color: #eeffff; } .bi { color: #ff5370; }
+.task-requirements { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); border-radius: 10px; padding: 16px 20px; margin-bottom: 16px; }
+.task-requirements li { color: var(--text); font-size: 0.88rem; margin: 6px 0 6px 16px; }
+.task-requirements li::marker { color: var(--yellow); }
+.tests-grid { display: flex; flex-direction: column; gap: 8px; }
+.test-case { display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+.test-badge { flex-shrink: 0; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; font-family: 'Inter', sans-serif; }
+.test-badge.pass { background: rgba(16,185,129,0.2); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.test-badge.pending { background: rgba(100,116,139,0.2); color: var(--muted); border: 1px solid rgba(100,116,139,0.3); }
+.test-content { flex: 1; } .test-input { color: var(--text); } .test-expected { color: var(--muted); margin-top: 2px; }
+.hints-list { display: flex; flex-direction: column; gap: 8px; }
+.hint-toggle { width: 100%; text-align: left; padding: 10px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--muted); cursor: pointer; font-family: 'Inter', sans-serif; font-size: 0.85rem; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s; }
+.hint-toggle:hover { border-color: var(--purple); color: var(--text); }
+.hint-toggle .arrow { transition: transform 0.2s; }
+.hint-toggle.open .arrow { transform: rotate(90deg); }
+.hint-body { display: none; padding: 12px 16px; margin-top: 4px; background: rgba(124,58,237,0.05); border: 1px solid rgba(124,58,237,0.2); border-radius: 8px; font-size: 0.85rem; color: var(--text); line-height: 1.6; }
+.hint-body code { background: rgba(124,58,237,0.15); padding: 1px 5px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--purple-light); }
+.section-label { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.section-label.purple { color: var(--purple-light); } .section-label.yellow { color: var(--yellow); } .section-label.green { color: #34d399; } .section-label.teal { color: #2dd4bf; }
+.section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.animate-btn { margin-top: 12px; padding: 8px 18px; border-radius: 8px; background: var(--purple); color: white; border: none; cursor: pointer; font-size: 0.82rem; font-weight: 600; font-family: 'Inter', sans-serif; transition: background 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+.animate-btn:hover { background: var(--purple-light); }
+.visual-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+.flow-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.flow-node { padding: 8px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; text-align: center; }
+.flow-node.purple { background: rgba(124,58,237,0.2); border: 1px solid rgba(124,58,237,0.4); color: var(--purple-light); }
+.flow-node.teal { background: rgba(13,148,136,0.2); border: 1px solid rgba(13,148,136,0.4); color: #2dd4bf; }
+.flow-node.green { background: rgba(16,185,129,0.2); border: 1px solid rgba(16,185,129,0.4); color: #34d399; }
+.flow-node.yellow { background: rgba(245,158,11,0.2); border: 1px solid rgba(245,158,11,0.4); color: var(--yellow); }
+.flow-node.red { background: rgba(239,68,68,0.2); border: 1px solid rgba(239,68,68,0.4); color: #f87171; }
+.flow-arrow { color: var(--muted); font-size: 1.1rem; }
+.info-callout { padding: 12px 16px; border-radius: 8px; font-size: 0.82rem; margin-top: 12px; }
+.info-callout.teal { background: rgba(13,148,136,0.08); border: 1px solid rgba(13,148,136,0.2); }
+.info-callout.purple { background: rgba(124,58,237,0.08); border: 1px solid rgba(124,58,237,0.2); }
+.info-callout.yellow { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); }
+.cost-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; margin-top: 12px; }
+.cost-table th { background: var(--surface2); padding: 8px 12px; text-align: left; color: var(--muted); border-bottom: 1px solid var(--border); }
+.cost-table td { padding: 8px 12px; border-bottom: 1px solid rgba(42,42,69,0.5); }
+.cost-table tr:hover td { background: rgba(124,58,237,0.05); }
+.footer { border-top: 1px solid var(--border); padding: 32px; text-align: center; color: var(--muted); font-size: 0.82rem; }
+.footer a { color: var(--purple-light); text-decoration: none; }
+@media (max-width: 768px) { .tab-btn { padding: 10px 12px; font-size: 0.75rem; } }
+</style>
+</head>
+<body data-animation-density="high">
+
+<nav class="sticky-nav">
+  <a href="../days/day26.html">← Day 26 lesson</a>
+  <span class="nav-sep">|</span>
+  <a href="../index.html" class="brand">🤖 Agentic AI</a>
+  <span class="nav-sep">|</span>
+  <span class="nav-title">Day 26 Exercises — Cloud AI Services</span>
+  <a href="day27_exercises.html" style="margin-left:auto;">Day 27 Exercises →</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-meta">
+    <span class="badge badge-purple">Day 26</span>
+    <span class="badge badge-teal">5 Exercises</span>
+    <span class="badge badge-green">AWS Bedrock / Vertex AI / Azure OpenAI</span>
+  </div>
+  <h1>Cloud AI <span>Services</span></h1>
+  <p>Call foundation models from all three major clouds — AWS Bedrock, Google Vertex AI, and Azure OpenAI — then build a provider-fallback router that automatically switches on failure and tracks cost per provider.</p>
+</div>
+
+<div class="progress-bar-wrap">
+  <div class="progress-label"><span>Progress</span><span id="progress-text">0 / 5 completed</span></div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+</div>
+
+<main class="main">
+
+<!-- ========== EXERCISE 1: AWS BEDROCK ========== -->
+<section class="exercise" id="ex1">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 1 of 5</div>
+      <h2>AWS Bedrock — invoke_model</h2>
+      <p>Call Claude on Bedrock via <code style="font-family:'JetBrains Mono',monospace;">boto3</code>, handle request signing, and parse the streaming response.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot1"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex1','visual')">Visual Explainer</button>
+    <button class="tab-btn" onclick="showTab('ex1','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex1','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex1','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex1','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex1-visual">
+    <div class="section-label purple">AWS Bedrock Architecture</div>
+    <div class="visual-box">
+      <div class="flow-row">
+        <div class="flow-node purple">Your code<br><small>boto3 client</small></div>
+        <div class="flow-arrow">→ SigV4</div>
+        <div class="flow-node yellow">Bedrock Runtime<br><small>us-east-1</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node teal">Model<br><small>anthropic.claude-3...</small></div>
+        <div class="flow-arrow">→ stream</div>
+        <div class="flow-node green">Response chunks</div>
+      </div>
+    </div>
+    <div class="info-callout teal">
+      <strong style="color:#2dd4bf;">Bedrock advantages:</strong> VPC endpoints (no traffic leaves your network), AWS IAM auth (no API key rotation), CloudWatch billing visibility, cross-region inference for latency, and native integration with SageMaker pipelines.
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex1-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>day26_bedrock.py</span></div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span></div>
+        <div class="code-content"><span class="cm"># pip install boto3</span>
+<span class="kw">import</span> <span class="va">boto3</span><span class="dt">,</span> <span class="va">json</span>
+
+<span class="va">bedrock</span> <span class="dt">=</span> <span class="va">boto3</span><span class="dt">.</span><span class="fn">client</span><span class="dt">(</span>
+    <span class="st">"bedrock-runtime"</span><span class="dt">,</span>
+    <span class="va">region_name</span><span class="dt">=</span><span class="st">"us-east-1"</span>
+    <span class="cm"># credentials from ~/.aws/credentials or IAM role</span>
+<span class="dt">)</span>
+
+<span class="va">MODEL_ID</span> <span class="dt">=</span> <span class="st">"anthropic.claude-3-haiku-20240307-v1:0"</span>
+
+<span class="kw">def</span> <span class="fn">bedrock_invoke</span><span class="dt">(</span><span class="va">prompt</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">,</span> <span class="va">max_tokens</span><span class="dt">:</span> <span class="tp">int</span> <span class="dt">=</span> <span class="nm">256</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">str</span><span class="dt">:</span>
+    <span class="cm">"""Invoke Claude on Bedrock using the Messages API format."""</span>
+    <span class="va">body</span> <span class="dt">=</span> <span class="va">json</span><span class="dt">.</span><span class="fn">dumps</span><span class="dt">({</span>
+        <span class="st">"anthropic_version"</span><span class="dt">:</span> <span class="st">"bedrock-2023-05-31"</span><span class="dt">,</span>
+        <span class="st">"max_tokens"</span><span class="dt">:</span> <span class="va">max_tokens</span><span class="dt">,</span>
+        <span class="st">"messages"</span><span class="dt">:</span> <span class="dt">[{</span><span class="st">"role"</span><span class="dt">:</span> <span class="st">"user"</span><span class="dt">,</span> <span class="st">"content"</span><span class="dt">:</span> <span class="va">prompt</span><span class="dt">}]</span>
+    <span class="dt">})</span>
+    <span class="cm"># TODO: call bedrock.invoke_model(), parse response body</span>
+    <span class="dt">...</span>
+
+<span class="kw">def</span> <span class="fn">bedrock_invoke_stream</span><span class="dt">(</span><span class="va">prompt</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span><span class="dt">:</span>
+    <span class="cm">"""Stream response from Bedrock, yield text chunks."""</span>
+    <span class="va">body</span> <span class="dt">=</span> <span class="va">json</span><span class="dt">.</span><span class="fn">dumps</span><span class="dt">({</span>
+        <span class="st">"anthropic_version"</span><span class="dt">:</span> <span class="st">"bedrock-2023-05-31"</span><span class="dt">,</span>
+        <span class="st">"max_tokens"</span><span class="dt">:</span> <span class="nm">512</span><span class="dt">,</span>
+        <span class="st">"messages"</span><span class="dt">:</span> <span class="dt">[{</span><span class="st">"role"</span><span class="dt">:</span><span class="st">"user"</span><span class="dt">,</span><span class="st">"content"</span><span class="dt">:</span><span class="va">prompt</span><span class="dt">}]</span>
+    <span class="dt">})</span>
+    <span class="cm"># TODO: call bedrock.invoke_model_with_response_stream()</span>
+    <span class="cm"># iterate stream["body"], decode each chunk, yield delta text</span>
+    <span class="dt">...</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex1-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Implement both Bedrock functions:</p>
+      <ul>
+        <li>In <code style="font-family:'JetBrains Mono',monospace;">bedrock_invoke()</code>: call <code style="font-family:'JetBrains Mono',monospace;">bedrock.invoke_model(modelId=MODEL_ID, body=body)</code>, parse <code style="font-family:'JetBrains Mono',monospace;">json.loads(response["body"].read())["content"][0]["text"]</code></li>
+        <li>In <code style="font-family:'JetBrains Mono',monospace;">bedrock_invoke_stream()</code>: use <code style="font-family:'JetBrains Mono',monospace;">invoke_model_with_response_stream</code>, iterate <code style="font-family:'JetBrains Mono',monospace;">stream["body"]</code>, parse each chunk's <code style="font-family:'JetBrains Mono',monospace;">delta.text</code></li>
+        <li>Track <code style="font-family:'JetBrains Mono',monospace;">input_tokens</code> and <code style="font-family:'JetBrains Mono',monospace;">output_tokens</code> from the response metadata</li>
+        <li>Return a dict with <code style="font-family:'JetBrains Mono',monospace;">text</code>, <code style="font-family:'JetBrains Mono',monospace;">input_tokens</code>, <code style="font-family:'JetBrains Mono',monospace;">output_tokens</code>, <code style="font-family:'JetBrains Mono',monospace;">cost_usd</code></li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(1)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex1-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t1-1">T1</span><div class="test-content"><div class="test-input">r = bedrock_invoke("What is 2+2?")</div><div class="test-expected">→ "4" in r["text"] and r["input_tokens"] > 0</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t1-2">T2</span><div class="test-content"><div class="test-input">chunks = list(bedrock_invoke_stream("Tell me a haiku"))</div><div class="test-expected">→ len(chunks) > 3 (multiple streaming chunks)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t1-3">T3</span><div class="test-content"><div class="test-input">"".join(chunks) contains at least 20 characters</div><div class="test-expected">→ True (complete streamed response)</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(1)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex1-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — Streaming chunk parsing</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>for event in stream["body"]: chunk = json.loads(event["chunk"]["bytes"]); if chunk.get("type") == "content_block_delta": yield chunk["delta"]["text"]</code></div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — Local testing without AWS creds</span><span class="arrow">▶</span></button>
+        <div class="hint-body">Use <code>boto3.client("bedrock-runtime", endpoint_url="http://localhost:4566")</code> with LocalStack for local dev. Or mock with <code>unittest.mock.patch("boto3.client")</code>.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 2: VERTEX AI ========== -->
+<section class="exercise" id="ex2">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 2 of 5</div>
+      <h2>Google Vertex AI — Gemini</h2>
+      <p>Call Gemini via the <code style="font-family:'JetBrains Mono',monospace;">vertexai</code> SDK, handle multimodal inputs, and use function calling.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot2"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex2','visual')">Visual Explainer</button>
+    <button class="tab-btn" onclick="showTab('ex2','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex2','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex2','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex2','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex2-visual">
+    <div class="section-label purple">Vertex AI — Google Cloud Foundation Models</div>
+    <div class="visual-box">
+      <div class="flow-row">
+        <div class="flow-node purple">vertexai.init()<br><small>project + region</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node yellow">GenerativeModel<br><small>"gemini-1.5-pro"</small></div>
+        <div class="flow-arrow">→ generate_content</div>
+        <div class="flow-node green">Text / FunctionCall</div>
+      </div>
+    </div>
+    <div class="info-callout teal">
+      <strong style="color:#2dd4bf;">Vertex AI advantages:</strong> Google OAuth2 auth (service accounts), 1M+ token context window in Gemini 1.5 Pro, grounding in Google Search, native BigQuery integration, and enterprise data residency controls.
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex2-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>day26_vertex.py</span></div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span></div>
+        <div class="code-content"><span class="cm"># pip install google-cloud-aiplatform</span>
+<span class="kw">import</span> <span class="va">vertexai</span>
+<span class="kw">from</span> <span class="va">vertexai.generative_models</span> <span class="kw">import</span> <span class="dt">(</span>
+    <span class="va">GenerativeModel</span><span class="dt">,</span> <span class="va">GenerationConfig</span><span class="dt">,</span> <span class="va">Tool</span><span class="dt">,</span> <span class="va">FunctionDeclaration</span>
+<span class="dt">)</span>
+
+<span class="fn">vertexai</span><span class="dt">.</span><span class="fn">init</span><span class="dt">(</span><span class="va">project</span><span class="dt">=</span><span class="st">"your-gcp-project"</span><span class="dt">,</span> <span class="va">location</span><span class="dt">=</span><span class="st">"us-central1"</span><span class="dt">)</span>
+<span class="va">model</span> <span class="dt">=</span> <span class="fn">GenerativeModel</span><span class="dt">(</span><span class="st">"gemini-1.5-flash"</span><span class="dt">)</span>
+
+<span class="kw">def</span> <span class="fn">vertex_chat</span><span class="dt">(</span><span class="va">prompt</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">,</span> <span class="va">temperature</span><span class="dt">:</span> <span class="tp">float</span> <span class="dt">=</span> <span class="nm">0.7</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">str</span><span class="dt">:</span>
+    <span class="cm">"""Simple text generation via Vertex AI."""</span>
+    <span class="va">config</span> <span class="dt">=</span> <span class="fn">GenerationConfig</span><span class="dt">(</span><span class="va">temperature</span><span class="dt">=</span><span class="va">temperature</span><span class="dt">,</span> <span class="va">max_output_tokens</span><span class="dt">=</span><span class="nm">256</span><span class="dt">)</span>
+    <span class="cm"># TODO: call model.generate_content(prompt, generation_config=config)</span>
+    <span class="cm"># Return response.text</span>
+    <span class="dt">...</span>
+
+<span class="kw">def</span> <span class="fn">vertex_with_function</span><span class="dt">(</span><span class="va">prompt</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">dict</span><span class="dt">:</span>
+    <span class="cm">"""Call Gemini with a weather function tool."""</span>
+    <span class="va">get_weather</span> <span class="dt">=</span> <span class="fn">FunctionDeclaration</span><span class="dt">(</span>
+        <span class="va">name</span><span class="dt">=</span><span class="st">"get_weather"</span><span class="dt">,</span>
+        <span class="va">description</span><span class="dt">=</span><span class="st">"Get current weather for a city"</span><span class="dt">,</span>
+        <span class="va">parameters</span><span class="dt">={</span><span class="st">"type"</span><span class="dt">:</span><span class="st">"object"</span><span class="dt">,</span><span class="st">"properties"</span><span class="dt">:{</span><span class="st">"city"</span><span class="dt">:{</span><span class="st">"type"</span><span class="dt">:</span><span class="st">"string"</span><span class="dt">}},</span><span class="st">"required"</span><span class="dt">:[</span><span class="st">"city"</span><span class="dt">]}</span>
+    <span class="dt">)</span>
+    <span class="va">weather_tool</span> <span class="dt">=</span> <span class="fn">Tool</span><span class="dt">(</span><span class="va">function_declarations</span><span class="dt">=[</span><span class="va">get_weather</span><span class="dt">])</span>
+    <span class="cm"># TODO: call model.generate_content with tools=[weather_tool]</span>
+    <span class="cm"># Check if response.candidates[0].content.parts[0].function_call exists</span>
+    <span class="cm"># Return {"type": "function_call", "name": ..., "args": ...} or {"type": "text", "text": ...}</span>
+    <span class="dt">...</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex2-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Complete both Vertex AI functions:</p>
+      <ul>
+        <li>Implement <code style="font-family:'JetBrains Mono',monospace;">vertex_chat()</code>: straightforward <code style="font-family:'JetBrains Mono',monospace;">model.generate_content()</code> call, return <code style="font-family:'JetBrains Mono',monospace;">response.text</code></li>
+        <li>Implement <code style="font-family:'JetBrains Mono',monospace;">vertex_with_function()</code>: check <code style="font-family:'JetBrains Mono',monospace;">part.function_call</code> in the response parts</li>
+        <li>If function call: return <code style="font-family:'JetBrains Mono',monospace;">{"type":"function_call","name":fc.name,"args":dict(fc.args)}</code></li>
+        <li>Test with "What's the weather in London?" — Gemini should trigger <code style="font-family:'JetBrains Mono',monospace;">get_weather</code></li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(2)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex2-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t2-1">T1</span><div class="test-content"><div class="test-input">text = vertex_chat("What is Python?")</div><div class="test-expected">→ len(text) > 50 (substantive response)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t2-2">T2</span><div class="test-content"><div class="test-input">r = vertex_with_function("What's the weather in Tokyo?")</div><div class="test-expected">→ r["type"] == "function_call" and r["args"]["city"] == "Tokyo"</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(2)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex2-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — Checking for function call in response</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>part = response.candidates[0].content.parts[0]</code>. Then <code>if hasattr(part, 'function_call') and part.function_call.name: ...</code> else it's a text response with <code>part.text</code>.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 3: AZURE OPENAI ========== -->
+<section class="exercise" id="ex3">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 3 of 5</div>
+      <h2>Azure OpenAI Service</h2>
+      <p>Call GPT-4o via Azure OpenAI using <code style="font-family:'JetBrains Mono',monospace;">AzureOpenAI</code> client with deployment-based routing and managed identity auth.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot3"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex3','visual')">Visual Explainer</button>
+    <button class="tab-btn" onclick="showTab('ex3','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex3','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex3','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex3','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex3-visual">
+    <div class="section-label purple">Azure OpenAI — Deployment Model</div>
+    <div class="visual-box">
+      <div class="flow-row">
+        <div class="flow-node purple">AzureOpenAI client<br><small>azure_endpoint + key</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node yellow">Azure AOAI resource<br><small>myresource.openai.azure.com</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node teal">Deployment<br><small>"gpt-4o-prod"</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node green">Response</div>
+      </div>
+    </div>
+    <div class="info-callout purple">
+      <strong style="color:var(--purple-light);">Key difference from OpenAI API:</strong> You call a <em>deployment name</em> not a model name. Your org deploys <code>gpt-4o</code> and names the deployment whatever they want (e.g., "gpt4o-prod-v2"). Pass that deployment name as <code>model=</code>.
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex3-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>day26_azure_openai.py</span></div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span></div>
+        <div class="code-content"><span class="cm"># pip install openai</span>
+<span class="kw">import</span> <span class="va">os</span>
+<span class="kw">from</span> <span class="va">openai</span> <span class="kw">import</span> <span class="va">AzureOpenAI</span>
+
+<span class="va">client</span> <span class="dt">=</span> <span class="fn">AzureOpenAI</span><span class="dt">(</span>
+    <span class="va">azure_endpoint</span><span class="dt">=</span><span class="va">os</span><span class="dt">.</span><span class="fn">getenv</span><span class="dt">(</span><span class="st">"AZURE_OPENAI_ENDPOINT"</span><span class="dt">),</span>
+    <span class="cm"># e.g. https://myresource.openai.azure.com/</span>
+    <span class="va">api_key</span><span class="dt">=</span><span class="va">os</span><span class="dt">.</span><span class="fn">getenv</span><span class="dt">(</span><span class="st">"AZURE_OPENAI_KEY"</span><span class="dt">),</span>
+    <span class="va">api_version</span><span class="dt">=</span><span class="st">"2024-02-01"</span>
+<span class="dt">)</span>
+
+<span class="va">DEPLOYMENT</span> <span class="dt">=</span> <span class="va">os</span><span class="dt">.</span><span class="fn">getenv</span><span class="dt">(</span><span class="st">"AZURE_DEPLOYMENT_NAME"</span><span class="dt">,</span> <span class="st">"gpt-4o"</span><span class="dt">)</span>
+
+<span class="kw">def</span> <span class="fn">azure_chat</span><span class="dt">(</span><span class="va">messages</span><span class="dt">:</span> <span class="tp">list</span><span class="dt">,</span> <span class="va">max_tokens</span><span class="dt">:</span> <span class="tp">int</span> <span class="dt">=</span> <span class="nm">256</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">dict</span><span class="dt">:</span>
+    <span class="cm">"""Call Azure OpenAI, return text + usage stats."""</span>
+    <span class="cm"># TODO: call client.chat.completions.create(model=DEPLOYMENT, messages=messages, max_tokens=max_tokens)</span>
+    <span class="cm"># Return {"text": ..., "prompt_tokens": ..., "completion_tokens": ...}</span>
+    <span class="dt">...</span>
+
+<span class="kw">def</span> <span class="fn">azure_embeddings</span><span class="dt">(</span><span class="va">text</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">,</span> <span class="va">deployment</span><span class="dt">:</span> <span class="tp">str</span> <span class="dt">=</span> <span class="st">"text-embedding-ada-002"</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">list</span><span class="dt">[</span><span class="tp">float</span><span class="dt">]:</span>
+    <span class="cm">"""Get embeddings from Azure OpenAI."""</span>
+    <span class="cm"># TODO: call client.embeddings.create(model=deployment, input=text)</span>
+    <span class="cm"># Return response.data[0].embedding</span>
+    <span class="dt">...</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex3-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Implement both Azure functions:</p>
+      <ul>
+        <li>Implement <code style="font-family:'JetBrains Mono',monospace;">azure_chat()</code> — identical call pattern to regular OpenAI, just using <code style="font-family:'JetBrains Mono',monospace;">AzureOpenAI</code> client</li>
+        <li>Implement <code style="font-family:'JetBrains Mono',monospace;">azure_embeddings()</code> — note Azure ada-002 produces 1536-dim vectors</li>
+        <li>Add retry logic: catch <code style="font-family:'JetBrains Mono',monospace;">openai.RateLimitError</code> and retry with exponential backoff up to 3 times</li>
+        <li>Set up env variables in <code style="font-family:'JetBrains Mono',monospace;">.env</code> and test both functions</li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(3)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex3-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t3-1">T1</span><div class="test-content"><div class="test-input">r = azure_chat([{"role":"user","content":"What is 2+2?"}])</div><div class="test-expected">→ "4" in r["text"] and r["prompt_tokens"] > 0</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t3-2">T2</span><div class="test-content"><div class="test-input">vec = azure_embeddings("Hello world")<br>len(vec) == 1536</div><div class="test-expected">→ True</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t3-3">T3</span><div class="test-content"><div class="test-input">RateLimitError → retries up to 3 times before raising</div><div class="test-expected">→ True (backoff observed in logs)</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(3)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex3-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — Retry with tenacity</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type; @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=1), retry=retry_if_exception_type(openai.RateLimitError))</code> — decorate your function.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 4: PROVIDER FALLBACK ========== -->
+<section class="exercise" id="ex4">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 4 of 5</div>
+      <h2>Provider Fallback Router</h2>
+      <p>Build a router that tries Anthropic → Bedrock → Azure in order, falling back on any exception, and tracks per-provider latency.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot4"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex4','visual')">Visual Explainer</button>
+    <button class="tab-btn" onclick="showTab('ex4','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex4','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex4','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex4','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex4-visual">
+    <div class="section-label purple">Fallback Router — Priority Chain</div>
+    <div class="visual-box">
+      <div class="flow-row">
+        <div class="flow-node purple">Request</div>
+        <div class="flow-arrow">→ try</div>
+        <div class="flow-node teal">Anthropic API<br><small>primary</small></div>
+        <div class="flow-arrow">→ fail?</div>
+        <div class="flow-node yellow">AWS Bedrock<br><small>secondary</small></div>
+        <div class="flow-arrow">→ fail?</div>
+        <div class="flow-node yellow">Azure OpenAI<br><small>tertiary</small></div>
+        <div class="flow-arrow">→ all fail</div>
+        <div class="flow-node red">Raise</div>
+      </div>
+    </div>
+    <div class="info-callout yellow">
+      <strong style="color:var(--yellow);">Production pattern:</strong> Add circuit breakers (pybreaker) so a provider that's been failing doesn't get retried for 60s. Track success/failure rates per provider and use that to reorder priority dynamically.
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex4-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>day26_fallback_router.py</span></div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span></div>
+        <div class="code-content"><span class="cm"># pip install anthropic openai boto3</span>
+<span class="kw">import</span> <span class="va">time</span><span class="dt">,</span> <span class="va">logging</span>
+<span class="kw">from</span> <span class="va">typing</span> <span class="kw">import</span> <span class="va">Callable</span><span class="dt">,</span> <span class="va">Any</span>
+
+<span class="va">logger</span> <span class="dt">=</span> <span class="va">logging</span><span class="dt">.</span><span class="fn">getLogger</span><span class="dt">(</span><span class="st">"llm_router"</span><span class="dt">)</span>
+
+<span class="kw">class</span> <span class="tp">LLMRouter</span><span class="dt">:</span>
+    <span class="kw">def</span> <span class="fn">__init__</span><span class="dt">(</span><span class="va">self</span><span class="dt">):</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">providers</span><span class="dt">:</span> <span class="tp">list</span><span class="dt">[</span><span class="tp">dict</span><span class="dt">]</span> <span class="dt">=</span> <span class="dt">[]</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">stats</span><span class="dt">:</span> <span class="tp">dict</span><span class="dt">[</span><span class="tp">str</span><span class="dt">,</span> <span class="tp">dict</span><span class="dt">]</span> <span class="dt">=</span> <span class="dt">{}</span>
+
+    <span class="kw">def</span> <span class="fn">add_provider</span><span class="dt">(</span><span class="va">self</span><span class="dt">,</span> <span class="va">name</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">,</span> <span class="va">fn</span><span class="dt">:</span> <span class="tp">Callable</span><span class="dt">[[</span><span class="tp">str</span><span class="dt">],</span> <span class="tp">str</span><span class="dt">])</span><span class="dt">:</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">providers</span><span class="dt">.</span><span class="fn">append</span><span class="dt">({</span><span class="st">"name"</span><span class="dt">:</span><span class="va">name</span><span class="dt">,</span><span class="st">"fn"</span><span class="dt">:</span><span class="va">fn</span><span class="dt">})</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">stats</span><span class="dt">[</span><span class="va">name</span><span class="dt">]</span> <span class="dt">=</span> <span class="dt">{</span><span class="st">"calls"</span><span class="dt">:</span><span class="nm">0</span><span class="dt">,</span><span class="st">"successes"</span><span class="dt">:</span><span class="nm">0</span><span class="dt">,</span><span class="st">"failures"</span><span class="dt">:</span><span class="nm">0</span><span class="dt">,</span><span class="st">"avg_latency_ms"</span><span class="dt">:</span><span class="nm">0</span><span class="dt">}</span>
+
+    <span class="kw">def</span> <span class="fn">complete</span><span class="dt">(</span><span class="va">self</span><span class="dt">,</span> <span class="va">prompt</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">dict</span><span class="dt">:</span>
+        <span class="cm">"""Try each provider in order, return first success."""</span>
+        <span class="va">errors</span> <span class="dt">=</span> <span class="dt">[]</span>
+        <span class="kw">for</span> <span class="va">provider</span> <span class="kw">in</span> <span class="va">self</span><span class="dt">.</span><span class="va">providers</span><span class="dt">:</span>
+            <span class="cm"># TODO: time the call, update stats, return on success, log on failure</span>
+            <span class="dt">...</span>
+        <span class="kw">raise</span> <span class="fn">RuntimeError</span><span class="dt">(</span><span class="st">f"All providers failed: {errors}"</span><span class="dt">)</span>
+
+    <span class="kw">def</span> <span class="fn">get_stats</span><span class="dt">(</span><span class="va">self</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">dict</span><span class="dt">:</span>
+        <span class="cm"># TODO: return stats with success rates computed</span>
+        <span class="dt">...</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex4-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Complete <code style="font-family:'JetBrains Mono',monospace;">LLMRouter.complete()</code>:</p>
+      <ul>
+        <li>Wrap each provider call in try/except, time it with <code style="font-family:'JetBrains Mono',monospace;">time.perf_counter()</code></li>
+        <li>On success: update stats (calls, successes, avg_latency), return <code style="font-family:'JetBrains Mono',monospace;">{"text": result, "provider": name, "latency_ms": ms}</code></li>
+        <li>On failure: log warning, append to errors list, continue to next provider</li>
+        <li>Compute running average latency: <code style="font-family:'JetBrains Mono',monospace;">old_avg * (n-1)/n + new_ms/n</code></li>
+        <li>In <code style="font-family:'JetBrains Mono',monospace;">get_stats()</code>: add <code style="font-family:'JetBrains Mono',monospace;">success_rate</code> = successes/calls for each provider</li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(4)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex4-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t4-1">T1</span><div class="test-content"><div class="test-input">router with failing_provider, then working_provider<br>r = router.complete("Hello")</div><div class="test-expected">→ r["provider"] == "working_provider"</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t4-2">T2</span><div class="test-content"><div class="test-input">router.get_stats()["failing_provider"]["failures"] == 1</div><div class="test-expected">→ True (failure tracked)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t4-3">T3</span><div class="test-content"><div class="test-input">r["latency_ms"] > 0</div><div class="test-expected">→ True (timing captured)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t4-4">T4</span><div class="test-content"><div class="test-input">All providers fail → RuntimeError</div><div class="test-expected">→ "All providers failed" in str(error)</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(4)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex4-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — Running average formula</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>n = stats["calls"]; stats["avg_latency_ms"] = (stats["avg_latency_ms"] * (n-1) + ms) / n</code>. Compute after incrementing calls counter.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 5: COST COMPARISON ========== -->
+<section class="exercise" id="ex5">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 5 of 5</div>
+      <h2>Multi-Provider Cost Tracker</h2>
+      <p>Build a cost tracker that records token usage per provider and computes actual dollar cost using current pricing tables.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot5"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex5','visual')">Visual Explainer</button>
+    <button class="tab-btn" onclick="showTab('ex5','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex5','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex5','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex5','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex5-visual">
+    <div class="section-label purple">Provider Pricing Comparison (per 1M tokens, 2025)</div>
+    <table class="cost-table">
+      <tr><th>Provider</th><th>Model</th><th>Input</th><th>Output</th></tr>
+      <tr><td style="color:#2dd4bf;">Anthropic</td><td>Claude 3.5 Haiku</td><td>$0.80</td><td>$4.00</td></tr>
+      <tr><td style="color:#2dd4bf;">Anthropic</td><td>Claude Sonnet 4.5</td><td>$3.00</td><td>$15.00</td></tr>
+      <tr><td style="color:#f78c6c;">AWS Bedrock</td><td>Claude 3 Haiku</td><td>$0.25</td><td>$1.25</td></tr>
+      <tr><td style="color:#82aaff;">Azure</td><td>GPT-4o mini</td><td>$0.15</td><td>$0.60</td></tr>
+      <tr><td style="color:#82aaff;">Azure</td><td>GPT-4o</td><td>$5.00</td><td>$15.00</td></tr>
+      <tr><td style="color:#c3e88d;">Vertex AI</td><td>Gemini 1.5 Flash</td><td>$0.075</td><td>$0.30</td></tr>
+    </table>
+  </div>
+
+  <div class="tab-panel" id="ex5-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>day26_cost_tracker.py</span></div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span></div>
+        <div class="code-content"><span class="cm"># No extra deps needed</span>
+<span class="kw">from</span> <span class="va">dataclasses</span> <span class="kw">import</span> <span class="va">dataclass</span><span class="dt">,</span> <span class="va">field</span>
+
+<span class="va">PRICING</span> <span class="dt">=</span> <span class="dt">{</span>  <span class="cm"># (input_per_1m, output_per_1m) in USD</span>
+    <span class="st">"anthropic/claude-3.5-haiku"</span><span class="dt">:</span> <span class="dt">(</span><span class="nm">0.80</span><span class="dt">,</span> <span class="nm">4.00</span><span class="dt">),</span>
+    <span class="st">"anthropic/claude-sonnet-4-5"</span><span class="dt">:</span> <span class="dt">(</span><span class="nm">3.00</span><span class="dt">,</span> <span class="nm">15.00</span><span class="dt">),</span>
+    <span class="st">"bedrock/claude-3-haiku"</span><span class="dt">:</span> <span class="dt">(</span><span class="nm">0.25</span><span class="dt">,</span> <span class="nm">1.25</span><span class="dt">),</span>
+    <span class="st">"azure/gpt-4o-mini"</span><span class="dt">:</span> <span class="dt">(</span><span class="nm">0.15</span><span class="dt">,</span> <span class="nm">0.60</span><span class="dt">),</span>
+    <span class="st">"azure/gpt-4o"</span><span class="dt">:</span> <span class="dt">(</span><span class="nm">5.00</span><span class="dt">,</span> <span class="nm">15.00</span><span class="dt">),</span>
+    <span class="st">"vertex/gemini-1.5-flash"</span><span class="dt">:</span> <span class="dt">(</span><span class="nm">0.075</span><span class="dt">,</span> <span class="nm">0.30</span><span class="dt">),</span>
+<span class="dt">}</span>
+
+<span class="dt">@</span><span class="fn">dataclass</span>
+<span class="kw">class</span> <span class="tp">CostTracker</span><span class="dt">:</span>
+    <span class="va">records</span><span class="dt">:</span> <span class="tp">list</span> <span class="dt">=</span> <span class="fn">field</span><span class="dt">(</span><span class="va">default_factory</span><span class="dt">=</span><span class="va">list</span><span class="dt">)</span>
+
+    <span class="kw">def</span> <span class="fn">record</span><span class="dt">(</span><span class="va">self</span><span class="dt">,</span> <span class="va">model_key</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">,</span> <span class="va">input_tokens</span><span class="dt">:</span> <span class="tp">int</span><span class="dt">,</span> <span class="va">output_tokens</span><span class="dt">:</span> <span class="tp">int</span><span class="dt">):</span>
+        <span class="cm">"""Record a usage event and compute cost."""</span>
+        <span class="cm"># TODO: look up PRICING, compute cost_usd, append to records</span>
+        <span class="dt">...</span>
+
+    <span class="kw">def</span> <span class="fn">summary</span><span class="dt">(</span><span class="va">self</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">dict</span><span class="dt">:</span>
+        <span class="cm">"""Aggregate cost by model, return sorted by total_cost desc."""</span>
+        <span class="cm"># TODO: group records by model_key, sum tokens and costs</span>
+        <span class="dt">...</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex5-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Complete the cost tracker:</p>
+      <ul>
+        <li>In <code style="font-family:'JetBrains Mono',monospace;">record()</code>: compute <code style="font-family:'JetBrains Mono',monospace;">cost = (input_tokens/1e6)*in_price + (output_tokens/1e6)*out_price</code></li>
+        <li>Append dict with <code style="font-family:'JetBrains Mono',monospace;">model_key</code>, <code style="font-family:'JetBrains Mono',monospace;">input_tokens</code>, <code style="font-family:'JetBrains Mono',monospace;">output_tokens</code>, <code style="font-family:'JetBrains Mono',monospace;">cost_usd</code>, <code style="font-family:'JetBrains Mono',monospace;">timestamp</code></li>
+        <li>In <code style="font-family:'JetBrains Mono',monospace;">summary()</code>: group by <code style="font-family:'JetBrains Mono',monospace;">model_key</code> using a defaultdict, return list sorted by <code style="font-family:'JetBrains Mono',monospace;">total_cost_usd</code> desc</li>
+        <li>Print a cost comparison table after simulating 100 calls per model</li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(5)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex5-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t5-1">T1</span><div class="test-content"><div class="test-input">tracker = CostTracker()<br>tracker.record("azure/gpt-4o-mini", 1000, 500)</div><div class="test-expected">→ cost ≈ $0.000150 + $0.000300 = $0.000450</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t5-2">T2</span><div class="test-content"><div class="test-input">tracker.summary() sorted correctly</div><div class="test-expected">→ highest cost model appears first</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t5-3">T3</span><div class="test-content"><div class="test-input">100 calls × 1000 input, 500 output on vertex/gemini-1.5-flash</div><div class="test-expected">→ total ≈ $0.015 (cheapest provider)</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(5)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex5-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — Grouping with defaultdict</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>from collections import defaultdict; groups = defaultdict(lambda: {"total_cost_usd":0,"total_input":0,"total_output":0,"calls":0}); for r in self.records: groups[r["model_key"]]["total_cost_usd"] += r["cost_usd"]...</code></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <p>Day 26 of 30 — Cloud AI Services · <a href="../index.html">Dashboard</a> · <a href="day27_exercises.html">Day 27 →</a></p>
+</footer>
+
+<script>
+function showTab(exId, tab) {
+  document.querySelectorAll(`#${exId} .tab-panel`).forEach(p => p.classList.remove('active'));
+  document.querySelectorAll(`#${exId} .tab-btn`).forEach(b => b.classList.remove('active'));
+  const target = document.getElementById(`${exId}-${tab}`);
+  if (target) target.classList.add('active');
+  const idx = ['visual','code','task','tests','hints'].indexOf(tab);
+  const btns = document.querySelectorAll(`#${exId} .tab-btn`);
+  if (btns[idx]) btns[idx].classList.add('active');
+}
+let completed = 0;
+function markDone(n) {
+  const dot = document.getElementById('dot' + n);
+  if (dot && !dot.classList.contains('done')) {
+    dot.classList.add('done'); completed++;
+    document.getElementById('progress-text').textContent = `${completed} / 5 completed`;
+    document.getElementById('progress-fill').style.width = `${(completed/5)*100}%`;
+  }
+}
+function runTests(exNum) {
+  document.querySelectorAll(`#ex${exNum}-tests .test-badge`).forEach((badge, i) => {
+    setTimeout(() => { badge.className = 'test-badge pass'; badge.textContent = '✓ T' + (i+1); }, i * 300);
+  });
+}
+function toggleHint(btn) {
+  btn.classList.toggle('open');
+  const body = btn.nextElementSibling;
+  body.style.display = body.style.display === 'block' ? 'none' : 'block';
+}
+</script>
+<script src="../bg-animation.js"></script>
+</body>
+</html>

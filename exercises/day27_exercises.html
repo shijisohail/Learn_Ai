@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 27 Exercises — Docker & Kubernetes for AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f; --card: #141420; --surface2: #1a1a2e; --border: #2a2a45;
+  --purple: #7c3aed; --purple-light: #a855f7; --teal: #0d9488; --green: #10b981;
+  --yellow: #f59e0b; --red: #ef4444; --text: #e2e8f0; --muted: #64748b;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+code, pre { font-family: 'JetBrains Mono', monospace; }
+.sticky-nav { position: sticky; top: 0; z-index: 100; background: rgba(10,10,15,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); padding: 12px 32px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.sticky-nav a { color: var(--muted); text-decoration: none; font-size: 0.85rem; padding: 6px 12px; border-radius: 6px; transition: all 0.2s; border: 1px solid transparent; }
+.sticky-nav a:hover { color: var(--text); background: var(--card); border-color: var(--border); }
+.sticky-nav .brand { color: var(--purple-light); font-weight: 600; font-size: 0.9rem; }
+.nav-sep { color: var(--border); } .nav-title { color: var(--text); font-weight: 700; font-size: 0.95rem; flex: 1; }
+.hero { padding: 56px 32px 32px; max-width: 1100px; margin: 0 auto; border-bottom: 1px solid var(--border); }
+.hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: 8px; }
+.hero h1 span { color: var(--purple-light); }
+.hero p { color: var(--muted); font-size: 1rem; max-width: 700px; }
+.hero-meta { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
+.badge-purple { background: rgba(124,58,237,0.15); color: var(--purple-light); border: 1px solid rgba(124,58,237,0.3); }
+.badge-teal { background: rgba(13,148,136,0.15); color: #2dd4bf; border: 1px solid rgba(13,148,136,0.3); }
+.badge-green { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.progress-bar-wrap { max-width: 1100px; margin: 24px auto; padding: 0 32px; }
+.progress-label { font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
+.progress-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--purple), var(--teal)); border-radius: 3px; transition: width 0.5s ease; }
+.main { max-width: 1100px; margin: 0 auto; padding: 32px; display: flex; flex-direction: column; gap: 64px; }
+.exercise { border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: var(--card); }
+.exercise-header { padding: 24px 32px; background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(13,148,136,0.05)); border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.exercise-num { font-size: 0.75rem; color: var(--purple-light); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.exercise-header h2 { font-size: 1.4rem; font-weight: 700; margin: 4px 0 8px; }
+.exercise-header p { color: var(--muted); font-size: 0.9rem; }
+.ex-status { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); transition: background 0.3s; }
+.status-dot.done { background: var(--green); }
+.tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--surface2); }
+.tab-btn { padding: 12px 20px; font-size: 0.82rem; font-weight: 600; color: var(--muted); cursor: pointer; border: none; background: none; border-bottom: 2px solid transparent; transition: all 0.2s; font-family: 'Inter', sans-serif; }
+.tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+.tab-btn.active { color: var(--purple-light); border-bottom-color: var(--purple-light); background: rgba(124,58,237,0.05); }
+.tab-panel { display: none; padding: 28px 32px; }
+.tab-panel.active { display: block; }
+.code-wrap { background: #0d0d18; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin: 12px 0; }
+.code-header { padding: 8px 16px; background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; color: var(--muted); }
+.code-dots { display: flex; gap: 6px; }
+.code-dots span { width: 10px; height: 10px; border-radius: 50%; }
+.code-dots .dot-r { background: var(--red); } .code-dots .dot-y { background: var(--yellow); } .code-dots .dot-g { background: var(--green); }
+.code-body { display: flex; }
+.code-content { padding: 16px; overflow-x: auto; flex: 1; white-space: pre; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; line-height: 1.7; }
+.kw { color: #c792ea; } .fn { color: #82aaff; } .st { color: #c3e88d; } .cm { color: #546e7a; font-style: italic; } .nm { color: #f78c6c; } .tp { color: #ffcb6b; } .dt { color: #89ddff; } .va { color: #eeffff; }
+.task-requirements { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); border-radius: 10px; padding: 16px 20px; margin-bottom: 16px; }
+.task-requirements li { color: var(--text); font-size: 0.88rem; margin: 6px 0 6px 16px; }
+.task-requirements li::marker { color: var(--yellow); }
+.tests-grid { display: flex; flex-direction: column; gap: 8px; }
+.test-case { display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+.test-badge { flex-shrink: 0; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; font-family: 'Inter', sans-serif; }
+.test-badge.pass { background: rgba(16,185,129,0.2); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.test-badge.pending { background: rgba(100,116,139,0.2); color: var(--muted); border: 1px solid rgba(100,116,139,0.3); }
+.test-content { flex: 1; } .test-input { color: var(--text); } .test-expected { color: var(--muted); margin-top: 2px; }
+.hints-list { display: flex; flex-direction: column; gap: 8px; }
+.hint-toggle { width: 100%; text-align: left; padding: 10px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--muted); cursor: pointer; font-family: 'Inter', sans-serif; font-size: 0.85rem; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s; }
+.hint-toggle:hover { border-color: var(--purple); color: var(--text); }
+.hint-toggle .arrow { transition: transform 0.2s; }
+.hint-toggle.open .arrow { transform: rotate(90deg); }
+.hint-body { display: none; padding: 12px 16px; margin-top: 4px; background: rgba(124,58,237,0.05); border: 1px solid rgba(124,58,237,0.2); border-radius: 8px; font-size: 0.85rem; color: var(--text); line-height: 1.6; }
+.hint-body code { background: rgba(124,58,237,0.15); padding: 1px 5px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--purple-light); }
+.section-label { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.section-label.purple { color: var(--purple-light); } .section-label.yellow { color: var(--yellow); } .section-label.green { color: #34d399; } .section-label.teal { color: #2dd4bf; }
+.section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.animate-btn { margin-top: 12px; padding: 8px 18px; border-radius: 8px; background: var(--purple); color: white; border: none; cursor: pointer; font-size: 0.82rem; font-weight: 600; font-family: 'Inter', sans-serif; transition: background 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+.animate-btn:hover { background: var(--purple-light); }
+.visual-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+.flow-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.flow-node { padding: 8px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; text-align: center; }
+.flow-node.purple { background: rgba(124,58,237,0.2); border: 1px solid rgba(124,58,237,0.4); color: var(--purple-light); }
+.flow-node.teal { background: rgba(13,148,136,0.2); border: 1px solid rgba(13,148,136,0.4); color: #2dd4bf; }
+.flow-node.green { background: rgba(16,185,129,0.2); border: 1px solid rgba(16,185,129,0.4); color: #34d399; }
+.flow-node.yellow { background: rgba(245,158,11,0.2); border: 1px solid rgba(245,158,11,0.4); color: var(--yellow); }
+.flow-arrow { color: var(--muted); font-size: 1.1rem; }
+.info-callout { padding: 12px 16px; border-radius: 8px; font-size: 0.82rem; margin-top: 12px; }
+.info-callout.teal { background: rgba(13,148,136,0.08); border: 1px solid rgba(13,148,136,0.2); }
+.info-callout.purple { background: rgba(124,58,237,0.08); border: 1px solid rgba(124,58,237,0.2); }
+.info-callout.yellow { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); }
+.yaml-wrap { background: #0d0d18; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin: 12px 0; padding: 16px; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; line-height: 1.7; white-space: pre; overflow-x: auto; }
+.footer { border-top: 1px solid var(--border); padding: 32px; text-align: center; color: var(--muted); font-size: 0.82rem; }
+.footer a { color: var(--purple-light); text-decoration: none; }
+@media (max-width: 768px) { .tab-btn { padding: 10px 12px; font-size: 0.75rem; } }
+</style>
+</head>
+<body data-animation-density="high">
+
+<nav class="sticky-nav">
+  <a href="../days/day27.html">← Day 27 lesson</a>
+  <span class="nav-sep">|</span>
+  <a href="../index.html" class="brand">🤖 Agentic AI</a>
+  <span class="nav-sep">|</span>
+  <span class="nav-title">Day 27 Exercises — Docker & Kubernetes for AI</span>
+  <a href="day28_exercises.html" style="margin-left:auto;">Day 28 Exercises →</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-meta">
+    <span class="badge badge-purple">Day 27</span>
+    <span class="badge badge-teal">5 Exercises</span>
+    <span class="badge badge-green">Docker / K8s / Helm / GPU</span>
+  </div>
+  <h1>Docker <span>&amp; Kubernetes</span> for AI</h1>
+  <p>Containerize FastAPI+model services, write production docker-compose setups with health checks, deploy to Kubernetes with GPU resource limits, and package with Helm for repeatable multi-environment deployments.</p>
+</div>
+
+<div class="progress-bar-wrap">
+  <div class="progress-label"><span>Progress</span><span id="progress-text">0 / 5 completed</span></div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+</div>
+
+<main class="main">
+
+<!-- ========== EXERCISE 1: DOCKERFILE ========== -->
+<section class="exercise" id="ex1">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 1 of 5</div>
+      <h2>Production Dockerfile for FastAPI + Model</h2>
+      <p>Write a multi-stage Dockerfile that produces a minimal, secure image for a FastAPI AI service using uv and a non-root user.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot1"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex1','visual')">Visual Explainer</button>
+    <button class="tab-btn" onclick="showTab('ex1','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex1','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex1','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex1','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex1-visual">
+    <div class="section-label purple">Multi-Stage Build — Builder → Runtime</div>
+    <div class="visual-box">
+      <div class="flow-row">
+        <div class="flow-node purple">Stage 1: builder<br><small>python:3.12-slim + uv<br>install deps</small></div>
+        <div class="flow-arrow">COPY --from=builder</div>
+        <div class="flow-node green">Stage 2: runtime<br><small>python:3.12-slim<br>no build tools<br>non-root user</small></div>
+      </div>
+    </div>
+    <div class="info-callout teal">
+      <strong style="color:#2dd4bf;">Size comparison:</strong> Naive single-stage image: ~1.2GB. Multi-stage with uv: ~180MB. That's 85% smaller — faster pulls, smaller attack surface, cheaper ECR/GCR storage.
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex1-code">
+    <div class="section-label purple">Starter Dockerfile</div>
+    <div class="yaml-wrap"><span style="color:#546e7a;"># ── Stage 1: install dependencies ────────────────────────────</span>
+<span style="color:#c792ea;">FROM</span> <span style="color:#c3e88d;">python:3.12-slim</span> <span style="color:#c792ea;">AS</span> builder
+
+<span style="color:#546e7a;"># Install uv (fast Python package manager)</span>
+<span style="color:#c792ea;">RUN</span> pip install uv
+
+<span style="color:#c792ea;">WORKDIR</span> /build
+
+<span style="color:#546e7a;"># Copy dependency files first (layer caching)</span>
+<span style="color:#c792ea;">COPY</span> pyproject.toml uv.lock ./
+
+<span style="color:#546e7a;"># TODO: install deps into /build/venv using uv</span>
+<span style="color:#546e7a;"># uv sync --frozen --no-dev --python python3.12</span>
+
+<span style="color:#546e7a;"># ── Stage 2: runtime image ───────────────────────────────────</span>
+<span style="color:#c792ea;">FROM</span> <span style="color:#c3e88d;">python:3.12-slim</span>
+
+<span style="color:#546e7a;"># Create non-root user</span>
+<span style="color:#c792ea;">RUN</span> groupadd -r appuser &amp;&amp; useradd -r -g appuser appuser
+
+<span style="color:#c792ea;">WORKDIR</span> /app
+
+<span style="color:#546e7a;"># Copy venv from builder stage</span>
+<span style="color:#c792ea;">COPY</span> --from=builder /build/.venv /app/.venv
+
+<span style="color:#546e7a;"># TODO: copy application code</span>
+<span style="color:#546e7a;"># TODO: set ENV PATH, switch to appuser, expose port, set CMD</span></div>
+  </div>
+
+  <div class="tab-panel" id="ex1-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Complete the Dockerfile:</p>
+      <ul>
+        <li>In builder: run <code style="font-family:'JetBrains Mono',monospace;">RUN uv sync --frozen --no-dev</code> to install into <code style="font-family:'JetBrains Mono',monospace;">.venv</code></li>
+        <li>In runtime: <code style="font-family:'JetBrains Mono',monospace;">COPY app/ /app/app/</code> and set <code style="font-family:'JetBrains Mono',monospace;">ENV PATH="/app/.venv/bin:$PATH"</code></li>
+        <li>Switch to non-root: <code style="font-family:'JetBrains Mono',monospace;">USER appuser</code></li>
+        <li>Add <code style="font-family:'JetBrains Mono',monospace;">HEALTHCHECK --interval=30s CMD curl -f http://localhost:8000/health || exit 1</code></li>
+        <li>Set <code style="font-family:'JetBrains Mono',monospace;">CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]</code></li>
+        <li>Build and verify: <code style="font-family:'JetBrains Mono',monospace;">docker build -t ai-service . && docker run --rm ai-service</code></li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(1)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex1-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t1-1">T1</span><div class="test-content"><div class="test-input">docker build -t ai-service . → success</div><div class="test-expected">→ Exit code 0, image created</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t1-2">T2</span><div class="test-content"><div class="test-input">docker image inspect ai-service --format "{{.Size}}"</div><div class="test-expected">→ less than 300MB</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t1-3">T3</span><div class="test-content"><div class="test-input">docker run ai-service whoami</div><div class="test-expected">→ "appuser" (non-root)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t1-4">T4</span><div class="test-content"><div class="test-input">docker run -p 8000:8000 ai-service → curl localhost:8000/health</div><div class="test-expected">→ 200 {"status": "ok"}</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(1)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex1-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — uv venv location</span><span class="arrow">▶</span></button>
+        <div class="hint-body">uv creates the venv at <code>.venv</code> inside the working directory. So <code>COPY --from=builder /build/.venv /app/.venv</code> then set <code>ENV PATH="/app/.venv/bin:$PATH"</code> and you're done — no need to activate.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — Layer caching for deps</span><span class="arrow">▶</span></button>
+        <div class="hint-body">Copy <code>pyproject.toml</code> and <code>uv.lock</code> BEFORE copying your app code. This way, Docker only re-runs the expensive <code>uv sync</code> when your dependencies change, not every time you change a Python file.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 2: DOCKER COMPOSE ========== -->
+<section class="exercise" id="ex2">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 2 of 5</div>
+      <h2>docker-compose for AI Stack</h2>
+      <p>Write a <code style="font-family:'JetBrains Mono',monospace;">docker-compose.yml</code> that brings up FastAPI, Qdrant, Redis, and a worker together with health checks and secrets.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot2"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex2','visual')">Visual Explainer</button>
+    <button class="tab-btn" onclick="showTab('ex2','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex2','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex2','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex2','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex2-visual">
+    <div class="section-label purple">AI Service Stack Architecture</div>
+    <div class="visual-box">
+      <div class="flow-row">
+        <div class="flow-node purple">fastapi-app<br><small>:8000</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node teal">qdrant<br><small>:6333</small></div>
+      </div>
+      <div class="flow-row" style="margin-top:4px;">
+        <div class="flow-node purple">fastapi-app</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node yellow">redis<br><small>:6379 (cache)</small></div>
+      </div>
+      <div class="flow-row" style="margin-top:4px;">
+        <div class="flow-node green">worker<br><small>background jobs</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node yellow">redis<br><small>(task queue)</small></div>
+      </div>
+    </div>
+    <div class="info-callout purple">
+      <strong style="color:var(--purple-light);">Best practices:</strong> Use <code>depends_on: condition: service_healthy</code> to ensure Qdrant is ready before FastAPI starts. Pass secrets via environment files (<code>env_file: .env.local</code>), never hardcode in compose files.
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex2-code">
+    <div class="section-label purple">Starter docker-compose.yml</div>
+    <div class="yaml-wrap"><span style="color:#c792ea;">version:</span> <span style="color:#c3e88d;">"3.9"</span>
+
+<span style="color:#c792ea;">services:</span>
+  <span style="color:#c792ea;">qdrant:</span>
+    <span style="color:#c792ea;">image:</span> qdrant/qdrant:latest
+    <span style="color:#c792ea;">ports:</span>
+      - <span style="color:#c3e88d;">"6333:6333"</span>
+    <span style="color:#c792ea;">volumes:</span>
+      - qdrant_data:/qdrant/storage
+    <span style="color:#c792ea;">healthcheck:</span>
+      <span style="color:#c792ea;">test:</span> [<span style="color:#c3e88d;">"CMD"</span>, <span style="color:#c3e88d;">"curl"</span>, <span style="color:#c3e88d;">"-f"</span>, <span style="color:#c3e88d;">"http://localhost:6333/healthz"</span>]
+      <span style="color:#c792ea;">interval:</span> <span style="color:#f78c6c;">10s</span>
+      <span style="color:#c792ea;">timeout:</span> <span style="color:#f78c6c;">5s</span>
+      <span style="color:#c792ea;">retries:</span> <span style="color:#f78c6c;">3</span>
+
+  <span style="color:#c792ea;">redis:</span>
+    <span style="color:#c792ea;">image:</span> redis:7-alpine
+    <span style="color:#c792ea;">ports:</span>
+      - <span style="color:#c3e88d;">"6379:6379"</span>
+    <span style="color:#546e7a;"># TODO: add healthcheck for redis</span>
+
+  <span style="color:#c792ea;">api:</span>
+    <span style="color:#c792ea;">build:</span> <span style="color:#c3e88d;">.</span>
+    <span style="color:#c792ea;">ports:</span>
+      - <span style="color:#c3e88d;">"8000:8000"</span>
+    <span style="color:#c792ea;">env_file:</span>
+      - <span style="color:#c3e88d;">.env.local</span>
+    <span style="color:#c792ea;">environment:</span>
+      <span style="color:#c792ea;">QDRANT_URL:</span> <span style="color:#c3e88d;">http://qdrant:6333</span>
+      <span style="color:#c792ea;">REDIS_URL:</span> <span style="color:#c3e88d;">redis://redis:6379</span>
+    <span style="color:#546e7a;"># TODO: add depends_on with health conditions</span>
+    <span style="color:#546e7a;"># TODO: add resource limits and restart policy</span>
+
+  <span style="color:#c792ea;">worker:</span>
+    <span style="color:#c792ea;">build:</span> <span style="color:#c3e88d;">.</span>
+    <span style="color:#c792ea;">command:</span> <span style="color:#c3e88d;">["python", "-m", "app.worker"]</span>
+    <span style="color:#546e7a;"># TODO: add same env, depends_on, limits as api</span>
+
+<span style="color:#c792ea;">volumes:</span>
+  <span style="color:#c792ea;">qdrant_data:</span></div>
+  </div>
+
+  <div class="tab-panel" id="ex2-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Complete the docker-compose.yml:</p>
+      <ul>
+        <li>Add Redis healthcheck: <code style="font-family:'JetBrains Mono',monospace;">test: ["CMD", "redis-cli", "ping"]</code></li>
+        <li>Add <code style="font-family:'JetBrains Mono',monospace;">depends_on</code> to api: <code style="font-family:'JetBrains Mono',monospace;">qdrant: {condition: service_healthy}</code>, same for redis</li>
+        <li>Add resource limits to api: <code style="font-family:'JetBrains Mono',monospace;">deploy: resources: limits: {cpus: "1.0", memory: 512M}</code></li>
+        <li>Add <code style="font-family:'JetBrains Mono',monospace;">restart: unless-stopped</code> to api and worker</li>
+        <li>Run <code style="font-family:'JetBrains Mono',monospace;">docker compose up --build</code> and verify all services are healthy</li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(2)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex2-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t2-1">T1</span><div class="test-content"><div class="test-input">docker compose up -d → docker compose ps</div><div class="test-expected">→ all 4 services "healthy" or "running"</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t2-2">T2</span><div class="test-content"><div class="test-input">curl http://localhost:8000/health</div><div class="test-expected">→ 200 {"status":"ok","qdrant":"connected","redis":"connected"}</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t2-3">T3</span><div class="test-content"><div class="test-input">docker compose stop qdrant → api still responds to /health</div><div class="test-expected">→ 503 degraded (graceful degradation)</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(2)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex2-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — depends_on health condition syntax</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>depends_on:\n  qdrant:\n    condition: service_healthy\n  redis:\n    condition: service_healthy</code>. This waits for the healthcheck to pass before starting the api container.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 3: K8S GPU MANIFEST ========== -->
+<section class="exercise" id="ex3">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 3 of 5</div>
+      <h2>Kubernetes Deployment with GPU Resources</h2>
+      <p>Write a K8s Deployment manifest that schedules an AI inference pod on GPU nodes with proper resource requests and limits.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot3"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex3','visual')">Visual Explainer</button>
+    <button class="tab-btn" onclick="showTab('ex3','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex3','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex3','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex3','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex3-visual">
+    <div class="section-label purple">K8s GPU Scheduling</div>
+    <div class="visual-box">
+      <div class="flow-row">
+        <div class="flow-node purple">Pod spec<br><small>nvidia.com/gpu: 1</small></div>
+        <div class="flow-arrow">→ scheduler</div>
+        <div class="flow-node yellow">Node selector<br><small>accelerator=nvidia-a100</small></div>
+        <div class="flow-arrow">→ scheduled on</div>
+        <div class="flow-node green">GPU Node<br><small>with NVIDIA device plugin</small></div>
+      </div>
+    </div>
+    <div class="info-callout teal">
+      <strong style="color:#2dd4bf;">GPU in K8s requirements:</strong> Node must have NVIDIA device plugin DaemonSet running. Request and limit must be equal for GPU resources. Use node selectors or tolerations to target GPU node pools. Set <code>NVIDIA_VISIBLE_DEVICES=all</code> env var.
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex3-code">
+    <div class="section-label purple">Starter Kubernetes Manifest</div>
+    <div class="yaml-wrap"><span style="color:#82aaff;">apiVersion:</span> apps/v1
+<span style="color:#82aaff;">kind:</span> Deployment
+<span style="color:#82aaff;">metadata:</span>
+  <span style="color:#82aaff;">name:</span> ai-inference
+  <span style="color:#82aaff;">namespace:</span> ai-prod
+  <span style="color:#82aaff;">labels:</span>
+    <span style="color:#82aaff;">app:</span> ai-inference
+    <span style="color:#82aaff;">version:</span> v1
+<span style="color:#82aaff;">spec:</span>
+  <span style="color:#82aaff;">replicas:</span> 2
+  <span style="color:#82aaff;">selector:</span>
+    <span style="color:#82aaff;">matchLabels:</span>
+      <span style="color:#82aaff;">app:</span> ai-inference
+  <span style="color:#82aaff;">template:</span>
+    <span style="color:#82aaff;">metadata:</span>
+      <span style="color:#82aaff;">labels:</span>
+        <span style="color:#82aaff;">app:</span> ai-inference
+    <span style="color:#82aaff;">spec:</span>
+      <span style="color:#546e7a;"># TODO: add nodeSelector for GPU nodes</span>
+      <span style="color:#82aaff;">containers:</span>
+        - <span style="color:#82aaff;">name:</span> inference
+          <span style="color:#82aaff;">image:</span> myregistry/ai-service:latest
+          <span style="color:#82aaff;">ports:</span>
+            - <span style="color:#82aaff;">containerPort:</span> 8000
+          <span style="color:#82aaff;">resources:</span>
+            <span style="color:#82aaff;">requests:</span>
+              <span style="color:#82aaff;">memory:</span> "4Gi"
+              <span style="color:#82aaff;">cpu:</span> "2"
+              <span style="color:#546e7a;"># TODO: add GPU request</span>
+            <span style="color:#82aaff;">limits:</span>
+              <span style="color:#82aaff;">memory:</span> "8Gi"
+              <span style="color:#82aaff;">cpu:</span> "4"
+              <span style="color:#546e7a;"># TODO: add GPU limit (must equal request)</span>
+          <span style="color:#546e7a;"># TODO: add liveness/readiness probes</span>
+          <span style="color:#546e7a;"># TODO: add envFrom secretRef for ANTHROPIC_API_KEY</span></div>
+  </div>
+
+  <div class="tab-panel" id="ex3-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Complete the K8s deployment manifest:</p>
+      <ul>
+        <li>Add GPU resource: <code style="font-family:'JetBrains Mono',monospace;">nvidia.com/gpu: "1"</code> to both requests and limits</li>
+        <li>Add nodeSelector: <code style="font-family:'JetBrains Mono',monospace;">accelerator: nvidia-tesla-a100</code></li>
+        <li>Add liveness probe: <code style="font-family:'JetBrains Mono',monospace;">httpGet: path: /health port: 8000, initialDelaySeconds: 30</code></li>
+        <li>Add readiness probe: <code style="font-family:'JetBrains Mono',monospace;">httpGet: path: /ready port: 8000, initialDelaySeconds: 10</code></li>
+        <li>Add secret reference: <code style="font-family:'JetBrains Mono',monospace;">envFrom: - secretRef: name: ai-secrets</code></li>
+        <li>Also write a <code style="font-family:'JetBrains Mono',monospace;">HorizontalPodAutoscaler</code> that scales 2–10 replicas based on CPU at 70%</li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(3)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex3-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t3-1">T1</span><div class="test-content"><div class="test-input">kubectl apply -f deployment.yaml --dry-run=client</div><div class="test-expected">→ "deployment.apps/ai-inference configured" (valid YAML)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t3-2">T2</span><div class="test-content"><div class="test-input">kubectl get pods -n ai-prod → pod STATUS</div><div class="test-expected">→ Running (if GPU nodes available)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t3-3">T3</span><div class="test-content"><div class="test-input">kubectl describe pod ai-inference-xxx | grep "nvidia.com/gpu"</div><div class="test-expected">→ "nvidia.com/gpu: 1" in Limits and Requests</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(3)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex3-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — GPU resource key format</span><span class="arrow">▶</span></button>
+        <div class="hint-body">The resource key uses a dot-separated domain format: <code>nvidia.com/gpu</code> (not <code>nvidia-gpu</code>). Both requests and limits must have the exact same value — K8s does not allow fractional GPU requests.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — HPA manifest skeleton</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>apiVersion: autoscaling/v2\nkind: HorizontalPodAutoscaler\nmetadata:\n  name: ai-inference-hpa\nspec:\n  scaleTargetRef:\n    apiVersion: apps/v1\n    kind: Deployment\n    name: ai-inference\n  minReplicas: 2\n  maxReplicas: 10\n  metrics:\n  - type: Resource\n    resource:\n      name: cpu\n      target:\n        type: Utilization\n        averageUtilization: 70</code></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 4: HELM CHART ========== -->
+<section class="exercise" id="ex4">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 4 of 5</div>
+      <h2>Helm Chart for AI Service</h2>
+      <p>Create a Helm chart with parameterized values for different environments (dev/staging/prod) including replica count, image tag, and GPU toggle.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot4"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex4','visual')">Visual Explainer</button>
+    <button class="tab-btn" onclick="showTab('ex4','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex4','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex4','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex4','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex4-visual">
+    <div class="section-label purple">Helm — Template + Values = Manifest</div>
+    <div class="visual-box">
+      <div class="flow-row">
+        <div class="flow-node purple">templates/<br><small>deployment.yaml</small></div>
+        <div class="flow-arrow">+ values</div>
+        <div class="flow-node teal">values-dev.yaml<br><small>replicas: 1<br>gpu: false</small></div>
+        <div class="flow-arrow">→ helm install</div>
+        <div class="flow-node green">K8s manifests<br><small>dev config</small></div>
+      </div>
+      <div class="flow-row" style="margin-top:4px;">
+        <div class="flow-node purple">templates/<br><small>deployment.yaml</small></div>
+        <div class="flow-arrow">+ values</div>
+        <div class="flow-node yellow">values-prod.yaml<br><small>replicas: 5<br>gpu: true</small></div>
+        <div class="flow-arrow">→ helm install</div>
+        <div class="flow-node green">K8s manifests<br><small>prod config</small></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex4-code">
+    <div class="section-label purple">Starter values.yaml + template snippet</div>
+    <div class="yaml-wrap"><span style="color:#546e7a;"># values.yaml</span>
+<span style="color:#c792ea;">replicaCount:</span> 2
+<span style="color:#c792ea;">image:</span>
+  <span style="color:#c792ea;">repository:</span> myregistry/ai-service
+  <span style="color:#c792ea;">tag:</span> latest
+  <span style="color:#c792ea;">pullPolicy:</span> IfNotPresent
+
+<span style="color:#c792ea;">gpu:</span>
+  <span style="color:#c792ea;">enabled:</span> false
+  <span style="color:#c792ea;">count:</span> 1
+
+<span style="color:#c792ea;">resources:</span>
+  <span style="color:#c792ea;">limits:</span>
+    <span style="color:#c792ea;">cpu:</span> "2"
+    <span style="color:#c792ea;">memory:</span> 2Gi
+  <span style="color:#c792ea;">requests:</span>
+    <span style="color:#c792ea;">cpu:</span> "500m"
+    <span style="color:#c792ea;">memory:</span> 512Mi
+
+<span style="color:#546e7a;"># templates/deployment.yaml snippet</span>
+<span style="color:#89ddff;">{{- if .Values.gpu.enabled }}</span>
+<span style="color:#82aaff;">              nvidia.com/gpu:</span> <span style="color:#89ddff;">{{ .Values.gpu.count | quote }}</span>
+<span style="color:#89ddff;">{{- end }}</span>
+
+<span style="color:#546e7a;"># TODO: add ingress, autoscaling, serviceAccount, secret templates</span></div>
+  </div>
+
+  <div class="tab-panel" id="ex4-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Create a complete Helm chart:</p>
+      <ul>
+        <li>Run <code style="font-family:'JetBrains Mono',monospace;">helm create ai-service</code> to scaffold the chart structure</li>
+        <li>Update <code style="font-family:'JetBrains Mono',monospace;">values.yaml</code> with <code style="font-family:'JetBrains Mono',monospace;">gpu.enabled</code> and <code style="font-family:'JetBrains Mono',monospace;">gpu.count</code> fields</li>
+        <li>Modify <code style="font-family:'JetBrains Mono',monospace;">templates/deployment.yaml</code> to conditionally add GPU resources using <code style="font-family:'JetBrains Mono',monospace;">{{- if .Values.gpu.enabled }}</code></li>
+        <li>Create <code style="font-family:'JetBrains Mono',monospace;">values-dev.yaml</code> (replicas:1, gpu:false) and <code style="font-family:'JetBrains Mono',monospace;">values-prod.yaml</code> (replicas:5, gpu:true)</li>
+        <li>Validate: <code style="font-family:'JetBrains Mono',monospace;">helm template ai-service ./ai-service -f values-prod.yaml | grep "nvidia.com/gpu"</code></li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(4)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex4-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t4-1">T1</span><div class="test-content"><div class="test-input">helm lint ./ai-service</div><div class="test-expected">→ 0 chart errors</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t4-2">T2</span><div class="test-content"><div class="test-input">helm template -f values-prod.yaml | grep "nvidia.com/gpu"</div><div class="test-expected">→ "nvidia.com/gpu: 1" appears in manifest</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t4-3">T3</span><div class="test-content"><div class="test-input">helm template -f values-dev.yaml | grep "nvidia.com/gpu"</div><div class="test-expected">→ empty (GPU disabled in dev)</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(4)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex4-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — Conditional GPU block in template</span><span class="arrow">▶</span></button>
+        <div class="hint-body">In the resources block: <code>{{- if .Values.gpu.enabled }}\n              nvidia.com/gpu: {{ .Values.gpu.count | quote }}\n{{- end }}</code>. Must appear in BOTH <code>requests</code> and <code>limits</code> sections with identical values.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 5: HEALTH + METRICS ========== -->
+<section class="exercise" id="ex5">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 5 of 5</div>
+      <h2>Health Checks &amp; Prometheus Metrics</h2>
+      <p>Add <code style="font-family:'JetBrains Mono',monospace;">/health</code>, <code style="font-family:'JetBrains Mono',monospace;">/ready</code>, and <code style="font-family:'JetBrains Mono',monospace;">/metrics</code> endpoints to the FastAPI app for K8s probes and Prometheus scraping.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot5"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex5','visual')">Visual Explainer</button>
+    <button class="tab-btn" onclick="showTab('ex5','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex5','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex5','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex5','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex5-visual">
+    <div class="section-label purple">K8s Probe Endpoints</div>
+    <div class="visual-box">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+        <div class="flow-node purple" style="display:block;padding:12px;">
+          <strong>/health</strong><br>
+          <small style="color:var(--muted);">Liveness probe<br>"Am I alive?"<br>Fast, no deps<br>Returns 200 always</small>
+        </div>
+        <div class="flow-node teal" style="display:block;padding:12px;">
+          <strong>/ready</strong><br>
+          <small style="color:var(--muted);">Readiness probe<br>"Can I serve?"<br>Checks DB/cache<br>Returns 503 if not ready</small>
+        </div>
+        <div class="flow-node green" style="display:block;padding:12px;">
+          <strong>/metrics</strong><br>
+          <small style="color:var(--muted);">Prometheus scrape<br>request count, latency<br>LLM tokens used<br>Error rates</small>
+        </div>
+      </div>
+    </div>
+    <div class="info-callout teal">
+      <strong style="color:#2dd4bf;">Custom AI metrics to expose:</strong> <code>llm_requests_total{model,status}</code>, <code>llm_tokens_total{type}</code>, <code>llm_request_duration_seconds</code>, <code>qdrant_search_duration_seconds</code>. These enable cost alerting and SLA dashboards.
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex5-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>app/main.py — health + metrics</span></div>
+      <div class="code-body">
+        <div class="code-content"><span class="cm"># pip install fastapi prometheus-client httpx</span>
+<span class="kw">from</span> <span class="va">fastapi</span> <span class="kw">import</span> <span class="va">FastAPI</span><span class="dt">,</span> <span class="va">Response</span>
+<span class="kw">from</span> <span class="va">prometheus_client</span> <span class="kw">import</span> <span class="dt">(</span>
+    <span class="va">Counter</span><span class="dt">,</span> <span class="va">Histogram</span><span class="dt">,</span> <span class="va">generate_latest</span><span class="dt">,</span> <span class="va">CONTENT_TYPE_LATEST</span>
+<span class="dt">)</span>
+<span class="kw">import</span> <span class="va">time</span><span class="dt">,</span> <span class="va">httpx</span>
+
+<span class="va">app</span> <span class="dt">=</span> <span class="fn">FastAPI</span><span class="dt">()</span>
+
+<span class="cm"># Prometheus metrics</span>
+<span class="va">LLM_REQUESTS</span> <span class="dt">=</span> <span class="fn">Counter</span><span class="dt">(</span>
+    <span class="st">"llm_requests_total"</span><span class="dt">,</span>
+    <span class="st">"Total LLM API calls"</span><span class="dt">,</span>
+    <span class="dt">[</span><span class="st">"model"</span><span class="dt">,</span> <span class="st">"status"</span><span class="dt">]</span>
+<span class="dt">)</span>
+<span class="va">LLM_LATENCY</span> <span class="dt">=</span> <span class="fn">Histogram</span><span class="dt">(</span>
+    <span class="st">"llm_request_duration_seconds"</span><span class="dt">,</span>
+    <span class="st">"LLM call latency"</span><span class="dt">,</span>
+    <span class="va">buckets</span><span class="dt">=[</span><span class="nm">0.1</span><span class="dt">,</span><span class="nm">0.5</span><span class="dt">,</span><span class="nm">1.0</span><span class="dt">,</span><span class="nm">2.0</span><span class="dt">,</span><span class="nm">5.0</span><span class="dt">,</span><span class="nm">10.0</span><span class="dt">]</span>
+<span class="dt">)</span>
+
+<span class="dt">@</span><span class="va">app</span><span class="dt">.</span><span class="fn">get</span><span class="dt">(</span><span class="st">"/health"</span><span class="dt">)</span>
+<span class="kw">def</span> <span class="fn">health</span><span class="dt">():</span>
+    <span class="cm"># TODO: return {"status": "ok"} — always 200, fast</span>
+    <span class="dt">...</span>
+
+<span class="dt">@</span><span class="va">app</span><span class="dt">.</span><span class="fn">get</span><span class="dt">(</span><span class="st">"/ready"</span><span class="dt">)</span>
+<span class="kw">async def</span> <span class="fn">ready</span><span class="dt">():</span>
+    <span class="cm"># TODO: check Qdrant + Redis connectivity, return 200 or 503</span>
+    <span class="dt">...</span>
+
+<span class="dt">@</span><span class="va">app</span><span class="dt">.</span><span class="fn">get</span><span class="dt">(</span><span class="st">"/metrics"</span><span class="dt">)</span>
+<span class="kw">def</span> <span class="fn">metrics</span><span class="dt">():</span>
+    <span class="cm"># TODO: return generate_latest() with CONTENT_TYPE_LATEST</span>
+    <span class="dt">...</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex5-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Implement all three endpoints:</p>
+      <ul>
+        <li><code style="font-family:'JetBrains Mono',monospace;">/health</code>: return <code style="font-family:'JetBrains Mono',monospace;">{"status": "ok", "version": "1.0"}</code> — never check external deps</li>
+        <li><code style="font-family:'JetBrains Mono',monospace;">/ready</code>: ping Qdrant <code style="font-family:'JetBrains Mono',monospace;">GET /healthz</code> and Redis <code style="font-family:'JetBrains Mono',monospace;">PING</code>; return 503 + details if either fails</li>
+        <li><code style="font-family:'JetBrains Mono',monospace;">/metrics</code>: return <code style="font-family:'JetBrains Mono',monospace;">Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)</code></li>
+        <li>Add a middleware that increments <code style="font-family:'JetBrains Mono',monospace;">LLM_REQUESTS</code> and records <code style="font-family:'JetBrains Mono',monospace;">LLM_LATENCY</code> for each <code style="font-family:'JetBrains Mono',monospace;">/agent/query</code> call</li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(5)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex5-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t5-1">T1</span><div class="test-content"><div class="test-input">curl http://localhost:8000/health</div><div class="test-expected">→ 200 {"status":"ok"} even if DB is down</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t5-2">T2</span><div class="test-content"><div class="test-input">curl http://localhost:8000/ready (Qdrant stopped)</div><div class="test-expected">→ 503 {"status":"degraded","qdrant":"unreachable"}</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t5-3">T3</span><div class="test-content"><div class="test-input">curl http://localhost:8000/metrics | grep llm_requests_total</div><div class="test-expected">→ metric definition present (even at 0)</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(5)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex5-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — Async readiness check</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>async with httpx.AsyncClient(timeout=2.0) as client:\n  try:\n    r = await client.get("http://qdrant:6333/healthz")\n    qdrant_ok = r.status_code == 200\n  except: qdrant_ok = False</code>. Return 503 if not qdrant_ok.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <p>Day 27 of 30 — Docker & Kubernetes for AI · <a href="../index.html">Dashboard</a> · <a href="day28_exercises.html">Day 28 →</a></p>
+</footer>
+
+<script>
+function showTab(exId, tab) {
+  document.querySelectorAll(`#${exId} .tab-panel`).forEach(p => p.classList.remove('active'));
+  document.querySelectorAll(`#${exId} .tab-btn`).forEach(b => b.classList.remove('active'));
+  const target = document.getElementById(`${exId}-${tab}`);
+  if (target) target.classList.add('active');
+  const idx = ['visual','code','task','tests','hints'].indexOf(tab);
+  const btns = document.querySelectorAll(`#${exId} .tab-btn`);
+  if (btns[idx]) btns[idx].classList.add('active');
+}
+let completed = 0;
+function markDone(n) {
+  const dot = document.getElementById('dot' + n);
+  if (dot && !dot.classList.contains('done')) {
+    dot.classList.add('done'); completed++;
+    document.getElementById('progress-text').textContent = `${completed} / 5 completed`;
+    document.getElementById('progress-fill').style.width = `${(completed/5)*100}%`;
+  }
+}
+function runTests(exNum) {
+  document.querySelectorAll(`#ex${exNum}-tests .test-badge`).forEach((badge, i) => {
+    setTimeout(() => { badge.className = 'test-badge pass'; badge.textContent = '✓ T' + (i+1); }, i * 300);
+  });
+}
+function toggleHint(btn) {
+  btn.classList.toggle('open');
+  const body = btn.nextElementSibling;
+  body.style.display = body.style.display === 'block' ? 'none' : 'block';
+}
+</script>
+<script src="../bg-animation.js"></script>
+</body>
+</html>

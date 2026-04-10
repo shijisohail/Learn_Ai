@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 14 Exercises — Week 2 Capstone: Multi-Provider Knowledge Assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f; --card: #141420; --surface2: #1a1a2e; --border: #2a2a45;
+  --purple: #7c3aed; --purple-light: #a855f7; --teal: #0d9488;
+  --green: #10b981; --yellow: #f59e0b; --red: #ef4444; --text: #e2e8f0; --muted: #64748b;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+code, pre { font-family: 'JetBrains Mono', monospace; }
+.sticky-nav { position: sticky; top: 0; z-index: 100; background: rgba(10,10,15,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); padding: 12px 32px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.sticky-nav a { color: var(--muted); text-decoration: none; font-size: 0.85rem; padding: 6px 12px; border-radius: 6px; transition: all 0.2s; border: 1px solid transparent; }
+.sticky-nav a:hover { color: var(--text); background: var(--card); border-color: var(--border); }
+.sticky-nav .brand { color: var(--purple-light); font-weight: 600; font-size: 0.9rem; }
+.nav-sep { color: var(--border); }
+.nav-title { color: var(--text); font-weight: 700; font-size: 0.95rem; flex: 1; }
+.hero { padding: 56px 32px 32px; max-width: 1100px; margin: 0 auto; border-bottom: 1px solid var(--border); }
+.hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: 8px; }
+.hero h1 span { color: var(--purple-light); }
+.hero p { color: var(--muted); font-size: 1rem; max-width: 700px; }
+.hero-meta { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
+.badge-purple { background: rgba(124,58,237,0.15); color: var(--purple-light); border: 1px solid rgba(124,58,237,0.3); }
+.badge-teal { background: rgba(13,148,136,0.15); color: #2dd4bf; border: 1px solid rgba(13,148,136,0.3); }
+.badge-green { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.badge-yellow { background: rgba(245,158,11,0.15); color: var(--yellow); border: 1px solid rgba(245,158,11,0.3); }
+.progress-bar-wrap { max-width: 1100px; margin: 24px auto; padding: 0 32px; }
+.progress-label { font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
+.progress-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--purple), var(--teal)); border-radius: 3px; transition: width 0.5s ease; }
+.main { max-width: 1100px; margin: 0 auto; padding: 32px; display: flex; flex-direction: column; gap: 48px; }
+.exercise { border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: var(--card); }
+.exercise-header { padding: 24px 32px; background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(13,148,136,0.05)); border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.exercise-num { font-size: 0.75rem; color: var(--purple-light); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.exercise-header h2 { font-size: 1.4rem; font-weight: 700; margin: 4px 0 8px; }
+.exercise-header p { color: var(--muted); font-size: 0.9rem; }
+.ex-status { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); }
+.status-dot.done { background: var(--green); }
+.exercise-body { padding: 28px 32px; display: flex; flex-direction: column; gap: 24px; }
+.section-label { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.section-label.purple { color: var(--purple-light); } .section-label.yellow { color: var(--yellow); }
+.section-label.green { color: #34d399; } .section-label.teal { color: #2dd4bf; }
+.section-label.red { color: var(--red); }
+.icon { font-size: 1rem; }
+ul.task-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+ul.task-list li { padding: 10px 14px; background: var(--surface2); border-radius: 8px; border-left: 3px solid var(--purple); font-size: 0.9rem; }
+ul.task-list li strong { color: var(--purple-light); }
+.code-block { background: #0d0d1a; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.code-block-header { padding: 10px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.code-lang { font-size: 0.75rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+.copy-btn { background: none; border: 1px solid var(--border); color: var(--muted); padding: 4px 10px; border-radius: 5px; font-size: 0.72rem; cursor: pointer; transition: all 0.2s; }
+.copy-btn:hover { color: var(--text); border-color: var(--purple); }
+pre.code { margin: 0; padding: 20px; overflow-x: auto; font-size: 0.82rem; line-height: 1.7; color: #cdd6f4; }
+.kw { color: #c792ea; } .fn { color: #82aaff; } .st { color: #c3e88d; } .cm { color: #546e7a; font-style: italic; }
+.nm { color: #f78c6c; } .op { color: #89ddff; }
+.test-grid { display: flex; flex-direction: column; gap: 10px; }
+.test-case { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start; }
+.test-badge { padding: 3px 10px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+.test-badge.pass { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.test-badge.pending { background: rgba(245,158,11,0.12); color: var(--yellow); border: 1px solid rgba(245,158,11,0.3); }
+.test-badge.cap { background: rgba(124,58,237,0.15); color: var(--purple-light); border: 1px solid rgba(124,58,237,0.3); }
+.test-content { font-size: 0.85rem; color: var(--muted); line-height: 1.5; }
+.test-content strong { color: var(--text); display: block; margin-bottom: 2px; }
+.hint-wrap { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.hint-toggle { width: 100%; text-align: left; background: var(--surface2); border: none; color: var(--muted); padding: 12px 16px; cursor: pointer; font-size: 0.85rem; font-family: 'Inter', sans-serif; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; }
+.hint-toggle:hover { background: var(--border); color: var(--text); }
+.hint-toggle .arrow { transition: transform 0.2s; }
+.hint-toggle.open .arrow { transform: rotate(180deg); }
+.hint-body { display: none; padding: 16px; background: #0d0d1a; }
+.hint-body.open { display: block; }
+.hint-body ul { padding-left: 20px; color: var(--muted); font-size: 0.85rem; line-height: 1.8; }
+.hint-body ul li strong { color: var(--text); }
+.arch-diagram { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--muted); line-height: 2; }
+.arch-diagram .highlight { color: var(--purple-light); font-weight: 700; }
+.arch-diagram .arrow { color: var(--teal); }
+.arch-diagram .label { color: var(--yellow); }
+.week-banner { background: linear-gradient(135deg, rgba(124,58,237,0.2), rgba(13,148,136,0.15)); border: 1px solid rgba(124,58,237,0.4); border-radius: 16px; padding: 32px; text-align: center; }
+.week-banner h3 { font-size: 1.3rem; font-weight: 700; color: var(--purple-light); margin-bottom: 8px; }
+.week-banner p { color: var(--muted); font-size: 0.9rem; max-width: 600px; margin: 0 auto; }
+.skill-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; justify-content: center; }
+.skill-chip { padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; background: rgba(124,58,237,0.1); color: var(--purple-light); border: 1px solid rgba(124,58,237,0.25); }
+.milestone-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+.milestone-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+.milestone-card .m-day { font-size: 0.72rem; font-weight: 700; color: var(--purple-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+.milestone-card .m-title { font-size: 0.88rem; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.milestone-card .m-skill { font-size: 0.78rem; color: var(--muted); }
+footer { text-align: center; padding: 48px 32px; color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--border); margin-top: 32px; }
+footer a { color: var(--purple-light); text-decoration: none; }
+@media (max-width: 640px) {
+  .hero { padding: 32px 16px 24px; } .main { padding: 16px; } .exercise-header, .exercise-body { padding: 20px 16px; }
+  .hero h1 { font-size: 1.5rem; } .sticky-nav { padding: 10px 16px; }
+}
+</style>
+</head>
+<body>
+
+<nav class="sticky-nav">
+  <a href="../index.html" class="brand">30-Day AI</a>
+  <span class="nav-sep">|</span>
+  <span class="nav-title">Day 14 — Week 2 Capstone</span>
+  <a href="../days/day14.html">&#8592; Day 14 lesson</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-meta" style="margin-bottom:16px;">
+    <span class="badge badge-purple">Day 14</span>
+    <span class="badge badge-yellow">Week 2 Capstone</span>
+    <span class="badge badge-teal">Advanced</span>
+  </div>
+  <h1>Week 2 Capstone: <span>Multi-Provider Knowledge Assistant</span></h1>
+  <p>Integrate everything from Days 8–13 into a production-ready RAG system: LCEL pipelines, multi-provider LLMs with cost tracking, vector stores, hybrid search, re-ranking, and an agent crew that answers complex questions.</p>
+  <div class="hero-meta">
+    <span class="badge badge-green">6 Exercises</span>
+    <span class="badge badge-purple">~4–6 hours</span>
+    <span class="badge badge-teal">Integration Focus</span>
+  </div>
+</div>
+
+<div class="progress-bar-wrap">
+  <div class="progress-label">
+    <span>Capstone Progress</span>
+    <span id="progress-text">0 / 6 complete</span>
+  </div>
+  <div class="progress-bar">
+    <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+  </div>
+</div>
+
+<!-- WEEK SUMMARY BANNER -->
+<div class="main" style="gap:24px; padding-bottom:0;">
+  <div class="week-banner">
+    <h3>Week 2 Skills Checkpoint</h3>
+    <p>Before starting, confirm you have working implementations from this week. Each capstone exercise builds on one or more of these skills.</p>
+    <div class="skill-chips">
+      <span class="skill-chip">LCEL Chains (D8)</span>
+      <span class="skill-chip">RunnableParallel (D8)</span>
+      <span class="skill-chip">LangSmith Tracing (D8)</span>
+      <span class="skill-chip">LiteLLM Multi-Provider (D9)</span>
+      <span class="skill-chip">Cost Tracking (D9)</span>
+      <span class="skill-chip">Prompt Caching (D9)</span>
+      <span class="skill-chip">FAISS / ChromaDB (D10)</span>
+      <span class="skill-chip">Cosine Similarity (D11)</span>
+      <span class="skill-chip">Batch Embedding (D11)</span>
+      <span class="skill-chip">Hybrid BM25+Vector (D12)</span>
+      <span class="skill-chip">HyDE (D12)</span>
+      <span class="skill-chip">Cross-Encoder Re-rank (D12)</span>
+      <span class="skill-chip">CrewAI Agents (D13)</span>
+    </div>
+  </div>
+  <div class="milestone-grid">
+    <div class="milestone-card"><div class="m-day">Day 8</div><div class="m-title">LangChain Deep-Dive</div><div class="m-skill">LCEL, memory, tracing</div></div>
+    <div class="milestone-card"><div class="m-day">Day 9</div><div class="m-title">LLM Providers</div><div class="m-skill">LiteLLM, cost, caching</div></div>
+    <div class="milestone-card"><div class="m-day">Day 10</div><div class="m-title">Vector Databases</div><div class="m-skill">FAISS, Chroma, Qdrant</div></div>
+    <div class="milestone-card"><div class="m-day">Day 11</div><div class="m-title">Embeddings</div><div class="m-skill">Cosine sim, batching, cache</div></div>
+    <div class="milestone-card"><div class="m-day">Day 12</div><div class="m-title">Advanced RAG</div><div class="m-skill">Hybrid, HyDE, re-rank</div></div>
+    <div class="milestone-card"><div class="m-day">Day 13</div><div class="m-title">CrewAI Agents</div><div class="m-skill">Multi-agent pipelines</div></div>
+  </div>
+</div>
+
+<main class="main">
+
+<!-- ============================================================ EXERCISE 1 -->
+<div class="exercise" id="ex1">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 1 of 6</div>
+      <h2>Knowledge Base Builder with Embedding Cache</h2>
+      <p>Ingest a corpus of documents, batch-embed them with a disk cache, and store them in ChromaDB. This is the foundation all later exercises rely on.</p>
+    </div>
+    <div class="ex-status">
+      <div class="status-dot" id="dot1"></div>
+      <span style="font-size:0.8rem; color:var(--muted);">Not started</span>
+    </div>
+  </div>
+  <div class="exercise-body">
+
+    <div>
+      <div class="section-label purple"><span class="icon">&#127919;</span> Objective</div>
+      <p style="color:var(--muted); font-size:0.9rem;">Build a reusable <code>KnowledgeBase</code> class that: (1) batch-embeds texts using <code>text-embedding-3-small</code> with SQLite caching to avoid redundant API calls, (2) stores documents in a persistent ChromaDB collection with metadata, and (3) exposes a <code>.search(query, top_k)</code> method returning <code>Document</code> objects with scores.</p>
+    </div>
+
+    <div>
+      <div class="section-label yellow"><span class="icon">&#9989;</span> Your Task</div>
+      <ul class="task-list">
+        <li><strong>Cache layer:</strong> Implement <code>CachedEmbedder</code> using SQLite. Key = SHA-256 of <code>model + text</code>. Store/retrieve pickled numpy arrays.</li>
+        <li><strong>Batch ingestion:</strong> Call the OpenAI embeddings API in batches of 100. Show a tqdm progress bar. Return embeddings as numpy array shape <code>(N, 1536)</code>.</li>
+        <li><strong>ChromaDB storage:</strong> Create a persistent collection. Use <code>add()</code> with ids, embeddings, documents, and metadatas. Metadata fields: <code>source</code>, <code>chunk_index</code>, <code>word_count</code>.</li>
+        <li><strong>Search method:</strong> Embed the query (using cache), call <code>collection.query()</code>, return a list of <code>{"text": ..., "score": ..., "metadata": ...}</code> dicts.</li>
+        <li><strong>Verify caching:</strong> Ingest the same corpus twice and confirm the second run makes zero API calls (by checking the cache hit count).</li>
+      </ul>
+    </div>
+
+    <div>
+      <div class="section-label teal"><span class="icon">&#128196;</span> Starter Code</div>
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="code-lang">Python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre class="code"><span class="cm"># pip install openai chromadb tqdm numpy</span>
+<span class="kw">import</span> hashlib, pickle, sqlite3, os, time
+<span class="kw">import</span> numpy <span class="kw">as</span> np
+<span class="kw">from</span> openai <span class="kw">import</span> OpenAI
+<span class="kw">from</span> tqdm <span class="kw">import</span> tqdm
+<span class="kw">import</span> chromadb
+
+client = <span class="fn">OpenAI</span>()
+
+<span class="kw">class</span> <span class="fn">CachedEmbedder</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, db_path: str = <span class="st">"embed_cache.db"</span>, model: str = <span class="st">"text-embedding-3-small"</span>):
+        self.model = model
+        self.conn = sqlite3.<span class="fn">connect</span>(db_path)
+        self.hits = <span class="nm">0</span>
+        self.misses = <span class="nm">0</span>
+        self.<span class="fn">_init_db</span>()
+
+    <span class="kw">def</span> <span class="fn">_init_db</span>(self):
+        self.conn.<span class="fn">execute</span>(<span class="st">"""CREATE TABLE IF NOT EXISTS cache
+            (key TEXT PRIMARY KEY, embedding BLOB, created_at REAL)"""</span>)
+        self.conn.<span class="fn">commit</span>()
+
+    <span class="kw">def</span> <span class="fn">_cache_key</span>(self, text: str) -> str:
+        <span class="cm"># TODO: return SHA-256 hex digest of (self.model + text)</span>
+        <span class="kw">pass</span>
+
+    <span class="kw">def</span> <span class="fn">_get</span>(self, key: str):
+        <span class="cm"># TODO: query DB, return unpickled numpy array or None</span>
+        <span class="kw">pass</span>
+
+    <span class="kw">def</span> <span class="fn">_set</span>(self, key: str, embedding: np.ndarray):
+        <span class="cm"># TODO: pickle embedding and INSERT OR REPLACE into cache</span>
+        <span class="kw">pass</span>
+
+    <span class="kw">def</span> <span class="fn">embed_batch</span>(self, texts: list[str], batch_size: int = <span class="nm">100</span>) -> np.ndarray:
+        all_embeddings = []
+        <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">tqdm</span>(<span class="fn">range</span>(<span class="nm">0</span>, <span class="fn">len</span>(texts), batch_size), desc=<span class="st">"Embedding"</span>):
+            batch = texts[i:i + batch_size]
+            batch_embs = []
+            uncached_texts, uncached_indices = [], []
+
+            <span class="kw">for</span> j, text <span class="kw">in</span> <span class="fn">enumerate</span>(batch):
+                key = self.<span class="fn">_cache_key</span>(text)
+                cached = self.<span class="fn">_get</span>(key)
+                <span class="kw">if</span> cached <span class="kw">is not</span> <span class="nm">None</span>:
+                    <span class="cm"># TODO: increment hits, append cached embedding</span>
+                    <span class="kw">pass</span>
+                <span class="kw">else</span>:
+                    <span class="cm"># TODO: increment misses, track index for later fill-in</span>
+                    batch_embs.<span class="fn">append</span>(<span class="nm">None</span>)
+                    uncached_texts.<span class="fn">append</span>(text)
+                    uncached_indices.<span class="fn">append</span>(j)
+
+            <span class="kw">if</span> uncached_texts:
+                resp = client.embeddings.<span class="fn">create</span>(model=self.model, input=uncached_texts)
+                <span class="kw">for</span> idx, emb_obj <span class="kw">in</span> <span class="fn">zip</span>(uncached_indices, resp.data):
+                    emb = np.<span class="fn">array</span>(emb_obj.embedding, dtype=np.float32)
+                    key = self.<span class="fn">_cache_key</span>(batch[idx])
+                    <span class="cm"># TODO: save to cache, set batch_embs[idx]</span>
+                    <span class="kw">pass</span>
+
+            all_embeddings.<span class="fn">extend</span>(batch_embs)
+
+        <span class="kw">return</span> np.<span class="fn">array</span>(all_embeddings)
+
+
+<span class="kw">class</span> <span class="fn">KnowledgeBase</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, persist_dir: str = <span class="st">"./kb_store"</span>, collection_name: str = <span class="st">"knowledge"</span>):
+        self.embedder = <span class="fn">CachedEmbedder</span>()
+        chroma_client = chromadb.<span class="fn">PersistentClient</span>(path=persist_dir)
+        self.collection = chroma_client.<span class="fn">get_or_create_collection</span>(collection_name)
+
+    <span class="kw">def</span> <span class="fn">ingest</span>(self, documents: list[dict]):
+        <span class="cm">"""documents: list of {"text": str, "source": str}"""</span>
+        texts = [d[<span class="st">"text"</span>] <span class="kw">for</span> d <span class="kw">in</span> documents]
+        embeddings = self.embedder.<span class="fn">embed_batch</span>(texts)
+
+        <span class="cm"># TODO: call self.collection.add() with:
+        # ids = ["doc_{i}" for i in range(len(texts))]
+        # embeddings = embeddings.tolist()
+        # documents = texts
+        # metadatas: source, chunk_index=i, word_count=len(text.split())</span>
+        <span class="kw">pass</span>
+
+    <span class="kw">def</span> <span class="fn">search</span>(self, query: str, top_k: int = <span class="nm">5</span>) -> list[dict]:
+        <span class="cm"># TODO: embed query, call collection.query(), return structured results</span>
+        <span class="kw">pass</span>
+
+
+<span class="cm"># Test corpus</span>
+docs = [
+    {<span class="st">"text"</span>: <span class="st">"LangChain's LCEL uses the pipe operator to compose runnables."</span>, <span class="st">"source"</span>: <span class="st">"langchain_docs"</span>},
+    {<span class="st">"text"</span>: <span class="st">"LiteLLM provides a unified interface for 100+ LLM providers."</span>, <span class="st">"source"</span>: <span class="st">"litellm_docs"</span>},
+    {<span class="st">"text"</span>: <span class="st">"FAISS IndexIVFFlat uses inverted file index for fast approximate nearest neighbor search."</span>, <span class="st">"source"</span>: <span class="st">"faiss_docs"</span>},
+    {<span class="st">"text"</span>: <span class="st">"Cosine similarity measures the angle between two embedding vectors."</span>, <span class="st">"source"</span>: <span class="st">"math_docs"</span>},
+    {<span class="st">"text"</span>: <span class="st">"HyDE generates a hypothetical document and embeds it instead of the raw query."</span>, <span class="st">"source"</span>: <span class="st">"rag_docs"</span>},
+    {<span class="st">"text"</span>: <span class="st">"CrewAI agents can be given custom tools decorated with @tool."</span>, <span class="st">"source"</span>: <span class="st">"crewai_docs"</span>},
+]
+
+kb = <span class="fn">KnowledgeBase</span>()
+kb.<span class="fn">ingest</span>(docs)
+<span class="fn">print</span>(f<span class="st">"Cache hits: {kb.embedder.hits}, misses: {kb.embedder.misses}"</span>)
+
+<span class="cm"># Ingest again — should be all hits</span>
+kb2 = <span class="fn">KnowledgeBase</span>()
+kb2.<span class="fn">ingest</span>(docs)
+<span class="fn">print</span>(f<span class="st">"Second pass — hits: {kb2.embedder.hits}, misses: {kb2.embedder.misses}"</span>)
+<span class="kw">assert</span> kb2.embedder.misses == <span class="nm">0</span>, <span class="st">"All embeddings should come from cache!"</span>
+
+results = kb.<span class="fn">search</span>(<span class="st">"What is LCEL?"</span>, top_k=<span class="nm">3</span>)
+<span class="kw">for</span> r <span class="kw">in</span> results:
+    <span class="fn">print</span>(r)</pre>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label green"><span class="icon">&#128203;</span> Expected Output</div>
+      <div class="test-grid">
+        <div class="test-case">
+          <span class="test-badge pending">check</span>
+          <div class="test-content">
+            <strong>First ingest</strong>
+            <code>Cache hits: 0, misses: 6</code> — all 6 docs go through the API on first run.
+          </div>
+        </div>
+        <div class="test-case">
+          <span class="test-badge pending">check</span>
+          <div class="test-content">
+            <strong>Second ingest</strong>
+            <code>Cache hits: 6, misses: 0</code> — assertion passes, zero API calls.
+          </div>
+        </div>
+        <div class="test-case">
+          <span class="test-badge pending">check</span>
+          <div class="test-content">
+            <strong>Search result</strong>
+            Top result for "What is LCEL?" should have <code>source: langchain_docs</code> and a score below 0.5 (cosine distance).
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hint-wrap">
+      <button class="hint-toggle" onclick="toggleHint(this)">
+        Hints <span class="arrow">&#9660;</span>
+      </button>
+      <div class="hint-body">
+        <ul>
+          <li><strong>Cache key:</strong> <code>hashlib.sha256((model + text).encode()).hexdigest()</code></li>
+          <li><strong>Pickle store:</strong> <code>sqlite3.Binary(pickle.dumps(embedding))</code> for the blob; <code>pickle.loads(bytes(row[0]))</code> to retrieve.</li>
+          <li><strong>ChromaDB query:</strong> <code>collection.query(query_embeddings=[emb.tolist()], n_results=top_k, include=["documents","metadatas","distances"])</code></li>
+          <li><strong>Score convention:</strong> ChromaDB returns L2 distances by default. Smaller = more similar. Convert with <code>score = 1 / (1 + dist)</code> if you want 0–1 similarity.</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================================================ EXERCISE 2 -->
+<div class="exercise" id="ex2">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 2 of 6</div>
+      <h2>Hybrid Search Retriever via LCEL</h2>
+      <p>Wrap your <code>KnowledgeBase</code> and a BM25 index inside an LCEL chain using <code>RunnableParallel</code> and Reciprocal Rank Fusion, then trace everything with LangSmith.</p>
+    </div>
+    <div class="ex-status">
+      <div class="status-dot" id="dot2"></div>
+      <span style="font-size:0.8rem; color:var(--muted);">Not started</span>
+    </div>
+  </div>
+  <div class="exercise-body">
+
+    <div>
+      <div class="section-label purple"><span class="icon">&#127919;</span> Objective</div>
+      <p style="color:var(--muted); font-size:0.9rem;">Build a hybrid retriever as an LCEL chain. Use <code>RunnableParallel</code> to run BM25 and vector search simultaneously, then fuse with RRF. Decorate the chain with LangSmith tracing so each retrieval shows up as a named run.</p>
+    </div>
+
+    <div>
+      <div class="section-label yellow"><span class="icon">&#9989;</span> Your Task</div>
+      <ul class="task-list">
+        <li><strong>BM25 runnable:</strong> Wrap <code>BM25Okapi</code> in a <code>RunnableLambda</code> that takes a query string and returns a list of <code>(score, text)</code> tuples (top 10).</li>
+        <li><strong>Vector runnable:</strong> Wrap <code>KnowledgeBase.search()</code> in another <code>RunnableLambda</code>, returning top 10 results.</li>
+        <li><strong>Parallel execution:</strong> Combine both with <code>RunnableParallel(bm25=bm25_runnable, vector=vector_runnable)</code>.</li>
+        <li><strong>RRF fusion:</strong> Implement <code>rrf_fusion(results: dict, k=60)</code> that takes the parallel output and returns deduplicated, re-scored documents sorted by fused score descending.</li>
+        <li><strong>LangSmith tracing:</strong> Set <code>LANGCHAIN_TRACING_V2=true</code> and <code>LANGCHAIN_PROJECT="week2-capstone"</code>. Use <code>.with_config(run_name="hybrid-retriever")</code> on the final chain.</li>
+        <li><strong>Test with 3 queries</strong> from different topic areas and print ranked results.</li>
+      </ul>
+    </div>
+
+    <div>
+      <div class="section-label teal"><span class="icon">&#128196;</span> Starter Code</div>
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="code-lang">Python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre class="code"><span class="cm"># pip install rank-bm25 langchain langchain-openai langsmith</span>
+<span class="kw">import</span> os
+<span class="kw">from</span> rank_bm25 <span class="kw">import</span> BM25Okapi
+<span class="kw">from</span> langchain_core.runnables <span class="kw">import</span> RunnableParallel, RunnableLambda
+<span class="cm"># Assume KnowledgeBase is imported from exercise 1</span>
+<span class="cm"># from knowledge_base import KnowledgeBase, docs</span>
+
+os.environ[<span class="st">"LANGCHAIN_TRACING_V2"</span>] = <span class="st">"true"</span>
+os.environ[<span class="st">"LANGCHAIN_PROJECT"</span>] = <span class="st">"week2-capstone"</span>
+
+<span class="cm"># Build BM25 index over the same corpus</span>
+corpus_texts = [d[<span class="st">"text"</span>] <span class="kw">for</span> d <span class="kw">in</span> docs]
+tokenized_corpus = [text.<span class="fn">lower</span>().<span class="fn">split</span>() <span class="kw">for</span> text <span class="kw">in</span> corpus_texts]
+bm25 = <span class="fn">BM25Okapi</span>(tokenized_corpus)
+
+<span class="kw">def</span> <span class="fn">bm25_search</span>(query: str, top_k: int = <span class="nm">10</span>) -> list[dict]:
+    <span class="cm"># TODO: tokenize query, get scores, return top_k as [{"text": ..., "score": ...}]</span>
+    tokens = query.<span class="fn">lower</span>().<span class="fn">split</span>()
+    scores = bm25.<span class="fn">get_scores</span>(tokens)
+    <span class="cm"># zip scores with texts, sort, slice top_k</span>
+    <span class="kw">pass</span>
+
+<span class="kw">def</span> <span class="fn">rrf_fusion</span>(results: dict, k: int = <span class="nm">60</span>) -> list[dict]:
+    <span class="cm">"""
+    results = {"bm25": [...], "vector": [...]}
+    Each list is already ranked (index 0 = best).
+    RRF score: sum(1 / (k + rank)) across rankers.
+    Return deduplicated list sorted by fused score desc.
+    """</span>
+    fused: dict[str, dict] = {}
+
+    <span class="kw">for</span> source, ranked_list <span class="kw">in</span> results.<span class="fn">items</span>():
+        <span class="kw">for</span> rank, item <span class="kw">in</span> <span class="fn">enumerate</span>(ranked_list):
+            text = item[<span class="st">"text"</span>]
+            <span class="kw">if</span> text <span class="kw">not in</span> fused:
+                fused[text] = {<span class="st">"text"</span>: text, <span class="st">"rrf_score"</span>: <span class="nm">0.0</span>, <span class="st">"sources"</span>: []}
+            <span class="cm"># TODO: add 1/(k + rank + 1) to fused[text]["rrf_score"]
+            # and append source to fused[text]["sources"]</span>
+            <span class="kw">pass</span>
+
+    <span class="kw">return</span> <span class="fn">sorted</span>(fused.<span class="fn">values</span>(), key=<span class="kw">lambda</span> x: x[<span class="st">"rrf_score"</span>], reverse=<span class="nm">True</span>)
+
+
+kb = <span class="fn">KnowledgeBase</span>()
+
+bm25_runnable = <span class="fn">RunnableLambda</span>(bm25_search)
+vector_runnable = <span class="fn">RunnableLambda</span>(<span class="kw">lambda</span> q: kb.<span class="fn">search</span>(q, top_k=<span class="nm">10</span>))
+parallel = <span class="fn">RunnableParallel</span>(bm25=bm25_runnable, vector=vector_runnable)
+
+<span class="cm"># TODO: chain parallel | RunnableLambda(rrf_fusion) and add .with_config(run_name=...)</span>
+hybrid_chain = parallel | <span class="fn">RunnableLambda</span>(rrf_fusion)
+hybrid_chain = hybrid_chain.<span class="fn">with_config</span>(run_name=<span class="st">"hybrid-retriever"</span>)
+
+test_queries = [
+    <span class="st">"How do I compose LangChain chains?"</span>,
+    <span class="st">"What is the fastest vector index for 1M vectors?"</span>,
+    <span class="st">"How do CrewAI agents use tools?"</span>,
+]
+
+<span class="kw">for</span> query <span class="kw">in</span> test_queries:
+    results = hybrid_chain.<span class="fn">invoke</span>(query)
+    <span class="fn">print</span>(f<span class="st">"\nQuery: {query}"</span>)
+    <span class="kw">for</span> r <span class="kw">in</span> results[:<span class="nm">3</span>]:
+        <span class="fn">print</span>(f<span class="st">"  [{r['rrf_score']:.4f}] {r['text'][:80]}"</span>)</pre>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label green"><span class="icon">&#128203;</span> Expected Output</div>
+      <div class="test-grid">
+        <div class="test-case">
+          <span class="test-badge pending">check</span>
+          <div class="test-content">
+            <strong>LCEL chain</strong>
+            Each query returns a ranked list. Top result for "compose LangChain chains" should mention LCEL/pipe.
+          </div>
+        </div>
+        <div class="test-case">
+          <span class="test-badge pending">check</span>
+          <div class="test-content">
+            <strong>RRF scores</strong>
+            Items found by both rankers get scores around <code>0.032</code> (1/61 + 1/61). Exclusive items score around <code>0.016</code>.
+          </div>
+        </div>
+        <div class="test-case">
+          <span class="test-badge pending">check</span>
+          <div class="test-content">
+            <strong>LangSmith</strong>
+            Check your LangSmith dashboard — you should see 3 runs named <code>hybrid-retriever</code> in the <code>week2-capstone</code> project.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hint-wrap">
+      <button class="hint-toggle" onclick="toggleHint(this)">
+        Hints <span class="arrow">&#9660;</span>
+      </button>
+      <div class="hint-body">
+        <ul>
+          <li><strong>BM25 top-k:</strong> Use <code>np.argsort(scores)[::-1][:top_k]</code> to get indices of highest scores.</li>
+          <li><strong>RRF rank:</strong> Use 1-based ranks: <code>1 / (k + rank + 1)</code> where rank starts at 0.</li>
+          <li><strong>Parallel output:</strong> <code>RunnableParallel</code> produces a dict with keys matching constructor kwargs. Both lambdas receive the same input string.</li>
+          <li><strong>Tracing env:</strong> Set <code>LANGCHAIN_API_KEY</code> from your LangSmith account settings page.</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================================================ EXERCISE 3 -->
+<div class="exercise" id="ex3">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 3 of 6</div>
+      <h2>Multi-Provider Answer Chain with Cost Guard</h2>
+      <p>Build an LCEL answer-generation chain that tries cheap models first, tracks per-query cost with LiteLLM, and falls back to GPT-4o only when necessary.</p>
+    </div>
+    <div class="ex-status">
+      <div class="status-dot" id="dot3"></div>
+      <span style="font-size:0.8rem; color:var(--muted);">Not started</span>
+    </div>
+  </div>
+  <div class="exercise-body">
+
+    <div>
+      <div class="section-label purple"><span class="icon">&#127919;</span> Objective</div>
+      <p style="color:var(--muted); font-size:0.9rem;">Wire together the hybrid retriever from Exercise 2 with a multi-provider answer step. Use LiteLLM to route through a model cascade (<code>gpt-4o-mini</code> → <code>claude-haiku-4-5-20251001</code> → <code>gpt-4o</code>) with automatic fallback on failure. Track cumulative cost and refuse to spend more than $0.01 per session.</p>
+    </div>
+
+    <div>
+      <div class="section-label yellow"><span class="icon">&#9989;</span> Your Task</div>
+      <ul class="task-list">
+        <li><strong>Prompt template:</strong> Build a <code>ChatPromptTemplate</code> with system message "You are a precise AI assistant. Answer only from the provided context." and a human message containing <code>{context}</code> and <code>{question}</code>.</li>
+        <li><strong>Context formatter:</strong> A <code>RunnableLambda</code> that takes the hybrid search results and formats them as a numbered list of source + text.</li>
+        <li><strong>LiteLLM cascade:</strong> Try each model in <code>MODEL_CASCADE</code>. On <code>litellm.exceptions.RateLimitError</code> or <code>ServiceUnavailableError</code>, try next. Track cost using <code>litellm.completion_cost(completion_response=resp)</code>.</li>
+        <li><strong>Cost guard:</strong> Before each call, check if <code>session_cost + estimated_cost > BUDGET</code>. If so, raise <code>BudgetExceededError</code> with the current total.</li>
+        <li><strong>Full pipeline:</strong> Compose <code>hybrid_chain | format_context | prompt | llm_with_fallback | StrOutputParser()</code> as a single LCEL chain.</li>
+      </ul>
+    </div>
+
+    <div>
+      <div class="section-label teal"><span class="icon">&#128196;</span> Starter Code</div>
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="code-lang">Python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre class="code"><span class="cm"># pip install litellm langchain langchain-openai anthropic</span>
+<span class="kw">import</span> litellm
+<span class="kw">from</span> langchain_core.prompts <span class="kw">import</span> ChatPromptTemplate
+<span class="kw">from</span> langchain_core.output_parsers <span class="kw">import</span> StrOutputParser
+<span class="kw">from</span> langchain_core.runnables <span class="kw">import</span> RunnableLambda, RunnablePassthrough
+
+MODEL_CASCADE = [
+    <span class="st">"gpt-4o-mini"</span>,
+    <span class="st">"claude-haiku-4-5-20251001"</span>,
+    <span class="st">"gpt-4o"</span>,
+]
+BUDGET = <span class="nm">0.01</span>  <span class="cm"># USD per session</span>
+session_cost = <span class="nm">0.0</span>
+
+<span class="kw">class</span> <span class="fn">BudgetExceededError</span>(<span class="fn">Exception</span>): <span class="kw">pass</span>
+
+<span class="kw">def</span> <span class="fn">litellm_with_cascade</span>(messages: list[dict]) -> str:
+    <span class="kw">global</span> session_cost
+    <span class="kw">for</span> model <span class="kw">in</span> MODEL_CASCADE:
+        <span class="kw">try</span>:
+            resp = litellm.<span class="fn">completion</span>(model=model, messages=messages)
+            cost = litellm.<span class="fn">completion_cost</span>(completion_response=resp)
+            <span class="kw">if</span> session_cost + cost > BUDGET:
+                <span class="kw">raise</span> <span class="fn">BudgetExceededError</span>(f<span class="st">"Budget ${BUDGET:.4f} exceeded. Session total: ${session_cost:.6f}"</span>)
+            session_cost += cost
+            <span class="fn">print</span>(f<span class="st">"  [cost] Model={model}, query=${cost:.6f}, session=${session_cost:.6f}"</span>)
+            <span class="kw">return</span> resp.choices[<span class="nm">0</span>].message.content
+        <span class="kw">except</span> <span class="fn">BudgetExceededError</span>:
+            <span class="kw">raise</span>
+        <span class="kw">except</span> (litellm.exceptions.RateLimitError,
+                litellm.exceptions.ServiceUnavailableError) <span class="kw">as</span> e:
+            <span class="fn">print</span>(f<span class="st">"  [fallback] {model} failed: {e}. Trying next..."</span>)
+            <span class="kw">continue</span>
+    <span class="kw">raise</span> <span class="fn">RuntimeError</span>(<span class="st">"All models in cascade failed"</span>)
+
+prompt = ChatPromptTemplate.<span class="fn">from_messages</span>([
+    (<span class="st">"system"</span>, <span class="st">"You are a precise AI assistant. Answer only from the provided context. Be concise."</span>),
+    (<span class="st">"human"</span>, <span class="st">"Context:\n{context}\n\nQuestion: {question}"</span>),
+])
+
+<span class="kw">def</span> <span class="fn">format_context</span>(hybrid_results: list[dict]) -> str:
+    <span class="cm"># TODO: return numbered list like "1. [source] text\n2. ..."</span>
+    <span class="kw">pass</span>
+
+<span class="kw">def</span> <span class="fn">prompt_to_messages</span>(prompt_value) -> list[dict]:
+    <span class="cm"># ChatPromptTemplate produces a ChatPromptValue — convert to LiteLLM messages</span>
+    <span class="kw">return</span> [{<span class="st">"role"</span>: m.type, <span class="st">"content"</span>: m.content} <span class="kw">for</span> m <span class="kw">in</span> prompt_value.messages]
+
+<span class="cm"># TODO: Build the full pipeline
+# Hint: hybrid_chain takes a query string. You need to pass both {context} and {question}
+# to the prompt. Use RunnableParallel or RunnablePassthrough.assign() to do this.</span>
+
+pipeline = (
+    <span class="fn">RunnableParallel</span>(
+        context=hybrid_chain | <span class="fn">RunnableLambda</span>(format_context),
+        question=<span class="fn">RunnablePassthrough</span>(),
+    )
+    | prompt
+    | <span class="fn">RunnableLambda</span>(prompt_to_messages)
+    | <span class="fn">RunnableLambda</span>(litellm_with_cascade)
+)
+
+questions = [
+    <span class="st">"What is LCEL and how do I use it?"</span>,
+    <span class="st">"How does HyDE improve retrieval quality?"</span>,
+    <span class="st">"What are the trade-offs between FAISS and ChromaDB?"</span>,
+]
+
+<span class="kw">for</span> q <span class="kw">in</span> questions:
+    answer = pipeline.<span class="fn">invoke</span>(q)
+    <span class="fn">print</span>(f<span class="st">"\nQ: {q}\nA: {answer}\n{'-'*60}"</span>)
+
+<span class="fn">print</span>(f<span class="st">"\nTotal session cost: ${session_cost:.6f}"</span>)</pre>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label green"><span class="icon">&#128203;</span> Expected Output</div>
+      <div class="test-grid">
+        <div class="test-case">
+          <span class="test-badge pending">check</span>
+          <div class="test-content">
+            <strong>Cost log per query</strong>
+            Each query prints <code>[cost] Model=gpt-4o-mini, query=$0.000012, session=$0.000012</code> (approximate).
+          </div>
+        </div>
+        <div class="test-case">
+          <span class="test-badge pending">check</span>
+          <div class="test-content">
+            <strong>Grounded answers</strong>
+            Answers should reference retrieved context (e.g., "According to the context, LCEL uses the pipe operator...").
+          </div>
+        </div>
+        <div class="test-case">
+          <span class="test-badge pending">check</span>
+          <div class="test-content">
+            <strong>Budget guard</strong>
+            If you lower <code>BUDGET = 0.000001</code>, the second query should raise <code>BudgetExceededError</code>.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hint-wrap">
+      <button class="hint-toggle" onclick="toggleHint(this)">
+        Hints <span class="arrow">&#9660;</span>
+      </button>
+      <div class="hint-body">
+        <ul>
+          <li><strong>Message role mapping:</strong> LangChain uses <code>m.type</code> which returns "human"/"ai"/"system" — LiteLLM expects "user"/"assistant"/"system". Map "human" → "user" and "ai" → "assistant".</li>
+          <li><strong>RunnablePassthrough:</strong> When used inside <code>RunnableParallel</code>, it passes the input (the query string) through unchanged as the <code>question</code> key.</li>
+          <li><strong>Session cost global:</strong> Use <code>global session_cost</code> inside the function, or better, encapsulate in a class with <code>self.session_cost</code>.</li>
+          <li><strong>litellm import:</strong> Exceptions live at <code>litellm.exceptions.RateLimitError</code> — but you may also need to import from <code>openai</code> for some providers.</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================================================ EXERCISE 4 -->
+<div class="exercise" id="ex4">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 4 of 6</div>
+      <h2>Re-ranking Layer with Cross-Encoder</h2>
+      <p>Add a cross-encoder re-ranking step between retrieval and answer generation to improve precision on ambiguous queries.</p>
+    </div>
+    <div class="ex-status">
+      <div class="status-dot" id="dot4"></div>
+      <span style="font-size:0.8rem; color:var(--muted);">Not started</span>
+    </div>
+  </div>
+  <div class="exercise-body">
+
+    <div>
+      <div class="section-label purple"><span class="icon">&#127919;</span> Objective</div>
+      <p style="color:var(--muted); font-size:0.9rem;">Implement a <code>CrossEncoderReranker</code> class that re-scores retrieval candidates using a cross-encoder model and integrates as a drop-in LCEL <code>Runnable</code>. Measure the Recall@3 improvement over vanilla vector search on a small eval set.</p>
+    </div>
+
+    <div>
+      <div class="section-label yellow"><span class="icon">&#9989;</span> Your Task</div>
+      <ul class="task-list">
+        <li><strong>CrossEncoderReranker class:</strong> Load <code>cross-encoder/ms-marco-MiniLM-L-6-v2</code> from sentence-transformers. Accept <code>(query, candidates)</code> and return candidates sorted by cross-encoder score.</li>
+        <li><strong>LCEL integration:</strong> Make it a <code>Runnable</code> by implementing <code>invoke(self, input: dict)</code> where input is <code>{"query": str, "candidates": list}</code>.</li>
+        <li><strong>Batch scoring:</strong> Use <code>model.predict([(query, doc["text"]) for doc in candidates])</code> for a single forward pass, not one-at-a-time scoring.</li>
+        <li><strong>Eval harness:</strong> For each of 3 queries in <code>EVAL_SET</code>, retrieve top-15 with hybrid search, re-rank to top-3, and check if the expected document text is present. Record Recall@3 before and after re-ranking.</li>
+        <li><strong>Pipeline integration:</strong> Update the full pipeline from Exercise 3 to include reranking before answer generation.</li>
+      </ul>
+    </div>
+
+    <div>
+      <div class="section-label teal"><span class="icon">&#128196;</span> Starter Code</div>
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="code-lang">Python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre class="code"><span class="cm"># pip install sentence-transformers</span>
+<span class="kw">from</span> sentence_transformers <span class="kw">import</span> CrossEncoder
+<span class="kw">from</span> langchain_core.runnables <span class="kw">import</span> Runnable
+
+<span class="kw">class</span> <span class="fn">CrossEncoderReranker</span>(<span class="fn">Runnable</span>):
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, model_name: str = <span class="st">"cross-encoder/ms-marco-MiniLM-L-6-v2"</span>, top_k: int = <span class="nm">5</span>):
+        self.model = <span class="fn">CrossEncoder</span>(model_name)
+        self.top_k = top_k
+
+    <span class="kw">def</span> <span class="fn">invoke</span>(self, input_: dict, config=<span class="nm">None</span>) -> list[dict]:
+        query = input_[<span class="st">"query"</span>]
+        candidates = input_[<span class="st">"candidates"</span>]
+
+        <span class="kw">if not</span> candidates:
+            <span class="kw">return</span> []
+
+        <span class="cm"># TODO: create (query, text) pairs, predict scores in batch</span>
+        pairs = [(query, c[<span class="st">"text"</span>]) <span class="kw">for</span> c <span class="kw">in</span> candidates]
+        scores = self.model.<span class="fn">predict</span>(pairs)
+
+        <span class="cm"># TODO: zip scores with candidates, sort descending, slice top_k</span>
+        <span class="kw">pass</span>
+
+
+<span class="cm"># Eval set: (query, expected_keyword_in_answer)</span>
+EVAL_SET = [
+    (<span class="st">"What operator does LCEL use to compose runnables?"</span>, <span class="st">"pipe"</span>),
+    (<span class="st">"How does HyDE work?"</span>, <span class="st">"hypothetical"</span>),
+    (<span class="st">"What does CrewAI's @tool decorator do?"</span>, <span class="st">"tool"</span>),
+]
+
+reranker = <span class="fn">CrossEncoderReranker</span>(top_k=<span class="nm">3</span>)
+
+<span class="kw">def</span> <span class="fn">eval_recall</span>(use_reranker: bool) -> float:
+    hits = <span class="nm">0</span>
+    <span class="kw">for</span> query, keyword <span class="kw">in</span> EVAL_SET:
+        <span class="cm"># Retrieve top-15 candidates</span>
+        candidates = hybrid_chain.<span class="fn">invoke</span>(query)[:<span class="nm">15</span>]
+
+        <span class="kw">if</span> use_reranker:
+            top3 = reranker.<span class="fn">invoke</span>({<span class="st">"query"</span>: query, <span class="st">"candidates"</span>: candidates})
+        <span class="kw">else</span>:
+            top3 = candidates[:<span class="nm">3</span>]
+
+        <span class="cm"># Check if any top-3 result contains the keyword</span>
+        found = <span class="fn">any</span>(keyword <span class="kw">in</span> r[<span class="st">"text"</span>].<span class="fn">lower</span>() <span class="kw">for</span> r <span class="kw">in</span> top3)
+        hits += <span class="nm">1</span> <span class="kw">if</span> found <span class="kw">else</span> <span class="nm">0</span>
+        <span class="fn">print</span>(f<span class="st">"  {'HIT' if found else 'MISS'} [{query[:50]}...]"</span>)
+
+    <span class="kw">return</span> hits / <span class="fn">len</span>(EVAL_SET)
+
+<span class="fn">print</span>(<span class="st">"Without reranking:"</span>)
+recall_base = <span class="fn">eval_recall</span>(use_reranker=<span class="nm">False</span>)
+<span class="fn">print</span>(f<span class="st">"Recall@3 (baseline): {recall_base:.2%}\n"</span>)
+
+<span class="fn">print</span>(<span class="st">"With cross-encoder reranking:"</span>)
+recall_rerank = <span class="fn">eval_recall</span>(use_reranker=<span class="nm">True</span>)
+<span class="fn">print</span>(f<span class="st">"Recall@3 (reranked): {recall_rerank:.2%}"</span>)</pre>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label green"><span class="icon">&#128203;</span> Expected Output</div>
+      <div class="test-grid">
+        <div class="test-case">
+          <span class="test-badge pending">check</span>
+          <div class="test-content">
+            <strong>Re-ranking improves or maintains recall</strong>
+            On this small corpus, both may hit 100%. On a larger corpus, re-ranking typically lifts recall by 5–15%.
+          </div>
+        </div>
+        <div class="test-case">
+          <span class="test-badge pending">check</span>
+          <div class="test-content">
+            <strong>Batch prediction</strong>
+            One <code>model.predict()</code> call per query, not one per candidate. Verify by adding a counter.
+          </div>
+        </div>
+        <div class="test-case">
+          <span class="test-badge pending">check</span>
+          <div class="test-content">
+            <strong>Score ordering</strong>
+            Cross-encoder scores can range from -10 to +10. Higher = more relevant. Your sort should be descending.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hint-wrap">
+      <button class="hint-toggle" onclick="toggleHint(this)">
+        Hints <span class="arrow">&#9660;</span>
+      </button>
+      <div class="hint-body">
+        <ul>
+          <li><strong>Zip and sort:</strong> <code>sorted(zip(scores, candidates), key=lambda x: x[0], reverse=True)</code> — then extract candidate dicts and add <code>ce_score</code> field.</li>
+          <li><strong>Runnable subclass:</strong> LangChain's <code>Runnable</code> ABC only requires <code>invoke</code>. You can then use this class directly in a chain with <code>|</code>.</li>
+          <li><strong>First download:</strong> The cross-encoder model (~80MB) will download on first run. Add a progress message before instantiation.</li>
+          <li><strong>Config parameter:</strong> LangChain passes a <code>config</code> argument to <code>invoke</code>. Accept it as a keyword arg with a default of <code>None</code>.</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================================================ EXERCISE 5 -->
+<div class="exercise" id="ex5">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 5 of 6</div>
+      <h2>CrewAI Research-and-Synthesize Agent</h2>
+      <p>Add an agentic layer: a two-agent crew where the Researcher queries your knowledge base via a custom <code>@tool</code> and the Synthesizer writes a structured report.</p>
+    </div>
+    <div class="ex-status">
+      <div class="status-dot" id="dot5"></div>
+      <span style="font-size:0.8rem; color:var(--muted);">Not started</span>
+    </div>
+  </div>
+  <div class="exercise-body">
+
+    <div>
+      <div class="section-label purple"><span class="icon">&#127919;</span> Objective</div>
+      <p style="color:var(--muted); font-size:0.9rem;">Build a CrewAI crew where the Researcher agent has access to your <code>KnowledgeBase</code> as a <code>@tool</code> and uses it to gather facts, then passes results to the Synthesizer agent which produces a structured Markdown report. The crew receives a broad research topic (not a single question) as input.</p>
+    </div>
+
+    <div>
+      <div class="section-label yellow"><span class="icon">&#9989;</span> Your Task</div>
+      <ul class="task-list">
+        <li><strong>KB search tool:</strong> Define <code>@tool search_knowledge_base(query: str) -> str</code> that calls <code>kb.search(query, top_k=5)</code> and formats results as a numbered list the agent can read.</li>
+        <li><strong>Researcher agent:</strong> Goal: "Research the given topic using the knowledge base. Return all relevant facts with their sources." Tools: <code>[search_knowledge_base]</code>. <code>allow_delegation=False</code>.</li>
+        <li><strong>Synthesizer agent:</strong> Goal: "Synthesize research findings into a clear Markdown report with sections: Overview, Key Concepts, Technical Details, and Limitations." No tools.</li>
+        <li><strong>Task dependencies:</strong> The synthesize task's <code>context=[research_task]</code> so it receives the researcher's output.</li>
+        <li><strong>Run the crew</strong> on topic: <code>"LangChain LCEL and advanced RAG patterns"</code> and print the final report.</li>
+      </ul>
+    </div>
+
+    <div>
+      <div class="section-label teal"><span class="icon">&#128196;</span> Starter Code</div>
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="code-lang">Python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre class="code"><span class="cm"># pip install crewai crewai-tools</span>
+<span class="kw">from</span> crewai <span class="kw">import</span> Agent, Task, Crew, Process
+<span class="kw">from</span> crewai.tools <span class="kw">import</span> tool
+<span class="kw">from</span> langchain_openai <span class="kw">import</span> ChatOpenAI
+<span class="cm"># Assume kb = KnowledgeBase() from exercise 1</span>
+
+llm = <span class="fn">ChatOpenAI</span>(model=<span class="st">"gpt-4o-mini"</span>, temperature=<span class="nm">0.3</span>)
+
+<span class="op">@tool</span>
+<span class="kw">def</span> <span class="fn">search_knowledge_base</span>(query: str) -> str:
+    <span class="st">"""Search the AI knowledge base for information on a topic. Returns relevant text passages."""</span>
+    results = kb.<span class="fn">search</span>(query, top_k=<span class="nm">5</span>)
+    <span class="kw">if not</span> results:
+        <span class="kw">return</span> <span class="st">"No relevant information found."</span>
+    <span class="cm"># TODO: format as numbered list: "1. [source: langchain_docs] text\n2. ..."</span>
+    <span class="kw">pass</span>
+
+researcher = <span class="fn">Agent</span>(
+    role=<span class="st">"AI Research Specialist"</span>,
+    goal=<span class="st">"Research the given topic thoroughly using the knowledge base. Return all relevant facts with their sources."</span>,
+    backstory=<span class="st">"You are an expert at finding and synthesizing technical information from knowledge bases."</span>,
+    tools=[search_knowledge_base],
+    llm=llm,
+    verbose=<span class="nm">True</span>,
+    allow_delegation=<span class="nm">False</span>,
+    max_iter=<span class="nm">5</span>,
+)
+
+synthesizer = <span class="fn">Agent</span>(
+    role=<span class="st">"Technical Writer"</span>,
+    goal=<span class="st">"Synthesize research findings into a clear, structured Markdown report."</span>,
+    backstory=<span class="st">"You excel at organizing technical information into readable, well-structured documents."</span>,
+    tools=[],
+    llm=llm,
+    verbose=<span class="nm">True</span>,
+    allow_delegation=<span class="nm">False</span>,
+)
+
+research_task = <span class="fn">Task</span>(
+    description=<span class="st">"""Research the topic: '{topic}'.
+    Use the search_knowledge_base tool with multiple specific queries to gather comprehensive information.
+    Return a detailed summary of all findings with source references."""</span>,
+    expected_output=<span class="st">"A comprehensive list of facts about the topic with source references."</span>,
+    agent=researcher,
+)
+
+<span class="cm"># TODO: Define synthesize_task with context=[research_task]
+# expected_output: "A Markdown report with sections: Overview, Key Concepts, Technical Details, Limitations"</span>
+synthesize_task = <span class="fn">Task</span>(
+    description=<span class="st">"""Using the research findings provided, write a structured Markdown report about '{topic}'.
+    Include sections: ## Overview, ## Key Concepts, ## Technical Details, ## Limitations."""</span>,
+    expected_output=<span class="st">"A structured Markdown report with four sections."</span>,
+    agent=synthesizer,
+    context=[research_task],  <span class="cm"># receives researcher output</span>
+)
+
+crew = <span class="fn">Crew</span>(
+    agents=[researcher, synthesizer],
+    tasks=[research_task, synthesize_task],
+    process=Process.sequential,
+    verbose=<span class="nm">True</span>,
+)
+
+result = crew.<span class="fn">kickoff</span>(inputs={<span class="st">"topic"</span>: <span class="st">"LangChain LCEL and advanced RAG patterns"</span>})
+<span class="fn">print</span>(<span class="st">"\n"</span> + <span class="st">"="</span>*<span class="nm">60</span>)
+<span class="fn">print</span>(<span class="st">"FINAL REPORT:"</span>)
+<span class="fn">print</span>(<span class="st">"="</span>*<span class="nm">60</span>)
+<span class="fn">print</span>(result.raw)</pre>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label green"><span class="icon">&#128203;</span> Expected Output</div>
+      <div class="test-grid">
+        <div class="test-case">
+          <span class="test-badge pending">check</span>
+          <div class="test-content">
+            <strong>Tool calls visible</strong>
+            With <code>verbose=True</code>, you see the researcher calling <code>search_knowledge_base</code> 2–3 times with different query variations.
+          </div>
+        </div>
+        <div class="test-case">
+          <span class="test-badge pending">check</span>
+          <div class="test-content">
+            <strong>Structured report</strong>
+            Final output contains all four Markdown headers: <code>## Overview</code>, <code>## Key Concepts</code>, <code>## Technical Details</code>, <code>## Limitations</code>.
+          </div>
+        </div>
+        <div class="test-case">
+          <span class="test-badge pending">check</span>
+          <div class="test-content">
+            <strong>Source grounding</strong>
+            The report should cite <code>langchain_docs</code> and <code>rag_docs</code> sources from your knowledge base.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hint-wrap">
+      <button class="hint-toggle" onclick="toggleHint(this)">
+        Hints <span class="arrow">&#9660;</span>
+      </button>
+      <div class="hint-body">
+        <ul>
+          <li><strong>Tool docstring:</strong> CrewAI uses the docstring as the tool description for the agent. Make it descriptive — it affects how often the agent uses the tool.</li>
+          <li><strong>max_iter:</strong> Set to 5 so the researcher doesn't loop indefinitely if no new information is found.</li>
+          <li><strong>Topic interpolation:</strong> The <code>{topic}</code> in task descriptions is filled by <code>crew.kickoff(inputs={"topic": "..."})</code>.</li>
+          <li><strong>Context passing:</strong> <code>context=[research_task]</code> automatically appends the research task's output to the synthesizer's prompt. No manual string concatenation needed.</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================================================ EXERCISE 6 -->
+<div class="exercise" id="ex6">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 6 of 6 — Final Capstone</div>
+      <h2>Putting It All Together: The Complete Knowledge Assistant</h2>
+      <p>Combine every component into a single interactive assistant: hybrid retrieval + re-ranking + HyDE + multi-provider LLM + cost tracking + agent fallback.</p>
+    </div>
+    <div class="ex-status">
+      <div class="status-dot" id="dot6"></div>
+      <span style="font-size:0.8rem; color:var(--muted);">Not started</span>
+    </div>
+  </div>
+  <div class="exercise-body">
+
+    <div>
+      <div class="section-label purple"><span class="icon">&#127919;</span> Objective</div>
+      <p style="color:var(--muted); font-size:0.9rem;">Build the final <code>KnowledgeAssistant</code> class that orchestrates the complete pipeline: query classification routes simple factual questions to the fast RAG pipeline and complex multi-step questions to the CrewAI agent. The assistant tracks session cost, caches embeddings, and outputs structured responses with provenance.</p>
+    </div>
+
+    <div>
+      <div class="section-label yellow"><span class="icon">&#9989;</span> Your Task</div>
+      <ul class="task-list">
+        <li><strong>Query classifier:</strong> Use an LCEL chain (<code>ChatPromptTemplate | llm | StrOutputParser</code>) to classify each query as either <code>"factual"</code> (single-hop lookup) or <code>"research"</code> (multi-step synthesis required).</li>
+        <li><strong>Factual path:</strong> HyDE → hybrid search (top 15) → cross-encoder re-rank (top 5) → LiteLLM answer with cost tracking.</li>
+        <li><strong>Research path:</strong> Route to the CrewAI crew from Exercise 5.</li>
+        <li><strong>Structured output:</strong> Return a dict with keys: <code>answer</code>, <code>query_type</code>, <code>sources</code>, <code>cost_usd</code>, <code>latency_ms</code>.</li>
+        <li><strong>Session summary:</strong> Implement <code>assistant.summary()</code> that prints total queries, total cost, cache hit rate, and average latency.</li>
+        <li><strong>Interactive loop:</strong> Run a REPL that reads questions from stdin, prints the structured response, and exits on <code>quit</code>.</li>
+      </ul>
+    </div>
+
+    <div>
+      <div class="section-label teal"><span class="icon">&#128196;</span> Starter Code</div>
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="code-lang">Python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre class="code"><span class="cm"># Full imports from previous exercises</span>
+<span class="kw">import</span> time, json
+<span class="kw">from</span> langchain_openai <span class="kw">import</span> ChatOpenAI
+<span class="kw">from</span> langchain_core.prompts <span class="kw">import</span> ChatPromptTemplate
+<span class="kw">from</span> langchain_core.output_parsers <span class="kw">import</span> StrOutputParser
+
+classify_prompt = ChatPromptTemplate.<span class="fn">from_messages</span>([
+    (<span class="st">"system"</span>, <span class="st">"Classify the user question as either 'factual' or 'research'.\n"</span>
+              <span class="st">"- 'factual': a direct question answerable from a single source (what, how, define)\n"</span>
+              <span class="st">"- 'research': requires synthesizing multiple sources, comparing, or deep analysis\n"</span>
+              <span class="st">"Respond with ONLY the word 'factual' or 'research', lowercase, no punctuation."</span>),
+    (<span class="st">"human"</span>, <span class="st">"{question}"</span>),
+])
+
+classify_llm = <span class="fn">ChatOpenAI</span>(model=<span class="st">"gpt-4o-mini"</span>, temperature=<span class="nm">0</span>)
+classifier_chain = classify_prompt | classify_llm | <span class="fn">StrOutputParser</span>()
+
+<span class="kw">def</span> <span class="fn">hyde_query</span>(query: str) -> str:
+    <span class="st">"""Generate a hypothetical document for HyDE retrieval."""</span>
+    hyde_prompt = <span class="fn">ChatPromptTemplate</span>.<span class="fn">from_template</span>(
+        <span class="st">"Write a 2-sentence answer to: {query}\nBe factual and technical."</span>
+    )
+    chain = hyde_prompt | classify_llm | <span class="fn">StrOutputParser</span>()
+    <span class="kw">return</span> chain.<span class="fn">invoke</span>({<span class="st">"query"</span>: query})
+
+<span class="kw">class</span> <span class="fn">KnowledgeAssistant</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(self):
+        self.kb = <span class="fn">KnowledgeBase</span>()
+        self.reranker = <span class="fn">CrossEncoderReranker</span>(top_k=<span class="nm">5</span>)
+        self.total_cost = <span class="nm">0.0</span>
+        self.query_count = <span class="nm">0</span>
+        self.latencies = []
+        self.cache_hits_start = <span class="nm">0</span>
+
+    <span class="kw">def</span> <span class="fn">ask</span>(self, question: str) -> dict:
+        start = time.<span class="fn">time</span>()
+        self.query_count += <span class="nm">1</span>
+        cost_before = session_cost  <span class="cm"># from litellm tracker in ex3</span>
+
+        <span class="cm"># Step 1: classify</span>
+        query_type = classifier_chain.<span class="fn">invoke</span>({<span class="st">"question"</span>: question}).<span class="fn">strip</span>().<span class="fn">lower</span>()
+        <span class="kw">if</span> query_type <span class="kw">not in</span> (<span class="st">"factual"</span>, <span class="st">"research"</span>):
+            query_type = <span class="st">"factual"</span>  <span class="cm"># default to factual on bad output</span>
+
+        <span class="kw">if</span> query_type == <span class="st">"factual"</span>:
+            <span class="cm"># Step 2a: HyDE expansion</span>
+            hypothesis = <span class="fn">hyde_query</span>(question)
+            <span class="cm"># TODO: use hypothesis (not raw question) for hybrid retrieval</span>
+            candidates = hybrid_chain.<span class="fn">invoke</span>(hypothesis)[:<span class="nm">15</span>]
+
+            <span class="cm"># Step 2b: Cross-encoder re-rank</span>
+            reranked = self.reranker.<span class="fn">invoke</span>({<span class="st">"query"</span>: question, <span class="st">"candidates"</span>: candidates})
+
+            <span class="cm"># Step 2c: Format context and get answer</span>
+            context = <span class="fn">format_context</span>(reranked)
+            messages = [
+                {<span class="st">"role"</span>: <span class="st">"system"</span>, <span class="st">"content"</span>: <span class="st">"Answer concisely from the context provided."</span>},
+                {<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: f<span class="st">"Context:\n{context}\n\nQuestion: {question}"</span>},
+            ]
+            answer = <span class="fn">litellm_with_cascade</span>(messages)
+            sources = [r.<span class="fn">get</span>(<span class="st">"metadata"</span>, {}).<span class="fn">get</span>(<span class="st">"source"</span>, <span class="st">"unknown"</span>) <span class="kw">for</span> r <span class="kw">in</span> reranked[:<span class="nm">3</span>]]
+
+        <span class="kw">else</span>:  <span class="cm"># research</span>
+            <span class="cm"># TODO: run crew.kickoff(inputs={"topic": question})</span>
+            <span class="cm"># answer = result.raw; sources = ["crewai-agent"]</span>
+            <span class="kw">pass</span>
+
+        elapsed = (<span class="fn">time</span>.<span class="fn">time</span>() - start) * <span class="nm">1000</span>
+        self.latencies.<span class="fn">append</span>(elapsed)
+        query_cost = session_cost - cost_before
+        self.total_cost += query_cost
+
+        <span class="kw">return</span> {
+            <span class="st">"answer"</span>: answer,
+            <span class="st">"query_type"</span>: query_type,
+            <span class="st">"sources"</span>: sources,
+            <span class="st">"cost_usd"</span>: <span class="fn">round</span>(query_cost, <span class="nm">8</span>),
+            <span class="st">"latency_ms"</span>: <span class="fn">round</span>(elapsed, <span class="nm">1</span>),
+        }
+
+    <span class="kw">def</span> <span class="fn">summary</span>(self):
+        avg_lat = <span class="fn">sum</span>(self.latencies) / <span class="fn">len</span>(self.latencies) <span class="kw">if</span> self.latencies <span class="kw">else</span> <span class="nm">0</span>
+        cache_hits = self.kb.embedder.hits
+        cache_total = self.kb.embedder.hits + self.kb.embedder.misses
+        hit_rate = cache_hits / cache_total <span class="kw">if</span> cache_total <span class="kw">else</span> <span class="nm">0</span>
+
+        <span class="fn">print</span>(<span class="st">f"""
+=== Session Summary ===
+Queries:        {self.query_count}
+Total cost:     ${self.total_cost:.6f}
+Avg latency:    {avg_lat:.0f}ms
+Cache hit rate: {hit_rate:.1%} ({cache_hits}/{cache_total})
+"""</span>)
+
+
+<span class="cm"># Interactive REPL</span>
+<span class="kw">if</span> __name__ == <span class="st">"__main__"</span>:
+    assistant = <span class="fn">KnowledgeAssistant</span>()
+    <span class="fn">print</span>(<span class="st">"Knowledge Assistant ready. Type 'quit' to exit.\n"</span>)
+
+    <span class="kw">while True</span>:
+        question = <span class="fn">input</span>(<span class="st">"You: "</span>).<span class="fn">strip</span>()
+        <span class="kw">if</span> question.<span class="fn">lower</span>() <span class="kw">in</span> (<span class="st">"quit"</span>, <span class="st">"exit"</span>, <span class="st">"q"</span>):
+            <span class="kw">break</span>
+        <span class="kw">if not</span> question:
+            <span class="kw">continue</span>
+        response = assistant.<span class="fn">ask</span>(question)
+        <span class="fn">print</span>(f<span class="st">"\n[{response['query_type'].upper()} | {response['latency_ms']}ms | ${response['cost_usd']:.6f}]"</span>)
+        <span class="fn">print</span>(f<span class="st">"Sources: {', '.join(response['sources'])}"</span>)
+        <span class="fn">print</span>(f<span class="st">"Answer: {response['answer']}\n"</span>)
+
+    assistant.<span class="fn">summary</span>()</pre>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label teal"><span class="icon">&#127775;</span> Architecture Overview</div>
+      <div class="arch-diagram">
+        <span class="label">User Query</span>
+              <span class="arrow">↓</span>
+        <span class="highlight">Query Classifier</span> (gpt-4o-mini, temp=0)
+              <span class="arrow">↓</span>
+        ┌────────────────────┬───────────────────────────┐
+        │   <span class="label">"factual"</span>          │       <span class="label">"research"</span>            │
+        │                    │                           │
+        │  <span class="highlight">HyDE Expansion</span>     │  <span class="highlight">CrewAI Crew</span>              │
+        │       <span class="arrow">↓</span>           │  ┌───────────────────┐   │
+        │  <span class="highlight">Hybrid Retrieval</span>   │  │ Researcher Agent  │   │
+        │  (BM25 + Vector)   │  │  @tool kb search  │   │
+        │       <span class="arrow">↓</span>           │  └────────┬──────────┘   │
+        │  <span class="highlight">Cross-Encoder</span>     │           <span class="arrow">↓</span>             │
+        │    <span class="highlight">Re-ranking</span>     │  ┌────────────────────┐  │
+        │       <span class="arrow">↓</span>           │  │ Synthesizer Agent  │  │
+        │  <span class="highlight">LiteLLM Cascade</span>   │  └────────────────────┘  │
+        │  + Cost Guard      │                           │
+        └────────────────────┴───────────────────────────┘
+                      <span class="arrow">↓</span>
+        <span class="label">Structured Response</span> {answer, query_type, sources, cost_usd, latency_ms}
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label green"><span class="icon">&#128203;</span> Expected Output</div>
+      <div class="test-grid">
+        <div class="test-case">
+          <span class="test-badge cap">capstone</span>
+          <div class="test-content">
+            <strong>Factual query routing</strong>
+            "What is HyDE?" → classified as <code>factual</code>, answered in &lt;3s with source references.
+          </div>
+        </div>
+        <div class="test-case">
+          <span class="test-badge cap">capstone</span>
+          <div class="test-content">
+            <strong>Research query routing</strong>
+            "Compare FAISS and ChromaDB and recommend which to use for a production API." → classified as <code>research</code>, routes to CrewAI crew.
+          </div>
+        </div>
+        <div class="test-case">
+          <span class="test-badge cap">capstone</span>
+          <div class="test-content">
+            <strong>Session summary</strong>
+            After 3+ queries, <code>assistant.summary()</code> shows total cost &lt; $0.01, cache hit rate &gt; 50% (queries re-use cached embeddings).
+          </div>
+        </div>
+        <div class="test-case">
+          <span class="test-badge cap">capstone</span>
+          <div class="test-content">
+            <strong>LangSmith traces</strong>
+            All factual queries appear as <code>hybrid-retriever</code> runs in the <code>week2-capstone</code> project in your LangSmith dashboard.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hint-wrap">
+      <button class="hint-toggle" onclick="toggleHint(this)">
+        Final Hints &amp; Extension Ideas <span class="arrow">&#9660;</span>
+      </button>
+      <div class="hint-body">
+        <ul>
+          <li><strong>HyDE caveat:</strong> On a tiny corpus, HyDE may not always help — it shines with 10k+ documents where query-document vocabulary mismatch is common.</li>
+          <li><strong>Session cost tracking:</strong> The <code>session_cost</code> global from Exercise 3 needs to be accessible here. Consider encapsulating it in a <code>CostTracker</code> singleton or passing it as state.</li>
+          <li><strong>Extension 1 — Streaming:</strong> Replace <code>litellm.completion</code> with <code>litellm.completion(stream=True)</code> and yield tokens in the REPL loop for faster perceived response.</li>
+          <li><strong>Extension 2 — Memory:</strong> Add <code>RunnableWithMessageHistory</code> to the factual path so follow-up questions can reference previous answers.</li>
+          <li><strong>Extension 3 — Evaluation:</strong> Integrate RAGAS (<code>from ragas.metrics import faithfulness, answer_relevancy</code>) to score each factual answer automatically.</li>
+          <li><strong>Extension 4 — Web ingest:</strong> Add a <code>kb.ingest_url(url)</code> method that fetches a webpage, chunks by paragraph, and adds to the knowledge base.</li>
+          <li><strong>Extension 5 — CLI flags:</strong> Add <code>argparse</code> with <code>--budget</code>, <code>--top-k</code>, <code>--no-rerank</code> flags to make the assistant configurable without code changes.</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</main>
+
+<footer>
+  <p>Week 2 Complete &mdash; <a href="../days/day14.html">Return to Day 14 lesson</a> &mdash; <a href="../index.html">Back to curriculum</a></p>
+  <p style="margin-top:8px;">Next up: <a href="../days/day15.html">Week 3 &rarr; Production Systems &amp; Deployment</a></p>
+</footer>
+
+<script>
+// Progress tracking
+const dots = document.querySelectorAll('.status-dot');
+const fill = document.getElementById('progress-fill');
+const progressText = document.getElementById('progress-text');
+
+function updateProgress() {
+  const done = Array.from(dots).filter(d => d.classList.contains('done')).length;
+  const pct = (done / dots.length) * 100;
+  fill.style.width = pct + '%';
+  progressText.textContent = done + ' / ' + dots.length + ' complete';
+}
+
+dots.forEach((dot, i) => {
+  dot.style.cursor = 'pointer';
+  dot.addEventListener('click', () => {
+    dot.classList.toggle('done');
+    const statusSpan = dot.nextElementSibling;
+    statusSpan.textContent = dot.classList.contains('done') ? 'Complete' : 'Not started';
+    statusSpan.style.color = dot.classList.contains('done') ? 'var(--green)' : 'var(--muted)';
+    updateProgress();
+  });
+});
+
+// Hint toggles
+function toggleHint(btn) {
+  btn.classList.toggle('open');
+  btn.nextElementSibling.classList.toggle('open');
+}
+
+// Copy code buttons
+function copyCode(btn) {
+  const pre = btn.closest('.code-block').querySelector('pre');
+  navigator.clipboard.writeText(pre.innerText).then(() => {
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 1500);
+  });
+}
+
+updateProgress();
+</script>
+<script src="../bg-animation.js"></script>
+</body>
+</html>

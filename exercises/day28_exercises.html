@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 28 Exercises — RL & Self-Improving Agents</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f; --card: #141420; --surface2: #1a1a2e; --border: #2a2a45;
+  --purple: #7c3aed; --purple-light: #a855f7; --teal: #0d9488; --green: #10b981;
+  --yellow: #f59e0b; --red: #ef4444; --text: #e2e8f0; --muted: #64748b;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+code, pre { font-family: 'JetBrains Mono', monospace; }
+.sticky-nav { position: sticky; top: 0; z-index: 100; background: rgba(10,10,15,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); padding: 12px 32px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.sticky-nav a { color: var(--muted); text-decoration: none; font-size: 0.85rem; padding: 6px 12px; border-radius: 6px; transition: all 0.2s; border: 1px solid transparent; }
+.sticky-nav a:hover { color: var(--text); background: var(--card); border-color: var(--border); }
+.sticky-nav .brand { color: var(--purple-light); font-weight: 600; font-size: 0.9rem; }
+.nav-sep { color: var(--border); } .nav-title { color: var(--text); font-weight: 700; font-size: 0.95rem; flex: 1; }
+.hero { padding: 56px 32px 32px; max-width: 1100px; margin: 0 auto; border-bottom: 1px solid var(--border); }
+.hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: 8px; }
+.hero h1 span { color: var(--purple-light); }
+.hero p { color: var(--muted); font-size: 1rem; max-width: 700px; }
+.hero-meta { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
+.badge-purple { background: rgba(124,58,237,0.15); color: var(--purple-light); border: 1px solid rgba(124,58,237,0.3); }
+.badge-teal { background: rgba(13,148,136,0.15); color: #2dd4bf; border: 1px solid rgba(13,148,136,0.3); }
+.badge-green { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.progress-bar-wrap { max-width: 1100px; margin: 24px auto; padding: 0 32px; }
+.progress-label { font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
+.progress-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--purple), var(--teal)); border-radius: 3px; transition: width 0.5s ease; }
+.main { max-width: 1100px; margin: 0 auto; padding: 32px; display: flex; flex-direction: column; gap: 64px; }
+.exercise { border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: var(--card); }
+.exercise-header { padding: 24px 32px; background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(13,148,136,0.05)); border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.exercise-num { font-size: 0.75rem; color: var(--purple-light); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.exercise-header h2 { font-size: 1.4rem; font-weight: 700; margin: 4px 0 8px; }
+.exercise-header p { color: var(--muted); font-size: 0.9rem; }
+.ex-status { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); transition: background 0.3s; }
+.status-dot.done { background: var(--green); }
+.tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--surface2); }
+.tab-btn { padding: 12px 20px; font-size: 0.82rem; font-weight: 600; color: var(--muted); cursor: pointer; border: none; background: none; border-bottom: 2px solid transparent; transition: all 0.2s; font-family: 'Inter', sans-serif; }
+.tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+.tab-btn.active { color: var(--purple-light); border-bottom-color: var(--purple-light); background: rgba(124,58,237,0.05); }
+.tab-panel { display: none; padding: 28px 32px; }
+.tab-panel.active { display: block; }
+.code-wrap { background: #0d0d18; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin: 12px 0; }
+.code-header { padding: 8px 16px; background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; color: var(--muted); }
+.code-dots { display: flex; gap: 6px; }
+.code-dots span { width: 10px; height: 10px; border-radius: 50%; }
+.code-dots .dot-r { background: var(--red); } .code-dots .dot-y { background: var(--yellow); } .code-dots .dot-g { background: var(--green); }
+.code-body { display: flex; }
+.code-content { padding: 16px; overflow-x: auto; flex: 1; white-space: pre; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; line-height: 1.7; }
+.kw { color: #c792ea; } .fn { color: #82aaff; } .st { color: #c3e88d; } .cm { color: #546e7a; font-style: italic; } .nm { color: #f78c6c; } .tp { color: #ffcb6b; } .dt { color: #89ddff; } .va { color: #eeffff; }
+.task-requirements { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); border-radius: 10px; padding: 16px 20px; margin-bottom: 16px; }
+.task-requirements li { color: var(--text); font-size: 0.88rem; margin: 6px 0 6px 16px; }
+.task-requirements li::marker { color: var(--yellow); }
+.tests-grid { display: flex; flex-direction: column; gap: 8px; }
+.test-case { display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+.test-badge { flex-shrink: 0; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; font-family: 'Inter', sans-serif; }
+.test-badge.pass { background: rgba(16,185,129,0.2); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.test-badge.pending { background: rgba(100,116,139,0.2); color: var(--muted); border: 1px solid rgba(100,116,139,0.3); }
+.test-content { flex: 1; } .test-input { color: var(--text); } .test-expected { color: var(--muted); margin-top: 2px; }
+.hints-list { display: flex; flex-direction: column; gap: 8px; }
+.hint-toggle { width: 100%; text-align: left; padding: 10px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--muted); cursor: pointer; font-family: 'Inter', sans-serif; font-size: 0.85rem; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s; }
+.hint-toggle:hover { border-color: var(--purple); color: var(--text); }
+.hint-toggle .arrow { transition: transform 0.2s; }
+.hint-toggle.open .arrow { transform: rotate(90deg); }
+.hint-body { display: none; padding: 12px 16px; margin-top: 4px; background: rgba(124,58,237,0.05); border: 1px solid rgba(124,58,237,0.2); border-radius: 8px; font-size: 0.85rem; color: var(--text); line-height: 1.6; }
+.hint-body code { background: rgba(124,58,237,0.15); padding: 1px 5px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--purple-light); }
+.section-label { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.section-label.purple { color: var(--purple-light); } .section-label.yellow { color: var(--yellow); } .section-label.green { color: #34d399; } .section-label.teal { color: #2dd4bf; }
+.section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.mark-done-btn { padding: 8px 16px; border-radius: 8px; background: rgba(16,185,129,0.1); color: #34d399; border: 1px solid rgba(16,185,129,0.3); cursor: pointer; font-size: 0.82rem; font-weight: 600; font-family: 'Inter', sans-serif; transition: all 0.2s; }
+.mark-done-btn:hover, .mark-done-btn.done { background: rgba(16,185,129,0.25); border-color: #34d399; }
+.footer { margin-top: 80px; padding: 40px 32px; border-top: 1px solid var(--border); text-align: center; }
+.footer-nav { display: flex; justify-content: center; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+.footer-nav a { color: var(--teal); text-decoration: none; padding: 8px 20px; border: 1px solid rgba(13,148,136,0.3); border-radius: 8px; font-size: 0.9rem; transition: all 0.2s; }
+.footer-nav a:hover { background: rgba(13,148,136,0.1); border-color: var(--teal); }
+.footer p { color: var(--muted); font-size: 0.8rem; }
+</style>
+</head>
+<body data-animation-density="high">
+
+<nav class="sticky-nav">
+  <a href="../days/day28.html">← Day 28 Lesson</a>
+  <span class="nav-sep">|</span>
+  <span class="brand">Agentic AI Mastery</span>
+  <span class="nav-sep">|</span>
+  <span class="nav-title">Day 28 Exercises</span>
+  <a href="day29_exercises.html" style="margin-left:auto;">Day 29 Exercises →</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-meta">
+    <span class="badge badge-purple">Day 28</span>
+    <span class="badge badge-teal">Week 4</span>
+    <span class="badge badge-green">5 Exercises</span>
+  </div>
+  <h1>RL &amp; <span>Self-Improving Agents</span></h1>
+  <p>Build DPO training pipelines, LLM-as-judge scoring, Constitutional AI critique loops, and self-improvement cycles that make models better over time.</p>
+</div>
+
+<div class="progress-bar-wrap">
+  <div class="progress-label"><span>Exercises completed</span><span id="prog-text">0 / 5</span></div>
+  <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+</div>
+
+<div class="main">
+
+  <!-- Exercise 1 -->
+  <div class="exercise" id="ex1">
+    <div class="exercise-header">
+      <div>
+        <div class="exercise-num">Exercise 01</div>
+        <h2>Preference Dataset Generator</h2>
+        <p>Use LLM-as-judge to automatically generate DPO-ready preference pairs from a set of candidate responses.</p>
+      </div>
+      <div class="ex-status">
+        <div class="status-dot" id="dot1"></div>
+        <button class="mark-done-btn" onclick="markDone(1)">Mark Done</button>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(1,'task')">Your Task</button>
+      <button class="tab-btn" onclick="switchTab(1,'code')">Starter Code</button>
+      <button class="tab-btn" onclick="switchTab(1,'tests')">Test Cases</button>
+      <button class="tab-btn" onclick="switchTab(1,'hints')">Hints</button>
+    </div>
+    <div class="tab-panel active" id="ex1-task">
+      <div class="section-label purple">Objective</div>
+      <p style="color:var(--muted);margin-bottom:16px;">Build a pipeline that takes a prompt + two candidate responses, sends them to an LLM judge, and returns a structured preference pair suitable for DPO training.</p>
+      <div class="task-requirements">
+        <ul>
+          <li>Implement <code>judge_responses(prompt, response_a, response_b)</code> that calls GPT-4o-mini with a scoring rubric</li>
+          <li>Parse the judge output into a structured <code>PreferencePair</code> Pydantic model with fields: chosen, rejected, winner_reasoning</li>
+          <li>Run 5 different prompt+response pairs through the judge and collect results</li>
+          <li>Save results to <code>preference_data.jsonl</code> in DPO-ready format (prompt/chosen/rejected keys)</li>
+          <li>Add a simple quality filter: skip pairs where the judge expresses low confidence</li>
+        </ul>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex1-code">
+      <div class="code-wrap">
+        <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>preference_generator.py</span></div>
+        <div class="code-body"><div class="code-content"><span class="cm"># pip install openai pydantic</span>
+<span class="kw">import</span> json
+<span class="kw">from</span> openai <span class="kw">import</span> OpenAI
+<span class="kw">from</span> pydantic <span class="kw">import</span> BaseModel
+<span class="kw">from</span> typing <span class="kw">import</span> Literal
+
+client = <span class="fn">OpenAI</span>()
+
+JUDGE_PROMPT = <span class="st">"""You are an expert AI response evaluator.
+Given a user prompt and two responses (A and B), decide which is better.
+
+Criteria: accuracy, helpfulness, safety, conciseness.
+
+Respond in JSON:
+{{
+  "winner": "A" or "B",
+  "confidence": "high" or "low",
+  "reasoning": "one sentence explanation"
+}}
+
+Prompt: {prompt}
+Response A: {response_a}
+Response B: {response_b}"""</span>
+
+<span class="kw">class</span> <span class="tp">JudgeOutput</span>(BaseModel):
+    winner: Literal[<span class="st">"A"</span>, <span class="st">"B"</span>]
+    confidence: Literal[<span class="st">"high"</span>, <span class="st">"low"</span>]
+    reasoning: str
+
+<span class="kw">class</span> <span class="tp">PreferencePair</span>(BaseModel):
+    prompt: str
+    chosen: str
+    rejected: str
+    winner_reasoning: str
+
+<span class="kw">def</span> <span class="fn">judge_responses</span>(prompt: str, response_a: str, response_b: str) -> PreferencePair | <span class="kw">None</span>:
+    <span class="cm"># TODO: call GPT-4o-mini with JUDGE_PROMPT</span>
+    <span class="cm"># TODO: parse JSON response into JudgeOutput</span>
+    <span class="cm"># TODO: return None if confidence is "low"</span>
+    <span class="cm"># TODO: set chosen/rejected based on winner field</span>
+    <span class="kw">pass</span>
+
+<span class="kw">def</span> <span class="fn">generate_dataset</span>(examples: list[dict]) -> list[PreferencePair]:
+    <span class="cm"># TODO: run judge_responses on each example</span>
+    <span class="cm"># TODO: filter out None results</span>
+    <span class="kw">pass</span>
+
+<span class="kw">def</span> <span class="fn">save_jsonl</span>(pairs: list[PreferencePair], path: str):
+    <span class="cm"># TODO: write each pair as a JSON line</span>
+    <span class="kw">pass</span>
+
+<span class="cm"># Test data</span>
+examples = [
+    {<span class="st">"prompt"</span>: <span class="st">"What is gradient descent?"</span>,
+     <span class="st">"a"</span>: <span class="st">"Gradient descent minimizes a loss function by iteratively moving in the direction of steepest descent."</span>,
+     <span class="st">"b"</span>: <span class="st">"It's when you go downhill on a graph."</span>},
+    <span class="cm"># Add 4 more examples...</span>
+]
+
+<span class="kw">if</span> __name__ == <span class="st">"__main__"</span>:
+    pairs = <span class="fn">generate_dataset</span>(examples)
+    <span class="fn">save_jsonl</span>(pairs, <span class="st">"preference_data.jsonl"</span>)
+    <span class="fn">print</span>(<span class="fn">f</span><span class="st">f"Saved {len(pairs)} preference pairs"</span>)</div></div>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex1-tests">
+      <div class="tests-grid">
+        <div class="test-case"><span class="test-badge pending">PENDING</span><div class="test-content"><div class="test-input">judge_responses("What is 2+2?", "4", "Fish") → winner="A"</div><div class="test-expected">Expected: PreferencePair with chosen="4", confidence="high"</div></div></div>
+        <div class="test-case"><span class="test-badge pending">PENDING</span><div class="test-content"><div class="test-input">Low confidence response → None returned</div><div class="test-expected">Expected: filter removes low-confidence pairs from dataset</div></div></div>
+        <div class="test-case"><span class="test-badge pending">PENDING</span><div class="test-content"><div class="test-input">save_jsonl(pairs, "out.jsonl")</div><div class="test-expected">Expected: each line has "prompt", "chosen", "rejected" keys</div></div></div>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex1-hints">
+      <div class="hints-list">
+        <button class="hint-toggle" onclick="toggleHint(this)">Hint 1: Parsing JSON from LLM <span class="arrow">▶</span></button>
+        <div class="hint-body">Use <code>response_format={"type": "json_object"}</code> in the OpenAI call to guarantee JSON output. Then <code>json.loads(content)</code> and pass to <code>JudgeOutput.model_validate()</code>.</div>
+        <button class="hint-toggle" onclick="toggleHint(this)">Hint 2: DPO format <span class="arrow">▶</span></button>
+        <div class="hint-body">DPO training data format: <code>{"prompt": "...", "chosen": "...", "rejected": "..."}</code>. The chosen response is the one the judge preferred; rejected is the other.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Exercise 2 -->
+  <div class="exercise" id="ex2">
+    <div class="exercise-header">
+      <div>
+        <div class="exercise-num">Exercise 02</div>
+        <h2>Constitutional AI Critique-Revise Loop</h2>
+        <p>Implement self-critique: given a harmful or low-quality response, have the model identify issues and rewrite it according to a constitution.</p>
+      </div>
+      <div class="ex-status">
+        <div class="status-dot" id="dot2"></div>
+        <button class="mark-done-btn" onclick="markDone(2)">Mark Done</button>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(2,'task')">Your Task</button>
+      <button class="tab-btn" onclick="switchTab(2,'code')">Starter Code</button>
+      <button class="tab-btn" onclick="switchTab(2,'tests')">Test Cases</button>
+      <button class="tab-btn" onclick="switchTab(2,'hints')">Hints</button>
+    </div>
+    <div class="tab-panel active" id="ex2-task">
+      <div class="section-label purple">Objective</div>
+      <p style="color:var(--muted);margin-bottom:16px;">Build a two-step Constitutional AI pipeline: (1) critique the original response against principles, (2) revise it to comply.</p>
+      <div class="task-requirements">
+        <ul>
+          <li>Define a CONSTITUTION list with 5 principles (e.g., "Be honest", "Avoid harm", "Be concise")</li>
+          <li>Implement <code>critique(prompt, response, constitution)</code> that asks the model which principles are violated</li>
+          <li>Implement <code>revise(prompt, original_response, critique_output)</code> that rewrites the response</li>
+          <li>Run the loop twice (critique → revise → critique → revise) and compare initial vs final response</li>
+          <li>Print a diff showing what changed between iterations</li>
+        </ul>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex2-code">
+      <div class="code-wrap">
+        <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>constitutional_ai.py</span></div>
+        <div class="code-body"><div class="code-content"><span class="cm"># pip install openai</span>
+<span class="kw">from</span> openai <span class="kw">import</span> OpenAI
+
+client = <span class="fn">OpenAI</span>()
+
+CONSTITUTION = [
+    <span class="st">"Be helpful and accurate — never fabricate facts."</span>,
+    <span class="st">"Avoid harmful, offensive, or dangerous content."</span>,
+    <span class="st">"Be concise — avoid unnecessary verbosity."</span>,
+    <span class="st">"Respect user privacy — don't request personal data."</span>,
+    <span class="st">"Be honest about uncertainty — say 'I don't know' when unsure."</span>,
+]
+
+<span class="kw">def</span> <span class="fn">critique</span>(prompt: str, response: str, constitution: list[str]) -> str:
+    principles = <span class="st">"\n"</span>.<span class="fn">join</span>(<span class="fn">f</span><span class="st">f"{i+1}. {p}"</span> <span class="kw">for</span> i, p <span class="kw">in</span> <span class="fn">enumerate</span>(constitution))
+    <span class="cm"># TODO: ask model "which of these principles does the response violate, and why?"</span>
+    <span class="cm"># TODO: return the critique text</span>
+    <span class="kw">pass</span>
+
+<span class="kw">def</span> <span class="fn">revise</span>(prompt: str, original: str, critique: str) -> str:
+    <span class="cm"># TODO: ask model to rewrite the response addressing the critique</span>
+    <span class="cm"># TODO: return revised response</span>
+    <span class="kw">pass</span>
+
+<span class="kw">def</span> <span class="fn">constitutional_loop</span>(prompt: str, initial_response: str, iterations: int = <span class="nm">2</span>) -> dict:
+    <span class="cm"># TODO: run critique → revise for `iterations` rounds</span>
+    <span class="cm"># TODO: return {"initial": ..., "final": ..., "critiques": [...], "revisions": [...]}</span>
+    <span class="kw">pass</span>
+
+<span class="kw">if</span> __name__ == <span class="st">"__main__"</span>:
+    prompt = <span class="st">"How do I get rid of a headache?"</span>
+    bad_response = <span class="st">"Just take 10 ibuprofen, that'll definitely fix it fast."</span>
+    result = <span class="fn">constitutional_loop</span>(prompt, bad_response)
+    <span class="fn">print</span>(<span class="st">"Initial:"</span>, result[<span class="st">"initial"</span>])
+    <span class="fn">print</span>(<span class="st">"\nFinal:"</span>, result[<span class="st">"final"</span>])</div></div>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex2-tests">
+      <div class="tests-grid">
+        <div class="test-case"><span class="test-badge pending">PENDING</span><div class="test-content"><div class="test-input">critique(prompt, bad_response, CONSTITUTION)</div><div class="test-expected">Expected: mentions principle 1 or 2 violation (inaccurate/harmful dosage advice)</div></div></div>
+        <div class="test-case"><span class="test-badge pending">PENDING</span><div class="test-content"><div class="test-input">revise(prompt, bad_response, critique_output)</div><div class="test-expected">Expected: safer response recommending normal dose + doctor consultation</div></div></div>
+        <div class="test-case"><span class="test-badge pending">PENDING</span><div class="test-content"><div class="test-input">constitutional_loop returns 2 critiques and 2 revisions</div><div class="test-expected">Expected: result["critiques"] has length 2</div></div></div>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex2-hints">
+      <div class="hints-list">
+        <button class="hint-toggle" onclick="toggleHint(this)">Hint: Critique prompt structure <span class="arrow">▶</span></button>
+        <div class="hint-body">Frame the critique prompt as: "Here is a response to a user query. Identify which of the following principles it violates and explain why: [principles]. Response: [response]"</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Exercise 3 -->
+  <div class="exercise" id="ex3">
+    <div class="exercise-header">
+      <div>
+        <div class="exercise-num">Exercise 03</div>
+        <h2>DPO Training Setup with TRL</h2>
+        <p>Configure and initialize a DPO training run using TRL's DPOTrainer — without requiring a GPU.</p>
+      </div>
+      <div class="ex-status">
+        <div class="status-dot" id="dot3"></div>
+        <button class="mark-done-btn" onclick="markDone(3)">Mark Done</button>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(3,'task')">Your Task</button>
+      <button class="tab-btn" onclick="switchTab(3,'code')">Starter Code</button>
+      <button class="tab-btn" onclick="switchTab(3,'tests')">Test Cases</button>
+      <button class="tab-btn" onclick="switchTab(3,'hints')">Hints</button>
+    </div>
+    <div class="tab-panel active" id="ex3-task">
+      <div class="section-label purple">Objective</div>
+      <p style="color:var(--muted);margin-bottom:16px;">Set up a complete DPO training script using TRL. Use a tiny model (GPT-2) and synthetic dataset so it runs on CPU for this exercise.</p>
+      <div class="task-requirements">
+        <ul>
+          <li>Load GPT-2 as the base model and tokenizer</li>
+          <li>Create a small synthetic preference dataset (5 rows) using HuggingFace datasets</li>
+          <li>Configure <code>DPOConfig</code> with beta=0.1, max_length=128, num_train_epochs=1</li>
+          <li>Initialize <code>DPOTrainer</code> with model, ref_model (copy of base), args, and dataset</li>
+          <li>Run <code>trainer.train()</code> and print the final training loss</li>
+        </ul>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex3-code">
+      <div class="code-wrap">
+        <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>dpo_training.py</span></div>
+        <div class="code-body"><div class="code-content"><span class="cm"># pip install trl transformers datasets torch</span>
+<span class="kw">import</span> copy
+<span class="kw">from</span> datasets <span class="kw">import</span> Dataset
+<span class="kw">from</span> transformers <span class="kw">import</span> AutoTokenizer, AutoModelForCausalLM
+<span class="kw">from</span> trl <span class="kw">import</span> DPOTrainer, DPOConfig
+
+<span class="kw">def</span> <span class="fn">make_synthetic_dataset</span>() -> Dataset:
+    <span class="cm"># TODO: create 5 rows with "prompt", "chosen", "rejected" string columns</span>
+    data = {
+        <span class="st">"prompt"</span>: [<span class="st">"What is the capital of France?"</span>] * <span class="nm">5</span>,
+        <span class="st">"chosen"</span>: [<span class="st">"The capital of France is Paris."</span>] * <span class="nm">5</span>,
+        <span class="st">"rejected"</span>: [<span class="st">"I don't know."</span>] * <span class="nm">5</span>,
+    }
+    <span class="kw">return</span> Dataset.<span class="fn">from_dict</span>(data)
+
+<span class="kw">def</span> <span class="fn">train_dpo</span>():
+    model_name = <span class="st">"gpt2"</span>
+
+    <span class="cm"># TODO: load tokenizer, set pad_token = eos_token</span>
+    tokenizer = <span class="kw">None</span>
+
+    <span class="cm"># TODO: load model with AutoModelForCausalLM</span>
+    model = <span class="kw">None</span>
+
+    <span class="cm"># TODO: create ref_model as a deep copy of model</span>
+    ref_model = <span class="kw">None</span>
+
+    <span class="cm"># TODO: create DPOConfig with beta=0.1, max_length=128, num_train_epochs=1, output_dir="./dpo_output"</span>
+    training_args = <span class="kw">None</span>
+
+    dataset = <span class="fn">make_synthetic_dataset</span>()
+
+    <span class="cm"># TODO: create DPOTrainer(model, ref_model, args=training_args, train_dataset=dataset, tokenizer=tokenizer)</span>
+    trainer = <span class="kw">None</span>
+
+    <span class="cm"># TODO: trainer.train() and print loss</span>
+
+<span class="kw">if</span> __name__ == <span class="st">"__main__"</span>:
+    <span class="fn">train_dpo</span>()</div></div>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex3-tests">
+      <div class="tests-grid">
+        <div class="test-case"><span class="test-badge pending">PENDING</span><div class="test-content"><div class="test-input">make_synthetic_dataset() returns Dataset</div><div class="test-expected">Expected: dataset has columns ["prompt", "chosen", "rejected"], len=5</div></div></div>
+        <div class="test-case"><span class="test-badge pending">PENDING</span><div class="test-content"><div class="test-input">DPOTrainer initializes without error</div><div class="test-expected">Expected: trainer.train() runs and prints training_loss</div></div></div>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex3-hints">
+      <div class="hints-list">
+        <button class="hint-toggle" onclick="toggleHint(this)">Hint: ref_model <span class="arrow">▶</span></button>
+        <div class="hint-body">Use <code>copy.deepcopy(model)</code> for the reference model. Both model and ref_model start from the same weights; DPO penalizes the policy model from diverging too far from the reference.</div>
+        <button class="hint-toggle" onclick="toggleHint(this)">Hint: DPOConfig fields <span class="arrow">▶</span></button>
+        <div class="hint-body"><code>DPOConfig(beta=0.1, max_length=128, max_prompt_length=64, num_train_epochs=1, output_dir="./dpo_output", per_device_train_batch_size=1)</code></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Exercise 4 -->
+  <div class="exercise" id="ex4">
+    <div class="exercise-header">
+      <div>
+        <div class="exercise-num">Exercise 04</div>
+        <h2>Self-Improvement Loop</h2>
+        <p>Generate multiple responses, score them with an LLM judge, and collect the top-k as new training examples automatically.</p>
+      </div>
+      <div class="ex-status">
+        <div class="status-dot" id="dot4"></div>
+        <button class="mark-done-btn" onclick="markDone(4)">Mark Done</button>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(4,'task')">Your Task</button>
+      <button class="tab-btn" onclick="switchTab(4,'code')">Starter Code</button>
+      <button class="tab-btn" onclick="switchTab(4,'tests')">Test Cases</button>
+      <button class="tab-btn" onclick="switchTab(4,'hints')">Hints</button>
+    </div>
+    <div class="tab-panel active" id="ex4-task">
+      <div class="section-label purple">Objective</div>
+      <p style="color:var(--muted);margin-bottom:16px;">Implement a RLAIF-style self-improvement cycle: sample N responses, score each with a judge, use top-k as chosen and bottom-k as rejected for a new preference dataset.</p>
+      <div class="task-requirements">
+        <ul>
+          <li>Implement <code>sample_responses(prompt, n=4, temperature=0.8)</code> returning N diverse responses</li>
+          <li>Implement <code>score_response(prompt, response)</code> returning a float 0-10 from the judge</li>
+          <li>Implement <code>build_preference_pairs(prompt, scored_responses)</code> pairing top-k vs bottom-k</li>
+          <li>Run the loop on 3 different prompts and collect all pairs</li>
+          <li>Print a summary showing the score gap between chosen and rejected responses</li>
+        </ul>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex4-code">
+      <div class="code-wrap">
+        <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>self_improvement.py</span></div>
+        <div class="code-body"><div class="code-content"><span class="cm"># pip install openai</span>
+<span class="kw">from</span> openai <span class="kw">import</span> OpenAI
+<span class="kw">import</span> json
+
+client = <span class="fn">OpenAI</span>()
+
+<span class="kw">def</span> <span class="fn">sample_responses</span>(prompt: str, n: int = <span class="nm">4</span>, temperature: float = <span class="nm">0.8</span>) -> list[str]:
+    <span class="cm"># TODO: call GPT-4o-mini n times with temperature for diversity</span>
+    <span class="cm"># Tip: use a loop, not n=N (n is for choices, which repeats seed)</span>
+    <span class="kw">pass</span>
+
+<span class="kw">def</span> <span class="fn">score_response</span>(prompt: str, response: str) -> float:
+    <span class="cm"># TODO: ask judge to rate response 0-10 and return the score</span>
+    <span class="cm"># Return JSON: {"score": 7.5, "reason": "..."}</span>
+    <span class="kw">pass</span>
+
+<span class="kw">def</span> <span class="fn">build_preference_pairs</span>(prompt: str, scored: list[tuple[str, float]]) -> list[dict]:
+    <span class="cm"># scored: list of (response, score) sorted descending</span>
+    <span class="cm"># TODO: pair top-1 response with bottom-1 response as (chosen, rejected)</span>
+    <span class="cm"># Return list of {"prompt": ..., "chosen": ..., "rejected": ..., "score_gap": ...}</span>
+    <span class="kw">pass</span>
+
+<span class="kw">def</span> <span class="fn">self_improve</span>(prompts: list[str]) -> list[dict]:
+    all_pairs = []
+    <span class="kw">for</span> prompt <span class="kw">in</span> prompts:
+        responses = <span class="fn">sample_responses</span>(prompt)
+        scored = [(<span class="fn">r</span>, <span class="fn">score_response</span>(prompt, r)) <span class="kw">for</span> r <span class="kw">in</span> responses]
+        scored.<span class="fn">sort</span>(key=<span class="kw">lambda</span> x: x[<span class="nm">1</span>], reverse=<span class="kw">True</span>)
+        pairs = <span class="fn">build_preference_pairs</span>(prompt, scored)
+        all_pairs.<span class="fn">extend</span>(pairs)
+    <span class="kw">return</span> all_pairs
+
+prompts = [
+    <span class="st">"Explain backpropagation to a 10-year-old."</span>,
+    <span class="st">"What are the tradeoffs of using RAG vs fine-tuning?"</span>,
+    <span class="st">"Write a Python function to compute cosine similarity."</span>,
+]
+
+<span class="kw">if</span> __name__ == <span class="st">"__main__"</span>:
+    pairs = <span class="fn">self_improve</span>(prompts)
+    avg_gap = <span class="fn">sum</span>(p[<span class="st">"score_gap"</span>] <span class="kw">for</span> p <span class="kw">in</span> pairs) / <span class="fn">len</span>(pairs)
+    <span class="fn">print</span>(<span class="fn">f</span><span class="st">f"Collected {len(pairs)} pairs, avg score gap: {avg_gap:.1f}"</span>)</div></div>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex4-tests">
+      <div class="tests-grid">
+        <div class="test-case"><span class="test-badge pending">PENDING</span><div class="test-content"><div class="test-input">sample_responses(prompt, n=4) returns 4 different strings</div><div class="test-expected">Expected: list of 4 distinct responses</div></div></div>
+        <div class="test-case"><span class="test-badge pending">PENDING</span><div class="test-content"><div class="test-input">score_response returns float between 0 and 10</div><div class="test-expected">Expected: 0.0 ≤ score ≤ 10.0</div></div></div>
+        <div class="test-case"><span class="test-badge pending">PENDING</span><div class="test-content"><div class="test-input">score_gap = chosen_score - rejected_score</div><div class="test-expected">Expected: score_gap > 0 for all pairs</div></div></div>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex4-hints">
+      <div class="hints-list">
+        <button class="hint-toggle" onclick="toggleHint(this)">Hint: Sampling diversity <span class="arrow">▶</span></button>
+        <div class="hint-body">Call the API in a loop with <code>temperature=0.8</code> to get diverse responses. Using <code>n=4</code> in a single API call uses the same seed and gives less diversity.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Exercise 5 -->
+  <div class="exercise" id="ex5">
+    <div class="exercise-header">
+      <div>
+        <div class="exercise-num">Exercise 05</div>
+        <h2>Reward Model Evaluation</h2>
+        <p>Load a pretrained reward model from HuggingFace and use it to score and rank candidate responses.</p>
+      </div>
+      <div class="ex-status">
+        <div class="status-dot" id="dot5"></div>
+        <button class="mark-done-btn" onclick="markDone(5)">Mark Done</button>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(5,'task')">Your Task</button>
+      <button class="tab-btn" onclick="switchTab(5,'code')">Starter Code</button>
+      <button class="tab-btn" onclick="switchTab(5,'tests')">Test Cases</button>
+      <button class="tab-btn" onclick="switchTab(5,'hints')">Hints</button>
+    </div>
+    <div class="tab-panel active" id="ex5-task">
+      <div class="section-label purple">Objective</div>
+      <p style="color:var(--muted);margin-bottom:16px;">Use a HuggingFace reward model to score responses numerically, without calling an LLM judge API. Compare reward model scores against LLM judge scores.</p>
+      <div class="task-requirements">
+        <ul>
+          <li>Load <code>OpenAssistant/reward-model-deberta-v3-large-v2</code> tokenizer and model</li>
+          <li>Implement <code>get_reward_score(prompt, response)</code> using the model's forward pass</li>
+          <li>Score 5 candidate responses to the same prompt and rank them</li>
+          <li>Compare rankings from the reward model vs your LLM judge from Exercise 4</li>
+          <li>Print a table showing prompt, truncated response, reward score, and rank</li>
+        </ul>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex5-code">
+      <div class="code-wrap">
+        <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>reward_model.py</span></div>
+        <div class="code-body"><div class="code-content"><span class="cm"># pip install transformers torch</span>
+<span class="kw">import</span> torch
+<span class="kw">from</span> transformers <span class="kw">import</span> AutoTokenizer, AutoModelForSequenceClassification
+
+MODEL_NAME = <span class="st">"OpenAssistant/reward-model-deberta-v3-large-v2"</span>
+
+<span class="kw">def</span> <span class="fn">load_reward_model</span>():
+    <span class="cm"># TODO: load tokenizer and model (AutoModelForSequenceClassification)</span>
+    <span class="cm"># Return (tokenizer, model) tuple</span>
+    <span class="kw">pass</span>
+
+<span class="kw">def</span> <span class="fn">get_reward_score</span>(tokenizer, model, prompt: str, response: str) -> float:
+    <span class="cm"># TODO: tokenize prompt + response together (truncation=True, max_length=512)</span>
+    <span class="cm"># TODO: run model(**inputs) → get logits[0][0].item()</span>
+    <span class="cm"># This reward model outputs a single scalar reward score</span>
+    <span class="kw">pass</span>
+
+<span class="kw">def</span> <span class="fn">rank_responses</span>(tokenizer, model, prompt: str, responses: list[str]) -> list[dict]:
+    <span class="cm"># TODO: score each response and return sorted list with rank</span>
+    <span class="kw">pass</span>
+
+<span class="kw">if</span> __name__ == <span class="st">"__main__"</span>:
+    tokenizer, model = <span class="fn">load_reward_model</span>()
+    prompt = <span class="st">"What is the best way to learn Python?"</span>
+    candidates = [
+        <span class="st">"Practice daily with small projects."</span>,
+        <span class="st">"I don't know, maybe watch videos?"</span>,
+        <span class="st">"Build real projects, read docs, use REPL to experiment, and review others' code."</span>,
+        <span class="st">"Python is easy just Google everything."</span>,
+        <span class="st">"Take a structured course, then apply skills to a project you care about."</span>,
+    ]
+    ranked = <span class="fn">rank_responses</span>(tokenizer, model, prompt, candidates)
+    <span class="fn">print</span>(<span class="st">f"{'Rank':<6} {'Score':<8} Response"</span>)
+    <span class="kw">for</span> r <span class="kw">in</span> ranked:
+        <span class="fn">print</span>(<span class="fn">f</span><span class="st">f"{r['rank']:<6} {r['score']:<8.3f} {r['response'][:60]}..."</span>)</div></div>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex5-tests">
+      <div class="tests-grid">
+        <div class="test-case"><span class="test-badge pending">PENDING</span><div class="test-content"><div class="test-input">get_reward_score returns float</div><div class="test-expected">Expected: detailed response scores higher than "I don't know"</div></div></div>
+        <div class="test-case"><span class="test-badge pending">PENDING</span><div class="test-content"><div class="test-input">rank_responses returns sorted list, rank 1 = highest score</div><div class="test-expected">Expected: ranked[0]["score"] > ranked[-1]["score"]</div></div></div>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex5-hints">
+      <div class="hints-list">
+        <button class="hint-toggle" onclick="toggleHint(this)">Hint: Model forward pass <span class="arrow">▶</span></button>
+        <div class="hint-body">Tokenize as <code>tokenizer(prompt, response, return_tensors="pt", truncation=True)</code>. Then <code>with torch.no_grad(): outputs = model(**inputs)</code>. The reward score is <code>outputs.logits[0][0].item()</code>.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer class="footer">
+  <div class="footer-nav">
+    <a href="../days/day28.html">← Day 28 Lesson</a>
+    <a href="day29_exercises.html">Day 29 Exercises →</a>
+  </div>
+  <p>30-Day Agentic AI Mastery · Built for Sharjeel Sohail</p>
+</footer>
+
+<script>
+const TOTAL = 5;
+const KEY = 'aai_ex_day28';
+let done = JSON.parse(localStorage.getItem(KEY) || '{}');
+
+function updateProgress() {
+  const n = Object.keys(done).length;
+  document.getElementById('prog-text').textContent = n + ' / ' + TOTAL;
+  document.getElementById('prog-fill').style.width = (n / TOTAL * 100) + '%';
+}
+
+function markDone(n) {
+  done[n] = true;
+  localStorage.setItem(KEY, JSON.stringify(done));
+  document.getElementById('dot' + n).classList.add('done');
+  updateProgress();
+}
+
+function switchTab(ex, tab) {
+  ['task','code','tests','hints'].forEach(t => {
+    document.getElementById('ex' + ex + '-' + t).classList.toggle('active', t === tab);
+  });
+  const btns = document.querySelectorAll('#ex' + ex + ' .tab-btn');
+  btns.forEach((b, i) => b.classList.toggle('active', ['task','code','tests','hints'][i] === tab));
+}
+
+function toggleHint(btn) {
+  btn.classList.toggle('open');
+  const body = btn.nextElementSibling;
+  body.style.display = body.style.display === 'block' ? 'none' : 'block';
+}
+
+// Restore state
+Object.keys(done).forEach(n => document.getElementById('dot' + n)?.classList.add('done'));
+updateProgress();
+</script>
+<script src="../bg-animation.js"></script>
+</body>
+</html>

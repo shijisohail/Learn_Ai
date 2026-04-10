@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 30 Exercises — 30-Day Final Capstone</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f; --card: #141420; --surface2: #1a1a2e; --border: #2a2a45;
+  --purple: #7c3aed; --purple-light: #a855f7; --teal: #0d9488; --green: #10b981;
+  --yellow: #f59e0b; --red: #ef4444; --text: #e2e8f0; --muted: #64748b;
+  --gold: #fbbf24;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+code, pre { font-family: 'JetBrains Mono', monospace; }
+.sticky-nav { position: sticky; top: 0; z-index: 100; background: rgba(10,10,15,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); padding: 12px 32px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.sticky-nav a { color: var(--muted); text-decoration: none; font-size: 0.85rem; padding: 6px 12px; border-radius: 6px; transition: all 0.2s; border: 1px solid transparent; }
+.sticky-nav a:hover { color: var(--text); background: var(--card); border-color: var(--border); }
+.sticky-nav .brand { color: var(--gold); font-weight: 700; font-size: 0.9rem; }
+.nav-sep { color: var(--border); } .nav-title { color: var(--text); font-weight: 700; font-size: 0.95rem; flex: 1; }
+.hero { padding: 56px 32px 40px; max-width: 1100px; margin: 0 auto; border-bottom: 1px solid var(--border); }
+.hero h1 { font-size: 2.4rem; font-weight: 800; margin-bottom: 8px; background: linear-gradient(135deg, var(--gold), var(--purple-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.hero p { color: var(--muted); font-size: 1rem; max-width: 700px; }
+.hero-meta { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
+.badge-gold { background: rgba(251,191,36,0.15); color: var(--gold); border: 1px solid rgba(251,191,36,0.3); }
+.badge-purple { background: rgba(124,58,237,0.15); color: var(--purple-light); border: 1px solid rgba(124,58,237,0.3); }
+.badge-green { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.capstone-banner { max-width: 1100px; margin: 32px auto 0; padding: 0 32px; }
+.capstone-card { background: linear-gradient(135deg, rgba(251,191,36,0.08), rgba(124,58,237,0.08)); border: 1px solid rgba(251,191,36,0.25); border-radius: 16px; padding: 24px 32px; }
+.capstone-card h2 { font-size: 1.1rem; font-weight: 700; color: var(--gold); margin-bottom: 8px; }
+.capstone-card p { color: var(--muted); font-size: 0.9rem; }
+.progress-bar-wrap { max-width: 1100px; margin: 24px auto; padding: 0 32px; }
+.progress-label { font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
+.progress-bar { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--purple)); border-radius: 4px; transition: width 0.5s ease; }
+.main { max-width: 1100px; margin: 0 auto; padding: 32px; display: flex; flex-direction: column; gap: 64px; }
+.exercise { border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: var(--card); }
+.exercise.capstone-ex { border-color: rgba(251,191,36,0.3); }
+.exercise-header { padding: 24px 32px; background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(13,148,136,0.05)); border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.exercise-num { font-size: 0.75rem; color: var(--purple-light); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.exercise-header h2 { font-size: 1.4rem; font-weight: 700; margin: 4px 0 8px; }
+.exercise-header p { color: var(--muted); font-size: 0.9rem; }
+.ex-status { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); transition: background 0.3s; }
+.status-dot.done { background: var(--green); }
+.tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--surface2); }
+.tab-btn { padding: 12px 20px; font-size: 0.82rem; font-weight: 600; color: var(--muted); cursor: pointer; border: none; background: none; border-bottom: 2px solid transparent; transition: all 0.2s; font-family: 'Inter', sans-serif; }
+.tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+.tab-btn.active { color: var(--purple-light); border-bottom-color: var(--purple-light); background: rgba(124,58,237,0.05); }
+.tab-panel { display: none; padding: 28px 32px; }
+.tab-panel.active { display: block; }
+.code-wrap { background: #0d0d18; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin: 12px 0; }
+.code-header { padding: 8px 16px; background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; color: var(--muted); }
+.code-dots { display: flex; gap: 6px; }
+.code-dots span { width: 10px; height: 10px; border-radius: 50%; }
+.code-dots .dot-r { background: var(--red); } .code-dots .dot-y { background: var(--yellow); } .code-dots .dot-g { background: var(--green); }
+.code-body { display: flex; }
+.code-content { padding: 16px; overflow-x: auto; flex: 1; white-space: pre; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; line-height: 1.7; }
+.kw { color: #c792ea; } .fn { color: #82aaff; } .st { color: #c3e88d; } .cm { color: #546e7a; font-style: italic; } .nm { color: #f78c6c; } .tp { color: #ffcb6b; } .dt { color: #89ddff; }
+.task-requirements { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); border-radius: 10px; padding: 16px 20px; margin-bottom: 16px; }
+.task-requirements li { color: var(--text); font-size: 0.88rem; margin: 6px 0 6px 16px; }
+.task-requirements li::marker { color: var(--yellow); }
+.tests-grid { display: flex; flex-direction: column; gap: 8px; }
+.test-case { display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; font-size: 0.8rem; }
+.test-badge { flex-shrink: 0; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; font-family: 'Inter', sans-serif; }
+.test-badge.pending { background: rgba(100,116,139,0.2); color: var(--muted); border: 1px solid rgba(100,116,139,0.3); }
+.test-content { flex: 1; } .test-input { color: var(--text); font-family: 'JetBrains Mono', monospace; } .test-expected { color: var(--muted); margin-top: 2px; }
+.hints-list { display: flex; flex-direction: column; gap: 8px; }
+.hint-toggle { width: 100%; text-align: left; padding: 10px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--muted); cursor: pointer; font-family: 'Inter', sans-serif; font-size: 0.85rem; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s; }
+.hint-toggle:hover { border-color: var(--purple); color: var(--text); }
+.hint-toggle .arrow { transition: transform 0.2s; }
+.hint-toggle.open .arrow { transform: rotate(90deg); }
+.hint-body { display: none; padding: 12px 16px; margin-top: 4px; background: rgba(124,58,237,0.05); border: 1px solid rgba(124,58,237,0.2); border-radius: 8px; font-size: 0.85rem; color: var(--text); line-height: 1.6; }
+.hint-body code { background: rgba(124,58,237,0.15); padding: 1px 5px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--purple-light); }
+.section-label { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.section-label.purple { color: var(--purple-light); } .section-label.gold { color: var(--gold); }
+.section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.mark-done-btn { padding: 8px 16px; border-radius: 8px; background: rgba(16,185,129,0.1); color: #34d399; border: 1px solid rgba(16,185,129,0.3); cursor: pointer; font-size: 0.82rem; font-weight: 600; font-family: 'Inter', sans-serif; transition: all 0.2s; }
+.mark-done-btn:hover, .mark-done-btn.done { background: rgba(16,185,129,0.25); border-color: #34d399; }
+.completion-banner { display: none; max-width: 1100px; margin: 32px auto; padding: 0 32px; }
+.completion-banner.show { display: block; }
+.completion-inner { background: linear-gradient(135deg, rgba(251,191,36,0.1), rgba(124,58,237,0.1)); border: 1px solid var(--gold); border-radius: 20px; padding: 40px; text-align: center; }
+.completion-inner h2 { font-size: 2rem; font-weight: 800; color: var(--gold); margin-bottom: 8px; }
+.completion-inner p { color: var(--muted); margin-bottom: 24px; }
+.return-btn { display: inline-block; padding: 12px 32px; background: linear-gradient(135deg, var(--purple), var(--teal)); color: white; text-decoration: none; border-radius: 10px; font-weight: 700; font-size: 1rem; transition: opacity 0.2s; }
+.return-btn:hover { opacity: 0.85; }
+.footer { margin-top: 80px; padding: 40px 32px; border-top: 1px solid var(--border); text-align: center; }
+.footer-nav { display: flex; justify-content: center; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+.footer-nav a { color: var(--teal); text-decoration: none; padding: 8px 20px; border: 1px solid rgba(13,148,136,0.3); border-radius: 8px; font-size: 0.9rem; transition: all 0.2s; }
+.footer-nav a:hover { background: rgba(13,148,136,0.1); border-color: var(--teal); }
+.footer p { color: var(--muted); font-size: 0.8rem; }
+</style>
+</head>
+<body data-animation-density="high">
+
+<nav class="sticky-nav">
+  <a href="../days/day30.html">← Day 30 Lesson</a>
+  <span class="nav-sep">|</span>
+  <span class="brand">🏆 Agentic AI Mastery</span>
+  <span class="nav-sep">|</span>
+  <span class="nav-title">Day 30 — Final Capstone Exercises</span>
+  <a href="../index.html" style="margin-left:auto;">Return to Dashboard →</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-meta">
+    <span class="badge badge-gold">Day 30</span>
+    <span class="badge badge-purple">Week 5 · Final Capstone</span>
+    <span class="badge badge-green">6 Exercises</span>
+  </div>
+  <h1>30-Day Final Capstone</h1>
+  <p>Everything comes together. Build a production-grade AI system combining FastAPI, LangGraph, Qdrant, guardrails, MLflow, and Docker — the full stack of a Senior AI Engineer.</p>
+</div>
+
+<div class="capstone-banner">
+  <div class="capstone-card">
+    <h2>What you're building</h2>
+    <p>A multi-tenant AI knowledge copilot with: JWT auth → intent classification → LangGraph routing → Qdrant RAG → guardrails → structured output → MLflow tracking → Docker deployment. Each exercise builds one layer of this system.</p>
+  </div>
+</div>
+
+<div class="progress-bar-wrap">
+  <div class="progress-label"><span>Capstone exercises completed</span><span id="prog-text">0 / 6</span></div>
+  <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+</div>
+
+<div id="completion-banner" class="completion-banner">
+  <div class="completion-inner">
+    <h2>🎉 Capstone Complete!</h2>
+    <p>You've completed all 30 days and the final capstone. You are now a Senior AI Engineer.</p>
+    <a href="../index.html" class="return-btn">Return to Dashboard</a>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- Exercise 1 -->
+  <div class="exercise" id="ex1">
+    <div class="exercise-header">
+      <div>
+        <div class="exercise-num">Exercise 01</div>
+        <h2>Architecture Audit</h2>
+        <p>Review a provided AI system design and identify missing production-readiness components.</p>
+      </div>
+      <div class="ex-status">
+        <div class="status-dot" id="dot1"></div>
+        <button class="mark-done-btn" onclick="markDone(1)">Mark Done</button>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(1,'task')">Your Task</button>
+      <button class="tab-btn" onclick="switchTab(1,'code')">Starter Code</button>
+      <button class="tab-btn" onclick="switchTab(1,'tests')">Test Cases</button>
+      <button class="tab-btn" onclick="switchTab(1,'hints')">Hints</button>
+    </div>
+    <div class="tab-panel active" id="ex1-task">
+      <div class="section-label gold">Capstone Layer 1 — Architecture</div>
+      <p style="color:var(--muted);margin-bottom:16px;">Given a naive AI system design, write an audit function that scores it across 8 production-readiness dimensions and returns a report with gaps and recommendations.</p>
+      <div class="task-requirements">
+        <ul>
+          <li>Define an <code>ArchitectureAudit</code> Pydantic model with 8 boolean fields: has_auth, has_guardrails, has_observability, has_fallback, has_rate_limiting, has_multi_tenancy, has_evaluation, has_ci_cd</li>
+          <li>Implement <code>audit_system(config: dict) -> ArchitectureAudit</code> that inspects a system config dict</li>
+          <li>Implement <code>generate_audit_report(audit: ArchitectureAudit) -> str</code> that lists gaps with fix recommendations</li>
+          <li>Score the audit: each True field = 1 point. Print overall score and grade (A/B/C/D)</li>
+          <li>Run audit on both the provided naive_system and your own improved_system config</li>
+        </ul>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex1-code">
+      <div class="code-wrap">
+        <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>architecture_audit.py</span></div>
+        <div class="code-body"><div class="code-content"><span class="cm"># pip install pydantic</span>
+<span class="kw">from</span> pydantic <span class="kw">import</span> BaseModel
+
+<span class="kw">class</span> <span class="tp">ArchitectureAudit</span>(BaseModel):
+    has_auth: bool = <span class="kw">False</span>
+    has_guardrails: bool = <span class="kw">False</span>
+    has_observability: bool = <span class="kw">False</span>
+    has_fallback: bool = <span class="kw">False</span>
+    has_rate_limiting: bool = <span class="kw">False</span>
+    has_multi_tenancy: bool = <span class="kw">False</span>
+    has_evaluation: bool = <span class="kw">False</span>
+    has_ci_cd: bool = <span class="kw">False</span>
+
+<span class="cm"># A naive system with many gaps</span>
+naive_system = {
+    <span class="st">"components"</span>: [<span class="st">"fastapi"</span>, <span class="st">"openai_api"</span>, <span class="st">"chroma"</span>],
+    <span class="st">"auth"</span>: <span class="kw">None</span>,
+    <span class="st">"monitoring"</span>: <span class="kw">None</span>,
+    <span class="st">"llm_fallback"</span>: <span class="kw">False</span>,
+}
+
+<span class="cm"># Improved system (fill in all fields)</span>
+improved_system = {
+    <span class="st">"components"</span>: [<span class="st">"fastapi"</span>, <span class="st">"langgraph"</span>, <span class="st">"qdrant"</span>, <span class="st">"guardrails_ai"</span>, <span class="st">"mlflow"</span>, <span class="st">"langsmith"</span>],
+    <span class="st">"auth"</span>: <span class="st">"jwt"</span>,
+    <span class="st">"monitoring"</span>: <span class="st">"prometheus + langsmith"</span>,
+    <span class="st">"llm_fallback"</span>: <span class="kw">True</span>,
+    <span class="st">"rate_limiting"</span>: <span class="st">"redis"</span>,
+    <span class="st">"tenancy"</span>: <span class="st">"per_namespace"</span>,
+    <span class="st">"evaluation"</span>: <span class="st">"ragas"</span>,
+    <span class="st">"ci_cd"</span>: <span class="st">"github_actions"</span>,
+}
+
+<span class="kw">def</span> <span class="fn">audit_system</span>(config: dict) -> ArchitectureAudit:
+    <span class="cm"># TODO: inspect config fields and set audit fields accordingly</span>
+    <span class="kw">pass</span>
+
+<span class="kw">def</span> <span class="fn">generate_audit_report</span>(audit: ArchitectureAudit) -> str:
+    <span class="cm"># TODO: list what's missing with recommendations</span>
+    <span class="cm"># TODO: calculate score and grade (7-8=A, 5-6=B, 3-4=C, 0-2=D)</span>
+    <span class="kw">pass</span>
+
+<span class="kw">if</span> __name__ == <span class="st">"__main__"</span>:
+    <span class="fn">print</span>(<span class="st">"=== Naive System ==="</span>)
+    <span class="fn">print</span>(<span class="fn">generate_audit_report</span>(<span class="fn">audit_system</span>(naive_system)))
+    <span class="fn">print</span>(<span class="st">"\n=== Improved System ==="</span>)
+    <span class="fn">print</span>(<span class="fn">generate_audit_report</span>(<span class="fn">audit_system</span>(improved_system)))</div></div>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex1-tests">
+      <div class="tests-grid">
+        <div class="test-case"><span class="test-badge pending">PENDING</span><div class="test-content"><div class="test-input">audit_system(naive_system).has_auth == False</div><div class="test-expected">Expected: naive system scores ≤ 2/8 (grade D)</div></div></div>
+        <div class="test-case"><span class="test-badge pending">PENDING</span><div class="test-content"><div class="test-input">audit_system(improved_system) all True</div><div class="test-expected">Expected: improved system scores 8/8 (grade A)</div></div></div>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex1-hints">
+      <div class="hints-list">
+        <button class="hint-toggle" onclick="toggleHint(this)">Hint: Checking config fields <span class="arrow">▶</span></button>
+        <div class="hint-body">Check with <code>bool(config.get("auth"))</code> — None and False are falsy, strings and dicts are truthy. For components, check if relevant library names appear in the list.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Exercise 2 -->
+  <div class="exercise" id="ex2">
+    <div class="exercise-header">
+      <div>
+        <div class="exercise-num">Exercise 02</div>
+        <h2>Full RAG Pipeline with Observability</h2>
+        <p>Build a RAG pipeline with Qdrant retrieval, cross-encoder reranking, LangSmith tracing, and RAGAS evaluation in one function.</p>
+      </div>
+      <div class="ex-status">
+        <div class="status-dot" id="dot2"></div>
+        <button class="mark-done-btn" onclick="markDone(2)">Mark Done</button>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(2,'task')">Your Task</button>
+      <button class="tab-btn" onclick="switchTab(2,'code')">Starter Code</button>
+      <button class="tab-btn" onclick="switchTab(2,'tests')">Test Cases</button>
+      <button class="tab-btn" onclick="switchTab(2,'hints')">Hints</button>
+    </div>
+    <div class="tab-panel active" id="ex2-task">
+      <div class="section-label gold">Capstone Layer 2 — RAG + Observability</div>
+      <p style="color:var(--muted);margin-bottom:16px;">Assemble a production RAG function with retrieval, reranking, generation, and automatic quality evaluation — all traced to LangSmith.</p>
+      <div class="task-requirements">
+        <ul>
+          <li>Implement <code>@traceable</code>-decorated <code>rag_pipeline(query, collection, user_id)</code></li>
+          <li>Inside: embed query → Qdrant hybrid search (dense + sparse) → cross-encoder rerank top-10 → generate with Claude/GPT</li>
+          <li>After generation, run RAGAS <code>faithfulness</code> and <code>answer_relevancy</code> metrics</li>
+          <li>Log metrics to MLflow: faithfulness, answer_relevancy, retrieval_count, latency_ms</li>
+          <li>Return <code>{"answer": str, "sources": list, "ragas": {"faithfulness": float, "answer_relevancy": float}}</code></li>
+        </ul>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex2-code">
+      <div class="code-wrap">
+        <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>rag_with_observability.py</span></div>
+        <div class="code-body"><div class="code-content"><span class="cm"># pip install langsmith qdrant-client sentence-transformers ragas mlflow openai</span>
+<span class="kw">import</span> time, mlflow
+<span class="kw">from</span> langsmith <span class="kw">import</span> traceable
+<span class="kw">from</span> qdrant_client <span class="kw">import</span> QdrantClient
+<span class="kw">from</span> sentence_transformers <span class="kw">import</span> CrossEncoder
+<span class="kw">from</span> openai <span class="kw">import</span> OpenAI
+
+openai_client = <span class="fn">OpenAI</span>()
+qdrant = <span class="fn">QdrantClient</span>(<span class="st">":memory:"</span>)  <span class="cm"># Use persistent client in production</span>
+reranker = <span class="fn">CrossEncoder</span>(<span class="st">"cross-encoder/ms-marco-MiniLM-L-6-v2"</span>)
+
+<span class="kw">def</span> <span class="fn">embed_text</span>(text: str) -> list[float]:
+    <span class="cm"># TODO: use OpenAI embeddings (text-embedding-3-small)</span>
+    <span class="kw">pass</span>
+
+<span class="kw">def</span> <span class="fn">retrieve_and_rerank</span>(query: str, collection: str, top_k: int = <span class="nm">5</span>) -> list[str]:
+    <span class="cm"># TODO: embed query, search Qdrant, rerank with CrossEncoder, return top_k texts</span>
+    <span class="kw">pass</span>
+
+<span class="kw">def</span> <span class="fn">evaluate_with_ragas</span>(query: str, answer: str, contexts: list[str]) -> dict:
+    <span class="cm"># TODO: use ragas to compute faithfulness and answer_relevancy</span>
+    <span class="cm"># Simplified: use LLM judge instead of full RAGAS if import issues</span>
+    <span class="kw">pass</span>
+
+<span class="kw">@traceable</span>(name=<span class="st">"rag_pipeline"</span>)
+<span class="kw">def</span> <span class="fn">rag_pipeline</span>(query: str, collection: str, user_id: str) -> dict:
+    start = time.<span class="fn">time</span>()
+
+    <span class="cm"># TODO: retrieve and rerank</span>
+    contexts = <span class="fn">retrieve_and_rerank</span>(query, collection)
+
+    <span class="cm"># TODO: generate answer with context</span>
+    answer = <span class="st">""</span>
+
+    <span class="cm"># TODO: evaluate with RAGAS</span>
+    ragas_scores = <span class="fn">evaluate_with_ragas</span>(query, answer, contexts)
+
+    latency = (<span class="fn">time.time</span>() - start) * <span class="nm">1000</span>
+
+    <span class="cm"># TODO: log to MLflow</span>
+    <span class="kw">with</span> mlflow.<span class="fn">start_run</span>(run_name=<span class="fn">f</span><span class="st">f"rag_{user_id}"</span>):
+        mlflow.<span class="fn">log_metrics</span>({
+            <span class="st">"faithfulness"</span>: ragas_scores[<span class="st">"faithfulness"</span>],
+            <span class="st">"answer_relevancy"</span>: ragas_scores[<span class="st">"answer_relevancy"</span>],
+            <span class="st">"latency_ms"</span>: latency,
+        })
+
+    <span class="kw">return</span> {<span class="st">"answer"</span>: answer, <span class="st">"sources"</span>: contexts, <span class="st">"ragas"</span>: ragas_scores}
+
+<span class="kw">if</span> __name__ == <span class="st">"__main__"</span>:
+    result = <span class="fn">rag_pipeline</span>(<span class="st">"What is RLHF?"</span>, <span class="st">"ai_docs"</span>, <span class="st">"user_123"</span>)
+    <span class="fn">print</span>(result[<span class="st">"answer"</span>])
+    <span class="fn">print</span>(<span class="st">"RAGAS:"</span>, result[<span class="st">"ragas"</span>])</div></div>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex2-tests">
+      <div class="tests-grid">
+        <div class="test-case"><span class="test-badge pending">PENDING</span><div class="test-content"><div class="test-input">rag_pipeline returns dict with "answer", "sources", "ragas" keys</div><div class="test-expected">Expected: all three keys present, ragas has faithfulness + answer_relevancy</div></div></div>
+        <div class="test-case"><span class="test-badge pending">PENDING</span><div class="test-content"><div class="test-input">MLflow run created with metrics logged</div><div class="test-expected">Expected: mlflow.list_run_infos() returns at least 1 run</div></div></div>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex2-hints">
+      <div class="hints-list">
+        <button class="hint-toggle" onclick="toggleHint(this)">Hint: RAGAS simplified <span class="arrow">▶</span></button>
+        <div class="hint-body">If RAGAS import is complex, simulate with an LLM judge: ask GPT-4o-mini to rate faithfulness (0-1) and relevancy (0-1) given the query, answer, and contexts. Return as a dict.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Exercise 3 -->
+  <div class="exercise" id="ex3">
+    <div class="exercise-header">
+      <div>
+        <div class="exercise-num">Exercise 03</div>
+        <h2>Multi-Tenant Copilot Endpoint</h2>
+        <p>Add JWT auth, per-tenant Qdrant namespace isolation, and RBAC tool filtering to the copilot endpoint.</p>
+      </div>
+      <div class="ex-status">
+        <div class="status-dot" id="dot3"></div>
+        <button class="mark-done-btn" onclick="markDone(3)">Mark Done</button>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(3,'task')">Your Task</button>
+      <button class="tab-btn" onclick="switchTab(3,'code')">Starter Code</button>
+      <button class="tab-btn" onclick="switchTab(3,'tests')">Test Cases</button>
+      <button class="tab-btn" onclick="switchTab(3,'hints')">Hints</button>
+    </div>
+    <div class="tab-panel active" id="ex3-task">
+      <div class="section-label gold">Capstone Layer 3 — Multi-Tenancy</div>
+      <p style="color:var(--muted);margin-bottom:16px;">Secure the copilot endpoint with JWT authentication, isolate each tenant's data in Qdrant using payload filters, and restrict tools based on user roles.</p>
+      <div class="task-requirements">
+        <ul>
+          <li>Implement <code>verify_jwt(token: str) -> dict</code> that decodes and validates a JWT, returning the claims</li>
+          <li>Add <code>get_current_user</code> FastAPI dependency that reads the Bearer token and calls verify_jwt</li>
+          <li>In the RAG retrieval, add <code>must=[FieldCondition(key="tenant_id", match=MatchValue(value=tenant_id))]</code> filter</li>
+          <li>Implement <code>filter_tools_by_role(tools: list, role: str) -> list</code> — admins get all tools, viewers get read-only</li>
+          <li>Add audit logging: log each request with user_id, tenant_id, action, timestamp to a file</li>
+        </ul>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex3-code">
+      <div class="code-wrap">
+        <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>multi_tenant_api.py</span></div>
+        <div class="code-body"><div class="code-content"><span class="cm"># pip install fastapi python-jose qdrant-client</span>
+<span class="kw">from</span> fastapi <span class="kw">import</span> FastAPI, Depends, HTTPException, status
+<span class="kw">from</span> fastapi.security <span class="kw">import</span> HTTPBearer, HTTPAuthorizationCredentials
+<span class="kw">from</span> jose <span class="kw">import</span> jwt, JWTError
+<span class="kw">from</span> qdrant_client.models <span class="kw">import</span> Filter, FieldCondition, MatchValue
+<span class="kw">from</span> datetime <span class="kw">import</span> datetime
+<span class="kw">import</span> json, os
+
+SECRET_KEY = os.<span class="fn">getenv</span>(<span class="st">"JWT_SECRET"</span>, <span class="st">"dev-secret-change-in-prod"</span>)
+ALGORITHM = <span class="st">"HS256"</span>
+
+app = <span class="fn">FastAPI</span>()
+security = <span class="fn">HTTPBearer</span>()
+
+ROLE_TOOLS = {
+    <span class="st">"admin"</span>: [<span class="st">"search"</span>, <span class="st">"write"</span>, <span class="st">"delete"</span>, <span class="st">"send_email"</span>],
+    <span class="st">"editor"</span>: [<span class="st">"search"</span>, <span class="st">"write"</span>],
+    <span class="st">"viewer"</span>: [<span class="st">"search"</span>],
+}
+
+<span class="kw">def</span> <span class="fn">verify_jwt</span>(token: str) -> dict:
+    <span class="cm"># TODO: decode JWT, raise HTTPException(401) if invalid/expired</span>
+    <span class="kw">pass</span>
+
+<span class="kw">async def</span> <span class="fn">get_current_user</span>(creds: HTTPAuthorizationCredentials = <span class="fn">Depends</span>(security)) -> dict:
+    <span class="cm"># TODO: call verify_jwt(creds.credentials) and return claims</span>
+    <span class="kw">pass</span>
+
+<span class="kw">def</span> <span class="fn">tenant_filter</span>(tenant_id: str) -> Filter:
+    <span class="cm"># TODO: return Qdrant Filter that restricts to tenant_id</span>
+    <span class="kw">pass</span>
+
+<span class="kw">def</span> <span class="fn">filter_tools_by_role</span>(tools: list[str], role: str) -> list[str]:
+    <span class="cm"># TODO: return intersection of requested tools and role's allowed tools</span>
+    <span class="kw">pass</span>
+
+<span class="kw">def</span> <span class="fn">audit_log</span>(user_id: str, tenant_id: str, action: str):
+    entry = {<span class="st">"ts"</span>: datetime.<span class="fn">utcnow</span>().<span class="fn">isoformat</span>(), <span class="st">"user"</span>: user_id, <span class="st">"tenant"</span>: tenant_id, <span class="st">"action"</span>: action}
+    <span class="kw">with</span> <span class="fn">open</span>(<span class="st">"audit.log"</span>, <span class="st">"a"</span>) <span class="kw">as</span> f:
+        f.<span class="fn">write</span>(json.<span class="fn">dumps</span>(entry) + <span class="st">"\n"</span>)
+
+<span class="kw">@app.get</span>(<span class="st">"/query"</span>)
+<span class="kw">async def</span> <span class="fn">query_endpoint</span>(q: str, user: dict = <span class="fn">Depends</span>(get_current_user)):
+    user_id = user[<span class="st">"sub"</span>]
+    tenant_id = user[<span class="st">"tenant_id"</span>]
+    role = user[<span class="st">"role"</span>]
+
+    allowed_tools = <span class="fn">filter_tools_by_role</span>([<span class="st">"search"</span>, <span class="st">"write"</span>], role)
+    f = <span class="fn">tenant_filter</span>(tenant_id)
+    <span class="fn">audit_log</span>(user_id, tenant_id, <span class="fn">f</span><span class="st">f"query: {q[:50]}"</span>)
+
+    <span class="kw">return</span> {<span class="st">"tools_available"</span>: allowed_tools, <span class="st">"tenant"</span>: tenant_id, <span class="st">"query"</span>: q}</div></div>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex3-tests">
+      <div class="tests-grid">
+        <div class="test-case"><span class="test-badge pending">PENDING</span><div class="test-content"><div class="test-input">Request with invalid JWT → 401 Unauthorized</div><div class="test-expected">Expected: HTTPException with status_code=401</div></div></div>
+        <div class="test-case"><span class="test-badge pending">PENDING</span><div class="test-content"><div class="test-input">filter_tools_by_role(["search","delete"], "viewer")</div><div class="test-expected">Expected: ["search"] — delete not allowed for viewers</div></div></div>
+        <div class="test-case"><span class="test-badge pending">PENDING</span><div class="test-content"><div class="test-input">audit.log contains entry after request</div><div class="test-expected">Expected: JSON line with ts, user, tenant, action fields</div></div></div>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex3-hints">
+      <div class="hints-list">
+        <button class="hint-toggle" onclick="toggleHint(this)">Hint: JWT decode <span class="arrow">▶</span></button>
+        <div class="hint-body"><code>payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])</code>. Wrap in try/except JWTError and raise <code>HTTPException(status_code=401, detail="Invalid token")</code>.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Exercise 4 -->
+  <div class="exercise" id="ex4">
+    <div class="exercise-header">
+      <div>
+        <div class="exercise-num">Exercise 04</div>
+        <h2>Guardrails + Structured Output Pipeline</h2>
+        <p>Add Guardrails AI validation to the response pipeline with automatic retry on validation failure.</p>
+      </div>
+      <div class="ex-status">
+        <div class="status-dot" id="dot4"></div>
+        <button class="mark-done-btn" onclick="markDone(4)">Mark Done</button>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(4,'task')">Your Task</button>
+      <button class="tab-btn" onclick="switchTab(4,'code')">Starter Code</button>
+      <button class="tab-btn" onclick="switchTab(4,'tests')">Test Cases</button>
+      <button class="tab-btn" onclick="switchTab(4,'hints')">Hints</button>
+    </div>
+    <div class="tab-panel active" id="ex4-task">
+      <div class="section-label gold">Capstone Layer 4 — Safety</div>
+      <p style="color:var(--muted);margin-bottom:16px;">Wrap the LLM response in a Pydantic output model, validate with Guardrails, and retry with feedback if validation fails.</p>
+      <div class="task-requirements">
+        <ul>
+          <li>Define <code>CopilotAnswer</code> Pydantic model: answer (str, min 10 chars), sources (list[str], min 1 item), confidence (float 0-1), safe (bool)</li>
+          <li>Implement <code>generate_with_guardrails(query, context)</code> using instructor with retry</li>
+          <li>Add a custom Pydantic validator: if answer contains "I cannot" or "I don't know", set safe=False</li>
+          <li>Configure instructor to retry up to 3 times on ValidationError, passing the error back to the model</li>
+          <li>Test with a prompt that initially triggers a validation failure</li>
+        </ul>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex4-code">
+      <div class="code-wrap">
+        <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>guardrailed_output.py</span></div>
+        <div class="code-body"><div class="code-content"><span class="cm"># pip install instructor openai pydantic</span>
+<span class="kw">import</span> instructor
+<span class="kw">from</span> openai <span class="kw">import</span> OpenAI
+<span class="kw">from</span> pydantic <span class="kw">import</span> BaseModel, Field, field_validator
+<span class="kw">from</span> typing <span class="kw">import</span> Annotated
+
+client = instructor.<span class="fn">from_openai</span>(<span class="fn">OpenAI</span>(), mode=instructor.Mode.JSON)
+
+<span class="kw">class</span> <span class="tp">CopilotAnswer</span>(BaseModel):
+    answer: Annotated[str, Field(min_length=<span class="nm">10</span>, description=<span class="st">"Substantive answer to the question"</span>)]
+    sources: Annotated[list[str], Field(min_length=<span class="nm">1</span>, description=<span class="st">"Source documents used"</span>)]
+    confidence: float = Field(ge=<span class="nm">0.0</span>, le=<span class="nm">1.0</span>)
+    safe: bool = <span class="kw">True</span>
+
+    <span class="kw">@field_validator</span>(<span class="st">"answer"</span>)
+    <span class="kw">def</span> <span class="fn">check_not_refusal</span>(cls, v: str) -> str:
+        <span class="cm"># TODO: if answer contains "I cannot" or "I don't know", raise ValueError</span>
+        <span class="kw">pass</span>
+
+<span class="kw">def</span> <span class="fn">generate_with_guardrails</span>(query: str, context: str) -> CopilotAnswer:
+    <span class="cm"># TODO: use client.chat.completions.create with response_model=CopilotAnswer</span>
+    <span class="cm"># TODO: set max_retries=3 in the instructor call</span>
+    <span class="cm"># TODO: include context in the user message</span>
+    <span class="kw">pass</span>
+
+<span class="kw">if</span> __name__ == <span class="st">"__main__"</span>:
+    context = <span class="st">"RLHF stands for Reinforcement Learning from Human Feedback. It is used to align LLMs."</span>
+    result = <span class="fn">generate_with_guardrails</span>(<span class="st">"What is RLHF?"</span>, context)
+    <span class="fn">print</span>(<span class="fn">f</span><span class="st">f"Answer: {result.answer}"</span>)
+    <span class="fn">print</span>(<span class="fn">f</span><span class="st">f"Confidence: {result.confidence}"</span>)
+    <span class="fn">print</span>(<span class="fn">f</span><span class="st">f"Safe: {result.safe}"</span>)</div></div>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex4-tests">
+      <div class="tests-grid">
+        <div class="test-case"><span class="test-badge pending">PENDING</span><div class="test-content"><div class="test-input">Answer with "I cannot help" fails validation</div><div class="test-expected">Expected: instructor retries, final answer is substantive</div></div></div>
+        <div class="test-case"><span class="test-badge pending">PENDING</span><div class="test-content"><div class="test-input">sources list empty → ValidationError</div><div class="test-expected">Expected: min_length=1 raises ValidationError, retry requested</div></div></div>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex4-hints">
+      <div class="hints-list">
+        <button class="hint-toggle" onclick="toggleHint(this)">Hint: instructor max_retries <span class="arrow">▶</span></button>
+        <div class="hint-body"><code>client.chat.completions.create(..., max_retries=3)</code>. When validation fails, instructor automatically adds the error message to the next prompt so the model can fix it.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Exercise 5 -->
+  <div class="exercise" id="ex5">
+    <div class="exercise-header">
+      <div>
+        <div class="exercise-num">Exercise 05</div>
+        <h2>MLflow Experiment Comparison</h2>
+        <p>Run 3 different RAG configurations as MLflow experiments, compare metrics, and promote the best to staging.</p>
+      </div>
+      <div class="ex-status">
+        <div class="status-dot" id="dot5"></div>
+        <button class="mark-done-btn" onclick="markDone(5)">Mark Done</button>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(5,'task')">Your Task</button>
+      <button class="tab-btn" onclick="switchTab(5,'code')">Starter Code</button>
+      <button class="tab-btn" onclick="switchTab(5,'tests')">Test Cases</button>
+      <button class="tab-btn" onclick="switchTab(5,'hints')">Hints</button>
+    </div>
+    <div class="tab-panel active" id="ex5-task">
+      <div class="section-label gold">Capstone Layer 5 — MLOps</div>
+      <p style="color:var(--muted);margin-bottom:16px;">Use MLflow to systematically compare RAG configurations and promote the winner to the model registry.</p>
+      <div class="task-requirements">
+        <ul>
+          <li>Define 3 RAG configs: (1) chunk_size=256, no rerank; (2) chunk_size=512, with rerank; (3) chunk_size=512, HyDE enabled</li>
+          <li>For each config, simulate a test run logging: faithfulness, answer_relevancy, avg_latency_ms, chunk_size to MLflow</li>
+          <li>Use <code>mlflow.search_runs</code> to find the run with highest faithfulness score</li>
+          <li>Register the best run as a model version using <code>mlflow.register_model</code></li>
+          <li>Transition the registered model to "Staging" using <code>MlflowClient.transition_model_version_stage</code></li>
+        </ul>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex5-code">
+      <div class="code-wrap">
+        <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>mlflow_experiment.py</span></div>
+        <div class="code-body"><div class="code-content"><span class="cm"># pip install mlflow</span>
+<span class="kw">import</span> mlflow
+<span class="kw">from</span> mlflow.tracking <span class="kw">import</span> MlflowClient
+<span class="kw">import</span> random
+
+mlflow.<span class="fn">set_experiment</span>(<span class="st">"rag-config-comparison"</span>)
+
+RAG_CONFIGS = [
+    {<span class="st">"name"</span>: <span class="st">"baseline"</span>, <span class="st">"chunk_size"</span>: <span class="nm">256</span>, <span class="st">"rerank"</span>: <span class="kw">False</span>, <span class="st">"hyde"</span>: <span class="kw">False</span>},
+    {<span class="st">"name"</span>: <span class="st">"with_rerank"</span>, <span class="st">"chunk_size"</span>: <span class="nm">512</span>, <span class="st">"rerank"</span>: <span class="kw">True</span>, <span class="st">"hyde"</span>: <span class="kw">False</span>},
+    {<span class="st">"name"</span>: <span class="st">"hyde_rerank"</span>, <span class="st">"chunk_size"</span>: <span class="nm">512</span>, <span class="st">"rerank"</span>: <span class="kw">True</span>, <span class="st">"hyde"</span>: <span class="kw">True</span>},
+]
+
+<span class="kw">def</span> <span class="fn">simulate_rag_metrics</span>(config: dict) -> dict:
+    <span class="cm"># Simulate metrics — in real life these come from RAGAS evaluation</span>
+    base = <span class="nm">0.65</span> <span class="kw">if</span> <span class="kw">not</span> config[<span class="st">"rerank"</span>] <span class="kw">else</span> <span class="nm">0.78</span>
+    boost = <span class="nm">0.08</span> <span class="kw">if</span> config[<span class="st">"hyde"</span>] <span class="kw">else</span> <span class="nm">0</span>
+    <span class="kw">return</span> {
+        <span class="st">"faithfulness"</span>: <span class="fn">round</span>(base + boost + random.<span class="fn">uniform</span>(<span class="nm">-0.02</span>, <span class="nm">0.02</span>), <span class="nm">3</span>),
+        <span class="st">"answer_relevancy"</span>: <span class="fn">round</span>(base + <span class="nm">0.05</span> + random.<span class="fn">uniform</span>(<span class="nm">-0.02</span>, <span class="nm">0.02</span>), <span class="nm">3</span>),
+        <span class="st">"avg_latency_ms"</span>: <span class="nm">250</span> <span class="kw">if</span> <span class="kw">not</span> config[<span class="st">"rerank"</span>] <span class="kw">else</span> <span class="nm">450</span>,
+    }
+
+<span class="kw">def</span> <span class="fn">run_experiments</span>() -> list[str]:
+    <span class="cm"># TODO: for each config, start an mlflow run, log params + metrics, return run_ids</span>
+    run_ids = []
+    <span class="kw">for</span> config <span class="kw">in</span> RAG_CONFIGS:
+        <span class="kw">with</span> mlflow.<span class="fn">start_run</span>(run_name=config[<span class="st">"name"</span>]) <span class="kw">as</span> run:
+            <span class="cm"># TODO: log params and metrics</span>
+            run_ids.<span class="fn">append</span>(run.info.run_id)
+    <span class="kw">return</span> run_ids
+
+<span class="kw">def</span> <span class="fn">promote_best</span>(experiment_name: str, model_name: str = <span class="st">"rag-copilot"</span>):
+    <span class="cm"># TODO: use mlflow.search_runs to find run with max faithfulness</span>
+    <span class="cm"># TODO: mlflow.register_model(f"runs:/{best_run_id}/model", model_name)</span>
+    <span class="cm"># TODO: transition to Staging via MlflowClient</span>
+    <span class="kw">pass</span>
+
+<span class="kw">if</span> __name__ == <span class="st">"__main__"</span>:
+    <span class="fn">run_experiments</span>()
+    <span class="fn">promote_best</span>(<span class="st">"rag-config-comparison"</span>)</div></div>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex5-tests">
+      <div class="tests-grid">
+        <div class="test-case"><span class="test-badge pending">PENDING</span><div class="test-content"><div class="test-input">3 MLflow runs created in "rag-config-comparison" experiment</div><div class="test-expected">Expected: mlflow.search_runs() returns 3 rows</div></div></div>
+        <div class="test-case"><span class="test-badge pending">PENDING</span><div class="test-content"><div class="test-input">Best run promoted to Staging in registry</div><div class="test-expected">Expected: MlflowClient().get_model_version("rag-copilot", "1").current_stage == "Staging"</div></div></div>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex5-hints">
+      <div class="hints-list">
+        <button class="hint-toggle" onclick="toggleHint(this)">Hint: search_runs <span class="arrow">▶</span></button>
+        <div class="hint-body"><code>runs = mlflow.search_runs(experiment_names=["rag-config-comparison"], order_by=["metrics.faithfulness DESC"])</code>. The first row is the best. Get its run_id with <code>runs.iloc[0].run_id</code>.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Exercise 6 -->
+  <div class="exercise capstone-ex" id="ex6">
+    <div class="exercise-header" style="background: linear-gradient(135deg, rgba(251,191,36,0.12), rgba(124,58,237,0.08));">
+      <div>
+        <div class="exercise-num" style="color: var(--gold);">Exercise 06 — Final Boss</div>
+        <h2>Docker Compose Assembly</h2>
+        <p>Write the complete docker-compose.yml that deploys the entire AI copilot stack with GPU support.</p>
+      </div>
+      <div class="ex-status">
+        <div class="status-dot" id="dot6"></div>
+        <button class="mark-done-btn" onclick="markDone(6)">Mark Done</button>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(6,'task')">Your Task</button>
+      <button class="tab-btn" onclick="switchTab(6,'code')">Starter Code</button>
+      <button class="tab-btn" onclick="switchTab(6,'tests')">Test Cases</button>
+      <button class="tab-btn" onclick="switchTab(6,'hints')">Hints</button>
+    </div>
+    <div class="tab-panel active" id="ex6-task">
+      <div class="section-label gold">Capstone Layer 6 — Deployment</div>
+      <p style="color:var(--muted);margin-bottom:16px;">Create a production-ready docker-compose.yml that orchestrates the full AI copilot stack: API, vector DB, cache, metrics, and optional GPU support.</p>
+      <div class="task-requirements">
+        <ul>
+          <li>Define 5 services: <code>api</code> (FastAPI), <code>qdrant</code>, <code>redis</code>, <code>prometheus</code>, <code>mlflow</code></li>
+          <li>The <code>api</code> service should build from a local Dockerfile and accept GPU resources if available</li>
+          <li>Add health checks to <code>qdrant</code> (HTTP check on :6333/healthz) and <code>redis</code> (redis-cli ping)</li>
+          <li>Configure networks: services communicate via internal <code>ai-network</code>, only api and prometheus exposed externally</li>
+          <li>Add a <code>.env.example</code> file listing all required env vars: OPENAI_API_KEY, JWT_SECRET, MLFLOW_TRACKING_URI</li>
+          <li>Write a companion <code>Dockerfile</code> for the FastAPI app with multi-stage build</li>
+        </ul>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex6-code">
+      <div class="code-wrap">
+        <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>docker-compose.yml</span></div>
+        <div class="code-body"><div class="code-content"><span class="cm"># docker-compose.yml skeleton — complete the TODOs</span>
+<span class="kw">version</span>: <span class="st">"3.9"</span>
+
+<span class="kw">services</span>:
+  <span class="fn">api</span>:
+    <span class="kw">build</span>: .
+    <span class="kw">ports</span>:
+      - <span class="st">"8000:8000"</span>
+    <span class="kw">environment</span>:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+      - QDRANT_URL=http://qdrant:6333
+      - REDIS_URL=redis://redis:6379
+    <span class="cm"># TODO: add GPU resource reservation (deploy.resources.reservations.devices)</span>
+    <span class="kw">depends_on</span>:
+      qdrant: {<span class="kw">condition</span>: service_healthy}
+      redis: {<span class="kw">condition</span>: service_healthy}
+    <span class="kw">networks</span>: [ai-network]
+
+  <span class="fn">qdrant</span>:
+    <span class="kw">image</span>: qdrant/qdrant:latest
+    <span class="kw">ports</span>:
+      - <span class="st">"6333:6333"</span>
+    <span class="kw">volumes</span>:
+      - qdrant_data:/qdrant/storage
+    <span class="cm"># TODO: add healthcheck (test: curl -f http://localhost:6333/healthz)</span>
+    <span class="kw">networks</span>: [ai-network]
+
+  <span class="fn">redis</span>:
+    <span class="kw">image</span>: redis:7-alpine
+    <span class="cm"># TODO: add healthcheck (test: redis-cli ping)</span>
+    <span class="kw">networks</span>: [ai-network]
+
+  <span class="fn">prometheus</span>:
+    <span class="kw">image</span>: prom/prometheus:latest
+    <span class="kw">ports</span>:
+      - <span class="st">"9090:9090"</span>
+    <span class="kw">volumes</span>:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    <span class="kw">networks</span>: [ai-network]
+
+  <span class="fn">mlflow</span>:
+    <span class="kw">image</span>: ghcr.io/mlflow/mlflow:latest
+    <span class="kw">ports</span>:
+      - <span class="st">"5001:5001"</span>
+    <span class="kw">command</span>: mlflow server --host 0.0.0.0 --port 5001
+    <span class="kw">volumes</span>:
+      - mlflow_data:/mlflow
+    <span class="kw">networks</span>: [ai-network]
+
+<span class="kw">volumes</span>:
+  qdrant_data:
+  mlflow_data:
+
+<span class="kw">networks</span>:
+  <span class="fn">ai-network</span>:
+    <span class="kw">driver</span>: bridge</div></div>
+      </div>
+      <div class="code-wrap" style="margin-top:16px;">
+        <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>Dockerfile (multi-stage)</span></div>
+        <div class="code-body"><div class="code-content"><span class="cm"># Dockerfile skeleton</span>
+<span class="cm"># Stage 1: dependencies</span>
+<span class="kw">FROM</span> python:3.12-slim <span class="kw">AS</span> builder
+<span class="kw">WORKDIR</span> /app
+<span class="kw">COPY</span> requirements.txt .
+<span class="cm"># TODO: pip install --no-cache-dir with --prefix=/install</span>
+
+<span class="cm"># Stage 2: runtime</span>
+<span class="kw">FROM</span> python:3.12-slim
+<span class="kw">WORKDIR</span> /app
+<span class="cm"># TODO: copy installed packages from builder stage</span>
+<span class="kw">COPY</span> . .
+<span class="cm"># TODO: add non-root user for security</span>
+<span class="kw">EXPOSE</span> 8000
+<span class="cm"># TODO: CMD to start uvicorn</span></div></div>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex6-tests">
+      <div class="tests-grid">
+        <div class="test-case"><span class="test-badge pending">PENDING</span><div class="test-content"><div class="test-input">docker compose config validates without errors</div><div class="test-expected">Expected: docker compose config exits 0, no YAML errors</div></div></div>
+        <div class="test-case"><span class="test-badge pending">PENDING</span><div class="test-content"><div class="test-input">docker compose up --no-start shows 5 services</div><div class="test-expected">Expected: api, qdrant, redis, prometheus, mlflow all listed</div></div></div>
+        <div class="test-case"><span class="test-badge pending">PENDING</span><div class="test-content"><div class="test-input">Health checks defined for qdrant and redis</div><div class="test-expected">Expected: depends_on with condition: service_healthy works</div></div></div>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex6-hints">
+      <div class="hints-list">
+        <button class="hint-toggle" onclick="toggleHint(this)">Hint: GPU resource reservation <span class="arrow">▶</span></button>
+        <div class="hint-body"><pre style="font-size:0.78rem;color:#c3e88d;">deploy:
+  resources:
+    reservations:
+      devices:
+        - driver: nvidia
+          count: 1
+          capabilities: [gpu]</pre></div>
+        <button class="hint-toggle" onclick="toggleHint(this)">Hint: Health check syntax <span class="arrow">▶</span></button>
+        <div class="hint-body"><pre style="font-size:0.78rem;color:#c3e88d;">healthcheck:
+  test: ["CMD", "curl", "-f", "http://localhost:6333/healthz"]
+  interval: 10s
+  timeout: 5s
+  retries: 3</pre></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer class="footer">
+  <div class="footer-nav">
+    <a href="../days/day30.html">← Day 30 Lesson</a>
+    <a href="../index.html">Return to Dashboard →</a>
+  </div>
+  <p>30-Day Agentic AI Mastery · Built for Sharjeel Sohail · You made it! 🏆</p>
+</footer>
+
+<script>
+const TOTAL = 6;
+const KEY = 'aai_ex_day30';
+let done = JSON.parse(localStorage.getItem(KEY) || '{}');
+function updateProgress() {
+  const n = Object.keys(done).length;
+  document.getElementById('prog-text').textContent = n + ' / ' + TOTAL;
+  document.getElementById('prog-fill').style.width = (n / TOTAL * 100) + '%';
+  if (n === TOTAL) {
+    document.getElementById('completion-banner').classList.add('show');
+    window.dispatchEvent(new CustomEvent('dayComplete'));
+  }
+}
+function markDone(n) {
+  done[n] = true; localStorage.setItem(KEY, JSON.stringify(done));
+  document.getElementById('dot' + n).classList.add('done'); updateProgress();
+}
+function switchTab(ex, tab) {
+  ['task','code','tests','hints'].forEach(t => {
+    document.getElementById('ex' + ex + '-' + t).classList.toggle('active', t === tab);
+  });
+  document.querySelectorAll('#ex' + ex + ' .tab-btn').forEach((b, i) =>
+    b.classList.toggle('active', ['task','code','tests','hints'][i] === tab));
+}
+function toggleHint(btn) {
+  btn.classList.toggle('open');
+  const body = btn.nextElementSibling;
+  body.style.display = body.style.display === 'block' ? 'none' : 'block';
+}
+Object.keys(done).forEach(n => document.getElementById('dot' + n)?.classList.add('done'));
+updateProgress();
+</script>
+<script src="../bg-animation.js"></script>
+</body>
+</html>

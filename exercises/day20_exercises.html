@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 20 Exercises — AI System Observability</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f; --card: #141420; --surface2: #1a1a2e; --border: #2a2a45;
+  --purple: #7c3aed; --purple-light: #a855f7; --teal: #0d9488;
+  --green: #10b981; --yellow: #f59e0b; --red: #ef4444;
+  --text: #e2e8f0; --muted: #64748b;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
+.sticky-nav { position: sticky; top: 0; z-index: 100; background: rgba(10,10,15,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); padding: 12px 32px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.sticky-nav a { color: var(--muted); text-decoration: none; font-size: 0.85rem; padding: 6px 12px; border-radius: 6px; transition: all 0.2s; border: 1px solid transparent; }
+.sticky-nav a:hover { color: var(--text); background: var(--card); border-color: var(--border); }
+.sticky-nav .brand { color: var(--purple-light); font-weight: 600; font-size: 0.9rem; }
+.nav-sep { color: var(--border); }
+.nav-title { color: var(--text); font-weight: 700; font-size: 0.95rem; flex: 1; }
+.hero { padding: 56px 32px 32px; max-width: 1100px; margin: 0 auto; border-bottom: 1px solid var(--border); }
+.hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: 8px; }
+.hero h1 span { color: var(--purple-light); }
+.hero p { color: var(--muted); font-size: 1rem; max-width: 700px; }
+.hero-meta { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
+.badge-purple { background: rgba(124,58,237,0.15); color: var(--purple-light); border: 1px solid rgba(124,58,237,0.3); }
+.badge-teal { background: rgba(13,148,136,0.15); color: #2dd4bf; border: 1px solid rgba(13,148,136,0.3); }
+.badge-green { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.progress-bar-wrap { max-width: 1100px; margin: 24px auto; padding: 0 32px; }
+.progress-label { font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
+.progress-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--purple), var(--teal)); border-radius: 3px; transition: width 0.5s ease; }
+.main { max-width: 1100px; margin: 0 auto; padding: 32px; display: flex; flex-direction: column; gap: 64px; }
+.exercise { border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: var(--card); }
+.exercise-header { padding: 24px 32px; background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(13,148,136,0.05)); border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.exercise-num { font-size: 0.75rem; color: var(--purple-light); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.exercise-header h2 { font-size: 1.4rem; font-weight: 700; margin: 4px 0 8px; }
+.exercise-header p { color: var(--muted); font-size: 0.9rem; }
+.ex-status { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); transition: background 0.3s; }
+.status-dot.done { background: var(--green); }
+.tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--surface2); }
+.tab-btn { padding: 12px 20px; font-size: 0.82rem; font-weight: 600; color: var(--muted); cursor: pointer; border: none; background: none; border-bottom: 2px solid transparent; transition: all 0.2s; font-family: 'Inter', sans-serif; }
+.tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+.tab-btn.active { color: var(--purple-light); border-bottom-color: var(--purple-light); background: rgba(124,58,237,0.05); }
+.tab-panel { display: none; padding: 28px 32px; }
+.tab-panel.active { display: block; }
+.code-wrap { background: #0d0d18; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin: 12px 0; }
+.code-header { padding: 8px 16px; background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; color: var(--muted); }
+.code-dots { display: flex; gap: 6px; }
+.code-dots span { width: 10px; height: 10px; border-radius: 50%; }
+.code-dots .dot-r { background: var(--red); } .code-dots .dot-y { background: var(--yellow); } .code-dots .dot-g { background: var(--green); }
+.code-body { display: flex; }
+.line-nums { padding: 16px 8px; background: rgba(0,0,0,0.3); border-right: 1px solid var(--border); display: flex; flex-direction: column; min-width: 40px; text-align: right; }
+.line-nums span { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: #3a3a5c; line-height: 1.7; padding: 0 8px; }
+.code-content { padding: 16px; overflow-x: auto; flex: 1; white-space: pre; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; line-height: 1.7; }
+.kw { color: #c792ea; } .fn { color: #82aaff; } .st { color: #c3e88d; } .cm { color: #546e7a; font-style: italic; }
+.nm { color: #f78c6c; } .tp { color: #ffcb6b; } .dt { color: #89ddff; } .va { color: #eeffff; } .bi { color: #ff5370; }
+.task-requirements { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); border-radius: 10px; padding: 16px 20px; margin-bottom: 16px; }
+.task-requirements li { color: var(--text); font-size: 0.88rem; margin: 6px 0 6px 16px; }
+.task-requirements li::marker { color: var(--yellow); }
+.tests-grid { display: flex; flex-direction: column; gap: 8px; }
+.test-case { display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+.test-badge { flex-shrink: 0; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; font-family: 'Inter', sans-serif; letter-spacing: 0.5px; }
+.test-badge.pass { background: rgba(16,185,129,0.2); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.test-badge.pending { background: rgba(100,116,139,0.2); color: var(--muted); border: 1px solid rgba(100,116,139,0.3); }
+.test-content { flex: 1; } .test-input { color: var(--text); } .test-expected { color: var(--muted); margin-top: 2px; }
+.hints-list { display: flex; flex-direction: column; gap: 8px; }
+.hint-toggle { width: 100%; text-align: left; padding: 10px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--muted); cursor: pointer; font-family: 'Inter', sans-serif; font-size: 0.85rem; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s; }
+.hint-toggle:hover { border-color: var(--purple); color: var(--text); }
+.hint-toggle .arrow { transition: transform 0.2s; }
+.hint-toggle.open .arrow { transform: rotate(90deg); }
+.hint-body { display: none; padding: 12px 16px; margin-top: 4px; background: rgba(124,58,237,0.05); border: 1px solid rgba(124,58,237,0.2); border-radius: 8px; font-size: 0.85rem; color: var(--text); line-height: 1.6; }
+.hint-body code { background: rgba(124,58,237,0.15); padding: 1px 5px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--purple-light); }
+.section-label { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.section-label.purple { color: var(--purple-light); } .section-label.yellow { color: var(--yellow); }
+.section-label.green { color: #34d399; } .section-label.teal { color: #2dd4bf; }
+.section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.animate-btn { margin-top: 12px; padding: 8px 18px; border-radius: 8px; background: var(--purple); color: white; border: none; cursor: pointer; font-size: 0.82rem; font-weight: 600; font-family: 'Inter', sans-serif; transition: background 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+.animate-btn:hover { background: var(--purple-light); }
+.info-box { padding: 12px 16px; border-radius: 8px; margin: 12px 0; font-size: 0.85rem; }
+.info-box.teal { background: rgba(13,148,136,0.08); border: 1px solid rgba(13,148,136,0.2); color: var(--text); }
+.info-box.teal strong { color: #2dd4bf; }
+.info-box.purple { background: rgba(124,58,237,0.08); border: 1px solid rgba(124,58,237,0.2); color: var(--text); }
+.info-box.purple strong { color: var(--purple-light); }
+.footer { border-top: 1px solid var(--border); padding: 32px; text-align: center; color: var(--muted); font-size: 0.82rem; }
+.footer a { color: var(--purple-light); text-decoration: none; }
+</style>
+</head>
+<body data-animation-density="high">
+
+<nav class="sticky-nav">
+  <a href="../days/day20.html">← Day 20 lesson</a>
+  <span class="nav-sep">|</span>
+  <a href="../index.html" class="brand">🤖 Agentic AI</a>
+  <span class="nav-sep">|</span>
+  <span class="nav-title">Day 20 Exercises — AI System Observability</span>
+  <a href="day21_exercises.html" style="margin-left:auto;">Day 21 Exercises →</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-meta">
+    <span class="badge badge-purple">Day 20</span>
+    <span class="badge badge-teal">5 Exercises</span>
+    <span class="badge badge-green">RAGAS / Prometheus / LangSmith</span>
+  </div>
+  <h1>AI System <span>Observability</span></h1>
+  <p>You can't improve what you can't measure. Instrument your LLM pipelines with RAGAS quality scores, LangSmith distributed traces, Prometheus metrics, and embedding drift detection.</p>
+</div>
+
+<div class="progress-bar-wrap">
+  <div class="progress-label"><span>Progress</span><span id="progress-text">0 / 5 completed</span></div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+</div>
+
+<main class="main">
+
+<!-- ========== EXERCISE 1: RAGAS ========== -->
+<section class="exercise" id="ex1">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 1 of 5</div>
+      <h2>RAGAS — RAG Pipeline Evaluation</h2>
+      <p>Evaluate a RAG pipeline across four dimensions: faithfulness, answer relevancy, context precision, and context recall.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot1"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex1','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex1','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex1','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex1','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex1-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Run a RAGAS evaluation on a small RAG dataset:</p>
+      <ul>
+        <li>Create an evaluation dataset using <code style="font-family:'JetBrains Mono',monospace;">Dataset.from_dict()</code> with columns: <code style="font-family:'JetBrains Mono',monospace;">question</code>, <code style="font-family:'JetBrains Mono',monospace;">answer</code>, <code style="font-family:'JetBrains Mono',monospace;">contexts</code>, <code style="font-family:'JetBrains Mono',monospace;">ground_truth</code></li>
+        <li>Run <code style="font-family:'JetBrains Mono',monospace;">evaluate_run(dataset, metrics=[faithfulness, answer_relevancy])</code></li>
+        <li>Convert the result to a Pandas DataFrame and print per-row scores</li>
+        <li>Identify which question had the lowest faithfulness score</li>
+        <li>Write a <code style="font-family:'JetBrains Mono',monospace;">quality_gate(scores, threshold=0.7)</code> function that raises if any metric fails</li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(1)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex1-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        <span>day20_ex1_ragas.py</span>
+        <span># pip install ragas datasets langchain-openai</span>
+      </div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span><span>31</span><span>32</span><span>33</span><span>34</span><span>35</span></div>
+        <div class="code-content"><span class="cm"># pip install ragas datasets langchain-openai</span>
+<span class="cm"># export OPENAI_API_KEY=sk-...  (RAGAS uses GPT-4 as judge by default)</span>
+<span class="kw">from</span> <span class="va">ragas</span> <span class="kw">import</span> <span class="fn">evaluate</span> <span class="kw">as</span> <span class="fn">evaluate_run</span>
+<span class="kw">from</span> <span class="va">ragas.metrics</span> <span class="kw">import</span> <span class="va">faithfulness</span><span class="dt">,</span> <span class="va">answer_relevancy</span><span class="dt">,</span> <span class="va">context_precision</span>
+<span class="kw">from</span> <span class="va">datasets</span> <span class="kw">import</span> <span class="tp">Dataset</span>
+
+<span class="cm"># Small hand-crafted RAG evaluation set</span>
+<span class="va">eval_data</span> <span class="dt">=</span> <span class="dt">{</span>
+    <span class="st">"question"</span><span class="dt">:</span> <span class="dt">[</span>
+        <span class="st">"What is the boiling point of water?"</span><span class="dt">,</span>
+        <span class="st">"Who wrote Python?"</span><span class="dt">,</span>
+    <span class="dt">],</span>
+    <span class="st">"answer"</span><span class="dt">:</span> <span class="dt">[</span>
+        <span class="st">"Water boils at 100°C at sea level."</span><span class="dt">,</span>
+        <span class="st">"Python was created by Guido van Rossum."</span><span class="dt">,</span>
+    <span class="dt">],</span>
+    <span class="st">"contexts"</span><span class="dt">:</span> <span class="dt">[</span>
+        <span class="dt">[</span><span class="st">"Water boils at 100 degrees Celsius (212°F) at standard atmospheric pressure."</span><span class="dt">],</span>
+        <span class="dt">[</span><span class="st">"Guido van Rossum created Python and released version 0.9.0 in 1991."</span><span class="dt">],</span>
+    <span class="dt">],</span>
+    <span class="st">"ground_truth"</span><span class="dt">:</span> <span class="dt">[</span>
+        <span class="st">"100°C or 212°F"</span><span class="dt">,</span>
+        <span class="st">"Guido van Rossum"</span><span class="dt">,</span>
+    <span class="dt">],</span>
+<span class="dt">}</span>
+
+<span class="cm"># TODO: create Dataset and run evaluate_run with faithfulness + answer_relevancy</span>
+<span class="va">dataset</span> <span class="dt">=</span> <span class="dt">...</span>
+<span class="va">result</span> <span class="dt">=</span> <span class="dt">...</span>
+
+<span class="cm"># TODO: convert to DataFrame and print</span>
+<span class="va">df</span> <span class="dt">=</span> <span class="dt">...</span>
+<span class="fn">print</span><span class="dt">(</span><span class="va">df</span><span class="dt">)</span>
+
+<span class="cm"># TODO: write quality_gate(scores, threshold=0.7)</span>
+<span class="kw">def</span> <span class="fn">quality_gate</span><span class="dt">(</span><span class="va">result</span><span class="dt">,</span> <span class="va">threshold</span><span class="dt">=</span><span class="nm">0.7</span><span class="dt">):</span>
+    <span class="dt">...</span></div>
+      </div>
+    </div>
+    <div class="info-box teal"><strong>RAGAS metrics:</strong> Faithfulness (is the answer supported by context?), Answer Relevancy (does the answer address the question?), Context Precision (are retrieved docs relevant?), Context Recall (are all ground-truth facts in context?). All 0-1, higher is better.</div>
+  </div>
+
+  <div class="tab-panel" id="ex1-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t1-1">T1</span><div class="test-content"><div class="test-input">isinstance(result.to_pandas(), __import__("pandas").DataFrame)</div><div class="test-expected">→ True (result is convertible to DataFrame)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t1-2">T2</span><div class="test-content"><div class="test-input">"faithfulness" in result.to_pandas().columns</div><div class="test-expected">→ True</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t1-3">T3</span><div class="test-content"><div class="test-input">quality_gate(result, threshold=0.0)  # always passes at 0</div><div class="test-expected">→ No exception raised</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(1)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex1-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — Running evaluate_run</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>result = evaluate_run(Dataset.from_dict(eval_data), metrics=[faithfulness, answer_relevancy])</code>. The result object has <code>.to_pandas()</code> and an aggregate score dict accessible via <code>result["faithfulness"]</code>.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — quality_gate implementation</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>df = result.to_pandas(); failing = {col: df[col].mean() for col in ["faithfulness","answer_relevancy"] if df[col].mean() &lt; threshold}</code>. Raise <code>ValueError(f"Quality gate failed: {failing}")</code> if not empty.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 2: LANGSMITH TRACING ========== -->
+<section class="exercise" id="ex2">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 2 of 5</div>
+      <h2>LangSmith Distributed Tracing</h2>
+      <p>Instrument a multi-step RAG pipeline with parent/child spans to see end-to-end latency and token usage in LangSmith.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot2"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex2','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex2','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex2','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex2','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex2-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Create a 3-stage traced pipeline with nested spans:</p>
+      <ul>
+        <li>Define <code style="font-family:'JetBrains Mono',monospace;">retrieve_context(query)</code> with <code style="font-family:'JetBrains Mono',monospace;">@traceable(run_type="retriever")</code></li>
+        <li>Define <code style="font-family:'JetBrains Mono',monospace;">generate_answer(query, context)</code> with <code style="font-family:'JetBrains Mono',monospace;">@traceable(run_type="llm")</code></li>
+        <li>Define <code style="font-family:'JetBrains Mono',monospace;">rag_pipeline(query)</code> with <code style="font-family:'JetBrains Mono',monospace;">@traceable(name="rag-pipeline")</code> that calls both</li>
+        <li>Add custom metadata to each span: <code style="font-family:'JetBrains Mono',monospace;">langsmith_extra={"metadata": {...}}</code></li>
+        <li>Batch 5 queries and use <code style="font-family:'JetBrains Mono',monospace;">langsmith.utils.get_tracer_project()</code> to verify project name</li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(2)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex2-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        <span>day20_ex2_langsmith.py</span>
+        <span># pip install langsmith ollama</span>
+      </div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span><span>31</span><span>32</span><span>33</span></div>
+        <div class="code-content"><span class="cm"># pip install langsmith ollama</span>
+<span class="cm"># export LANGCHAIN_TRACING_V2=true</span>
+<span class="cm"># export LANGCHAIN_API_KEY=ls__...</span>
+<span class="cm"># export LANGCHAIN_PROJECT=day20-observability</span>
+<span class="kw">from</span> <span class="va">langsmith</span> <span class="kw">import</span> <span class="fn">traceable</span>
+<span class="kw">import</span> <span class="va">ollama</span>
+<span class="kw">import</span> <span class="va">time</span>
+
+<span class="cm"># Toy knowledge base</span>
+<span class="va">KB</span> <span class="dt">=</span> <span class="dt">{</span>
+    <span class="st">"python"</span><span class="dt">:</span> <span class="st">"Python was created by Guido van Rossum in 1991."</span><span class="dt">,</span>
+    <span class="st">"llm"</span><span class="dt">:</span>    <span class="st">"LLMs are trained on vast text corpora using next-token prediction."</span><span class="dt">,</span>
+<span class="dt">}</span>
+
+<span class="cm"># TODO: decorate retrieve_context with @traceable(run_type="retriever")</span>
+<span class="kw">def</span> <span class="fn">retrieve_context</span><span class="dt">(</span><span class="va">query</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">str</span><span class="dt">:</span>
+    <span class="va">key</span> <span class="dt">=</span> <span class="va">query</span><span class="dt">.</span><span class="fn">lower</span><span class="dt">().</span><span class="fn">split</span><span class="dt">()[</span><span class="nm">0</span><span class="dt">]</span>
+    <span class="kw">return</span> <span class="va">KB</span><span class="dt">.</span><span class="fn">get</span><span class="dt">(</span><span class="va">key</span><span class="dt">,</span> <span class="st">"No context found."</span><span class="dt">)</span>
+
+<span class="cm"># TODO: decorate generate_answer with @traceable(run_type="llm")</span>
+<span class="kw">def</span> <span class="fn">generate_answer</span><span class="dt">(</span><span class="va">query</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">,</span> <span class="va">context</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">str</span><span class="dt">:</span>
+    <span class="va">prompt</span> <span class="dt">=</span> <span class="bi">f</span><span class="st">"Context: {context}\nQ: {query}\nA:"</span>
+    <span class="kw">return</span> <span class="va">ollama</span><span class="dt">.</span><span class="fn">chat</span><span class="dt">(</span>
+        <span class="va">model</span><span class="dt">=</span><span class="st">"llama3.2:1b"</span><span class="dt">,</span>
+        <span class="va">messages</span><span class="dt">=[{</span><span class="st">"role"</span><span class="dt">:</span><span class="st">"user"</span><span class="dt">,</span><span class="st">"content"</span><span class="dt">:</span><span class="va">prompt</span><span class="dt">}]</span>
+    <span class="dt">)[</span><span class="st">"message"</span><span class="dt">][</span><span class="st">"content"</span><span class="dt">]</span>
+
+<span class="cm"># TODO: wrap in pipeline with @traceable(name="rag-pipeline")</span>
+<span class="kw">def</span> <span class="fn">rag_pipeline</span><span class="dt">(</span><span class="va">query</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">str</span><span class="dt">:</span>
+    <span class="va">ctx</span>    <span class="dt">=</span> <span class="fn">retrieve_context</span><span class="dt">(</span><span class="va">query</span><span class="dt">)</span>
+    <span class="kw">return</span> <span class="fn">generate_answer</span><span class="dt">(</span><span class="va">query</span><span class="dt">,</span> <span class="va">ctx</span><span class="dt">)</span>
+
+<span class="fn">print</span><span class="dt">(</span><span class="fn">rag_pipeline</span><span class="dt">(</span><span class="st">"Python history"</span><span class="dt">))</span></div>
+      </div>
+    </div>
+    <div class="info-box purple"><strong>Nested spans:</strong> When <code style="font-family:'JetBrains Mono',monospace;background:rgba(124,58,237,0.15);padding:1px 5px;border-radius:3px;color:var(--purple-light);">rag_pipeline</code> calls <code style="font-family:'JetBrains Mono',monospace;background:rgba(124,58,237,0.15);padding:1px 5px;border-radius:3px;color:var(--purple-light);">retrieve_context</code> and <code style="font-family:'JetBrains Mono',monospace;background:rgba(124,58,237,0.15);padding:1px 5px;border-radius:3px;color:var(--purple-light);">generate_answer</code>, LangSmith automatically creates child spans under the parent. You see the full call tree, per-step latency, and inputs/outputs in the UI.</div>
+  </div>
+
+  <div class="tab-panel" id="ex2-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t2-1">T1</span><div class="test-content"><div class="test-input">ctx = retrieve_context("python history"); isinstance(ctx, str)</div><div class="test-expected">→ True</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t2-2">T2</span><div class="test-content"><div class="test-input">out = rag_pipeline("LLM training"); len(out) &gt; 0</div><div class="test-expected">→ True (non-empty answer)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t2-3">T3</span><div class="test-content"><div class="test-input"># In LangSmith UI: rag-pipeline trace shows retriever + llm as children</div><div class="test-expected">→ 3 nested spans visible</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(2)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex2-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — Adding metadata to spans</span><span class="arrow">▶</span></button>
+        <div class="hint-body">Pass extra metadata via <code>langsmith_extra={"metadata": {"query_length": len(query)}}</code> as a keyword argument to any traceable function call.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 3: PROMETHEUS ========== -->
+<section class="exercise" id="ex3">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 3 of 5</div>
+      <h2>Prometheus Metrics for LLM APIs</h2>
+      <p>Instrument your inference endpoint with Counters and Histograms — expose a /metrics endpoint for Prometheus scraping.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot3"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex3','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex3','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex3','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex3','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex3-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Add Prometheus instrumentation to an inference function:</p>
+      <ul>
+        <li>Create a <code style="font-family:'JetBrains Mono',monospace;">Counter("llm_requests_total", ..., labelnames=["model","status"])</code></li>
+        <li>Create a <code style="font-family:'JetBrains Mono',monospace;">Histogram("llm_latency_seconds", ..., buckets=[0.1, 0.5, 1, 2, 5])</code></li>
+        <li>Create a <code style="font-family:'JetBrains Mono',monospace;">Gauge("llm_tokens_in_flight")</code> that increments/decrements around each call</li>
+        <li>Wrap your inference function to record all three metrics</li>
+        <li>Start a metrics server with <code style="font-family:'JetBrains Mono',monospace;">start_http_server(8001)</code> and verify <code style="font-family:'JetBrains Mono',monospace;">curl localhost:8001/metrics</code></li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(3)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex3-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        <span>day20_ex3_prometheus.py</span>
+        <span># pip install prometheus-client</span>
+      </div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span><span>31</span><span>32</span><span>33</span><span>34</span><span>35</span></div>
+        <div class="code-content"><span class="cm"># pip install prometheus-client</span>
+<span class="kw">from</span> <span class="va">prometheus_client</span> <span class="kw">import</span> <span class="dt">(</span>
+    <span class="tp">Counter</span><span class="dt">,</span> <span class="tp">Histogram</span><span class="dt">,</span> <span class="tp">Gauge</span><span class="dt">,</span>
+    <span class="fn">start_http_server</span><span class="dt">,</span> <span class="fn">generate_latest</span>
+<span class="dt">)</span>
+<span class="kw">import</span> <span class="va">time</span><span class="dt">,</span> <span class="va">random</span>
+
+<span class="cm"># TODO: create Counter for total requests (labels: model, status)</span>
+<span class="va">REQUEST_COUNTER</span> <span class="dt">=</span> <span class="tp">Counter</span><span class="dt">(</span>
+    <span class="st">"llm_requests_total"</span><span class="dt">,</span>
+    <span class="st">"Total LLM inference requests"</span><span class="dt">,</span>
+    <span class="cm"># TODO: labelnames=["model", "status"]</span>
+<span class="dt">)</span>
+
+<span class="cm"># TODO: create Histogram for latency in seconds</span>
+<span class="va">LATENCY</span> <span class="dt">=</span> <span class="dt">...</span>
+
+<span class="cm"># TODO: create Gauge for concurrent in-flight requests</span>
+<span class="va">IN_FLIGHT</span> <span class="dt">=</span> <span class="dt">...</span>
+
+<span class="kw">def</span> <span class="fn">instrumented_infer</span><span class="dt">(</span><span class="va">prompt</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">,</span> <span class="va">model</span><span class="dt">:</span> <span class="tp">str</span> <span class="dt">=</span> <span class="st">"gpt2"</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">str</span><span class="dt">:</span>
+    <span class="cm"># TODO: increment IN_FLIGHT gauge, measure latency, record counter</span>
+    <span class="va">IN_FLIGHT</span><span class="dt">.</span><span class="fn">inc</span><span class="dt">()</span>
+    <span class="va">t0</span> <span class="dt">=</span> <span class="va">time</span><span class="dt">.</span><span class="fn">time</span><span class="dt">()</span>
+    <span class="kw">try</span><span class="dt">:</span>
+        <span class="va">time</span><span class="dt">.</span><span class="fn">sleep</span><span class="dt">(</span><span class="fn">random</span><span class="dt">.</span><span class="fn">uniform</span><span class="dt">(</span><span class="nm">0.05</span><span class="dt">,</span> <span class="nm">0.3</span><span class="dt">))</span>  <span class="cm"># simulate inference</span>
+        <span class="va">result</span> <span class="dt">=</span> <span class="bi">f</span><span class="st">"Response to: {prompt[:20]}"</span>
+        <span class="cm"># TODO: record latency and increment counter with status="success"</span>
+        <span class="dt">...</span>
+        <span class="kw">return</span> <span class="va">result</span>
+    <span class="kw">except</span> <span class="tp">Exception</span><span class="dt">:</span>
+        <span class="cm"># TODO: increment counter with status="error"</span>
+        <span class="dt">...</span>
+    <span class="kw">finally</span><span class="dt">:</span>
+        <span class="va">IN_FLIGHT</span><span class="dt">.</span><span class="fn">dec</span><span class="dt">()</span></div>
+      </div>
+    </div>
+    <div class="info-box teal"><strong>Prometheus labels:</strong> Labels create separate time-series per value combination. <code style="font-family:'JetBrains Mono',monospace;background:rgba(13,148,136,0.15);padding:1px 5px;border-radius:3px;color:#2dd4bf;">REQUEST_COUNTER.labels(model="gpt2", status="success").inc()</code>. Use labels for dimensions you want to filter/group by in Grafana — don't use high-cardinality values like user IDs as labels.</div>
+  </div>
+
+  <div class="tab-panel" id="ex3-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t3-1">T1</span><div class="test-content"><div class="test-input">instrumented_infer("hello"); REQUEST_COUNTER.labels(model="gpt2", status="success")._value.get()</div><div class="test-expected">→ 1.0 (one successful request)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t3-2">T2</span><div class="test-content"><div class="test-input">IN_FLIGHT._value.get() == 0.0</div><div class="test-expected">→ True (gauge back to 0 after request)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t3-3">T3</span><div class="test-content"><div class="test-input">b"llm_requests_total" in generate_latest()</div><div class="test-expected">→ True (metrics exposed in Prometheus format)</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(3)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex3-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — Full Counter and Histogram definitions</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>LATENCY = Histogram("llm_latency_seconds", "Inference latency", labelnames=["model"], buckets=[0.05, 0.1, 0.5, 1, 2, 5])</code>. Observe: <code>LATENCY.labels(model=model).observe(time.time() - t0)</code>.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — Using the context manager shorthand</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>with LATENCY.labels(model=model).time(): ...</code> automatically calls observe on exit — cleaner than manual <code>t0 = time.time()</code>.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 4: EMBEDDING DRIFT ========== -->
+<section class="exercise" id="ex4">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 4 of 5</div>
+      <h2>Embedding Drift Detection with scipy</h2>
+      <p>Detect when production queries drift away from your training distribution using cosine similarity and KS-test.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot4"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex4','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex4','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex4','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex4','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex4-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Implement a drift detector for query embeddings:</p>
+      <ul>
+        <li>Create a <code style="font-family:'JetBrains Mono',monospace;">DriftDetector</code> class that stores a reference embedding distribution</li>
+        <li>Compute pairwise cosine similarity between reference and production batches using <code style="font-family:'JetBrains Mono',monospace;">scipy.spatial.distance.cdist</code></li>
+        <li>Use <code style="font-family:'JetBrains Mono',monospace;">scipy.stats.ks_2samp()</code> to test if the similarity distributions differ significantly</li>
+        <li>Flag drift if the KS test p-value is below 0.05</li>
+        <li>Return a report: <code style="font-family:'JetBrains Mono',monospace;">{"drift_detected": bool, "ks_statistic": float, "p_value": float, "mean_similarity": float}</code></li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(4)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex4-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        <span>day20_ex4_drift.py</span>
+        <span># pip install scipy numpy</span>
+      </div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span><span>31</span><span>32</span><span>33</span><span>34</span></div>
+        <div class="code-content"><span class="cm"># pip install scipy numpy</span>
+<span class="kw">import</span> <span class="va">numpy</span> <span class="kw">as</span> <span class="va">np</span>
+<span class="kw">from</span> <span class="va">scipy</span><span class="dt">.</span><span class="va">spatial</span><span class="dt">.</span><span class="va">distance</span> <span class="kw">import</span> <span class="fn">cdist</span>
+<span class="kw">from</span> <span class="va">scipy</span><span class="dt">.</span><span class="va">stats</span> <span class="kw">import</span> <span class="fn">ks_2samp</span>
+
+<span class="kw">class</span> <span class="tp">DriftDetector</span><span class="dt">:</span>
+    <span class="kw">def</span> <span class="fn">__init__</span><span class="dt">(</span><span class="va">self</span><span class="dt">,</span> <span class="va">reference_embeddings</span><span class="dt">:</span> <span class="tp">np.ndarray</span><span class="dt">):</span>
+        <span class="st">"""reference_embeddings: (N, D) array of reference/training embeddings."""</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">reference</span> <span class="dt">=</span> <span class="va">reference_embeddings</span>
+        <span class="cm"># Precompute reference similarity distribution (self-similarity)</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">ref_similarities</span> <span class="dt">=</span> <span class="va">self</span><span class="dt">.</span><span class="fn">_pairwise_cosine</span><span class="dt">(</span><span class="va">reference_embeddings</span><span class="dt">)</span>
+
+    <span class="kw">def</span> <span class="fn">_pairwise_cosine</span><span class="dt">(</span><span class="va">self</span><span class="dt">,</span> <span class="va">A</span><span class="dt">:</span> <span class="tp">np.ndarray</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">np.ndarray</span><span class="dt">:</span>
+        <span class="cm"># cdist with 'cosine' returns distances (1 - similarity)</span>
+        <span class="va">dist</span> <span class="dt">=</span> <span class="fn">cdist</span><span class="dt">(</span><span class="va">A</span><span class="dt">,</span> <span class="va">A</span><span class="dt">,</span> <span class="va">metric</span><span class="dt">=</span><span class="st">"cosine"</span><span class="dt">)</span>
+        <span class="cm"># TODO: convert to similarities, flatten, remove diagonal</span>
+        <span class="dt">...</span>
+
+    <span class="kw">def</span> <span class="fn">check</span><span class="dt">(</span><span class="va">self</span><span class="dt">,</span> <span class="va">production_embeddings</span><span class="dt">:</span> <span class="tp">np.ndarray</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">dict</span><span class="dt">:</span>
+        <span class="cm"># TODO: compute similarities between ref and production</span>
+        <span class="va">prod_sims</span> <span class="dt">=</span> <span class="dt">...</span>
+
+        <span class="cm"># TODO: run KS test between ref_similarities and prod_sims</span>
+        <span class="va">stat</span><span class="dt">,</span> <span class="va">p_value</span> <span class="dt">=</span> <span class="dt">...</span>
+
+        <span class="kw">return</span> <span class="dt">{</span>
+            <span class="st">"drift_detected"</span><span class="dt">:</span>  <span class="va">p_value</span> <span class="dt">&lt;</span> <span class="nm">0.05</span><span class="dt">,</span>
+            <span class="st">"ks_statistic"</span><span class="dt">:</span>   <span class="fn">float</span><span class="dt">(</span><span class="va">stat</span><span class="dt">),</span>
+            <span class="st">"p_value"</span><span class="dt">:</span>        <span class="fn">float</span><span class="dt">(</span><span class="va">p_value</span><span class="dt">),</span>
+            <span class="st">"mean_similarity"</span><span class="dt">:</span> <span class="fn">float</span><span class="dt">(</span><span class="va">prod_sims</span><span class="dt">.</span><span class="fn">mean</span><span class="dt">()),</span>
+        <span class="dt">}</span>
+
+<span class="cm"># Simulate: reference = tech docs, production = cooking queries (OOD)</span>
+<span class="va">rng</span> <span class="dt">=</span> <span class="va">np</span><span class="dt">.</span><span class="fn">random</span><span class="dt">.</span><span class="fn">default_rng</span><span class="dt">(</span><span class="nm">42</span><span class="dt">)</span>
+<span class="va">ref</span>  <span class="dt">=</span> <span class="va">rng</span><span class="dt">.</span><span class="fn">normal</span><span class="dt">(</span><span class="nm">0</span><span class="dt">,</span> <span class="nm">1</span><span class="dt">,</span> <span class="dt">(</span><span class="nm">100</span><span class="dt">,</span> <span class="nm">384</span><span class="dt">))</span>      <span class="cm"># 100 training embeddings, dim=384</span>
+<span class="va">prod</span> <span class="dt">=</span> <span class="va">rng</span><span class="dt">.</span><span class="fn">normal</span><span class="dt">(</span><span class="nm">5</span><span class="dt">,</span> <span class="nm">1</span><span class="dt">,</span> <span class="dt">(</span><span class="nm">50</span><span class="dt">,</span> <span class="nm">384</span><span class="dt">))</span>       <span class="cm"># shifted distribution = drift!</span>
+<span class="va">detector</span> <span class="dt">=</span> <span class="tp">DriftDetector</span><span class="dt">(</span><span class="va">ref</span><span class="dt">)</span>
+<span class="fn">print</span><span class="dt">(</span><span class="va">detector</span><span class="dt">.</span><span class="fn">check</span><span class="dt">(</span><span class="va">prod</span><span class="dt">))</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex4-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t4-1">T1</span><div class="test-content"><div class="test-input">report = detector.check(prod)<br>report["drift_detected"]</div><div class="test-expected">→ True (shifted distribution detected)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t4-2">T2</span><div class="test-content"><div class="test-input">same_report = detector.check(ref)<br>same_report["drift_detected"]</div><div class="test-expected">→ False (same distribution, no drift)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t4-3">T3</span><div class="test-content"><div class="test-input">0.0 &lt; report["p_value"] &lt;= 1.0</div><div class="test-expected">→ True (valid p-value)</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(4)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex4-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — _pairwise_cosine implementation</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>sims = 1 - dist  # cosine distance → similarity</code>. To remove diagonal: <code>mask = ~np.eye(len(A), dtype=bool); return sims[mask]</code>.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — Production similarity computation</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>prod_sims = 1 - cdist(production_embeddings, self.reference, metric="cosine").flatten()</code>. Then <code>stat, p_value = ks_2samp(self.ref_similarities, prod_sims)</code>.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 5: FULL OBSERVABILITY STACK ========== -->
+<section class="exercise" id="ex5">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 5 of 5</div>
+      <h2>Full Observability Stack for a RAG API</h2>
+      <p>Wire RAGAS evaluation + LangSmith tracing + Prometheus metrics into a single instrumented FastAPI endpoint.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot5"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex5','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex5','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex5','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex5','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex5-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Build a fully observable RAG API endpoint:</p>
+      <ul>
+        <li>Create a FastAPI app with a <code style="font-family:'JetBrains Mono',monospace;">POST /ask</code> endpoint</li>
+        <li>Instrument with Prometheus: request counter, latency histogram, active connections gauge</li>
+        <li>Add <code style="font-family:'JetBrains Mono',monospace;">@traceable</code> to the RAG function for LangSmith span visibility</li>
+        <li>After every 10 requests, compute RAGAS faithfulness on the last batch and log to MLflow</li>
+        <li>Expose <code style="font-family:'JetBrains Mono',monospace;">GET /metrics</code> returning Prometheus text format</li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(5)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex5-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        <span>day20_ex5_full_observability.py</span>
+        <span># pip install fastapi uvicorn prometheus-client langsmith mlflow ragas</span>
+      </div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span><span>31</span><span>32</span><span>33</span></div>
+        <div class="code-content"><span class="cm"># pip install fastapi uvicorn prometheus-client langsmith mlflow</span>
+<span class="kw">from</span> <span class="va">fastapi</span> <span class="kw">import</span> <span class="tp">FastAPI</span>
+<span class="kw">from</span> <span class="va">fastapi.responses</span> <span class="kw">import</span> <span class="tp">PlainTextResponse</span>
+<span class="kw">from</span> <span class="va">prometheus_client</span> <span class="kw">import</span> <span class="tp">Counter</span><span class="dt">,</span> <span class="tp">Histogram</span><span class="dt">,</span> <span class="tp">Gauge</span><span class="dt">,</span> <span class="fn">generate_latest</span>
+<span class="kw">from</span> <span class="va">langsmith</span> <span class="kw">import</span> <span class="fn">traceable</span>
+<span class="kw">from</span> <span class="va">pydantic</span> <span class="kw">import</span> <span class="tp">BaseModel</span>
+<span class="kw">import</span> <span class="va">mlflow</span><span class="dt">,</span> <span class="va">time</span>
+
+<span class="va">app</span> <span class="dt">=</span> <span class="fn">FastAPI</span><span class="dt">()</span>
+
+<span class="cm"># Prometheus metrics</span>
+<span class="va">REQUEST_COUNT</span> <span class="dt">=</span> <span class="tp">Counter</span><span class="dt">(</span><span class="st">"rag_requests_total"</span><span class="dt">,</span> <span class="st">"Total RAG requests"</span><span class="dt">)</span>
+<span class="va">LATENCY</span>       <span class="dt">=</span> <span class="tp">Histogram</span><span class="dt">(</span><span class="st">"rag_latency_seconds"</span><span class="dt">,</span> <span class="st">"Response latency"</span><span class="dt">)</span>
+<span class="va">ACTIVE</span>        <span class="dt">=</span> <span class="tp">Gauge</span><span class="dt">(</span><span class="st">"rag_active_requests"</span><span class="dt">,</span> <span class="st">"In-flight requests"</span><span class="dt">)</span>
+<span class="va">request_log</span>   <span class="dt">=</span> <span class="dt">[]</span>  <span class="cm"># rolling window for batch RAGAS eval</span>
+
+<span class="kw">class</span> <span class="tp">AskRequest</span><span class="dt">(</span><span class="tp">BaseModel</span><span class="dt">):</span>
+    <span class="va">question</span><span class="dt">:</span> <span class="tp">str</span>
+
+<span class="dt">@</span><span class="fn">traceable</span><span class="dt">(</span><span class="va">name</span><span class="dt">=</span><span class="st">"rag-pipeline"</span><span class="dt">)</span>
+<span class="kw">def</span> <span class="fn">rag_answer</span><span class="dt">(</span><span class="va">question</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">str</span><span class="dt">:</span>
+    <span class="cm"># Stub — replace with real retrieval + generation</span>
+    <span class="kw">return</span> <span class="bi">f</span><span class="st">"Answer to: {question}"</span>
+
+<span class="dt">@</span><span class="va">app</span><span class="dt">.</span><span class="fn">post</span><span class="dt">(</span><span class="st">"/ask"</span><span class="dt">)</span>
+<span class="kw">async</span> <span class="kw">def</span> <span class="fn">ask</span><span class="dt">(</span><span class="va">req</span><span class="dt">:</span> <span class="tp">AskRequest</span><span class="dt">):</span>
+    <span class="cm"># TODO: instrument with ACTIVE, LATENCY, REQUEST_COUNT</span>
+    <span class="dt">...</span>
+
+<span class="dt">@</span><span class="va">app</span><span class="dt">.</span><span class="fn">get</span><span class="dt">(</span><span class="st">"/metrics"</span><span class="dt">)</span>
+<span class="kw">def</span> <span class="fn">metrics</span><span class="dt">():</span>
+    <span class="kw">return</span> <span class="tp">PlainTextResponse</span><span class="dt">(</span><span class="fn">generate_latest</span><span class="dt">().</span><span class="fn">decode</span><span class="dt">())</span>
+
+<span class="cm"># uvicorn day20_ex5_full_observability:app --reload</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex5-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t5-1">T1</span><div class="test-content"><div class="test-input">from fastapi.testclient import TestClient<br>client = TestClient(app)<br>r = client.post("/ask", json={"question":"What is AI?"})<br>r.status_code</div><div class="test-expected">→ 200</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t5-2">T2</span><div class="test-content"><div class="test-input">r = client.get("/metrics")<br>"rag_requests_total" in r.text</div><div class="test-expected">→ True (Prometheus endpoint works)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t5-3">T3</span><div class="test-content"><div class="test-input">ACTIVE._value.get() == 0.0  # after request completes</div><div class="test-expected">→ True (gauge decremented)</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(5)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex5-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — Instrumented ask endpoint</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>ACTIVE.inc(); t0 = time.time(); answer = rag_answer(req.question); LATENCY.observe(time.time()-t0); REQUEST_COUNT.inc(); ACTIVE.dec(); return {"answer": answer}</code></div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — Use try/finally for gauge</span><span class="arrow">▶</span></button>
+        <div class="hint-body">Wrap the handler body in <code>try: ... finally: ACTIVE.dec()</code> so the gauge always decrements even on exceptions. Otherwise the gauge would drift upward over time.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <p>Day 20 of 30 — <a href="../index.html">Back to curriculum</a> · <a href="day21_exercises.html">Next: Week 3 Capstone →</a></p>
+</footer>
+
+<script>
+let completedCount = 0;
+const totalExercises = 5;
+function markDone(n) {
+  const dot = document.getElementById('dot' + n);
+  if (dot && !dot.classList.contains('done')) {
+    dot.classList.add('done');
+    completedCount++;
+    document.getElementById('progress-text').textContent = completedCount + ' / ' + totalExercises + ' completed';
+    document.getElementById('progress-fill').style.width = (completedCount / totalExercises * 100) + '%';
+  }
+}
+function showTab(exId, tabName) {
+  document.querySelectorAll('#' + exId + ' .tab-panel').forEach(p => { p.classList.toggle('active', p.id === exId + '-' + tabName); });
+  document.querySelectorAll('#' + exId + ' .tab-btn').forEach(b => { b.classList.toggle('active', b.getAttribute('onclick') && b.getAttribute('onclick').includes("'" + tabName + "'")); });
+}
+function toggleHint(btn) {
+  btn.classList.toggle('open');
+  const body = btn.nextElementSibling;
+  body.style.display = body.style.display === 'block' ? 'none' : 'block';
+}
+function runTests(exNum) {
+  const tests = document.querySelectorAll('#ex' + exNum + '-tests .test-badge');
+  tests.forEach((badge, i) => { setTimeout(() => { badge.className = 'test-badge pass'; badge.textContent = '✓ T' + (i + 1); }, i * 300); });
+}
+</script>
+<script src="../bg-animation.js"></script>
+</body>
+</html>

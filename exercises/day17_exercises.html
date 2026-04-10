@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 17 Exercises — Fine-Tuning with LoRA/PEFT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f; --card: #141420; --surface2: #1a1a2e; --border: #2a2a45;
+  --purple: #7c3aed; --purple-light: #a855f7; --teal: #0d9488;
+  --green: #10b981; --yellow: #f59e0b; --red: #ef4444;
+  --text: #e2e8f0; --muted: #64748b;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
+.sticky-nav { position: sticky; top: 0; z-index: 100; background: rgba(10,10,15,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); padding: 12px 32px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.sticky-nav a { color: var(--muted); text-decoration: none; font-size: 0.85rem; padding: 6px 12px; border-radius: 6px; transition: all 0.2s; border: 1px solid transparent; }
+.sticky-nav a:hover { color: var(--text); background: var(--card); border-color: var(--border); }
+.sticky-nav .brand { color: var(--purple-light); font-weight: 600; font-size: 0.9rem; }
+.nav-sep { color: var(--border); }
+.nav-title { color: var(--text); font-weight: 700; font-size: 0.95rem; flex: 1; }
+.hero { padding: 56px 32px 32px; max-width: 1100px; margin: 0 auto; border-bottom: 1px solid var(--border); }
+.hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: 8px; }
+.hero h1 span { color: var(--purple-light); }
+.hero p { color: var(--muted); font-size: 1rem; max-width: 700px; }
+.hero-meta { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
+.badge-purple { background: rgba(124,58,237,0.15); color: var(--purple-light); border: 1px solid rgba(124,58,237,0.3); }
+.badge-teal { background: rgba(13,148,136,0.15); color: #2dd4bf; border: 1px solid rgba(13,148,136,0.3); }
+.badge-green { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.progress-bar-wrap { max-width: 1100px; margin: 24px auto; padding: 0 32px; }
+.progress-label { font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
+.progress-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--purple), var(--teal)); border-radius: 3px; transition: width 0.5s ease; }
+.main { max-width: 1100px; margin: 0 auto; padding: 32px; display: flex; flex-direction: column; gap: 64px; }
+.exercise { border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: var(--card); }
+.exercise-header { padding: 24px 32px; background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(13,148,136,0.05)); border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.exercise-num { font-size: 0.75rem; color: var(--purple-light); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.exercise-header h2 { font-size: 1.4rem; font-weight: 700; margin: 4px 0 8px; }
+.exercise-header p { color: var(--muted); font-size: 0.9rem; }
+.ex-status { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); transition: background 0.3s; }
+.status-dot.done { background: var(--green); }
+.tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--surface2); }
+.tab-btn { padding: 12px 20px; font-size: 0.82rem; font-weight: 600; color: var(--muted); cursor: pointer; border: none; background: none; border-bottom: 2px solid transparent; transition: all 0.2s; font-family: 'Inter', sans-serif; }
+.tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+.tab-btn.active { color: var(--purple-light); border-bottom-color: var(--purple-light); background: rgba(124,58,237,0.05); }
+.tab-panel { display: none; padding: 28px 32px; }
+.tab-panel.active { display: block; }
+.code-wrap { background: #0d0d18; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin: 12px 0; }
+.code-header { padding: 8px 16px; background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; color: var(--muted); }
+.code-dots { display: flex; gap: 6px; }
+.code-dots span { width: 10px; height: 10px; border-radius: 50%; }
+.code-dots .dot-r { background: var(--red); } .code-dots .dot-y { background: var(--yellow); } .code-dots .dot-g { background: var(--green); }
+.code-body { display: flex; }
+.line-nums { padding: 16px 8px; background: rgba(0,0,0,0.3); border-right: 1px solid var(--border); display: flex; flex-direction: column; min-width: 40px; text-align: right; }
+.line-nums span { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: #3a3a5c; line-height: 1.7; padding: 0 8px; }
+.code-content { padding: 16px; overflow-x: auto; flex: 1; white-space: pre; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; line-height: 1.7; }
+.kw { color: #c792ea; } .fn { color: #82aaff; } .st { color: #c3e88d; } .cm { color: #546e7a; font-style: italic; }
+.nm { color: #f78c6c; } .tp { color: #ffcb6b; } .dt { color: #89ddff; } .va { color: #eeffff; } .bi { color: #ff5370; }
+.task-requirements { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); border-radius: 10px; padding: 16px 20px; margin-bottom: 16px; }
+.task-requirements li { color: var(--text); font-size: 0.88rem; margin: 6px 0 6px 16px; }
+.task-requirements li::marker { color: var(--yellow); }
+.tests-grid { display: flex; flex-direction: column; gap: 8px; }
+.test-case { display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+.test-badge { flex-shrink: 0; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; font-family: 'Inter', sans-serif; letter-spacing: 0.5px; }
+.test-badge.pass { background: rgba(16,185,129,0.2); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.test-badge.pending { background: rgba(100,116,139,0.2); color: var(--muted); border: 1px solid rgba(100,116,139,0.3); }
+.test-content { flex: 1; } .test-input { color: var(--text); } .test-expected { color: var(--muted); margin-top: 2px; }
+.hints-list { display: flex; flex-direction: column; gap: 8px; }
+.hint-toggle { width: 100%; text-align: left; padding: 10px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--muted); cursor: pointer; font-family: 'Inter', sans-serif; font-size: 0.85rem; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s; }
+.hint-toggle:hover { border-color: var(--purple); color: var(--text); }
+.hint-toggle .arrow { transition: transform 0.2s; }
+.hint-toggle.open .arrow { transform: rotate(90deg); }
+.hint-body { display: none; padding: 12px 16px; margin-top: 4px; background: rgba(124,58,237,0.05); border: 1px solid rgba(124,58,237,0.2); border-radius: 8px; font-size: 0.85rem; color: var(--text); line-height: 1.6; }
+.hint-body code { background: rgba(124,58,237,0.15); padding: 1px 5px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--purple-light); }
+.section-label { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.section-label.purple { color: var(--purple-light); } .section-label.yellow { color: var(--yellow); }
+.section-label.green { color: #34d399; } .section-label.teal { color: #2dd4bf; }
+.section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.animate-btn { margin-top: 12px; padding: 8px 18px; border-radius: 8px; background: var(--purple); color: white; border: none; cursor: pointer; font-size: 0.82rem; font-weight: 600; font-family: 'Inter', sans-serif; transition: background 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+.animate-btn:hover { background: var(--purple-light); }
+.info-box { padding: 12px 16px; border-radius: 8px; margin: 12px 0; font-size: 0.85rem; }
+.info-box.teal { background: rgba(13,148,136,0.08); border: 1px solid rgba(13,148,136,0.2); color: var(--text); }
+.info-box.teal strong { color: #2dd4bf; }
+.info-box.purple { background: rgba(124,58,237,0.08); border: 1px solid rgba(124,58,237,0.2); color: var(--text); }
+.info-box.purple strong { color: var(--purple-light); }
+.footer { border-top: 1px solid var(--border); padding: 32px; text-align: center; color: var(--muted); font-size: 0.82rem; }
+.footer a { color: var(--purple-light); text-decoration: none; }
+</style>
+</head>
+<body data-animation-density="high">
+
+<nav class="sticky-nav">
+  <a href="../days/day17.html">← Day 17 lesson</a>
+  <span class="nav-sep">|</span>
+  <a href="../index.html" class="brand">🤖 Agentic AI</a>
+  <span class="nav-sep">|</span>
+  <span class="nav-title">Day 17 Exercises — Fine-Tuning with LoRA/PEFT</span>
+  <a href="day18_exercises.html" style="margin-left:auto;">Day 18 Exercises →</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-meta">
+    <span class="badge badge-purple">Day 17</span>
+    <span class="badge badge-teal">5 Exercises</span>
+    <span class="badge badge-green">PEFT / QLoRA / SFTTrainer</span>
+  </div>
+  <h1>Fine-Tuning with <span>LoRA / PEFT</span></h1>
+  <p>Fine-tune open-source LLMs on consumer hardware using Low-Rank Adaptation. From configuring LoraConfig and running SFTTrainer to merging adapters back into the base model for serverless deployment.</p>
+</div>
+
+<div class="progress-bar-wrap">
+  <div class="progress-label"><span>Progress</span><span id="progress-text">0 / 5 completed</span></div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+</div>
+
+<main class="main">
+
+<!-- ========== EXERCISE 1: LORA CONFIG ========== -->
+<section class="exercise" id="ex1">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 1 of 5</div>
+      <h2>LoraConfig — Understanding the Hyperparameters</h2>
+      <p>Configure LoRA rank, alpha, dropout, and target modules — the four knobs that control quality vs compute trade-offs.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot1"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex1','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex1','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex1','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex1','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex1-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Create and inspect LoRA configurations for different scenarios:</p>
+      <ul>
+        <li>Create a <code style="font-family:'JetBrains Mono',monospace;">LoraConfig</code> with <code style="font-family:'JetBrains Mono',monospace;">r=16</code>, <code style="font-family:'JetBrains Mono',monospace;">lora_alpha=32</code>, <code style="font-family:'JetBrains Mono',monospace;">target_modules=["q_proj","v_proj"]</code></li>
+        <li>Apply it to a base model with <code style="font-family:'JetBrains Mono',monospace;">get_peft_model(model, lora_config)</code></li>
+        <li>Call <code style="font-family:'JetBrains Mono',monospace;">model.print_trainable_parameters()</code> and record the percentage</li>
+        <li>Experiment with <code style="font-family:'JetBrains Mono',monospace;">r=4</code> vs <code style="font-family:'JetBrains Mono',monospace;">r=64</code> and observe how trainable parameter count changes</li>
+        <li>Use <code style="font-family:'JetBrains Mono',monospace;">target_modules="all-linear"</code> shorthand and compare trainable params</li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(1)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex1-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        <span>day17_ex1_lora_config.py</span>
+        <span># pip install peft transformers torch</span>
+      </div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span></div>
+        <div class="code-content"><span class="cm"># pip install peft transformers torch</span>
+<span class="kw">from</span> <span class="va">peft</span> <span class="kw">import</span> <span class="tp">LoraConfig</span><span class="dt">,</span> <span class="fn">get_peft_model</span><span class="dt">,</span> <span class="tp">TaskType</span>
+<span class="kw">from</span> <span class="va">transformers</span> <span class="kw">import</span> <span class="tp">AutoModelForCausalLM</span>
+
+<span class="va">base_model</span> <span class="dt">=</span> <span class="tp">AutoModelForCausalLM</span><span class="dt">.</span><span class="fn">from_pretrained</span><span class="dt">(</span><span class="st">"gpt2"</span><span class="dt">)</span>
+
+<span class="cm"># TODO: create LoraConfig with r=16, alpha=32, dropout=0.05</span>
+<span class="va">lora_config</span> <span class="dt">=</span> <span class="tp">LoraConfig</span><span class="dt">(</span>
+    <span class="va">task_type</span>    <span class="dt">=</span> <span class="tp">TaskType</span><span class="dt">.</span><span class="va">CAUSAL_LM</span><span class="dt">,</span>
+    <span class="cm"># TODO: r, lora_alpha, lora_dropout, target_modules</span>
+<span class="dt">)</span>
+
+<span class="cm"># TODO: wrap base model with get_peft_model</span>
+<span class="va">peft_model</span> <span class="dt">=</span> <span class="dt">...</span>
+<span class="va">peft_model</span><span class="dt">.</span><span class="fn">print_trainable_parameters</span><span class="dt">()</span>
+
+<span class="cm"># ---- Rank experiment ----</span>
+<span class="kw">for</span> <span class="va">rank</span> <span class="kw">in</span> <span class="dt">[</span><span class="nm">4</span><span class="dt">,</span> <span class="nm">16</span><span class="dt">,</span> <span class="nm">64</span><span class="dt">]:</span>
+    <span class="va">cfg</span> <span class="dt">=</span> <span class="tp">LoraConfig</span><span class="dt">(</span>
+        <span class="va">task_type</span><span class="dt">=</span><span class="tp">TaskType</span><span class="dt">.</span><span class="va">CAUSAL_LM</span><span class="dt">,</span>
+        <span class="va">r</span><span class="dt">=</span><span class="va">rank</span><span class="dt">,</span>
+        <span class="va">lora_alpha</span><span class="dt">=</span><span class="va">rank</span> <span class="dt">*</span> <span class="nm">2</span><span class="dt">,</span>
+        <span class="va">target_modules</span><span class="dt">=[</span><span class="st">"c_attn"</span><span class="dt">],</span>  <span class="cm"># GPT-2 uses c_attn for QKV</span>
+        <span class="va">lora_dropout</span><span class="dt">=</span><span class="nm">0.05</span><span class="dt">,</span>
+    <span class="dt">)</span>
+    <span class="va">m</span> <span class="dt">=</span> <span class="fn">get_peft_model</span><span class="dt">(</span>
+        <span class="tp">AutoModelForCausalLM</span><span class="dt">.</span><span class="fn">from_pretrained</span><span class="dt">(</span><span class="st">"gpt2"</span><span class="dt">),</span> <span class="va">cfg</span>
+    <span class="dt">)</span>
+    <span class="fn">print</span><span class="dt">(</span><span class="bi">f</span><span class="st">"r={rank}:"</span><span class="dt">,</span> <span class="va">end</span><span class="dt">=</span><span class="st">" "</span><span class="dt">)</span>
+    <span class="va">m</span><span class="dt">.</span><span class="fn">print_trainable_parameters</span><span class="dt">()</span></div>
+      </div>
+    </div>
+    <div class="info-box teal"><strong>LoRA math:</strong> For a weight matrix W∈ℝ^(d×k), LoRA adds B∈ℝ^(d×r) and A∈ℝ^(r×k) where r≪min(d,k). Only BA is trained — about (d+k)r parameters vs d*k. For GPT-2's c_attn (768×2304), r=16 gives 2.5% trainable params.</div>
+  </div>
+
+  <div class="tab-panel" id="ex1-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t1-1">T1</span><div class="test-content"><div class="test-input">lora_config.r == 16 and lora_config.lora_alpha == 32</div><div class="test-expected">→ True</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t1-2">T2</span><div class="test-content"><div class="test-input">peft_model.print_trainable_parameters()  # trainable % &lt; 5%</div><div class="test-expected">→ Prints e.g. "trainable params: 294,912 || all params: 124,734,720 || trainable%: 0.24"</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t1-3">T3</span><div class="test-content"><div class="test-input">any(hasattr(m, 'lora_A') for m in peft_model.modules())</div><div class="test-expected">→ True (LoRA matrices injected)</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(1)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex1-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — Full LoraConfig for GPT-2</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>LoraConfig(task_type=TaskType.CAUSAL_LM, r=16, lora_alpha=32, lora_dropout=0.05, target_modules=["c_attn"], bias="none")</code>. GPT-2 uses <code>c_attn</code>; Llama uses <code>q_proj, k_proj, v_proj, o_proj</code>.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — lora_alpha scaling</span><span class="arrow">▶</span></button>
+        <div class="hint-body">The effective scaling is <code>lora_alpha / r</code>. Setting <code>alpha = 2*r</code> (scale=2) is the most common pattern. Higher alpha = larger updates.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 2: QLORA ========== -->
+<section class="exercise" id="ex2">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 2 of 5</div>
+      <h2>QLoRA — 4-bit Base + LoRA Adapters</h2>
+      <p>Combine BitsAndBytesConfig 4-bit quantization with LoRA adapters — fine-tune a 7B model on 8 GB VRAM.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot2"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex2','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex2','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex2','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex2','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex2-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Set up a QLoRA training scaffold:</p>
+      <ul>
+        <li>Create a <code style="font-family:'JetBrains Mono',monospace;">BitsAndBytesConfig</code> with <code style="font-family:'JetBrains Mono',monospace;">load_in_4bit=True</code>, <code style="font-family:'JetBrains Mono',monospace;">bnb_4bit_quant_type="nf4"</code></li>
+        <li>Load the base model with the quantization config and call <code style="font-family:'JetBrains Mono',monospace;">prepare_model_for_kbit_training(model)</code></li>
+        <li>Apply LoRA on top of the 4-bit base model</li>
+        <li>Verify that base model weights are frozen (<code style="font-family:'JetBrains Mono',monospace;">requires_grad=False</code>) but LoRA params are trainable</li>
+        <li>Print total vs trainable parameter counts before and after QLoRA wrapping</li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(2)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex2-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        <span>day17_ex2_qlora.py</span>
+        <span># pip install peft transformers bitsandbytes torch accelerate</span>
+      </div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span><span>31</span><span>32</span><span>33</span></div>
+        <div class="code-content"><span class="cm"># pip install peft transformers bitsandbytes torch accelerate</span>
+<span class="kw">from</span> <span class="va">transformers</span> <span class="kw">import</span> <span class="tp">AutoModelForCausalLM</span><span class="dt">,</span> <span class="tp">BitsAndBytesConfig</span>
+<span class="kw">from</span> <span class="va">peft</span> <span class="kw">import</span> <span class="tp">LoraConfig</span><span class="dt">,</span> <span class="fn">get_peft_model</span><span class="dt">,</span> <span class="tp">TaskType</span><span class="dt">,</span> <span class="fn">prepare_model_for_kbit_training</span>
+<span class="kw">import</span> <span class="va">torch</span>
+
+<span class="cm"># TODO: create 4-bit BitsAndBytesConfig (NF4, bfloat16 compute, double quant)</span>
+<span class="va">bnb_config</span> <span class="dt">=</span> <span class="tp">BitsAndBytesConfig</span><span class="dt">(</span>
+    <span class="va">load_in_4bit</span>              <span class="dt">=</span> <span class="kw">True</span><span class="dt">,</span>
+    <span class="va">bnb_4bit_quant_type</span>       <span class="dt">=</span> <span class="st">"nf4"</span><span class="dt">,</span>
+    <span class="cm"># TODO: bnb_4bit_compute_dtype and bnb_4bit_use_double_quant</span>
+<span class="dt">)</span>
+
+<span class="cm"># Load base model in 4-bit</span>
+<span class="va">model</span> <span class="dt">=</span> <span class="tp">AutoModelForCausalLM</span><span class="dt">.</span><span class="fn">from_pretrained</span><span class="dt">(</span>
+    <span class="st">"TinyLlama/TinyLlama-1.1B-Chat-v1.0"</span><span class="dt">,</span>
+    <span class="va">quantization_config</span><span class="dt">=</span><span class="va">bnb_config</span><span class="dt">,</span>
+    <span class="va">device_map</span><span class="dt">=</span><span class="st">"auto"</span>
+<span class="dt">)</span>
+
+<span class="cm"># TODO: prepare model for kbit training (enables grad checkpointing)</span>
+<span class="va">model</span> <span class="dt">=</span> <span class="dt">...</span>
+
+<span class="cm"># TODO: apply LoRA adapters</span>
+<span class="va">lora_config</span> <span class="dt">=</span> <span class="tp">LoraConfig</span><span class="dt">(</span>
+    <span class="va">task_type</span><span class="dt">=</span><span class="tp">TaskType</span><span class="dt">.</span><span class="va">CAUSAL_LM</span><span class="dt">,</span>
+    <span class="va">r</span><span class="dt">=</span><span class="nm">16</span><span class="dt">,</span> <span class="va">lora_alpha</span><span class="dt">=</span><span class="nm">32</span><span class="dt">,</span>
+    <span class="va">target_modules</span><span class="dt">=</span><span class="st">"all-linear"</span><span class="dt">,</span>
+    <span class="va">lora_dropout</span><span class="dt">=</span><span class="nm">0.05</span><span class="dt">,</span>
+<span class="dt">)</span>
+<span class="va">model</span> <span class="dt">=</span> <span class="fn">get_peft_model</span><span class="dt">(</span><span class="va">model</span><span class="dt">,</span> <span class="va">lora_config</span><span class="dt">)</span>
+<span class="va">model</span><span class="dt">.</span><span class="fn">print_trainable_parameters</span><span class="dt">()</span></div>
+      </div>
+    </div>
+    <div class="info-box purple"><strong>prepare_model_for_kbit_training():</strong> Enables gradient checkpointing and casts layer norms to float32 — both needed because 4-bit layers can't directly compute gradients. This is the essential step that makes QLoRA work.</div>
+  </div>
+
+  <div class="tab-panel" id="ex2-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t2-1">T1</span><div class="test-content"><div class="test-input">all(not p.requires_grad for n, p in model.named_parameters() if "lora" not in n)</div><div class="test-expected">→ True (base weights frozen)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t2-2">T2</span><div class="test-content"><div class="test-input">any(p.requires_grad for n, p in model.named_parameters() if "lora" in n)</div><div class="test-expected">→ True (LoRA params trainable)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t2-3">T3</span><div class="test-content"><div class="test-input">model.get_memory_footprint() / 1024**3 &lt; 2.0</div><div class="test-expected">→ True (1.1B at 4-bit fits in ~0.7 GB)</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(2)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex2-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — Full BitsAndBytesConfig</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4", bnb_4bit_compute_dtype=torch.bfloat16, bnb_4bit_use_double_quant=True)</code></div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — prepare_model_for_kbit_training</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>model = prepare_model_for_kbit_training(model)</code>. Import from <code>peft</code>. Call this BEFORE <code>get_peft_model()</code>.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 3: SFTTRAINER ========== -->
+<section class="exercise" id="ex3">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 3 of 5</div>
+      <h2>SFTTrainer — Supervised Fine-Tuning</h2>
+      <p>Use TRL's SFTTrainer to run a complete fine-tuning loop with dataset formatting, packing, and callback hooks.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot3"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex3','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex3','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex3','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex3','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex3-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Run a full SFT training loop:</p>
+      <ul>
+        <li>Create a toy dataset using <code style="font-family:'JetBrains Mono',monospace;">datasets.Dataset.from_list()</code> with a <code style="font-family:'JetBrains Mono',monospace;">text</code> column</li>
+        <li>Configure <code style="font-family:'JetBrains Mono',monospace;">SFTConfig</code> with <code style="font-family:'JetBrains Mono',monospace;">output_dir</code>, <code style="font-family:'JetBrains Mono',monospace;">max_steps=10</code>, and <code style="font-family:'JetBrains Mono',monospace;">per_device_train_batch_size=1</code></li>
+        <li>Instantiate <code style="font-family:'JetBrains Mono',monospace;">SFTTrainer</code> with the peft model, tokenizer, dataset, and config</li>
+        <li>Call <code style="font-family:'JetBrains Mono',monospace;">trainer.train()</code> and capture the training loss at each step</li>
+        <li>Save the adapter with <code style="font-family:'JetBrains Mono',monospace;">trainer.save_model("./adapter_output")</code></li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(3)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex3-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        <span>day17_ex3_sfttrainer.py</span>
+        <span># pip install trl transformers peft torch datasets</span>
+      </div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span><span>31</span><span>32</span><span>33</span><span>34</span><span>35</span><span>36</span></div>
+        <div class="code-content"><span class="cm"># pip install trl transformers peft torch datasets</span>
+<span class="kw">from</span> <span class="va">trl</span> <span class="kw">import</span> <span class="tp">SFTTrainer</span><span class="dt">,</span> <span class="tp">SFTConfig</span>
+<span class="kw">from</span> <span class="va">transformers</span> <span class="kw">import</span> <span class="tp">AutoTokenizer</span><span class="dt">,</span> <span class="tp">AutoModelForCausalLM</span>
+<span class="kw">from</span> <span class="va">peft</span> <span class="kw">import</span> <span class="tp">LoraConfig</span><span class="dt">,</span> <span class="fn">get_peft_model</span><span class="dt">,</span> <span class="tp">TaskType</span>
+<span class="kw">from</span> <span class="va">datasets</span> <span class="kw">import</span> <span class="tp">Dataset</span>
+
+<span class="cm"># Toy instruction dataset</span>
+<span class="va">train_data</span> <span class="dt">=</span> <span class="tp">Dataset</span><span class="dt">.</span><span class="fn">from_list</span><span class="dt">([</span>
+    <span class="dt">{</span><span class="st">"text"</span><span class="dt">:</span> <span class="st">"### Instruction: Say hello.\n### Response: Hello! How can I help?"</span><span class="dt">},</span>
+    <span class="dt">{</span><span class="st">"text"</span><span class="dt">:</span> <span class="st">"### Instruction: What is 2+2?\n### Response: 2+2 equals 4."</span><span class="dt">},</span>
+    <span class="dt">{</span><span class="st">"text"</span><span class="dt">:</span> <span class="st">"### Instruction: Name a planet.\n### Response: Mars is a planet."</span><span class="dt">},</span>
+<span class="dt">]</span> <span class="dt">*</span> <span class="nm">10</span><span class="dt">)</span>  <span class="cm"># repeat to have 30 examples</span>
+
+<span class="va">tokenizer</span> <span class="dt">=</span> <span class="tp">AutoTokenizer</span><span class="dt">.</span><span class="fn">from_pretrained</span><span class="dt">(</span><span class="st">"gpt2"</span><span class="dt">)</span>
+<span class="va">tokenizer</span><span class="dt">.</span><span class="va">pad_token</span> <span class="dt">=</span> <span class="va">tokenizer</span><span class="dt">.</span><span class="va">eos_token</span>
+
+<span class="va">base</span> <span class="dt">=</span> <span class="tp">AutoModelForCausalLM</span><span class="dt">.</span><span class="fn">from_pretrained</span><span class="dt">(</span><span class="st">"gpt2"</span><span class="dt">)</span>
+<span class="va">model</span> <span class="dt">=</span> <span class="fn">get_peft_model</span><span class="dt">(</span><span class="va">base</span><span class="dt">,</span> <span class="tp">LoraConfig</span><span class="dt">(</span>
+    <span class="va">task_type</span><span class="dt">=</span><span class="tp">TaskType</span><span class="dt">.</span><span class="va">CAUSAL_LM</span><span class="dt">,</span> <span class="va">r</span><span class="dt">=</span><span class="nm">8</span><span class="dt">,</span> <span class="va">lora_alpha</span><span class="dt">=</span><span class="nm">16</span><span class="dt">,</span> <span class="va">target_modules</span><span class="dt">=[</span><span class="st">"c_attn"</span><span class="dt">]</span>
+<span class="dt">))</span>
+
+<span class="cm"># TODO: create SFTConfig with output_dir="./sft_output", max_steps=10</span>
+<span class="va">sft_config</span> <span class="dt">=</span> <span class="tp">SFTConfig</span><span class="dt">(</span>
+    <span class="cm"># TODO: fill kwargs</span>
+<span class="dt">)</span>
+
+<span class="cm"># TODO: create and run SFTTrainer</span>
+<span class="va">trainer</span> <span class="dt">=</span> <span class="tp">SFTTrainer</span><span class="dt">(</span>
+    <span class="va">model</span><span class="dt">=</span><span class="va">model</span><span class="dt">,</span>
+    <span class="va">tokenizer</span><span class="dt">=</span><span class="va">tokenizer</span><span class="dt">,</span>
+    <span class="va">train_dataset</span><span class="dt">=</span><span class="va">train_data</span><span class="dt">,</span>
+    <span class="va">args</span><span class="dt">=</span><span class="va">sft_config</span><span class="dt">,</span>
+<span class="dt">)</span>
+<span class="cm"># TODO: call trainer.train() and print final loss</span>
+<span class="dt">...</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex3-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t3-1">T1</span><div class="test-content"><div class="test-input">result = trainer.train()<br>result.training_loss &gt; 0</div><div class="test-expected">→ True (training ran and loss is positive)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t3-2">T2</span><div class="test-content"><div class="test-input">import os; os.path.exists("./sft_output")</div><div class="test-expected">→ True (output directory created)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t3-3">T3</span><div class="test-content"><div class="test-input">result.global_step == 10</div><div class="test-expected">→ True (ran for max_steps=10)</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(3)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex3-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — Minimum SFTConfig</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>SFTConfig(output_dir="./sft_output", max_steps=10, per_device_train_batch_size=1, max_seq_length=128, dataset_text_field="text")</code></div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — SFTTrainer column name</span><span class="arrow">▶</span></button>
+        <div class="hint-body">SFTTrainer expects the text column to be named <code>text</code> by default. Override with <code>dataset_text_field="your_column"</code> in SFTConfig if different.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 4: MERGE AND UNLOAD ========== -->
+<section class="exercise" id="ex4">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 4 of 5</div>
+      <h2>Adapter Merging with merge_and_unload()</h2>
+      <p>Merge trained LoRA weights back into the base model to get a single self-contained model for deployment.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot4"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex4','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex4','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex4','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex4','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex4-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Merge adapters and save for production:</p>
+      <ul>
+        <li>Load a saved PEFT adapter from disk with <code style="font-family:'JetBrains Mono',monospace;">PeftModel.from_pretrained(base_model, adapter_path)</code></li>
+        <li>Call <code style="font-family:'JetBrains Mono',monospace;">model.merge_and_unload()</code> to fold adapter weights into base weights</li>
+        <li>Verify the result is a plain <code style="font-family:'JetBrains Mono',monospace;">nn.Module</code> — not a <code style="font-family:'JetBrains Mono',monospace;">PeftModel</code></li>
+        <li>Save the merged model with <code style="font-family:'JetBrains Mono',monospace;">merged.save_pretrained("./merged_model")</code></li>
+        <li>Reload from disk and confirm weights match (forward pass gives same logits)</li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(4)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex4-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        <span>day17_ex4_merge.py</span>
+        <span># pip install peft transformers torch</span>
+      </div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span></div>
+        <div class="code-content"><span class="cm"># pip install peft transformers torch</span>
+<span class="kw">from</span> <span class="va">peft</span> <span class="kw">import</span> <span class="tp">PeftModel</span><span class="dt">,</span> <span class="tp">LoraConfig</span><span class="dt">,</span> <span class="fn">get_peft_model</span><span class="dt">,</span> <span class="tp">TaskType</span>
+<span class="kw">from</span> <span class="va">transformers</span> <span class="kw">import</span> <span class="tp">AutoModelForCausalLM</span><span class="dt">,</span> <span class="tp">AutoTokenizer</span>
+<span class="kw">import</span> <span class="va">torch</span>
+
+<span class="cm"># Step 1: create and save a dummy adapter (simulating post-training)</span>
+<span class="va">base</span> <span class="dt">=</span> <span class="tp">AutoModelForCausalLM</span><span class="dt">.</span><span class="fn">from_pretrained</span><span class="dt">(</span><span class="st">"gpt2"</span><span class="dt">)</span>
+<span class="va">peft_model</span> <span class="dt">=</span> <span class="fn">get_peft_model</span><span class="dt">(</span><span class="va">base</span><span class="dt">,</span> <span class="tp">LoraConfig</span><span class="dt">(</span>
+    <span class="va">task_type</span><span class="dt">=</span><span class="tp">TaskType</span><span class="dt">.</span><span class="va">CAUSAL_LM</span><span class="dt">,</span> <span class="va">r</span><span class="dt">=</span><span class="nm">8</span><span class="dt">,</span> <span class="va">lora_alpha</span><span class="dt">=</span><span class="nm">16</span><span class="dt">,</span> <span class="va">target_modules</span><span class="dt">=[</span><span class="st">"c_attn"</span><span class="dt">]</span>
+<span class="dt">))</span>
+<span class="va">peft_model</span><span class="dt">.</span><span class="fn">save_pretrained</span><span class="dt">(</span><span class="st">"./adapter_to_merge"</span><span class="dt">)</span>
+
+<span class="cm"># Step 2: load base + adapter</span>
+<span class="va">base_reload</span> <span class="dt">=</span> <span class="tp">AutoModelForCausalLM</span><span class="dt">.</span><span class="fn">from_pretrained</span><span class="dt">(</span><span class="st">"gpt2"</span><span class="dt">)</span>
+
+<span class="cm"># TODO: load the saved adapter on top of base_reload</span>
+<span class="va">loaded_peft</span> <span class="dt">=</span> <span class="dt">...</span>
+
+<span class="cm"># TODO: merge and unload — returns plain nn.Module</span>
+<span class="va">merged</span> <span class="dt">=</span> <span class="dt">...</span>
+
+<span class="fn">print</span><span class="dt">(</span><span class="bi">f</span><span class="st">"Type after merge: {type(merged).__name__}"</span><span class="dt">)</span>
+<span class="fn">print</span><span class="dt">(</span><span class="st">"Is PeftModel:"</span><span class="dt">,</span> <span class="fn">isinstance</span><span class="dt">(</span><span class="va">merged</span><span class="dt">,</span> <span class="tp">PeftModel</span><span class="dt">))</span>
+
+<span class="cm"># TODO: save merged model and reload to verify</span>
+<span class="va">merged</span><span class="dt">.</span><span class="fn">save_pretrained</span><span class="dt">(</span><span class="st">"./merged_model"</span><span class="dt">)</span>
+<span class="dt">...</span></div>
+      </div>
+    </div>
+    <div class="info-box teal"><strong>Why merge?</strong> Keeping the PEFT adapter separate adds runtime overhead (extra matrix multiply). After merging, the effective weight is W' = W + BA·(alpha/r), stored directly — zero inference overhead and compatible with vLLM, llama.cpp, etc.</div>
+  </div>
+
+  <div class="tab-panel" id="ex4-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t4-1">T1</span><div class="test-content"><div class="test-input">isinstance(merged, PeftModel)</div><div class="test-expected">→ False (plain model after merge)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t4-2">T2</span><div class="test-content"><div class="test-input">import os; os.path.exists("./merged_model/config.json")</div><div class="test-expected">→ True (model saved correctly)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t4-3">T3</span><div class="test-content"><div class="test-input">reloaded = AutoModelForCausalLM.from_pretrained("./merged_model")<br>isinstance(reloaded, AutoModelForCausalLM)</div><div class="test-expected">→ True (loads without PEFT)</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(4)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex4-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — Loading adapter</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>loaded_peft = PeftModel.from_pretrained(base_reload, "./adapter_to_merge")</code>. The first argument is always the base model instance.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — merge_and_unload</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>merged = loaded_peft.merge_and_unload()</code>. This returns a plain model. You can then call <code>merged.save_pretrained()</code> and <code>tokenizer.save_pretrained()</code> together for a complete deployment package.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 5: FULL PIPELINE ========== -->
+<section class="exercise" id="ex5">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 5 of 5</div>
+      <h2>End-to-End QLoRA Fine-Tune Pipeline</h2>
+      <p>Chain all pieces together: 4-bit base model → LoRA adapters → SFTTrainer → merge → save → reload and generate.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot5"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex5','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex5','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex5','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex5','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex5-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Assemble the full fine-tuning pipeline in a single script:</p>
+      <ul>
+        <li>Stage 1 — Load base in 4-bit, apply LoRA, <code style="font-family:'JetBrains Mono',monospace;">prepare_model_for_kbit_training</code></li>
+        <li>Stage 2 — Create dataset, run <code style="font-family:'JetBrains Mono',monospace;">SFTTrainer</code> for 20 steps</li>
+        <li>Stage 3 — Merge adapters and save merged model + tokenizer to <code style="font-family:'JetBrains Mono',monospace;">./final_model</code></li>
+        <li>Stage 4 — Reload merged model, generate 5 responses, print them</li>
+        <li>Report: total trainable params, final training loss, VRAM used (if GPU available)</li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(5)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex5-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        <span>day17_ex5_full_pipeline.py</span>
+        <span># pip install trl peft transformers bitsandbytes torch accelerate datasets</span>
+      </div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span></div>
+        <div class="code-content"><span class="cm"># pip install trl peft transformers bitsandbytes torch accelerate datasets</span>
+<span class="kw">from</span> <span class="va">transformers</span> <span class="kw">import</span> <span class="tp">AutoModelForCausalLM</span><span class="dt">,</span> <span class="tp">AutoTokenizer</span><span class="dt">,</span> <span class="tp">BitsAndBytesConfig</span>
+<span class="kw">from</span> <span class="va">peft</span> <span class="kw">import</span> <span class="tp">LoraConfig</span><span class="dt">,</span> <span class="fn">get_peft_model</span><span class="dt">,</span> <span class="tp">TaskType</span><span class="dt">,</span> <span class="fn">prepare_model_for_kbit_training</span>
+<span class="kw">from</span> <span class="va">trl</span> <span class="kw">import</span> <span class="tp">SFTTrainer</span><span class="dt">,</span> <span class="tp">SFTConfig</span>
+<span class="kw">from</span> <span class="va">datasets</span> <span class="kw">import</span> <span class="tp">Dataset</span>
+<span class="kw">import</span> <span class="va">torch</span>
+
+<span class="va">MODEL_ID</span> <span class="dt">=</span> <span class="st">"TinyLlama/TinyLlama-1.1B-Chat-v1.0"</span>
+
+<span class="cm"># ---- STAGE 1: Setup ----</span>
+<span class="cm"># TODO: bnb_config, tokenizer, model, prepare_model, lora, get_peft_model</span>
+<span class="dt">...</span>
+
+<span class="cm"># ---- STAGE 2: Train ----</span>
+<span class="va">dataset</span> <span class="dt">=</span> <span class="tp">Dataset</span><span class="dt">.</span><span class="fn">from_list</span><span class="dt">([</span>
+    <span class="dt">{</span><span class="st">"text"</span><span class="dt">:</span> <span class="bi">f</span><span class="st">"Question: What is {i}+{i}?\nAnswer: {i+i}"</span><span class="dt">}</span>
+    <span class="kw">for</span> <span class="va">i</span> <span class="kw">in</span> <span class="fn">range</span><span class="dt">(</span><span class="nm">1</span><span class="dt">,</span> <span class="nm">21</span><span class="dt">)</span>
+<span class="dt">])</span>
+<span class="cm"># TODO: SFTConfig + SFTTrainer + train()</span>
+<span class="dt">...</span>
+
+<span class="cm"># ---- STAGE 3: Merge ----</span>
+<span class="cm"># TODO: merge_and_unload(), save_pretrained("./final_model")</span>
+<span class="dt">...</span>
+
+<span class="cm"># ---- STAGE 4: Reload and generate ----</span>
+<span class="cm"># TODO: load from ./final_model, generate 5 responses, print</span>
+<span class="dt">...</span>
+
+<span class="fn">print</span><span class="dt">(</span><span class="st">"Pipeline complete!"</span><span class="dt">)</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex5-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t5-1">T1</span><div class="test-content"><div class="test-input">import os; os.path.exists("./final_model/config.json")</div><div class="test-expected">→ True (merged model saved)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t5-2">T2</span><div class="test-content"><div class="test-input">result.global_step == 20 and result.training_loss &gt; 0</div><div class="test-expected">→ True (trained for 20 steps)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t5-3">T3</span><div class="test-content"><div class="test-input">final = AutoModelForCausalLM.from_pretrained("./final_model")<br>isinstance(final, AutoModelForCausalLM)</div><div class="test-expected">→ True (loads as plain model)</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(5)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex5-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — Stage 1 order matters</span><span class="arrow">▶</span></button>
+        <div class="hint-body">Order: (1) load 4-bit model, (2) <code>prepare_model_for_kbit_training(model)</code>, (3) <code>get_peft_model(model, lora_config)</code>. Skip step 2 and training will fail silently.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — Merge from trainer output</span><span class="arrow">▶</span></button>
+        <div class="hint-body">After training, the peft model is at <code>trainer.model</code>. Call <code>merged = trainer.model.merge_and_unload()</code> then save both model and tokenizer to the same directory.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <p>Day 17 of 30 — <a href="../index.html">Back to curriculum</a> · <a href="day18_exercises.html">Next: MLflow & Experiment Tracking →</a></p>
+</footer>
+
+<script>
+let completedCount = 0;
+const totalExercises = 5;
+function markDone(n) {
+  const dot = document.getElementById('dot' + n);
+  if (dot && !dot.classList.contains('done')) {
+    dot.classList.add('done');
+    completedCount++;
+    document.getElementById('progress-text').textContent = completedCount + ' / ' + totalExercises + ' completed';
+    document.getElementById('progress-fill').style.width = (completedCount / totalExercises * 100) + '%';
+  }
+}
+function showTab(exId, tabName) {
+  document.querySelectorAll('#' + exId + ' .tab-panel').forEach(p => { p.classList.toggle('active', p.id === exId + '-' + tabName); });
+  document.querySelectorAll('#' + exId + ' .tab-btn').forEach(b => { b.classList.toggle('active', b.getAttribute('onclick') && b.getAttribute('onclick').includes("'" + tabName + "'")); });
+}
+function toggleHint(btn) {
+  btn.classList.toggle('open');
+  const body = btn.nextElementSibling;
+  body.style.display = body.style.display === 'block' ? 'none' : 'block';
+}
+function runTests(exNum) {
+  const tests = document.querySelectorAll('#ex' + exNum + '-tests .test-badge');
+  tests.forEach((badge, i) => { setTimeout(() => { badge.className = 'test-badge pass'; badge.textContent = '✓ T' + (i + 1); }, i * 300); });
+}
+</script>
+<script src="../bg-animation.js"></script>
+</body>
+</html>

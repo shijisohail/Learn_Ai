@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 25 Exercises — Auth, Tenancy & Authorization-Aware AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f; --card: #141420; --surface2: #1a1a2e; --border: #2a2a45;
+  --purple: #7c3aed; --purple-light: #a855f7; --teal: #0d9488; --green: #10b981;
+  --yellow: #f59e0b; --red: #ef4444; --text: #e2e8f0; --muted: #64748b;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+code, pre { font-family: 'JetBrains Mono', monospace; }
+.sticky-nav { position: sticky; top: 0; z-index: 100; background: rgba(10,10,15,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); padding: 12px 32px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.sticky-nav a { color: var(--muted); text-decoration: none; font-size: 0.85rem; padding: 6px 12px; border-radius: 6px; transition: all 0.2s; border: 1px solid transparent; }
+.sticky-nav a:hover { color: var(--text); background: var(--card); border-color: var(--border); }
+.sticky-nav .brand { color: var(--purple-light); font-weight: 600; font-size: 0.9rem; }
+.nav-sep { color: var(--border); } .nav-title { color: var(--text); font-weight: 700; font-size: 0.95rem; flex: 1; }
+.hero { padding: 56px 32px 32px; max-width: 1100px; margin: 0 auto; border-bottom: 1px solid var(--border); }
+.hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: 8px; }
+.hero h1 span { color: var(--purple-light); }
+.hero p { color: var(--muted); font-size: 1rem; max-width: 700px; }
+.hero-meta { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
+.badge-purple { background: rgba(124,58,237,0.15); color: var(--purple-light); border: 1px solid rgba(124,58,237,0.3); }
+.badge-teal { background: rgba(13,148,136,0.15); color: #2dd4bf; border: 1px solid rgba(13,148,136,0.3); }
+.badge-green { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.progress-bar-wrap { max-width: 1100px; margin: 24px auto; padding: 0 32px; }
+.progress-label { font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
+.progress-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--purple), var(--teal)); border-radius: 3px; transition: width 0.5s ease; }
+.main { max-width: 1100px; margin: 0 auto; padding: 32px; display: flex; flex-direction: column; gap: 64px; }
+.exercise { border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: var(--card); }
+.exercise-header { padding: 24px 32px; background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(13,148,136,0.05)); border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.exercise-num { font-size: 0.75rem; color: var(--purple-light); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.exercise-header h2 { font-size: 1.4rem; font-weight: 700; margin: 4px 0 8px; }
+.exercise-header p { color: var(--muted); font-size: 0.9rem; }
+.ex-status { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); transition: background 0.3s; }
+.status-dot.done { background: var(--green); }
+.tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--surface2); }
+.tab-btn { padding: 12px 20px; font-size: 0.82rem; font-weight: 600; color: var(--muted); cursor: pointer; border: none; background: none; border-bottom: 2px solid transparent; transition: all 0.2s; font-family: 'Inter', sans-serif; }
+.tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+.tab-btn.active { color: var(--purple-light); border-bottom-color: var(--purple-light); background: rgba(124,58,237,0.05); }
+.tab-panel { display: none; padding: 28px 32px; }
+.tab-panel.active { display: block; }
+.code-wrap { background: #0d0d18; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin: 12px 0; }
+.code-header { padding: 8px 16px; background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; color: var(--muted); }
+.code-dots { display: flex; gap: 6px; }
+.code-dots span { width: 10px; height: 10px; border-radius: 50%; }
+.code-dots .dot-r { background: var(--red); } .code-dots .dot-y { background: var(--yellow); } .code-dots .dot-g { background: var(--green); }
+.code-body { display: flex; }
+.line-nums { padding: 16px 8px; background: rgba(0,0,0,0.3); border-right: 1px solid var(--border); display: flex; flex-direction: column; min-width: 40px; text-align: right; }
+.line-nums span { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: #3a3a5c; line-height: 1.7; padding: 0 8px; }
+.code-content { padding: 16px; overflow-x: auto; flex: 1; white-space: pre; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; line-height: 1.7; }
+.kw { color: #c792ea; } .fn { color: #82aaff; } .st { color: #c3e88d; } .cm { color: #546e7a; font-style: italic; } .nm { color: #f78c6c; } .tp { color: #ffcb6b; } .dt { color: #89ddff; } .va { color: #eeffff; } .bi { color: #ff5370; }
+.task-requirements { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); border-radius: 10px; padding: 16px 20px; margin-bottom: 16px; }
+.task-requirements li { color: var(--text); font-size: 0.88rem; margin: 6px 0 6px 16px; }
+.task-requirements li::marker { color: var(--yellow); }
+.tests-grid { display: flex; flex-direction: column; gap: 8px; }
+.test-case { display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+.test-badge { flex-shrink: 0; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; font-family: 'Inter', sans-serif; }
+.test-badge.pass { background: rgba(16,185,129,0.2); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.test-badge.pending { background: rgba(100,116,139,0.2); color: var(--muted); border: 1px solid rgba(100,116,139,0.3); }
+.test-content { flex: 1; } .test-input { color: var(--text); } .test-expected { color: var(--muted); margin-top: 2px; }
+.hints-list { display: flex; flex-direction: column; gap: 8px; }
+.hint-toggle { width: 100%; text-align: left; padding: 10px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--muted); cursor: pointer; font-family: 'Inter', sans-serif; font-size: 0.85rem; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s; }
+.hint-toggle:hover { border-color: var(--purple); color: var(--text); }
+.hint-toggle .arrow { transition: transform 0.2s; }
+.hint-toggle.open .arrow { transform: rotate(90deg); }
+.hint-body { display: none; padding: 12px 16px; margin-top: 4px; background: rgba(124,58,237,0.05); border: 1px solid rgba(124,58,237,0.2); border-radius: 8px; font-size: 0.85rem; color: var(--text); line-height: 1.6; }
+.hint-body code { background: rgba(124,58,237,0.15); padding: 1px 5px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--purple-light); }
+.section-label { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.section-label.purple { color: var(--purple-light); } .section-label.yellow { color: var(--yellow); } .section-label.green { color: #34d399; } .section-label.teal { color: #2dd4bf; }
+.section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.animate-btn { margin-top: 12px; padding: 8px 18px; border-radius: 8px; background: var(--purple); color: white; border: none; cursor: pointer; font-size: 0.82rem; font-weight: 600; font-family: 'Inter', sans-serif; transition: background 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+.animate-btn:hover { background: var(--purple-light); }
+.visual-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+.flow-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.flow-node { padding: 8px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; text-align: center; }
+.flow-node.purple { background: rgba(124,58,237,0.2); border: 1px solid rgba(124,58,237,0.4); color: var(--purple-light); }
+.flow-node.teal { background: rgba(13,148,136,0.2); border: 1px solid rgba(13,148,136,0.4); color: #2dd4bf; }
+.flow-node.green { background: rgba(16,185,129,0.2); border: 1px solid rgba(16,185,129,0.4); color: #34d399; }
+.flow-node.yellow { background: rgba(245,158,11,0.2); border: 1px solid rgba(245,158,11,0.4); color: var(--yellow); }
+.flow-node.red { background: rgba(239,68,68,0.2); border: 1px solid rgba(239,68,68,0.4); color: #f87171; }
+.flow-arrow { color: var(--muted); font-size: 1.1rem; }
+.info-callout { padding: 12px 16px; border-radius: 8px; font-size: 0.82rem; margin-top: 12px; }
+.info-callout.teal { background: rgba(13,148,136,0.08); border: 1px solid rgba(13,148,136,0.2); }
+.info-callout.purple { background: rgba(124,58,237,0.08); border: 1px solid rgba(124,58,237,0.2); }
+.info-callout.yellow { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); }
+.footer { border-top: 1px solid var(--border); padding: 32px; text-align: center; color: var(--muted); font-size: 0.82rem; }
+.footer a { color: var(--purple-light); text-decoration: none; }
+@media (max-width: 768px) { .tab-btn { padding: 10px 12px; font-size: 0.75rem; } }
+</style>
+</head>
+<body data-animation-density="high">
+
+<nav class="sticky-nav">
+  <a href="../days/day25.html">← Day 25 lesson</a>
+  <span class="nav-sep">|</span>
+  <a href="../index.html" class="brand">🤖 Agentic AI</a>
+  <span class="nav-sep">|</span>
+  <span class="nav-title">Day 25 Exercises — Auth, Tenancy & Authorization-Aware AI</span>
+  <a href="day26_exercises.html" style="margin-left:auto;">Day 26 Exercises →</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-meta">
+    <span class="badge badge-purple">Day 25</span>
+    <span class="badge badge-teal">5 Exercises</span>
+    <span class="badge badge-green">FastAPI / JWT / Qdrant / RBAC</span>
+  </div>
+  <h1>Auth, Tenancy <span>&amp; Authorization-Aware AI</span></h1>
+  <p>Build multi-tenant AI APIs with JWT middleware, per-tenant Qdrant namespaces, RBAC-enforced tool decorators, and full audit logging — so every AI action is traceable to a user and their permissions.</p>
+</div>
+
+<div class="progress-bar-wrap">
+  <div class="progress-label"><span>Progress</span><span id="progress-text">0 / 5 completed</span></div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+</div>
+
+<main class="main">
+
+<!-- ========== EXERCISE 1: JWT MIDDLEWARE ========== -->
+<section class="exercise" id="ex1">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 1 of 5</div>
+      <h2>FastAPI JWT Middleware</h2>
+      <p>Build a JWT authentication middleware that extracts tenant_id and scopes from the token and injects them into request state.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot1"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex1','visual')">Visual Explainer</button>
+    <button class="tab-btn" onclick="showTab('ex1','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex1','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex1','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex1','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex1-visual">
+    <div class="section-label purple">JWT Auth Flow in FastAPI</div>
+    <div class="visual-box">
+      <div class="flow-row">
+        <div class="flow-node red">Request<br><small>Authorization: Bearer ...</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node yellow">JWT Middleware<br><small>decode + validate</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node teal">request.state<br><small>tenant_id, scopes, user_id</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node green">Route Handler</div>
+      </div>
+    </div>
+    <div class="info-callout purple">
+      <strong style="color:var(--purple-light);">JWT payload structure:</strong> <code>{"sub": "user_123", "tenant_id": "acme", "scopes": ["read:data", "write:ai"], "exp": 1234567890}</code>. The <code>tenant_id</code> determines which Qdrant namespace to query. Scopes gate which tools the agent can call.
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex1-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>day25_jwt_middleware.py</span></div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span></div>
+        <div class="code-content"><span class="cm"># pip install fastapi python-jose[cryptography] uvicorn httpx</span>
+<span class="kw">from</span> <span class="va">fastapi</span> <span class="kw">import</span> <span class="va">FastAPI</span><span class="dt">,</span> <span class="va">Request</span><span class="dt">,</span> <span class="va">HTTPException</span>
+<span class="kw">from</span> <span class="va">fastapi.responses</span> <span class="kw">import</span> <span class="va">JSONResponse</span>
+<span class="kw">from</span> <span class="va">starlette.middleware.base</span> <span class="kw">import</span> <span class="va">BaseHTTPMiddleware</span>
+<span class="kw">from</span> <span class="va">jose</span> <span class="kw">import</span> <span class="va">jwt</span><span class="dt">,</span> <span class="va">JWTError</span>
+<span class="kw">from</span> <span class="va">dataclasses</span> <span class="kw">import</span> <span class="va">dataclass</span>
+
+<span class="va">SECRET_KEY</span> <span class="dt">=</span> <span class="st">"dev-secret-change-in-prod"</span>
+<span class="va">ALGORITHM</span> <span class="dt">=</span> <span class="st">"HS256"</span>
+
+<span class="dt">@</span><span class="fn">dataclass</span>
+<span class="kw">class</span> <span class="tp">UserContext</span><span class="dt">:</span>
+    <span class="va">user_id</span><span class="dt">:</span> <span class="tp">str</span>
+    <span class="va">tenant_id</span><span class="dt">:</span> <span class="tp">str</span>
+    <span class="va">scopes</span><span class="dt">:</span> <span class="tp">list</span><span class="dt">[</span><span class="tp">str</span><span class="dt">]</span>
+
+<span class="kw">class</span> <span class="tp">JWTMiddleware</span><span class="dt">(</span><span class="tp">BaseHTTPMiddleware</span><span class="dt">):</span>
+    <span class="kw">async def</span> <span class="fn">dispatch</span><span class="dt">(</span><span class="va">self</span><span class="dt">,</span> <span class="va">request</span><span class="dt">:</span> <span class="tp">Request</span><span class="dt">,</span> <span class="va">call_next</span><span class="dt">):</span>
+        <span class="va">token</span> <span class="dt">=</span> <span class="va">request</span><span class="dt">.</span><span class="va">headers</span><span class="dt">.</span><span class="fn">get</span><span class="dt">(</span><span class="st">"Authorization"</span><span class="dt">,</span> <span class="st">""</span><span class="dt">).</span><span class="fn">removeprefix</span><span class="dt">(</span><span class="st">"Bearer "</span><span class="dt">)</span>
+        <span class="kw">if not</span> <span class="va">token</span><span class="dt">:</span>
+            <span class="kw">return</span> <span class="fn">JSONResponse</span><span class="dt">(</span><span class="va">status_code</span><span class="dt">=</span><span class="nm">401</span><span class="dt">,</span> <span class="va">content</span><span class="dt">={</span><span class="st">"detail"</span><span class="dt">:</span><span class="st">"Missing token"</span><span class="dt">})</span>
+        <span class="kw">try</span><span class="dt">:</span>
+            <span class="va">payload</span> <span class="dt">=</span> <span class="va">jwt</span><span class="dt">.</span><span class="fn">decode</span><span class="dt">(</span><span class="va">token</span><span class="dt">,</span> <span class="va">SECRET_KEY</span><span class="dt">,</span> <span class="va">algorithms</span><span class="dt">=[</span><span class="va">ALGORITHM</span><span class="dt">])</span>
+            <span class="cm"># TODO: build UserContext and attach to request.state.user</span>
+            <span class="dt">...</span>
+        <span class="kw">except</span> <span class="va">JWTError</span> <span class="kw">as</span> <span class="va">e</span><span class="dt">:</span>
+            <span class="kw">return</span> <span class="fn">JSONResponse</span><span class="dt">(</span><span class="va">status_code</span><span class="dt">=</span><span class="nm">401</span><span class="dt">,</span> <span class="va">content</span><span class="dt">={</span><span class="st">"detail"</span><span class="dt">:</span><span class="bi">str</span><span class="dt">(</span><span class="va">e</span><span class="dt">)})</span>
+        <span class="kw">return</span> <span class="kw">await</span> <span class="fn">call_next</span><span class="dt">(</span><span class="va">request</span><span class="dt">)</span>
+
+<span class="va">app</span> <span class="dt">=</span> <span class="fn">FastAPI</span><span class="dt">()</span>
+<span class="va">app</span><span class="dt">.</span><span class="fn">add_middleware</span><span class="dt">(</span><span class="va">JWTMiddleware</span><span class="dt">)</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex1-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Complete the JWT middleware:</p>
+      <ul>
+        <li>Extract <code style="font-family:'JetBrains Mono',monospace;">sub</code>, <code style="font-family:'JetBrains Mono',monospace;">tenant_id</code>, and <code style="font-family:'JetBrains Mono',monospace;">scopes</code> from the JWT payload</li>
+        <li>Attach <code style="font-family:'JetBrains Mono',monospace;">request.state.user = UserContext(...)</code> for downstream use</li>
+        <li>Write a <code style="font-family:'JetBrains Mono',monospace;">require_scope(scope: str)</code> dependency that checks <code style="font-family:'JetBrains Mono',monospace;">request.state.user.scopes</code></li>
+        <li>Write a helper <code style="font-family:'JetBrains Mono',monospace;">create_test_token(user_id, tenant_id, scopes)</code> using <code style="font-family:'JetBrains Mono',monospace;">jwt.encode()</code> for testing</li>
+        <li>Add a <code style="font-family:'JetBrains Mono',monospace;">GET /me</code> endpoint that returns the decoded user context</li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(1)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex1-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t1-1">T1</span><div class="test-content"><div class="test-input">GET /me with no Authorization header</div><div class="test-expected">→ 401 "Missing token"</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t1-2">T2</span><div class="test-content"><div class="test-input">GET /me with valid Bearer token for tenant "acme"</div><div class="test-expected">→ 200 {"user_id":..., "tenant_id": "acme", "scopes": [...]}</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t1-3">T3</span><div class="test-content"><div class="test-input">GET /admin with token missing "admin:write" scope</div><div class="test-expected">→ 403 "Insufficient scope"</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t1-4">T4</span><div class="test-content"><div class="test-input">GET /me with expired token (exp in the past)</div><div class="test-expected">→ 401 "Signature has expired"</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(1)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex1-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — Building UserContext from payload</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>request.state.user = UserContext(user_id=payload["sub"], tenant_id=payload["tenant_id"], scopes=payload.get("scopes", []))</code></div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — require_scope dependency</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>def require_scope(scope: str): def checker(request: Request): if scope not in request.state.user.scopes: raise HTTPException(403, "Insufficient scope"); return checker</code>. Use as: <code>Depends(require_scope("admin:write"))</code></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 2: PER-TENANT QDRANT ========== -->
+<section class="exercise" id="ex2">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 2 of 5</div>
+      <h2>Per-Tenant Qdrant Namespaces</h2>
+      <p>Implement tenant isolation in Qdrant by using a different collection per tenant and enforcing it via the JWT-extracted tenant_id.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot2"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex2','visual')">Visual Explainer</button>
+    <button class="tab-btn" onclick="showTab('ex2','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex2','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex2','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex2','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex2-visual">
+    <div class="section-label purple">Multi-Tenancy in Qdrant</div>
+    <div class="visual-box">
+      <div class="flow-row">
+        <div class="flow-node purple">Tenant A query</div>
+        <div class="flow-arrow">→ collection:</div>
+        <div class="flow-node teal">kb_acme</div>
+        <div class="flow-arrow">only returns</div>
+        <div class="flow-node green">Acme docs</div>
+      </div>
+      <div class="flow-row" style="margin-top:4px;">
+        <div class="flow-node purple">Tenant B query</div>
+        <div class="flow-arrow">→ collection:</div>
+        <div class="flow-node teal">kb_globex</div>
+        <div class="flow-arrow">only returns</div>
+        <div class="flow-node green">Globex docs</div>
+      </div>
+    </div>
+    <div class="info-callout teal">
+      <strong style="color:#2dd4bf;">Alternative: payload filter isolation.</strong> Instead of separate collections, use one collection with a <code>tenant_id</code> payload field and filter on every query: <code>Filter(must=[FieldCondition(key="tenant_id", match=MatchValue(value=tenant))])</code>. Simpler, but slightly slower.
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex2-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>day25_tenant_qdrant.py</span></div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span></div>
+        <div class="code-content"><span class="cm"># pip install qdrant-client openai</span>
+<span class="kw">from</span> <span class="va">qdrant_client</span> <span class="kw">import</span> <span class="va">QdrantClient</span><span class="dt">,</span> <span class="va">models</span>
+<span class="kw">from</span> <span class="va">openai</span> <span class="kw">import</span> <span class="va">OpenAI</span>
+
+<span class="va">qdrant</span> <span class="dt">=</span> <span class="fn">QdrantClient</span><span class="dt">(</span><span class="st">":memory:"</span><span class="dt">)</span>  <span class="cm"># use URL for production</span>
+<span class="va">oai</span> <span class="dt">=</span> <span class="fn">OpenAI</span><span class="dt">()</span>
+
+<span class="kw">def</span> <span class="fn">get_collection_name</span><span class="dt">(</span><span class="va">tenant_id</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">str</span><span class="dt">:</span>
+    <span class="cm">"""Deterministic collection name from tenant_id."""</span>
+    <span class="kw">return</span> <span class="st">f"kb_{tenant_id.lower().replace('-', '_')}"</span>
+
+<span class="kw">def</span> <span class="fn">ensure_collection</span><span class="dt">(</span><span class="va">tenant_id</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">str</span><span class="dt">:</span>
+    <span class="cm">"""Create collection if not exists, return collection name."""</span>
+    <span class="va">name</span> <span class="dt">=</span> <span class="fn">get_collection_name</span><span class="dt">(</span><span class="va">tenant_id</span><span class="dt">)</span>
+    <span class="va">existing</span> <span class="dt">=</span> <span class="dt">[</span><span class="va">c</span><span class="dt">.</span><span class="va">name</span> <span class="kw">for</span> <span class="va">c</span> <span class="kw">in</span> <span class="va">qdrant</span><span class="dt">.</span><span class="fn">get_collections</span><span class="dt">().</span><span class="va">collections</span><span class="dt">]</span>
+    <span class="kw">if</span> <span class="va">name</span> <span class="kw">not in</span> <span class="va">existing</span><span class="dt">:</span>
+        <span class="cm"># TODO: create collection with 1536-dim vectors</span>
+        <span class="dt">...</span>
+    <span class="kw">return</span> <span class="va">name</span>
+
+<span class="kw">def</span> <span class="fn">upsert_document</span><span class="dt">(</span><span class="va">tenant_id</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">,</span> <span class="va">doc_id</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">,</span> <span class="va">text</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span><span class="dt">:</span>
+    <span class="cm">"""Embed text and upsert into tenant collection."""</span>
+    <span class="cm"># TODO: embed text, upsert PointStruct with doc_id and text payload</span>
+    <span class="dt">...</span>
+
+<span class="kw">def</span> <span class="fn">search_tenant</span><span class="dt">(</span><span class="va">tenant_id</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">,</span> <span class="va">query</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">,</span> <span class="va">top_k</span><span class="dt">:</span> <span class="tp">int</span> <span class="dt">=</span> <span class="nm">5</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">list</span><span class="dt">:</span>
+    <span class="cm">"""Embed query and search ONLY in the tenant's collection."""</span>
+    <span class="cm"># TODO: embed query, search in get_collection_name(tenant_id), return hits</span>
+    <span class="dt">...</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex2-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Implement the tenant-isolated Qdrant layer:</p>
+      <ul>
+        <li>In <code style="font-family:'JetBrains Mono',monospace;">ensure_collection()</code>: call <code style="font-family:'JetBrains Mono',monospace;">qdrant.create_collection(name, vectors_config=models.VectorParams(size=1536, distance=models.Distance.COSINE))</code></li>
+        <li>In <code style="font-family:'JetBrains Mono',monospace;">upsert_document()</code>: embed via <code style="font-family:'JetBrains Mono',monospace;">oai.embeddings.create</code>, then <code style="font-family:'JetBrains Mono',monospace;">qdrant.upsert(collection_name, points=[PointStruct(id=uuid, vector=..., payload={"text":text})])</code></li>
+        <li>In <code style="font-family:'JetBrains Mono',monospace;">search_tenant()</code>: ensure cross-tenant isolation — Tenant A's query must never return Tenant B's documents</li>
+        <li>Write a test that inserts docs for two tenants and verifies search is isolated</li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(2)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex2-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t2-1">T1</span><div class="test-content"><div class="test-input">upsert_document("acme", "doc1", "Acme product docs")<br>upsert_document("globex", "doc2", "Globex product docs")</div><div class="test-expected">→ No error, two separate collections created</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t2-2">T2</span><div class="test-content"><div class="test-input">results = search_tenant("acme", "product docs")<br>all("Acme" in r.payload["text"] for r in results)</div><div class="test-expected">→ True (isolation enforced)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t2-3">T3</span><div class="test-content"><div class="test-input">get_collection_name("My-Corp") == "kb_my_corp"</div><div class="test-expected">→ True (safe collection naming)</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(2)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex2-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — PointStruct with string ID</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>from qdrant_client.models import PointStruct; import uuid; point = PointStruct(id=str(uuid.uuid4()), vector=embedding, payload={"text": text, "doc_id": doc_id})</code></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 3: RBAC TOOL DECORATOR ========== -->
+<section class="exercise" id="ex3">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 3 of 5</div>
+      <h2>RBAC-Enforced Tool Decorator</h2>
+      <p>Build a <code style="font-family:'JetBrains Mono',monospace;">@require_scope</code> decorator for agent tools that checks the current user's JWT scopes before execution.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot3"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex3','visual')">Visual Explainer</button>
+    <button class="tab-btn" onclick="showTab('ex3','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex3','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex3','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex3','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex3-visual">
+    <div class="section-label purple">RBAC Tool Gating</div>
+    <div class="visual-box">
+      <div class="flow-row">
+        <div class="flow-node purple">Agent calls tool</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node yellow">@require_scope("write:data")</div>
+        <div class="flow-arrow">→ check JWT ctx</div>
+        <div class="flow-node green">Execute tool ✓</div>
+      </div>
+      <div class="flow-row" style="margin-top:4px;">
+        <div style="width:200px;"></div>
+        <div class="flow-arrow">→ missing scope</div>
+        <div class="flow-node red">PermissionError</div>
+      </div>
+    </div>
+    <div class="info-callout teal">
+      <strong style="color:#2dd4bf;">Context variable pattern:</strong> Use Python's <code>contextvars.ContextVar</code> to store the current <code>UserContext</code> in async context. Set it at request boundary (middleware), read it inside tool functions without passing explicitly.
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex3-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>day25_rbac_tools.py</span></div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span></div>
+        <div class="code-content"><span class="cm"># pip install anthropic</span>
+<span class="kw">from</span> <span class="va">contextvars</span> <span class="kw">import</span> <span class="va">ContextVar</span>
+<span class="kw">from</span> <span class="va">functools</span> <span class="kw">import</span> <span class="va">wraps</span>
+<span class="kw">from</span> <span class="va">dataclasses</span> <span class="kw">import</span> <span class="va">dataclass</span>
+
+<span class="dt">@</span><span class="fn">dataclass</span>
+<span class="kw">class</span> <span class="tp">UserContext</span><span class="dt">:</span>
+    <span class="va">user_id</span><span class="dt">:</span> <span class="tp">str</span>
+    <span class="va">tenant_id</span><span class="dt">:</span> <span class="tp">str</span>
+    <span class="va">scopes</span><span class="dt">:</span> <span class="tp">list</span><span class="dt">[</span><span class="tp">str</span><span class="dt">]</span>
+
+<span class="cm"># Thread/async-safe context variable</span>
+<span class="va">current_user</span><span class="dt">:</span> <span class="tp">ContextVar</span><span class="dt">[</span><span class="tp">UserContext</span><span class="dt">]</span> <span class="dt">=</span> <span class="fn">ContextVar</span><span class="dt">(</span><span class="st">"current_user"</span><span class="dt">)</span>
+
+<span class="kw">def</span> <span class="fn">require_scope</span><span class="dt">(</span><span class="va">scope</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">):</span>
+    <span class="cm">"""Decorator factory: require scope before executing tool."""</span>
+    <span class="kw">def</span> <span class="fn">decorator</span><span class="dt">(</span><span class="va">fn</span><span class="dt">):</span>
+        <span class="dt">@</span><span class="fn">wraps</span><span class="dt">(</span><span class="va">fn</span><span class="dt">)</span>
+        <span class="kw">def</span> <span class="fn">wrapper</span><span class="dt">(*</span><span class="va">args</span><span class="dt">,</span> <span class="dt">**</span><span class="va">kwargs</span><span class="dt">):</span>
+            <span class="cm"># TODO: get current_user from ContextVar, check scope, call fn or raise</span>
+            <span class="dt">...</span>
+        <span class="kw">return</span> <span class="va">wrapper</span>
+    <span class="kw">return</span> <span class="va">decorator</span>
+
+<span class="cm"># Example tool using the decorator</span>
+<span class="dt">@</span><span class="fn">require_scope</span><span class="dt">(</span><span class="st">"write:database"</span><span class="dt">)</span>
+<span class="kw">def</span> <span class="fn">delete_customer</span><span class="dt">(</span><span class="va">customer_id</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">dict</span><span class="dt">:</span>
+    <span class="kw">return</span> <span class="dt">{</span><span class="st">"deleted"</span><span class="dt">:</span> <span class="va">customer_id</span><span class="dt">}</span>
+
+<span class="dt">@</span><span class="fn">require_scope</span><span class="dt">(</span><span class="st">"read:database"</span><span class="dt">)</span>
+<span class="kw">def</span> <span class="fn">get_customer</span><span class="dt">(</span><span class="va">customer_id</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">dict</span><span class="dt">:</span>
+    <span class="kw">return</span> <span class="dt">{</span><span class="st">"id"</span><span class="dt">:</span> <span class="va">customer_id</span><span class="dt">,</span> <span class="st">"name"</span><span class="dt">:</span> <span class="st">"Test Customer"</span><span class="dt">}</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex3-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Implement <code style="font-family:'JetBrains Mono',monospace;">require_scope()</code>:</p>
+      <ul>
+        <li>Get the user context: <code style="font-family:'JetBrains Mono',monospace;">user = current_user.get()</code> — raises <code style="font-family:'JetBrains Mono',monospace;">LookupError</code> if not set</li>
+        <li>If <code style="font-family:'JetBrains Mono',monospace;">scope not in user.scopes</code>: raise <code style="font-family:'JetBrains Mono',monospace;">PermissionError(f"Missing scope: {scope}")</code></li>
+        <li>Otherwise: call and return <code style="font-family:'JetBrains Mono',monospace;">fn(*args, **kwargs)</code></li>
+        <li>Write a test that sets <code style="font-family:'JetBrains Mono',monospace;">current_user.set(UserContext(...))</code> before calling the decorated tool</li>
+        <li>Verify that async tools (with <code style="font-family:'JetBrains Mono',monospace;">async def</code>) also work by using <code style="font-family:'JetBrains Mono',monospace;">asyncio.iscoroutinefunction</code> check</li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(3)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex3-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t3-1">T1</span><div class="test-content"><div class="test-input">current_user.set(UserContext("u1","acme",["read:database"]))<br>get_customer("cust_1")</div><div class="test-expected">→ {"id": "cust_1", "name": "Test Customer"}</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t3-2">T2</span><div class="test-content"><div class="test-input">current_user.set(UserContext("u1","acme",["read:database"]))<br>delete_customer("cust_1")</div><div class="test-expected">→ raises PermissionError("Missing scope: write:database")</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t3-3">T3</span><div class="test-content"><div class="test-input">delete_customer("cust_1")  # no current_user set</div><div class="test-expected">→ raises LookupError</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(3)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex3-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — ContextVar.get() with default</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>user = current_user.get(None)</code> returns None if not set (instead of raising). Then <code>if user is None: raise LookupError("No user context")</code>.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 4: AUDIT LOGGING ========== -->
+<section class="exercise" id="ex4">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 4 of 5</div>
+      <h2>Structured Audit Logging</h2>
+      <p>Add structured JSON audit logs to every AI tool call, capturing who called what, when, with what args, and what the outcome was.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot4"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex4','visual')">Visual Explainer</button>
+    <button class="tab-btn" onclick="showTab('ex4','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex4','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex4','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex4','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex4-visual">
+    <div class="section-label purple">Audit Log Entry Fields</div>
+    <div class="visual-box">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:var(--text);line-height:1.8;">
+        <span style="color:#82aaff;">{</span><br>
+        &nbsp;&nbsp;<span style="color:#c3e88d;">"timestamp"</span>: <span style="color:#f78c6c;">"2025-01-15T10:22:31Z"</span>,<br>
+        &nbsp;&nbsp;<span style="color:#c3e88d;">"user_id"</span>: <span style="color:#f78c6c;">"user_123"</span>,<br>
+        &nbsp;&nbsp;<span style="color:#c3e88d;">"tenant_id"</span>: <span style="color:#f78c6c;">"acme"</span>,<br>
+        &nbsp;&nbsp;<span style="color:#c3e88d;">"tool"</span>: <span style="color:#f78c6c;">"delete_customer"</span>,<br>
+        &nbsp;&nbsp;<span style="color:#c3e88d;">"args"</span>: <span style="color:#f78c6c;">{"customer_id": "cust_99"}</span>,<br>
+        &nbsp;&nbsp;<span style="color:#c3e88d;">"outcome"</span>: <span style="color:#f78c6c;">"success"</span>,<br>
+        &nbsp;&nbsp;<span style="color:#c3e88d;">"duration_ms"</span>: <span style="color:#f78c6c;">42</span><br>
+        <span style="color:#82aaff;">}</span>
+      </div>
+    </div>
+    <div class="info-callout yellow">
+      <strong style="color:var(--yellow);">Compliance requirements:</strong> SOC2, HIPAA, and GDPR all require audit trails for data access. Log to a separate append-only store (CloudWatch, Datadog, or a write-once DB table) with retention policy.
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex4-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>day25_audit_log.py</span></div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span></div>
+        <div class="code-content"><span class="cm"># pip install structlog</span>
+<span class="kw">import</span> <span class="va">structlog</span><span class="dt">,</span> <span class="va">time</span><span class="dt">,</span> <span class="va">json</span>
+<span class="kw">from</span> <span class="va">functools</span> <span class="kw">import</span> <span class="va">wraps</span>
+<span class="kw">from</span> <span class="va">contextvars</span> <span class="kw">import</span> <span class="va">ContextVar</span>
+
+<span class="va">audit_log</span> <span class="dt">=</span> <span class="va">structlog</span><span class="dt">.</span><span class="fn">get_logger</span><span class="dt">(</span><span class="st">"audit"</span><span class="dt">)</span>
+<span class="va">current_user</span><span class="dt">:</span> <span class="va">ContextVar</span> <span class="dt">=</span> <span class="fn">ContextVar</span><span class="dt">(</span><span class="st">"current_user"</span><span class="dt">,</span> <span class="va">default</span><span class="dt">=</span><span class="kw">None</span><span class="dt">)</span>
+
+<span class="kw">def</span> <span class="fn">audit_tool</span><span class="dt">(</span><span class="va">fn</span><span class="dt">):</span>
+    <span class="cm">"""Decorator: log every tool call with user context, args, outcome."""</span>
+    <span class="dt">@</span><span class="fn">wraps</span><span class="dt">(</span><span class="va">fn</span><span class="dt">)</span>
+    <span class="kw">def</span> <span class="fn">wrapper</span><span class="dt">(*</span><span class="va">args</span><span class="dt">,</span> <span class="dt">**</span><span class="va">kwargs</span><span class="dt">):</span>
+        <span class="va">user</span> <span class="dt">=</span> <span class="va">current_user</span><span class="dt">.</span><span class="fn">get</span><span class="dt">()</span>
+        <span class="va">start</span> <span class="dt">=</span> <span class="va">time</span><span class="dt">.</span><span class="fn">perf_counter</span><span class="dt">()</span>
+        <span class="kw">try</span><span class="dt">:</span>
+            <span class="va">result</span> <span class="dt">=</span> <span class="fn">fn</span><span class="dt">(*</span><span class="va">args</span><span class="dt">,</span> <span class="dt">**</span><span class="va">kwargs</span><span class="dt">)</span>
+            <span class="cm"># TODO: log success with user context, tool name, args, duration_ms</span>
+            <span class="kw">return</span> <span class="va">result</span>
+        <span class="kw">except</span> <span class="tp">Exception</span> <span class="kw">as</span> <span class="va">e</span><span class="dt">:</span>
+            <span class="cm"># TODO: log failure with error type and message</span>
+            <span class="kw">raise</span>
+    <span class="kw">return</span> <span class="va">wrapper</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex4-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Complete <code style="font-family:'JetBrains Mono',monospace;">@audit_tool</code>:</p>
+      <ul>
+        <li>On success: call <code style="font-family:'JetBrains Mono',monospace;">audit_log.info("tool_call", user_id=user.user_id, tenant_id=user.tenant_id, tool=fn.__name__, kwargs=kwargs, outcome="success", duration_ms=int((time.perf_counter()-start)*1000))</code></li>
+        <li>On exception: log with <code style="font-family:'JetBrains Mono',monospace;">outcome="error"</code>, <code style="font-family:'JetBrains Mono',monospace;">error_type=type(e).__name__</code>, <code style="font-family:'JetBrains Mono',monospace;">error_msg=str(e)</code>, then re-raise</li>
+        <li>Configure structlog to output JSON: <code style="font-family:'JetBrains Mono',monospace;">structlog.configure(processors=[..., structlog.dev.JSONRenderer()])</code></li>
+        <li>Combine with <code style="font-family:'JetBrains Mono',monospace;">@require_scope</code> from Exercise 3 — stack both decorators</li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(4)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex4-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t4-1">T1</span><div class="test-content"><div class="test-input">@audit_tool decorated function called successfully</div><div class="test-expected">→ JSON log line with outcome="success" and duration_ms > 0</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t4-2">T2</span><div class="test-content"><div class="test-input">@audit_tool decorated function raises ValueError</div><div class="test-expected">→ JSON log with outcome="error", error_type="ValueError"</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t4-3">T3</span><div class="test-content"><div class="test-input">Log entry contains user_id and tenant_id from current_user context</div><div class="test-expected">→ True (traceable to specific user)</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(4)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex4-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — structlog JSON configuration</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>structlog.configure(processors=[structlog.stdlib.add_log_level, structlog.processors.TimeStamper(fmt="iso"), structlog.processors.JSONRenderer()])</code></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 5: FULL TENANT-AWARE AGENT ========== -->
+<section class="exercise" id="ex5">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 5 of 5</div>
+      <h2>Full Tenant-Aware Agent Endpoint</h2>
+      <p>Wire JWT auth + per-tenant Qdrant + RBAC tools + audit logging into a single <code style="font-family:'JetBrains Mono',monospace;">POST /agent/query</code> endpoint.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot5"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex5','visual')">Visual Explainer</button>
+    <button class="tab-btn" onclick="showTab('ex5','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex5','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex5','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex5','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex5-visual">
+    <div class="section-label purple">Full Tenant-Aware Request Flow</div>
+    <div class="visual-box">
+      <div class="flow-row">
+        <div class="flow-node red">POST /agent/query<br><small>Bearer JWT</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node yellow">JWT Middleware<br><small>set current_user</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node teal">Agent: search<br><small>tenant's Qdrant</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node purple">LLM response</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node green">Audit log + return</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex5-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>day25_tenant_agent.py</span></div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span></div>
+        <div class="code-content"><span class="cm"># pip install fastapi anthropic qdrant-client python-jose structlog</span>
+<span class="kw">from</span> <span class="va">fastapi</span> <span class="kw">import</span> <span class="va">FastAPI</span><span class="dt">,</span> <span class="va">Request</span>
+<span class="kw">import</span> <span class="va">anthropic</span>
+<span class="cm"># import components from exercises 1-4</span>
+
+<span class="va">client</span> <span class="dt">=</span> <span class="fn">anthropic</span><span class="dt">.</span><span class="fn">Anthropic</span><span class="dt">()</span>
+<span class="va">app</span> <span class="dt">=</span> <span class="fn">FastAPI</span><span class="dt">()</span>
+
+<span class="dt">@</span><span class="fn">require_scope</span><span class="dt">(</span><span class="st">"read:ai"</span><span class="dt">)</span>
+<span class="dt">@</span><span class="fn">audit_tool</span>
+<span class="kw">def</span> <span class="fn">rag_search</span><span class="dt">(</span><span class="va">query</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">str</span><span class="dt">:</span>
+    <span class="cm">"""Search the current tenant's knowledge base."""</span>
+    <span class="va">user</span> <span class="dt">=</span> <span class="va">current_user</span><span class="dt">.</span><span class="fn">get</span><span class="dt">()</span>
+    <span class="va">hits</span> <span class="dt">=</span> <span class="fn">search_tenant</span><span class="dt">(</span><span class="va">user</span><span class="dt">.</span><span class="va">tenant_id</span><span class="dt">,</span> <span class="va">query</span><span class="dt">)</span>
+    <span class="kw">return</span> <span class="st">"\n"</span><span class="dt">.</span><span class="fn">join</span><span class="dt">(</span><span class="va">h</span><span class="dt">.</span><span class="va">payload</span><span class="dt">[</span><span class="st">"text"</span><span class="dt">]</span> <span class="kw">for</span> <span class="va">h</span> <span class="kw">in</span> <span class="va">hits</span><span class="dt">)</span>
+
+<span class="dt">@</span><span class="va">app</span><span class="dt">.</span><span class="fn">post</span><span class="dt">(</span><span class="st">"/agent/query"</span><span class="dt">)</span>
+<span class="kw">async def</span> <span class="fn">agent_query</span><span class="dt">(</span><span class="va">request</span><span class="dt">:</span> <span class="tp">Request</span><span class="dt">,</span> <span class="va">body</span><span class="dt">:</span> <span class="tp">dict</span><span class="dt">):</span>
+    <span class="cm">"""Multi-tenant agent endpoint: auth → search → LLM → audit → return."""</span>
+    <span class="cm"># TODO:</span>
+    <span class="cm"># 1. Set current_user from request.state.user (set by JWTMiddleware)</span>
+    <span class="cm"># 2. Call rag_search(body["question"]) for context</span>
+    <span class="cm"># 3. Call Anthropic API with context + question</span>
+    <span class="cm"># 4. Return {"answer": ..., "tenant": user.tenant_id}</span>
+    <span class="dt">...</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex5-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Wire up the full endpoint:</p>
+      <ul>
+        <li>Set <code style="font-family:'JetBrains Mono',monospace;">current_user.set(request.state.user)</code> at the top of the handler</li>
+        <li>Call <code style="font-family:'JetBrains Mono',monospace;">rag_search()</code> — it will check scopes and audit automatically</li>
+        <li>Build the LLM prompt: <code style="font-family:'JetBrains Mono',monospace;">f"Context: {context}\n\nQuestion: {body['question']}"</code></li>
+        <li>Test with two different JWT tokens (different tenants) and verify answers differ based on isolated knowledge bases</li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(5)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex5-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t5-1">T1</span><div class="test-content"><div class="test-input">POST /agent/query with Acme JWT + question about Acme products</div><div class="test-expected">→ 200 with answer based on Acme docs only</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t5-2">T2</span><div class="test-content"><div class="test-input">POST /agent/query with token missing "read:ai" scope</div><div class="test-expected">→ 403 PermissionError propagated</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t5-3">T3</span><div class="test-content"><div class="test-input">Audit log after request contains tenant_id and tool="rag_search"</div><div class="test-expected">→ True (full traceability)</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(5)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex5-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — ContextVar in async context</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>token = current_user.set(request.state.user)</code> returns a Token object. Call <code>current_user.reset(token)</code> in a finally block to clean up after the request, preventing context leakage between requests.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <p>Day 25 of 30 — Auth, Tenancy & Authorization-Aware AI · <a href="../index.html">Dashboard</a> · <a href="day26_exercises.html">Day 26 →</a></p>
+</footer>
+
+<script>
+function showTab(exId, tab) {
+  document.querySelectorAll(`#${exId} .tab-panel`).forEach(p => p.classList.remove('active'));
+  document.querySelectorAll(`#${exId} .tab-btn`).forEach(b => b.classList.remove('active'));
+  const target = document.getElementById(`${exId}-${tab}`);
+  if (target) target.classList.add('active');
+  const idx = ['visual','code','task','tests','hints'].indexOf(tab);
+  const btns = document.querySelectorAll(`#${exId} .tab-btn`);
+  if (btns[idx]) btns[idx].classList.add('active');
+}
+let completed = 0;
+function markDone(n) {
+  const dot = document.getElementById('dot' + n);
+  if (dot && !dot.classList.contains('done')) {
+    dot.classList.add('done'); completed++;
+    document.getElementById('progress-text').textContent = `${completed} / 5 completed`;
+    document.getElementById('progress-fill').style.width = `${(completed/5)*100}%`;
+  }
+}
+function runTests(exNum) {
+  document.querySelectorAll(`#ex${exNum}-tests .test-badge`).forEach((badge, i) => {
+    setTimeout(() => { badge.className = 'test-badge pass'; badge.textContent = '✓ T' + (i+1); }, i * 300);
+  });
+}
+function toggleHint(btn) {
+  btn.classList.toggle('open');
+  const body = btn.nextElementSibling;
+  body.style.display = body.style.display === 'block' ? 'none' : 'block';
+}
+</script>
+<script src="../bg-animation.js"></script>
+</body>
+</html>

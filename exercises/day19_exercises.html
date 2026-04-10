@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 19 Exercises — MLOps Pipelines</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f; --card: #141420; --surface2: #1a1a2e; --border: #2a2a45;
+  --purple: #7c3aed; --purple-light: #a855f7; --teal: #0d9488;
+  --green: #10b981; --yellow: #f59e0b; --red: #ef4444;
+  --text: #e2e8f0; --muted: #64748b;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
+.sticky-nav { position: sticky; top: 0; z-index: 100; background: rgba(10,10,15,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); padding: 12px 32px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.sticky-nav a { color: var(--muted); text-decoration: none; font-size: 0.85rem; padding: 6px 12px; border-radius: 6px; transition: all 0.2s; border: 1px solid transparent; }
+.sticky-nav a:hover { color: var(--text); background: var(--card); border-color: var(--border); }
+.sticky-nav .brand { color: var(--purple-light); font-weight: 600; font-size: 0.9rem; }
+.nav-sep { color: var(--border); }
+.nav-title { color: var(--text); font-weight: 700; font-size: 0.95rem; flex: 1; }
+.hero { padding: 56px 32px 32px; max-width: 1100px; margin: 0 auto; border-bottom: 1px solid var(--border); }
+.hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: 8px; }
+.hero h1 span { color: var(--purple-light); }
+.hero p { color: var(--muted); font-size: 1rem; max-width: 700px; }
+.hero-meta { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
+.badge-purple { background: rgba(124,58,237,0.15); color: var(--purple-light); border: 1px solid rgba(124,58,237,0.3); }
+.badge-teal { background: rgba(13,148,136,0.15); color: #2dd4bf; border: 1px solid rgba(13,148,136,0.3); }
+.badge-green { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.progress-bar-wrap { max-width: 1100px; margin: 24px auto; padding: 0 32px; }
+.progress-label { font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
+.progress-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--purple), var(--teal)); border-radius: 3px; transition: width 0.5s ease; }
+.main { max-width: 1100px; margin: 0 auto; padding: 32px; display: flex; flex-direction: column; gap: 64px; }
+.exercise { border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: var(--card); }
+.exercise-header { padding: 24px 32px; background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(13,148,136,0.05)); border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.exercise-num { font-size: 0.75rem; color: var(--purple-light); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.exercise-header h2 { font-size: 1.4rem; font-weight: 700; margin: 4px 0 8px; }
+.exercise-header p { color: var(--muted); font-size: 0.9rem; }
+.ex-status { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); transition: background 0.3s; }
+.status-dot.done { background: var(--green); }
+.tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--surface2); }
+.tab-btn { padding: 12px 20px; font-size: 0.82rem; font-weight: 600; color: var(--muted); cursor: pointer; border: none; background: none; border-bottom: 2px solid transparent; transition: all 0.2s; font-family: 'Inter', sans-serif; }
+.tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+.tab-btn.active { color: var(--purple-light); border-bottom-color: var(--purple-light); background: rgba(124,58,237,0.05); }
+.tab-panel { display: none; padding: 28px 32px; }
+.tab-panel.active { display: block; }
+.code-wrap { background: #0d0d18; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin: 12px 0; }
+.code-header { padding: 8px 16px; background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; color: var(--muted); }
+.code-dots { display: flex; gap: 6px; }
+.code-dots span { width: 10px; height: 10px; border-radius: 50%; }
+.code-dots .dot-r { background: var(--red); } .code-dots .dot-y { background: var(--yellow); } .code-dots .dot-g { background: var(--green); }
+.code-body { display: flex; }
+.line-nums { padding: 16px 8px; background: rgba(0,0,0,0.3); border-right: 1px solid var(--border); display: flex; flex-direction: column; min-width: 40px; text-align: right; }
+.line-nums span { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: #3a3a5c; line-height: 1.7; padding: 0 8px; }
+.code-content { padding: 16px; overflow-x: auto; flex: 1; white-space: pre; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; line-height: 1.7; }
+.kw { color: #c792ea; } .fn { color: #82aaff; } .st { color: #c3e88d; } .cm { color: #546e7a; font-style: italic; }
+.nm { color: #f78c6c; } .tp { color: #ffcb6b; } .dt { color: #89ddff; } .va { color: #eeffff; } .bi { color: #ff5370; }
+.task-requirements { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); border-radius: 10px; padding: 16px 20px; margin-bottom: 16px; }
+.task-requirements li { color: var(--text); font-size: 0.88rem; margin: 6px 0 6px 16px; }
+.task-requirements li::marker { color: var(--yellow); }
+.tests-grid { display: flex; flex-direction: column; gap: 8px; }
+.test-case { display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+.test-badge { flex-shrink: 0; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; font-family: 'Inter', sans-serif; letter-spacing: 0.5px; }
+.test-badge.pass { background: rgba(16,185,129,0.2); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.test-badge.pending { background: rgba(100,116,139,0.2); color: var(--muted); border: 1px solid rgba(100,116,139,0.3); }
+.test-content { flex: 1; } .test-input { color: var(--text); } .test-expected { color: var(--muted); margin-top: 2px; }
+.hints-list { display: flex; flex-direction: column; gap: 8px; }
+.hint-toggle { width: 100%; text-align: left; padding: 10px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--muted); cursor: pointer; font-family: 'Inter', sans-serif; font-size: 0.85rem; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s; }
+.hint-toggle:hover { border-color: var(--purple); color: var(--text); }
+.hint-toggle .arrow { transition: transform 0.2s; }
+.hint-toggle.open .arrow { transform: rotate(90deg); }
+.hint-body { display: none; padding: 12px 16px; margin-top: 4px; background: rgba(124,58,237,0.05); border: 1px solid rgba(124,58,237,0.2); border-radius: 8px; font-size: 0.85rem; color: var(--text); line-height: 1.6; }
+.hint-body code { background: rgba(124,58,237,0.15); padding: 1px 5px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--purple-light); }
+.section-label { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.section-label.purple { color: var(--purple-light); } .section-label.yellow { color: var(--yellow); }
+.section-label.green { color: #34d399; } .section-label.teal { color: #2dd4bf; }
+.section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.animate-btn { margin-top: 12px; padding: 8px 18px; border-radius: 8px; background: var(--purple); color: white; border: none; cursor: pointer; font-size: 0.82rem; font-weight: 600; font-family: 'Inter', sans-serif; transition: background 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+.animate-btn:hover { background: var(--purple-light); }
+.info-box { padding: 12px 16px; border-radius: 8px; margin: 12px 0; font-size: 0.85rem; }
+.info-box.teal { background: rgba(13,148,136,0.08); border: 1px solid rgba(13,148,136,0.2); color: var(--text); }
+.info-box.teal strong { color: #2dd4bf; }
+.info-box.purple { background: rgba(124,58,237,0.08); border: 1px solid rgba(124,58,237,0.2); color: var(--text); }
+.info-box.purple strong { color: var(--purple-light); }
+.footer { border-top: 1px solid var(--border); padding: 32px; text-align: center; color: var(--muted); font-size: 0.82rem; }
+.footer a { color: var(--purple-light); text-decoration: none; }
+</style>
+</head>
+<body data-animation-density="high">
+
+<nav class="sticky-nav">
+  <a href="../days/day19.html">← Day 19 lesson</a>
+  <span class="nav-sep">|</span>
+  <a href="../index.html" class="brand">🤖 Agentic AI</a>
+  <span class="nav-sep">|</span>
+  <span class="nav-title">Day 19 Exercises — MLOps Pipelines</span>
+  <a href="day20_exercises.html" style="margin-left:auto;">Day 20 Exercises →</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-meta">
+    <span class="badge badge-purple">Day 19</span>
+    <span class="badge badge-teal">5 Exercises</span>
+    <span class="badge badge-green">Kubeflow / BentoML / SageMaker</span>
+  </div>
+  <h1>MLOps <span>Pipelines</span></h1>
+  <p>Build production-grade ML pipelines that run on Kubernetes or the cloud — define components with Kubeflow DSL, serve models with BentoML, trigger training jobs on SageMaker, and deploy with canary rollouts.</p>
+</div>
+
+<div class="progress-bar-wrap">
+  <div class="progress-label"><span>Progress</span><span id="progress-text">0 / 5 completed</span></div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+</div>
+
+<main class="main">
+
+<!-- ========== EXERCISE 1: KUBEFLOW COMPONENT ========== -->
+<section class="exercise" id="ex1">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 1 of 5</div>
+      <h2>Kubeflow Pipeline Components with @dsl.component</h2>
+      <p>Define reusable, containerized pipeline steps using the Kubeflow DSL decorator.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot1"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex1','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex1','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex1','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex1','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex1-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Build three pipeline components and wire them together:</p>
+      <ul>
+        <li>Write a <code style="font-family:'JetBrains Mono',monospace;">@dsl.component</code> function <code style="font-family:'JetBrains Mono',monospace;">preprocess_data</code> that takes a dataset path and outputs a processed path</li>
+        <li>Write a <code style="font-family:'JetBrains Mono',monospace;">train_model</code> component that takes processed data and outputs a model artifact</li>
+        <li>Write an <code style="font-family:'JetBrains Mono',monospace;">evaluate_model</code> component that returns an <code style="font-family:'JetBrains Mono',monospace;">Output[Metrics]</code></li>
+        <li>Use <code style="font-family:'JetBrains Mono',monospace;">@dsl.pipeline(name="llm-finetune")</code> to compose all three components</li>
+        <li>Compile the pipeline to YAML with <code style="font-family:'JetBrains Mono',monospace;">compiler.Compiler().compile(pipeline, "pipeline.yaml")</code></li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(1)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex1-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        <span>day19_ex1_kubeflow.py</span>
+        <span># pip install kfp</span>
+      </div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span><span>31</span><span>32</span><span>33</span><span>34</span><span>35</span><span>36</span><span>37</span></div>
+        <div class="code-content"><span class="cm"># pip install kfp</span>
+<span class="kw">from</span> <span class="va">kfp</span> <span class="kw">import</span> <span class="va">dsl</span><span class="dt">,</span> <span class="va">compiler</span>
+<span class="kw">from</span> <span class="va">kfp.dsl</span> <span class="kw">import</span> <span class="tp">Output</span><span class="dt">,</span> <span class="tp">Metrics</span><span class="dt">,</span> <span class="tp">Model</span><span class="dt">,</span> <span class="tp">Dataset</span>
+
+<span class="cm"># TODO: define preprocess component</span>
+<span class="dt">@</span><span class="va">dsl</span><span class="dt">.</span><span class="fn">component</span><span class="dt">(</span><span class="va">base_image</span><span class="dt">=</span><span class="st">"python:3.11"</span><span class="dt">,</span> <span class="va">packages_to_install</span><span class="dt">=[</span><span class="st">"pandas"</span><span class="dt">])</span>
+<span class="kw">def</span> <span class="fn">preprocess_data</span><span class="dt">(</span>
+    <span class="va">raw_path</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">,</span>
+    <span class="va">processed</span><span class="dt">:</span> <span class="tp">Output</span><span class="dt">[</span><span class="tp">Dataset</span><span class="dt">],</span>
+<span class="dt">):</span>
+    <span class="cm"># TODO: simulate preprocessing — write a small CSV to processed.path</span>
+    <span class="dt">...</span>
+
+<span class="cm"># TODO: define train component</span>
+<span class="dt">@</span><span class="va">dsl</span><span class="dt">.</span><span class="fn">component</span><span class="dt">(</span><span class="va">base_image</span><span class="dt">=</span><span class="st">"python:3.11"</span><span class="dt">)</span>
+<span class="kw">def</span> <span class="fn">train_model</span><span class="dt">(</span>
+    <span class="va">processed</span><span class="dt">:</span> <span class="tp">Dataset</span><span class="dt">,</span>
+    <span class="va">model_output</span><span class="dt">:</span> <span class="tp">Output</span><span class="dt">[</span><span class="tp">Model</span><span class="dt">],</span>
+    <span class="va">learning_rate</span><span class="dt">:</span> <span class="tp">float</span> <span class="dt">=</span> <span class="nm">1e-4</span><span class="dt">,</span>
+<span class="dt">):</span>
+    <span class="cm"># TODO: simulate training, write dummy weights to model_output.path</span>
+    <span class="dt">...</span>
+
+<span class="cm"># TODO: define evaluate component</span>
+<span class="dt">@</span><span class="va">dsl</span><span class="dt">.</span><span class="fn">component</span><span class="dt">(</span><span class="va">base_image</span><span class="dt">=</span><span class="st">"python:3.11"</span><span class="dt">)</span>
+<span class="kw">def</span> <span class="fn">evaluate_model</span><span class="dt">(</span><span class="va">model</span><span class="dt">:</span> <span class="tp">Model</span><span class="dt">,</span> <span class="va">metrics</span><span class="dt">:</span> <span class="tp">Output</span><span class="dt">[</span><span class="tp">Metrics</span><span class="dt">]):</span>
+    <span class="va">metrics</span><span class="dt">.</span><span class="fn">log_metric</span><span class="dt">(</span><span class="st">"accuracy"</span><span class="dt">,</span> <span class="nm">0.923</span><span class="dt">)</span>
+
+<span class="cm"># TODO: compose pipeline</span>
+<span class="dt">@</span><span class="va">dsl</span><span class="dt">.</span><span class="fn">pipeline</span><span class="dt">(</span><span class="va">name</span><span class="dt">=</span><span class="st">"llm-finetune-pipeline"</span><span class="dt">)</span>
+<span class="kw">def</span> <span class="fn">llm_pipeline</span><span class="dt">(</span><span class="va">raw_path</span><span class="dt">:</span> <span class="tp">str</span> <span class="dt">=</span> <span class="st">"gs://my-bucket/data.csv"</span><span class="dt">):</span>
+    <span class="cm"># TODO: call components in sequence, chaining outputs to inputs</span>
+    <span class="dt">...</span>
+
+<span class="cm"># Compile to YAML (no cluster needed)</span>
+<span class="va">compiler</span><span class="dt">.</span><span class="tp">Compiler</span><span class="dt">().</span><span class="fn">compile</span><span class="dt">(</span><span class="va">llm_pipeline</span><span class="dt">,</span> <span class="st">"pipeline.yaml"</span><span class="dt">)</span>
+<span class="fn">print</span><span class="dt">(</span><span class="st">"Compiled pipeline.yaml"</span><span class="dt">)</span></div>
+      </div>
+    </div>
+    <div class="info-box teal"><strong>@dsl.component vs @dsl.pipeline:</strong> A component is a single containerized step (runs in its own pod). A pipeline is a DAG of components. The compiler serializes the DAG to a YAML spec that Kubeflow Pipelines can execute on any Kubernetes cluster.</div>
+  </div>
+
+  <div class="tab-panel" id="ex1-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t1-1">T1</span><div class="test-content"><div class="test-input">import os; os.path.exists("pipeline.yaml")</div><div class="test-expected">→ True (compiled successfully)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t1-2">T2</span><div class="test-content"><div class="test-input">import yaml; spec = yaml.safe_load(open("pipeline.yaml"))<br>"pipelineInfo" in spec</div><div class="test-expected">→ True (valid KFP spec)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t1-3">T3</span><div class="test-content"><div class="test-input">spec["pipelineInfo"]["name"]</div><div class="test-expected">→ "llm-finetune-pipeline"</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(1)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex1-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — Component body</span><span class="arrow">▶</span></button>
+        <div class="hint-body">Inside a component, write to artifact paths using <code>processed.path</code>. Example: <code>with open(processed.path, "w") as f: f.write("col1,col2\n1,2\n3,4")</code></div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — Wiring pipeline components</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>prep_task = preprocess_data(raw_path=raw_path)</code>, then <code>train_task = train_model(processed=prep_task.outputs["processed"])</code>. KFP infers the dependency graph from data flow.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 2: BENTOML ========== -->
+<section class="exercise" id="ex2">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 2 of 5</div>
+      <h2>BentoML Service for LLM Inference</h2>
+      <p>Define a BentoML service class with @bentoml.api endpoints and containerize it for any cloud.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot2"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex2','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex2','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex2','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex2','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex2-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Build a production-ready BentoML LLM service:</p>
+      <ul>
+        <li>Create a <code style="font-family:'JetBrains Mono',monospace;">@bentoml.service</code> class with <code style="font-family:'JetBrains Mono',monospace;">resources={"gpu": 1}</code> declaration</li>
+        <li>Add a <code style="font-family:'JetBrains Mono',monospace;">@bentoml.api</code> endpoint that accepts a Pydantic <code style="font-family:'JetBrains Mono',monospace;">GenerateRequest</code> and returns <code style="font-family:'JetBrains Mono',monospace;">GenerateResponse</code></li>
+        <li>Load the model in <code style="font-family:'JetBrains Mono',monospace;">__init__</code> once (warm path)</li>
+        <li>Add a <code style="font-family:'JetBrains Mono',monospace;">/health</code> endpoint that returns <code style="font-family:'JetBrains Mono',monospace;">{"status": "ok"}</code></li>
+        <li>Test locally: <code style="font-family:'JetBrains Mono',monospace;">bentoml serve service:LLMService --reload</code></li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(2)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex2-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        <span>service.py</span>
+        <span># pip install bentoml transformers torch pydantic</span>
+      </div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span><span>31</span><span>32</span><span>33</span><span>34</span><span>35</span><span>36</span></div>
+        <div class="code-content"><span class="cm"># pip install bentoml transformers torch pydantic</span>
+<span class="kw">import</span> <span class="va">bentoml</span>
+<span class="kw">from</span> <span class="va">pydantic</span> <span class="kw">import</span> <span class="tp">BaseModel</span>
+<span class="kw">from</span> <span class="va">transformers</span> <span class="kw">import</span> <span class="tp">AutoTokenizer</span><span class="dt">,</span> <span class="tp">AutoModelForCausalLM</span>
+<span class="kw">import</span> <span class="va">torch</span>
+
+<span class="kw">class</span> <span class="tp">GenerateRequest</span><span class="dt">(</span><span class="tp">BaseModel</span><span class="dt">):</span>
+    <span class="va">prompt</span><span class="dt">:</span> <span class="tp">str</span>
+    <span class="va">max_new_tokens</span><span class="dt">:</span> <span class="tp">int</span> <span class="dt">=</span> <span class="nm">100</span>
+    <span class="va">temperature</span><span class="dt">:</span> <span class="tp">float</span> <span class="dt">=</span> <span class="nm">0.7</span>
+
+<span class="kw">class</span> <span class="tp">GenerateResponse</span><span class="dt">(</span><span class="tp">BaseModel</span><span class="dt">):</span>
+    <span class="va">text</span><span class="dt">:</span> <span class="tp">str</span>
+    <span class="va">tokens_generated</span><span class="dt">:</span> <span class="tp">int</span>
+
+<span class="cm"># TODO: decorate with @bentoml.service and declare GPU resource</span>
+<span class="kw">class</span> <span class="tp">LLMService</span><span class="dt">:</span>
+    <span class="kw">def</span> <span class="fn">__init__</span><span class="dt">(</span><span class="va">self</span><span class="dt">):</span>
+        <span class="cm"># TODO: load tokenizer and model (gpt2 for dev, swap to real model)</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">model_id</span> <span class="dt">=</span> <span class="st">"gpt2"</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">tokenizer</span> <span class="dt">=</span> <span class="dt">...</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">model</span> <span class="dt">=</span> <span class="dt">...</span>
+
+    <span class="cm"># TODO: add @bentoml.api endpoint for /generate</span>
+    <span class="kw">def</span> <span class="fn">generate</span><span class="dt">(</span><span class="va">self</span><span class="dt">,</span> <span class="va">req</span><span class="dt">:</span> <span class="tp">GenerateRequest</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">GenerateResponse</span><span class="dt">:</span>
+        <span class="cm"># TODO: tokenize, generate with no_grad, decode, return response</span>
+        <span class="dt">...</span>
+
+    <span class="cm"># TODO: add @bentoml.api endpoint for /health</span>
+    <span class="kw">def</span> <span class="fn">health</span><span class="dt">(</span><span class="va">self</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">dict</span><span class="dt">:</span>
+        <span class="kw">return</span> <span class="dt">{</span><span class="st">"status"</span><span class="dt">:</span> <span class="st">"ok"</span><span class="dt">,</span> <span class="st">"model"</span><span class="dt">:</span> <span class="va">self</span><span class="dt">.</span><span class="va">model_id</span><span class="dt">}</span>
+
+<span class="cm"># Run locally: bentoml serve service:LLMService --reload</span>
+<span class="cm"># Then: curl -X POST http://localhost:3000/generate -H 'Content-Type: application/json' \</span>
+<span class="cm">#   -d '{"prompt":"Hello world","max_new_tokens":20}'</span></div>
+      </div>
+    </div>
+    <div class="info-box purple"><strong>BentoML vs FastAPI:</strong> BentoML adds model versioning, adaptive batching, containerization, and cloud deploy on top of a FastAPI-like interface. Use <code style="font-family:'JetBrains Mono',monospace;background:rgba(124,58,237,0.15);padding:1px 5px;border-radius:3px;color:var(--purple-light);">bentoml build</code> to create an OCI image and <code style="font-family:'JetBrains Mono',monospace;background:rgba(124,58,237,0.15);padding:1px 5px;border-radius:3px;color:var(--purple-light);">bentoml deploy</code> to ship to BentoCloud.</div>
+  </div>
+
+  <div class="tab-panel" id="ex2-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t2-1">T1</span><div class="test-content"><div class="test-input">svc = LLMService()<br>r = svc.health(); r["status"]</div><div class="test-expected">→ "ok"</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t2-2">T2</span><div class="test-content"><div class="test-input">req = GenerateRequest(prompt="Hello", max_new_tokens=10)<br>resp = svc.generate(req)<br>isinstance(resp, GenerateResponse)</div><div class="test-expected">→ True</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t2-3">T3</span><div class="test-content"><div class="test-input">resp.tokens_generated &gt; 0 and len(resp.text) &gt; 0</div><div class="test-expected">→ True (generated text and count)</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(2)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex2-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — @bentoml.service decorator</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>@bentoml.service(resources={"gpu": 1}, traffic={"timeout": 30})</code> above the class definition. For CPU-only dev: <code>resources={"cpu": "2"}</code>.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — @bentoml.api endpoint</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>@bentoml.api(route="/generate", input_spec=GenerateRequest, output_spec=GenerateResponse)</code>. Or simply <code>@bentoml.api</code> — BentoML infers the spec from type hints.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 3: SAGEMAKER ========== -->
+<section class="exercise" id="ex3">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 3 of 5</div>
+      <h2>SageMaker Training Job</h2>
+      <p>Submit a fine-tuning job to AWS SageMaker using the Python SDK — managed infrastructure, spot instances, and S3 artifacts.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot3"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex3','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex3','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex3','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex3','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex3-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Configure and submit a SageMaker HuggingFace training job:</p>
+      <ul>
+        <li>Create a <code style="font-family:'JetBrains Mono',monospace;">HuggingFace</code> estimator with <code style="font-family:'JetBrains Mono',monospace;">entry_point="train.py"</code> and <code style="font-family:'JetBrains Mono',monospace;">instance_type="ml.g5.xlarge"</code></li>
+        <li>Pass hyperparameters via <code style="font-family:'JetBrains Mono',monospace;">hyperparameters={"model_id": "...", "epochs": 3}</code></li>
+        <li>Enable spot training with <code style="font-family:'JetBrains Mono',monospace;">use_spot_instances=True</code> and <code style="font-family:'JetBrains Mono',monospace;">max_wait=7200</code></li>
+        <li>Point S3 inputs with <code style="font-family:'JetBrains Mono',monospace;">TrainingInput("s3://...")</code></li>
+        <li>Write a <code style="font-family:'JetBrains Mono',monospace;">train.py</code> script that reads hyperparameters from <code style="font-family:'JetBrains Mono',monospace;">os.environ["SM_HP_MODEL_ID"]</code></li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(3)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex3-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        <span>day19_ex3_sagemaker.py</span>
+        <span># pip install sagemaker boto3</span>
+      </div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span><span>31</span><span>32</span><span>33</span></div>
+        <div class="code-content"><span class="cm"># pip install sagemaker boto3</span>
+<span class="kw">import</span> <span class="va">sagemaker</span>
+<span class="kw">from</span> <span class="va">sagemaker.huggingface</span> <span class="kw">import</span> <span class="tp">HuggingFace</span>
+<span class="kw">from</span> <span class="va">sagemaker.inputs</span> <span class="kw">import</span> <span class="tp">TrainingInput</span>
+
+<span class="cm"># Assumes AWS credentials in ~/.aws or env vars</span>
+<span class="va">sess</span> <span class="dt">=</span> <span class="va">sagemaker</span><span class="dt">.</span><span class="fn">Session</span><span class="dt">()</span>
+<span class="va">role</span> <span class="dt">=</span> <span class="va">sagemaker</span><span class="dt">.</span><span class="fn">get_execution_role</span><span class="dt">()</span>
+
+<span class="cm"># TODO: configure HuggingFace estimator</span>
+<span class="va">estimator</span> <span class="dt">=</span> <span class="tp">HuggingFace</span><span class="dt">(</span>
+    <span class="va">entry_point</span>          <span class="dt">=</span> <span class="st">"train.py"</span><span class="dt">,</span>
+    <span class="va">source_dir</span>           <span class="dt">=</span> <span class="st">"./scripts"</span><span class="dt">,</span>
+    <span class="va">role</span>                 <span class="dt">=</span> <span class="va">role</span><span class="dt">,</span>
+    <span class="va">instance_type</span>        <span class="dt">=</span> <span class="st">"ml.g5.xlarge"</span><span class="dt">,</span>
+    <span class="va">instance_count</span>       <span class="dt">=</span> <span class="nm">1</span><span class="dt">,</span>
+    <span class="va">transformers_version</span> <span class="dt">=</span> <span class="st">"4.36"</span><span class="dt">,</span>
+    <span class="va">pytorch_version</span>      <span class="dt">=</span> <span class="st">"2.1"</span><span class="dt">,</span>
+    <span class="va">py_version</span>           <span class="dt">=</span> <span class="st">"py310"</span><span class="dt">,</span>
+    <span class="cm"># TODO: hyperparameters, use_spot_instances, max_wait</span>
+    <span class="va">hyperparameters</span>      <span class="dt">=</span> <span class="dt">{</span>
+        <span class="st">"model_id"</span><span class="dt">:</span>    <span class="st">"TinyLlama/TinyLlama-1.1B-Chat-v1.0"</span><span class="dt">,</span>
+        <span class="st">"epochs"</span><span class="dt">:</span>     <span class="nm">3</span><span class="dt">,</span>
+        <span class="st">"batch_size"</span><span class="dt">:</span> <span class="nm">4</span><span class="dt">,</span>
+    <span class="dt">},</span>
+<span class="dt">)</span>
+
+<span class="cm"># TODO: define S3 input and call estimator.fit()</span>
+<span class="va">train_input</span> <span class="dt">=</span> <span class="tp">TrainingInput</span><span class="dt">(</span><span class="st">"s3://my-bucket/training-data/"</span><span class="dt">)</span>
+<span class="cm"># estimator.fit({"train": train_input})  # Uncomment with real AWS creds</span>
+<span class="fn">print</span><span class="dt">(</span><span class="st">"Estimator configured. Uncomment .fit() to launch job."</span><span class="dt">)</span></div>
+      </div>
+    </div>
+    <div class="info-box teal"><strong>Spot savings:</strong> <code style="font-family:'JetBrains Mono',monospace;background:rgba(13,148,136,0.15);padding:1px 5px;border-radius:3px;color:#2dd4bf;">use_spot_instances=True</code> can cut costs by 60–90% for training jobs. SageMaker automatically checkpoints and resumes on interruption. Always pair with <code style="font-family:'JetBrains Mono',monospace;background:rgba(13,148,136,0.15);padding:1px 5px;border-radius:3px;color:#2dd4bf;">checkpoint_s3_uri</code> and <code style="font-family:'JetBrains Mono',monospace;background:rgba(13,148,136,0.15);padding:1px 5px;border-radius:3px;color:#2dd4bf;">max_wait</code>.</div>
+  </div>
+
+  <div class="tab-panel" id="ex3-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t3-1">T1</span><div class="test-content"><div class="test-input">estimator.hyperparameters["model_id"]</div><div class="test-expected">→ "TinyLlama/TinyLlama-1.1B-Chat-v1.0"</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t3-2">T2</span><div class="test-content"><div class="test-input">estimator.instance_type</div><div class="test-expected">→ "ml.g5.xlarge"</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t3-3">T3</span><div class="test-content"><div class="test-input">train_input.config["DataSource"]["S3DataSource"]["S3Uri"]</div><div class="test-expected">→ "s3://my-bucket/training-data/"</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(3)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex3-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — Spot training config</span><span class="arrow">▶</span></button>
+        <div class="hint-body">Add to HuggingFace constructor: <code>use_spot_instances=True, max_wait=7200, max_run=3600, checkpoint_s3_uri="s3://my-bucket/checkpoints/"</code></div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — Reading hyperparams in train.py</span><span class="arrow">▶</span></button>
+        <div class="hint-body">SageMaker passes hyperparams as <code>SM_HP_&lt;UPPERCASE_KEY&gt;</code> env vars. In train.py: <code>model_id = os.environ.get("SM_HP_MODEL_ID", "gpt2")</code>. Or use <code>argparse</code> — SageMaker also passes them as CLI args.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 4: CANARY DEPLOY ========== -->
+<section class="exercise" id="ex4">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 4 of 5</div>
+      <h2>Canary Deployment Pattern</h2>
+      <p>Simulate a canary rollout — route 10% of traffic to the new model version and monitor error rates before promoting.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot4"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex4','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex4','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex4','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex4','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex4-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Implement a traffic-splitting canary router:</p>
+      <ul>
+        <li>Create a <code style="font-family:'JetBrains Mono',monospace;">CanaryRouter</code> class with <code style="font-family:'JetBrains Mono',monospace;">stable_model</code> and <code style="font-family:'JetBrains Mono',monospace;">canary_model</code> plus a <code style="font-family:'JetBrains Mono',monospace;">canary_pct</code> float</li>
+        <li>Route requests using <code style="font-family:'JetBrains Mono',monospace;">random.random() &lt; canary_pct</code></li>
+        <li>Track per-version error rates and latencies using a simple rolling counter</li>
+        <li>Implement <code style="font-family:'JetBrains Mono',monospace;">promote()</code> method that sets <code style="font-family:'JetBrains Mono',monospace;">canary_pct=1.0</code> (full cutover)</li>
+        <li>Implement <code style="font-family:'JetBrains Mono',monospace;">rollback()</code> method that sets <code style="font-family:'JetBrains Mono',monospace;">canary_pct=0.0</code> (fall back to stable)</li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(4)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex4-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        <span>day19_ex4_canary.py</span>
+        <span># No extra dependencies</span>
+      </div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span><span>31</span><span>32</span><span>33</span><span>34</span><span>35</span><span>36</span></div>
+        <div class="code-content"><span class="kw">import</span> <span class="va">random</span><span class="dt">,</span> <span class="va">time</span>
+<span class="kw">from</span> <span class="va">collections</span> <span class="kw">import</span> <span class="tp">defaultdict</span>
+
+<span class="kw">class</span> <span class="tp">CanaryRouter</span><span class="dt">:</span>
+    <span class="kw">def</span> <span class="fn">__init__</span><span class="dt">(</span><span class="va">self</span><span class="dt">,</span> <span class="va">stable_model</span><span class="dt">,</span> <span class="va">canary_model</span><span class="dt">,</span> <span class="va">canary_pct</span><span class="dt">:</span> <span class="tp">float</span> <span class="dt">=</span> <span class="nm">0.1</span><span class="dt">):</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">stable</span>     <span class="dt">=</span> <span class="va">stable_model</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">canary</span>     <span class="dt">=</span> <span class="va">canary_model</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">canary_pct</span> <span class="dt">=</span> <span class="va">canary_pct</span>
+        <span class="va">self</span><span class="dt">.</span><span class="va">stats</span>      <span class="dt">=</span> <span class="fn">defaultdict</span><span class="dt">(</span><span class="kw">lambda</span><span class="dt">: {</span><span class="st">"requests"</span><span class="dt">:</span><span class="nm">0</span><span class="dt">,</span><span class="st">"errors"</span><span class="dt">:</span><span class="nm">0</span><span class="dt">,</span><span class="st">"latency_ms"</span><span class="dt">:[]})</span>
+
+    <span class="kw">def</span> <span class="fn">route</span><span class="dt">(</span><span class="va">self</span><span class="dt">,</span> <span class="va">prompt</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">dict</span><span class="dt">:</span>
+        <span class="cm"># TODO: pick model based on canary_pct, measure latency, track stats</span>
+        <span class="va">use_canary</span> <span class="dt">=</span> <span class="dt">...</span>
+        <span class="va">version</span>    <span class="dt">=</span> <span class="st">"canary"</span> <span class="kw">if</span> <span class="va">use_canary</span> <span class="kw">else</span> <span class="st">"stable"</span>
+        <span class="va">model</span>      <span class="dt">=</span> <span class="va">self</span><span class="dt">.</span><span class="va">canary</span> <span class="kw">if</span> <span class="va">use_canary</span> <span class="kw">else</span> <span class="va">self</span><span class="dt">.</span><span class="va">stable</span>
+
+        <span class="va">t0</span> <span class="dt">=</span> <span class="va">time</span><span class="dt">.</span><span class="fn">time</span><span class="dt">()</span>
+        <span class="kw">try</span><span class="dt">:</span>
+            <span class="va">result</span> <span class="dt">=</span> <span class="va">model</span><span class="dt">(</span><span class="va">prompt</span><span class="dt">)</span>
+            <span class="va">self</span><span class="dt">.</span><span class="va">stats</span><span class="dt">[</span><span class="va">version</span><span class="dt">][</span><span class="st">"requests"</span><span class="dt">]</span> <span class="dt">+=</span> <span class="nm">1</span>
+            <span class="va">self</span><span class="dt">.</span><span class="va">stats</span><span class="dt">[</span><span class="va">version</span><span class="dt">][</span><span class="st">"latency_ms"</span><span class="dt">].</span><span class="fn">append</span><span class="dt">((</span><span class="va">time</span><span class="dt">.</span><span class="fn">time</span><span class="dt">()</span><span class="dt">-</span><span class="va">t0</span><span class="dt">)*</span><span class="nm">1000</span><span class="dt">)</span>
+            <span class="kw">return</span> <span class="dt">{</span><span class="st">"version"</span><span class="dt">:</span> <span class="va">version</span><span class="dt">,</span> <span class="st">"output"</span><span class="dt">:</span> <span class="va">result</span><span class="dt">}</span>
+        <span class="kw">except</span> <span class="tp">Exception</span> <span class="kw">as</span> <span class="va">e</span><span class="dt">:</span>
+            <span class="va">self</span><span class="dt">.</span><span class="va">stats</span><span class="dt">[</span><span class="va">version</span><span class="dt">][</span><span class="st">"errors"</span><span class="dt">]</span> <span class="dt">+=</span> <span class="nm">1</span>
+            <span class="kw">raise</span>
+
+    <span class="kw">def</span> <span class="fn">promote</span><span class="dt">(</span><span class="va">self</span><span class="dt">):</span>
+        <span class="cm"># TODO: set canary_pct to 1.0</span>
+        <span class="dt">...</span>
+
+    <span class="kw">def</span> <span class="fn">rollback</span><span class="dt">(</span><span class="va">self</span><span class="dt">):</span>
+        <span class="cm"># TODO: set canary_pct to 0.0</span>
+        <span class="dt">...</span>
+
+    <span class="kw">def</span> <span class="fn">error_rate</span><span class="dt">(</span><span class="va">self</span><span class="dt">,</span> <span class="va">version</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">float</span><span class="dt">:</span>
+        <span class="va">s</span> <span class="dt">=</span> <span class="va">self</span><span class="dt">.</span><span class="va">stats</span><span class="dt">[</span><span class="va">version</span><span class="dt">]</span>
+        <span class="kw">return</span> <span class="va">s</span><span class="dt">[</span><span class="st">"errors"</span><span class="dt">]</span> <span class="dt">/</span> <span class="va">s</span><span class="dt">[</span><span class="st">"requests"</span><span class="dt">]</span> <span class="kw">if</span> <span class="va">s</span><span class="dt">[</span><span class="st">"requests"</span><span class="dt">]</span> <span class="kw">else</span> <span class="nm">0.0</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex4-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t4-1">T1</span><div class="test-content"><div class="test-input">router = CanaryRouter(lambda p: "stable", lambda p: "canary", canary_pct=0.0)<br>results = [router.route("hi")["version"] for _ in range(10)]<br>all(v == "stable" for v in results)</div><div class="test-expected">→ True (0% canary means always stable)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t4-2">T2</span><div class="test-content"><div class="test-input">router.promote(); router.canary_pct</div><div class="test-expected">→ 1.0</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t4-3">T3</span><div class="test-content"><div class="test-input">router.rollback(); router.canary_pct</div><div class="test-expected">→ 0.0</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(4)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex4-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — Traffic split</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>use_canary = random.random() < self.canary_pct</code>. With <code>canary_pct=0.1</code>, ~10% of calls get the canary. With <code>canary_pct=0.0</code>, zero calls reach canary.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 5: CI/CD PIPELINE ========== -->
+<section class="exercise" id="ex5">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 5 of 5</div>
+      <h2>CI/CD Gate for Model Promotion</h2>
+      <p>Write a promotion script that only upgrades the production model if evaluation metrics pass threshold checks.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot5"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex5','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex5','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex5','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex5','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex5-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Build a quality gate for automated model promotion:</p>
+      <ul>
+        <li>Write a <code style="font-family:'JetBrains Mono',monospace;">evaluate_candidate(run_id)</code> function that reads metrics from MLflow</li>
+        <li>Define threshold checks: <code style="font-family:'JetBrains Mono',monospace;">val_loss &lt; 1.5</code>, <code style="font-family:'JetBrains Mono',monospace;">ragas_score &gt; 0.7</code></li>
+        <li>Only promote to Production if ALL checks pass</li>
+        <li>Log promotion decisions as MLflow tags on the run</li>
+        <li>Return a structured result: <code style="font-family:'JetBrains Mono',monospace;">{"promoted": bool, "checks": {...}, "reason": str}</code></li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(5)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex5-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        <span>day19_ex5_quality_gate.py</span>
+        <span># pip install mlflow</span>
+      </div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span><span>31</span><span>32</span><span>33</span><span>34</span><span>35</span></div>
+        <div class="code-content"><span class="cm"># pip install mlflow</span>
+<span class="kw">import</span> <span class="va">mlflow</span>
+<span class="kw">from</span> <span class="va">mlflow.tracking</span> <span class="kw">import</span> <span class="tp">MlflowClient</span>
+
+<span class="va">THRESHOLDS</span> <span class="dt">=</span> <span class="dt">{</span>
+    <span class="st">"val_loss"</span><span class="dt">:</span>    <span class="dt">(</span><span class="st">"lt"</span><span class="dt">,</span> <span class="nm">1.5</span><span class="dt">),</span>  <span class="cm"># must be less than 1.5</span>
+    <span class="st">"ragas_score"</span><span class="dt">:</span> <span class="dt">(</span><span class="st">"gt"</span><span class="dt">,</span> <span class="nm">0.7</span><span class="dt">),</span>  <span class="cm"># must be greater than 0.7</span>
+<span class="dt">}</span>
+
+<span class="kw">def</span> <span class="fn">evaluate_candidate</span><span class="dt">(</span><span class="va">run_id</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">dict</span><span class="dt">:</span>
+    <span class="va">client</span> <span class="dt">=</span> <span class="tp">MlflowClient</span><span class="dt">()</span>
+    <span class="va">run</span> <span class="dt">=</span> <span class="va">client</span><span class="dt">.</span><span class="fn">get_run</span><span class="dt">(</span><span class="va">run_id</span><span class="dt">)</span>
+    <span class="va">metrics</span> <span class="dt">=</span> <span class="va">run</span><span class="dt">.</span><span class="va">data</span><span class="dt">.</span><span class="va">metrics</span>
+
+    <span class="va">checks</span> <span class="dt">=</span> <span class="dt">{}</span>
+    <span class="kw">for</span> <span class="va">metric_name</span><span class="dt">,</span> <span class="dt">(</span><span class="va">op</span><span class="dt">,</span> <span class="va">threshold</span><span class="dt">)</span> <span class="kw">in</span> <span class="va">THRESHOLDS</span><span class="dt">.</span><span class="fn">items</span><span class="dt">():</span>
+        <span class="va">value</span> <span class="dt">=</span> <span class="va">metrics</span><span class="dt">.</span><span class="fn">get</span><span class="dt">(</span><span class="va">metric_name</span><span class="dt">)</span>
+        <span class="kw">if</span> <span class="va">value</span> <span class="kw">is</span> <span class="kw">None</span><span class="dt">:</span>
+            <span class="va">checks</span><span class="dt">[</span><span class="va">metric_name</span><span class="dt">]</span> <span class="dt">=</span> <span class="kw">False</span>
+            <span class="kw">continue</span>
+        <span class="cm"># TODO: compare value vs threshold using op ("lt" or "gt")</span>
+        <span class="va">checks</span><span class="dt">[</span><span class="va">metric_name</span><span class="dt">]</span> <span class="dt">=</span> <span class="dt">...</span>
+
+    <span class="va">promoted</span> <span class="dt">=</span> <span class="fn">all</span><span class="dt">(</span><span class="va">checks</span><span class="dt">.</span><span class="fn">values</span><span class="dt">())</span>
+    <span class="va">reason</span> <span class="dt">=</span> <span class="st">"All checks passed"</span> <span class="kw">if</span> <span class="va">promoted</span> <span class="kw">else</span> <span class="bi">f</span><span class="st">"Failed: {[k for k,v in checks.items() if not v]}"</span>
+
+    <span class="cm"># TODO: log decision as MLflow tag on the run</span>
+    <span class="va">client</span><span class="dt">.</span><span class="fn">set_tag</span><span class="dt">(</span><span class="va">run_id</span><span class="dt">,</span> <span class="st">"promotion_decision"</span><span class="dt">,</span> <span class="st">"PASS"</span> <span class="kw">if</span> <span class="va">promoted</span> <span class="kw">else</span> <span class="st">"FAIL"</span><span class="dt">)</span>
+
+    <span class="kw">return</span> <span class="dt">{</span><span class="st">"promoted"</span><span class="dt">:</span> <span class="va">promoted</span><span class="dt">,</span> <span class="st">"checks"</span><span class="dt">:</span> <span class="va">checks</span><span class="dt">,</span> <span class="st">"reason"</span><span class="dt">:</span> <span class="va">reason</span><span class="dt">}</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex5-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t5-1">T1</span><div class="test-content"><div class="test-input"># Log run with passing metrics, then:<br>result = evaluate_candidate(good_run_id)<br>result["promoted"]</div><div class="test-expected">→ True (all thresholds met)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t5-2">T2</span><div class="test-content"><div class="test-input"># Log run with val_loss=2.0 (fails), then:<br>result = evaluate_candidate(bad_run_id)<br>result["promoted"]</div><div class="test-expected">→ False (val_loss check failed)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t5-3">T3</span><div class="test-content"><div class="test-input">client.get_run(bad_run_id).data.tags["promotion_decision"]</div><div class="test-expected">→ "FAIL"</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(5)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex5-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — Threshold check logic</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>checks[metric_name] = (value &lt; threshold) if op == "lt" else (value &gt; threshold)</code></div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — Setting up test runs</span><span class="arrow">▶</span></button>
+        <div class="hint-body">Create runs in the test: <code>with mlflow.start_run() as r: mlflow.log_metrics({"val_loss": 1.2, "ragas_score": 0.85})</code>. Use <code>r.info.run_id</code> as argument to <code>evaluate_candidate()</code>.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <p>Day 19 of 30 — <a href="../index.html">Back to curriculum</a> · <a href="day20_exercises.html">Next: AI System Observability →</a></p>
+</footer>
+
+<script>
+let completedCount = 0;
+const totalExercises = 5;
+function markDone(n) {
+  const dot = document.getElementById('dot' + n);
+  if (dot && !dot.classList.contains('done')) {
+    dot.classList.add('done');
+    completedCount++;
+    document.getElementById('progress-text').textContent = completedCount + ' / ' + totalExercises + ' completed';
+    document.getElementById('progress-fill').style.width = (completedCount / totalExercises * 100) + '%';
+  }
+}
+function showTab(exId, tabName) {
+  document.querySelectorAll('#' + exId + ' .tab-panel').forEach(p => { p.classList.toggle('active', p.id === exId + '-' + tabName); });
+  document.querySelectorAll('#' + exId + ' .tab-btn').forEach(b => { b.classList.toggle('active', b.getAttribute('onclick') && b.getAttribute('onclick').includes("'" + tabName + "'")); });
+}
+function toggleHint(btn) {
+  btn.classList.toggle('open');
+  const body = btn.nextElementSibling;
+  body.style.display = body.style.display === 'block' ? 'none' : 'block';
+}
+function runTests(exNum) {
+  const tests = document.querySelectorAll('#ex' + exNum + '-tests .test-badge');
+  tests.forEach((badge, i) => { setTimeout(() => { badge.className = 'test-badge pass'; badge.textContent = '✓ T' + (i + 1); }, i * 300); });
+}
+</script>
+<script src="../bg-animation.js"></script>
+</body>
+</html>

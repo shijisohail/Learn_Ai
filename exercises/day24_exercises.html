@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 24 Exercises — Structured Outputs & Determinism</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f; --card: #141420; --surface2: #1a1a2e; --border: #2a2a45;
+  --purple: #7c3aed; --purple-light: #a855f7; --teal: #0d9488; --green: #10b981;
+  --yellow: #f59e0b; --red: #ef4444; --text: #e2e8f0; --muted: #64748b;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+code, pre { font-family: 'JetBrains Mono', monospace; }
+.sticky-nav { position: sticky; top: 0; z-index: 100; background: rgba(10,10,15,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); padding: 12px 32px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.sticky-nav a { color: var(--muted); text-decoration: none; font-size: 0.85rem; padding: 6px 12px; border-radius: 6px; transition: all 0.2s; border: 1px solid transparent; }
+.sticky-nav a:hover { color: var(--text); background: var(--card); border-color: var(--border); }
+.sticky-nav .brand { color: var(--purple-light); font-weight: 600; font-size: 0.9rem; }
+.nav-sep { color: var(--border); } .nav-title { color: var(--text); font-weight: 700; font-size: 0.95rem; flex: 1; }
+.hero { padding: 56px 32px 32px; max-width: 1100px; margin: 0 auto; border-bottom: 1px solid var(--border); }
+.hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: 8px; }
+.hero h1 span { color: var(--purple-light); }
+.hero p { color: var(--muted); font-size: 1rem; max-width: 700px; }
+.hero-meta { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
+.badge-purple { background: rgba(124,58,237,0.15); color: var(--purple-light); border: 1px solid rgba(124,58,237,0.3); }
+.badge-teal { background: rgba(13,148,136,0.15); color: #2dd4bf; border: 1px solid rgba(13,148,136,0.3); }
+.badge-green { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.progress-bar-wrap { max-width: 1100px; margin: 24px auto; padding: 0 32px; }
+.progress-label { font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
+.progress-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--purple), var(--teal)); border-radius: 3px; transition: width 0.5s ease; }
+.main { max-width: 1100px; margin: 0 auto; padding: 32px; display: flex; flex-direction: column; gap: 64px; }
+.exercise { border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: var(--card); }
+.exercise-header { padding: 24px 32px; background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(13,148,136,0.05)); border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.exercise-num { font-size: 0.75rem; color: var(--purple-light); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.exercise-header h2 { font-size: 1.4rem; font-weight: 700; margin: 4px 0 8px; }
+.exercise-header p { color: var(--muted); font-size: 0.9rem; }
+.ex-status { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); transition: background 0.3s; }
+.status-dot.done { background: var(--green); }
+.tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--surface2); }
+.tab-btn { padding: 12px 20px; font-size: 0.82rem; font-weight: 600; color: var(--muted); cursor: pointer; border: none; background: none; border-bottom: 2px solid transparent; transition: all 0.2s; font-family: 'Inter', sans-serif; }
+.tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+.tab-btn.active { color: var(--purple-light); border-bottom-color: var(--purple-light); background: rgba(124,58,237,0.05); }
+.tab-panel { display: none; padding: 28px 32px; }
+.tab-panel.active { display: block; }
+.code-wrap { background: #0d0d18; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin: 12px 0; }
+.code-header { padding: 8px 16px; background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; color: var(--muted); }
+.code-dots { display: flex; gap: 6px; }
+.code-dots span { width: 10px; height: 10px; border-radius: 50%; }
+.code-dots .dot-r { background: var(--red); } .code-dots .dot-y { background: var(--yellow); } .code-dots .dot-g { background: var(--green); }
+.code-body { display: flex; }
+.line-nums { padding: 16px 8px; background: rgba(0,0,0,0.3); border-right: 1px solid var(--border); display: flex; flex-direction: column; min-width: 40px; text-align: right; }
+.line-nums span { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: #3a3a5c; line-height: 1.7; padding: 0 8px; }
+.code-content { padding: 16px; overflow-x: auto; flex: 1; white-space: pre; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; line-height: 1.7; }
+.kw { color: #c792ea; } .fn { color: #82aaff; } .st { color: #c3e88d; } .cm { color: #546e7a; font-style: italic; } .nm { color: #f78c6c; } .tp { color: #ffcb6b; } .dt { color: #89ddff; } .va { color: #eeffff; } .bi { color: #ff5370; }
+.task-requirements { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); border-radius: 10px; padding: 16px 20px; margin-bottom: 16px; }
+.task-requirements li { color: var(--text); font-size: 0.88rem; margin: 6px 0 6px 16px; }
+.task-requirements li::marker { color: var(--yellow); }
+.tests-grid { display: flex; flex-direction: column; gap: 8px; }
+.test-case { display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+.test-badge { flex-shrink: 0; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; font-family: 'Inter', sans-serif; }
+.test-badge.pass { background: rgba(16,185,129,0.2); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.test-badge.pending { background: rgba(100,116,139,0.2); color: var(--muted); border: 1px solid rgba(100,116,139,0.3); }
+.test-content { flex: 1; } .test-input { color: var(--text); } .test-expected { color: var(--muted); margin-top: 2px; }
+.hints-list { display: flex; flex-direction: column; gap: 8px; }
+.hint-toggle { width: 100%; text-align: left; padding: 10px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--muted); cursor: pointer; font-family: 'Inter', sans-serif; font-size: 0.85rem; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s; }
+.hint-toggle:hover { border-color: var(--purple); color: var(--text); }
+.hint-toggle .arrow { transition: transform 0.2s; }
+.hint-toggle.open .arrow { transform: rotate(90deg); }
+.hint-body { display: none; padding: 12px 16px; margin-top: 4px; background: rgba(124,58,237,0.05); border: 1px solid rgba(124,58,237,0.2); border-radius: 8px; font-size: 0.85rem; color: var(--text); line-height: 1.6; }
+.hint-body code { background: rgba(124,58,237,0.15); padding: 1px 5px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--purple-light); }
+.section-label { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.section-label.purple { color: var(--purple-light); } .section-label.yellow { color: var(--yellow); } .section-label.green { color: #34d399; } .section-label.teal { color: #2dd4bf; }
+.section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.animate-btn { margin-top: 12px; padding: 8px 18px; border-radius: 8px; background: var(--purple); color: white; border: none; cursor: pointer; font-size: 0.82rem; font-weight: 600; font-family: 'Inter', sans-serif; transition: background 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+.animate-btn:hover { background: var(--purple-light); }
+.visual-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+.flow-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.flow-node { padding: 8px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; text-align: center; }
+.flow-node.purple { background: rgba(124,58,237,0.2); border: 1px solid rgba(124,58,237,0.4); color: var(--purple-light); }
+.flow-node.teal { background: rgba(13,148,136,0.2); border: 1px solid rgba(13,148,136,0.4); color: #2dd4bf; }
+.flow-node.green { background: rgba(16,185,129,0.2); border: 1px solid rgba(16,185,129,0.4); color: #34d399; }
+.flow-node.yellow { background: rgba(245,158,11,0.2); border: 1px solid rgba(245,158,11,0.4); color: var(--yellow); }
+.flow-node.red { background: rgba(239,68,68,0.2); border: 1px solid rgba(239,68,68,0.4); color: #f87171; }
+.flow-arrow { color: var(--muted); font-size: 1.1rem; }
+.info-callout { padding: 12px 16px; border-radius: 8px; font-size: 0.82rem; margin-top: 12px; }
+.info-callout.teal { background: rgba(13,148,136,0.08); border: 1px solid rgba(13,148,136,0.2); }
+.info-callout.purple { background: rgba(124,58,237,0.08); border: 1px solid rgba(124,58,237,0.2); }
+.info-callout.yellow { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); }
+.footer { border-top: 1px solid var(--border); padding: 32px; text-align: center; color: var(--muted); font-size: 0.82rem; }
+.footer a { color: var(--purple-light); text-decoration: none; }
+@media (max-width: 768px) { .tab-btn { padding: 10px 12px; font-size: 0.75rem; } }
+</style>
+</head>
+<body data-animation-density="high">
+
+<nav class="sticky-nav">
+  <a href="../days/day24.html">← Day 24 lesson</a>
+  <span class="nav-sep">|</span>
+  <a href="../index.html" class="brand">🤖 Agentic AI</a>
+  <span class="nav-sep">|</span>
+  <span class="nav-title">Day 24 Exercises — Structured Outputs & Determinism</span>
+  <a href="day25_exercises.html" style="margin-left:auto;">Day 25 Exercises →</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-meta">
+    <span class="badge badge-purple">Day 24</span>
+    <span class="badge badge-teal">5 Exercises</span>
+    <span class="badge badge-green">Pydantic / instructor / JSON mode</span>
+  </div>
+  <h1>Structured Outputs <span>&amp; Determinism</span></h1>
+  <p>Eliminate unstructured LLM text from your pipeline: JSON mode, Pydantic model validation, automatic retry loops on schema violations, and canonical data models that flow through your entire system unchanged.</p>
+</div>
+
+<div class="progress-bar-wrap">
+  <div class="progress-label"><span>Progress</span><span id="progress-text">0 / 5 completed</span></div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+</div>
+
+<main class="main">
+
+<!-- ========== EXERCISE 1: JSON MODE ========== -->
+<section class="exercise" id="ex1">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 1 of 5</div>
+      <h2>JSON Mode with response_format</h2>
+      <p>Force the model to output valid JSON using <code style="font-family:'JetBrains Mono',monospace;">response_format={"type":"json_object"}</code> and parse it safely.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot1"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex1','visual')">Visual Explainer</button>
+    <button class="tab-btn" onclick="showTab('ex1','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex1','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex1','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex1','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex1-visual">
+    <div class="section-label purple">JSON Mode — Guaranteed Valid JSON Output</div>
+    <div class="visual-box">
+      <div class="flow-row">
+        <div class="flow-node purple">Prompt with<br>JSON schema hint</div>
+        <div class="flow-arrow">→ response_format</div>
+        <div class="flow-node teal">Model output<br>(always valid JSON)</div>
+        <div class="flow-arrow">→ json.loads()</div>
+        <div class="flow-node green">Python dict</div>
+        <div class="flow-arrow">→ model_validate</div>
+        <div class="flow-node green">Pydantic model ✓</div>
+      </div>
+    </div>
+    <div class="info-callout purple">
+      <strong style="color:var(--purple-light);">JSON mode vs structured outputs:</strong> JSON mode guarantees syntactically valid JSON. OpenAI's <code>response_format={"type":"json_schema"}</code> also enforces field-level schema adherence. For Anthropic, use tool-calling with a schema or the instructor library.
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex1-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>day24_json_mode.py</span></div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span></div>
+        <div class="code-content"><span class="cm"># pip install openai pydantic</span>
+<span class="kw">import</span> <span class="va">json</span>
+<span class="kw">from</span> <span class="va">openai</span> <span class="kw">import</span> <span class="va">OpenAI</span>
+<span class="kw">from</span> <span class="va">pydantic</span> <span class="kw">import</span> <span class="va">BaseModel</span><span class="dt">,</span> <span class="va">Field</span>
+<span class="kw">from</span> <span class="va">typing</span> <span class="kw">import</span> <span class="va">Optional</span>
+
+<span class="va">client</span> <span class="dt">=</span> <span class="fn">OpenAI</span><span class="dt">()</span>
+
+<span class="kw">class</span> <span class="tp">ExtractedEntity</span><span class="dt">(</span><span class="tp">BaseModel</span><span class="dt">):</span>
+    <span class="va">person_names</span><span class="dt">:</span> <span class="tp">list</span><span class="dt">[</span><span class="tp">str</span><span class="dt">]</span>
+    <span class="va">organizations</span><span class="dt">:</span> <span class="tp">list</span><span class="dt">[</span><span class="tp">str</span><span class="dt">]</span>
+    <span class="va">locations</span><span class="dt">:</span> <span class="tp">list</span><span class="dt">[</span><span class="tp">str</span><span class="dt">]</span>
+    <span class="va">dates</span><span class="dt">:</span> <span class="tp">list</span><span class="dt">[</span><span class="tp">str</span><span class="dt">]</span>
+    <span class="va">summary</span><span class="dt">:</span> <span class="tp">Optional</span><span class="dt">[</span><span class="tp">str</span><span class="dt">]</span> <span class="dt">=</span> <span class="kw">None</span>
+
+<span class="kw">def</span> <span class="fn">extract_entities</span><span class="dt">(</span><span class="va">text</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">ExtractedEntity</span><span class="dt">:</span>
+    <span class="cm">"""Extract NER entities from text using JSON mode."""</span>
+    <span class="va">schema_hint</span> <span class="dt">=</span> <span class="st">"""Return JSON with keys:
+person_names (list), organizations (list), locations (list),
+dates (list), summary (str or null)"""</span>
+
+    <span class="va">resp</span> <span class="dt">=</span> <span class="va">client</span><span class="dt">.</span><span class="va">chat</span><span class="dt">.</span><span class="va">completions</span><span class="dt">.</span><span class="fn">create</span><span class="dt">(</span>
+        <span class="va">model</span><span class="dt">=</span><span class="st">"gpt-4o-mini"</span><span class="dt">,</span>
+        <span class="va">response_format</span><span class="dt">={</span><span class="st">"type"</span><span class="dt">:</span> <span class="st">"json_object"</span><span class="dt">},</span>
+        <span class="va">messages</span><span class="dt">=[</span>
+            <span class="dt">{</span><span class="st">"role"</span><span class="dt">:</span><span class="st">"system"</span><span class="dt">,</span><span class="st">"content"</span><span class="dt">:</span><span class="st">f"You are an NER extractor. {schema_hint}"</span><span class="dt">},</span>
+            <span class="dt">{</span><span class="st">"role"</span><span class="dt">:</span><span class="st">"user"</span><span class="dt">,</span><span class="st">"content"</span><span class="dt">:</span><span class="va">text</span><span class="dt">}</span>
+        <span class="dt">]</span>
+    <span class="dt">)</span>
+    <span class="cm"># TODO: parse JSON and validate with ExtractedEntity.model_validate()</span>
+    <span class="dt">...</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex1-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Complete <code style="font-family:'JetBrains Mono',monospace;">extract_entities()</code>:</p>
+      <ul>
+        <li>Parse the JSON string: <code style="font-family:'JetBrains Mono',monospace;">raw = resp.choices[0].message.content; data = json.loads(raw)</code></li>
+        <li>Validate with Pydantic: <code style="font-family:'JetBrains Mono',monospace;">return ExtractedEntity.model_validate(data)</code></li>
+        <li>Wrap in a try/except: if <code style="font-family:'JetBrains Mono',monospace;">json.JSONDecodeError</code> or <code style="font-family:'JetBrains Mono',monospace;">ValidationError</code>, return an empty <code style="font-family:'JetBrains Mono',monospace;">ExtractedEntity</code></li>
+        <li>Test with the sample news text and verify entity types are correctly separated</li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(1)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex1-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t1-1">T1</span><div class="test-content"><div class="test-input">e = extract_entities("Elon Musk met with Tim Cook at Apple HQ in Cupertino on January 5th.")</div><div class="test-expected">→ "Elon Musk" in e.person_names and "Tim Cook" in e.person_names</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t1-2">T2</span><div class="test-content"><div class="test-input">"Apple" in e.organizations</div><div class="test-expected">→ True</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t1-3">T3</span><div class="test-content"><div class="test-input">"Cupertino" in e.locations</div><div class="test-expected">→ True</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t1-4">T4</span><div class="test-content"><div class="test-input">isinstance(e, ExtractedEntity)</div><div class="test-expected">→ True (Pydantic validated)</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(1)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex1-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — model_validate vs __init__</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>ExtractedEntity.model_validate(data)</code> accepts a dict and validates all fields. If the model omits a required field or uses wrong types, Pydantic raises <code>ValidationError</code> with helpful details.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — Empty fallback model</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>ExtractedEntity(person_names=[], organizations=[], locations=[], dates=[])</code> — all lists default to empty, summary defaults to None.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 2: PYDANTIC MODELS ========== -->
+<section class="exercise" id="ex2">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 2 of 5</div>
+      <h2>Deep Pydantic Models with Validators</h2>
+      <p>Build a canonical API response model with nested models, custom validators, and computed fields that enforce business rules.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot2"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex2','visual')">Visual Explainer</button>
+    <button class="tab-btn" onclick="showTab('ex2','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex2','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex2','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex2','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex2-visual">
+    <div class="section-label purple">Canonical Data Models — Single Source of Truth</div>
+    <div class="visual-box">
+      <div class="flow-row">
+        <div class="flow-node purple">LLM JSON output</div>
+        <div class="flow-arrow">→ model_validate</div>
+        <div class="flow-node yellow">Pydantic model<br><small>validates + coerces</small></div>
+        <div class="flow-arrow">→ everywhere</div>
+        <div class="flow-node green">DB · API · cache · queue</div>
+      </div>
+    </div>
+    <div class="info-callout teal">
+      <strong style="color:#2dd4bf;">Pydantic v2 features used today:</strong> <code>model_validator(mode='after')</code> for cross-field validation, <code>computed_field</code> for derived properties, <code>model_config</code> for strict mode and JSON serialization settings.
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex2-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>day24_pydantic_models.py</span></div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span></div>
+        <div class="code-content"><span class="cm"># pip install pydantic</span>
+<span class="kw">from</span> <span class="va">pydantic</span> <span class="kw">import</span> <span class="dt">(</span>
+    <span class="va">BaseModel</span><span class="dt">,</span> <span class="va">Field</span><span class="dt">,</span> <span class="va">field_validator</span><span class="dt">,</span>
+    <span class="va">model_validator</span><span class="dt">,</span> <span class="va">computed_field</span>
+<span class="dt">)</span>
+<span class="kw">from</span> <span class="va">typing</span> <span class="kw">import</span> <span class="va">Literal</span>
+<span class="kw">from</span> <span class="va">datetime</span> <span class="kw">import</span> <span class="va">datetime</span>
+
+<span class="kw">class</span> <span class="tp">PriceRange</span><span class="dt">(</span><span class="tp">BaseModel</span><span class="dt">):</span>
+    <span class="va">min_price</span><span class="dt">:</span> <span class="tp">float</span>
+    <span class="va">max_price</span><span class="dt">:</span> <span class="tp">float</span>
+    <span class="va">currency</span><span class="dt">:</span> <span class="tp">str</span> <span class="dt">=</span> <span class="st">"USD"</span>
+
+    <span class="dt">@</span><span class="fn">model_validator</span><span class="dt">(</span><span class="va">mode</span><span class="dt">=</span><span class="st">"after"</span><span class="dt">)</span>
+    <span class="kw">def</span> <span class="fn">check_range</span><span class="dt">(</span><span class="va">self</span><span class="dt">):</span>
+        <span class="cm"># TODO: raise ValueError if min_price > max_price</span>
+        <span class="dt">...</span>
+        <span class="kw">return</span> <span class="va">self</span>
+
+    <span class="dt">@</span><span class="fn">computed_field</span>
+    <span class="dt">@</span><span class="fn">property</span>
+    <span class="kw">def</span> <span class="fn">midpoint</span><span class="dt">(</span><span class="va">self</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">float</span><span class="dt">:</span>
+        <span class="cm"># TODO: return average of min and max price</span>
+        <span class="dt">...</span>
+
+<span class="kw">class</span> <span class="tp">ProductListing</span><span class="dt">(</span><span class="tp">BaseModel</span><span class="dt">):</span>
+    <span class="va">sku</span><span class="dt">:</span> <span class="tp">str</span> <span class="dt">=</span> <span class="fn">Field</span><span class="dt">(</span><span class="va">pattern</span><span class="dt">=</span><span class="st">r"^[A-Z]{2}-\d{6}$"</span><span class="dt">)</span>
+    <span class="va">title</span><span class="dt">:</span> <span class="tp">str</span> <span class="dt">=</span> <span class="fn">Field</span><span class="dt">(</span><span class="va">min_length</span><span class="dt">=</span><span class="nm">3</span><span class="dt">,</span> <span class="va">max_length</span><span class="dt">=</span><span class="nm">100</span><span class="dt">)</span>
+    <span class="va">price_range</span><span class="dt">:</span> <span class="tp">PriceRange</span>
+    <span class="va">status</span><span class="dt">:</span> <span class="tp">Literal</span><span class="dt">[</span><span class="st">"active"</span><span class="dt">,</span> <span class="st">"draft"</span><span class="dt">,</span> <span class="st">"archived"</span><span class="dt">]</span>
+    <span class="va">tags</span><span class="dt">:</span> <span class="tp">list</span><span class="dt">[</span><span class="tp">str</span><span class="dt">]</span> <span class="dt">=</span> <span class="fn">Field</span><span class="dt">(</span><span class="va">default_factory</span><span class="dt">=</span><span class="va">list</span><span class="dt">)</span>
+    <span class="va">created_at</span><span class="dt">:</span> <span class="tp">datetime</span> <span class="dt">=</span> <span class="fn">Field</span><span class="dt">(</span><span class="va">default_factory</span><span class="dt">=</span><span class="va">datetime</span><span class="dt">.</span><span class="va">utcnow</span><span class="dt">)</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex2-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Complete the Pydantic models:</p>
+      <ul>
+        <li>In <code style="font-family:'JetBrains Mono',monospace;">check_range()</code>: raise <code style="font-family:'JetBrains Mono',monospace;">ValueError("min_price must be ≤ max_price")</code> when violated</li>
+        <li>Implement the <code style="font-family:'JetBrains Mono',monospace;">midpoint</code> computed field</li>
+        <li>Add a <code style="font-family:'JetBrains Mono',monospace;">@field_validator("sku", mode="before")</code> to auto-uppercase the SKU before pattern validation</li>
+        <li>Test that <code style="font-family:'JetBrains Mono',monospace;">ProductListing.model_validate(llm_dict)</code> correctly parses nested <code style="font-family:'JetBrains Mono',monospace;">price_range</code></li>
+        <li>Serialize with <code style="font-family:'JetBrains Mono',monospace;">product.model_dump_json()</code> and verify <code style="font-family:'JetBrains Mono',monospace;">midpoint</code> appears in output</li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(2)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex2-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t2-1">T1</span><div class="test-content"><div class="test-input">PriceRange(min_price=10, max_price=5)</div><div class="test-expected">→ raises ValueError (min > max)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t2-2">T2</span><div class="test-content"><div class="test-input">pr = PriceRange(min_price=10, max_price=20)<br>pr.midpoint == 15.0</div><div class="test-expected">→ True (computed field)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t2-3">T3</span><div class="test-content"><div class="test-input">ProductListing(sku="ab-123456", ...)  # lowercase SKU</div><div class="test-expected">→ sku == "AB-123456" (auto-uppercased)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t2-4">T4</span><div class="test-content"><div class="test-input">ProductListing(sku="XX-999999", title="Widget", ...)<br>"midpoint" in product.model_dump()</div><div class="test-expected">→ True (computed field in serialization)</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(2)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex2-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — field_validator for sku uppercasing</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>@field_validator("sku", mode="before") @classmethod def uppercase_sku(cls, v: str) -> str: return v.upper()</code>. The <code>mode="before"</code> runs before the pattern regex validation.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — computed_field syntax</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>@computed_field @property def midpoint(self) -> float: return (self.min_price + self.max_price) / 2</code>. Pydantic v2 includes computed fields in <code>model_dump()</code> automatically.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 3: RETRY LOOP ========== -->
+<section class="exercise" id="ex3">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 3 of 5</div>
+      <h2>Retry Loop on Validation Failure</h2>
+      <p>Build a retry wrapper that catches <code style="font-family:'JetBrains Mono',monospace;">ValidationError</code>, appends the error to the conversation, and re-asks the model to fix its output.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot3"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex3','visual')">Visual Explainer</button>
+    <button class="tab-btn" onclick="showTab('ex3','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex3','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex3','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex3','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex3-visual">
+    <div class="section-label purple">Validation Retry Loop</div>
+    <div class="visual-box">
+      <div class="flow-row">
+        <div class="flow-node purple">LLM call</div>
+        <div class="flow-arrow">→ parse JSON</div>
+        <div class="flow-node yellow">Pydantic validate</div>
+        <div class="flow-arrow">→ FAIL</div>
+        <div class="flow-node red">Append error msg<br>to conversation</div>
+        <div class="flow-arrow">→ retry (max 3)</div>
+        <div class="flow-node purple">LLM call again</div>
+      </div>
+      <div class="flow-row" style="margin-top:4px;">
+        <div style="width:220px;"></div>
+        <div class="flow-arrow">→ PASS</div>
+        <div class="flow-node green">Return model ✓</div>
+      </div>
+    </div>
+    <div class="info-callout teal">
+      <strong style="color:#2dd4bf;">Error-in-prompt technique:</strong> Append the exact Pydantic <code>ValidationError</code> message to the conversation as a "user" correction. The model sees its mistake and the schema constraint, making self-correction highly reliable (95%+ on first retry).
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex3-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>day24_retry_loop.py</span></div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span></div>
+        <div class="code-content"><span class="cm"># pip install openai pydantic</span>
+<span class="kw">import</span> <span class="va">json</span>
+<span class="kw">from</span> <span class="va">openai</span> <span class="kw">import</span> <span class="va">OpenAI</span>
+<span class="kw">from</span> <span class="va">pydantic</span> <span class="kw">import</span> <span class="va">BaseModel</span><span class="dt">,</span> <span class="va">ValidationError</span>
+<span class="kw">from</span> <span class="va">typing</span> <span class="kw">import</span> <span class="va">TypeVar</span><span class="dt">,</span> <span class="va">Type</span>
+
+<span class="va">T</span> <span class="dt">=</span> <span class="fn">TypeVar</span><span class="dt">(</span><span class="st">"T"</span><span class="dt">,</span> <span class="va">bound</span><span class="dt">=</span><span class="va">BaseModel</span><span class="dt">)</span>
+<span class="va">client</span> <span class="dt">=</span> <span class="fn">OpenAI</span><span class="dt">()</span>
+
+<span class="kw">def</span> <span class="fn">extract_with_retry</span><span class="dt">(</span>
+    <span class="va">prompt</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">,</span>
+    <span class="va">model_class</span><span class="dt">:</span> <span class="tp">Type</span><span class="dt">[</span><span class="tp">T</span><span class="dt">],</span>
+    <span class="va">max_retries</span><span class="dt">:</span> <span class="tp">int</span> <span class="dt">=</span> <span class="nm">3</span>
+<span class="dt">)</span> <span class="dt">-></span> <span class="tp">T</span><span class="dt">:</span>
+    <span class="cm">"""Call LLM, parse JSON, validate. Retry on failure with error feedback."""</span>
+    <span class="va">messages</span> <span class="dt">=</span> <span class="dt">[</span>
+        <span class="dt">{</span><span class="st">"role"</span><span class="dt">:</span><span class="st">"system"</span><span class="dt">,</span><span class="st">"content"</span><span class="dt">:</span><span class="st">f"Output valid JSON matching: {model_class.model_json_schema()}"</span><span class="dt">},</span>
+        <span class="dt">{</span><span class="st">"role"</span><span class="dt">:</span><span class="st">"user"</span><span class="dt">,</span><span class="st">"content"</span><span class="dt">:</span><span class="va">prompt</span><span class="dt">}</span>
+    <span class="dt">]</span>
+    <span class="kw">for</span> <span class="va">attempt</span> <span class="kw">in</span> <span class="fn">range</span><span class="dt">(</span><span class="va">max_retries</span><span class="dt">):</span>
+        <span class="va">resp</span> <span class="dt">=</span> <span class="va">client</span><span class="dt">.</span><span class="va">chat</span><span class="dt">.</span><span class="va">completions</span><span class="dt">.</span><span class="fn">create</span><span class="dt">(</span>
+            <span class="va">model</span><span class="dt">=</span><span class="st">"gpt-4o-mini"</span><span class="dt">,</span>
+            <span class="va">response_format</span><span class="dt">={</span><span class="st">"type"</span><span class="dt">:</span><span class="st">"json_object"</span><span class="dt">},</span>
+            <span class="va">messages</span><span class="dt">=</span><span class="va">messages</span>
+        <span class="dt">)</span>
+        <span class="va">raw</span> <span class="dt">=</span> <span class="va">resp</span><span class="dt">.</span><span class="va">choices</span><span class="dt">[</span><span class="nm">0</span><span class="dt">].</span><span class="va">message</span><span class="dt">.</span><span class="va">content</span>
+        <span class="kw">try</span><span class="dt">:</span>
+            <span class="cm"># TODO: parse and validate, return on success</span>
+            <span class="dt">...</span>
+        <span class="kw">except</span> <span class="dt">(</span><span class="va">json</span><span class="dt">.</span><span class="va">JSONDecodeError</span><span class="dt">,</span> <span class="va">ValidationError</span><span class="dt">)</span> <span class="kw">as</span> <span class="va">e</span><span class="dt">:</span>
+            <span class="cm"># TODO: append assistant response + error correction to messages, continue loop</span>
+            <span class="dt">...</span>
+    <span class="kw">raise</span> <span class="fn">RuntimeError</span><span class="dt">(</span><span class="st">f"Failed after {max_retries} attempts"</span><span class="dt">)</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex3-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Complete the retry loop:</p>
+      <ul>
+        <li>On success: parse JSON, call <code style="font-family:'JetBrains Mono',monospace;">model_class.model_validate(data)</code>, return immediately</li>
+        <li>On failure: append the raw assistant reply as a <code style="font-family:'JetBrains Mono',monospace;">"assistant"</code> message, then append a <code style="font-family:'JetBrains Mono',monospace;">"user"</code> message containing the validation error string</li>
+        <li>Track <code style="font-family:'JetBrains Mono',monospace;">attempt</code> count and log each retry with the error message</li>
+        <li>Test by intentionally passing a prompt that causes the model to omit a required field on first attempt</li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(3)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex3-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t3-1">T1</span><div class="test-content"><div class="test-input">result = extract_with_retry("List of 3 Python books", BookList, max_retries=3)</div><div class="test-expected">→ isinstance(result, BookList)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t3-2">T2</span><div class="test-content"><div class="test-input">extract_with_retry("bad prompt", ModelWithRequiredField, max_retries=1)</div><div class="test-expected">→ raises RuntimeError after 1 attempt</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t3-3">T3</span><div class="test-content"><div class="test-input">Messages list grows by 2 per retry (assistant + user correction)</div><div class="test-expected">→ len(messages) == 2 + 2*retries_used</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(3)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex3-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — Building the error correction message</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>messages.append({"role": "assistant", "content": raw})</code> then <code>messages.append({"role": "user", "content": f"Your response failed validation:\n{str(e)}\n\nPlease fix and return valid JSON."})</code></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 4: CANONICAL DATA MODEL ========== -->
+<section class="exercise" id="ex4">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 4 of 5</div>
+      <h2>Canonical Data Model Pipeline</h2>
+      <p>Build a pipeline where LLM output feeds into a Pydantic model that persists to SQLite via SQLModel and reads back identically.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot4"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex4','visual')">Visual Explainer</button>
+    <button class="tab-btn" onclick="showTab('ex4','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex4','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex4','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex4','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex4-visual">
+    <div class="section-label purple">End-to-End Canonical Model Flow</div>
+    <div class="visual-box">
+      <div class="flow-row">
+        <div class="flow-node purple">Raw text</div>
+        <div class="flow-arrow">→ LLM</div>
+        <div class="flow-node yellow">JSON</div>
+        <div class="flow-arrow">→ Pydantic</div>
+        <div class="flow-node teal">Validated model</div>
+        <div class="flow-arrow">→ SQLModel</div>
+        <div class="flow-node green">DB row ✓</div>
+        <div class="flow-arrow">→ read back</div>
+        <div class="flow-node green">Same model ✓</div>
+      </div>
+    </div>
+    <div class="info-callout purple">
+      <strong style="color:var(--purple-light);">SQLModel = SQLAlchemy + Pydantic:</strong> One class definition doubles as your ORM model and your validation model. No separate schema files. No data mapping code. One canonical representation flows end-to-end.
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex4-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>day24_canonical_model.py</span></div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span></div>
+        <div class="code-content"><span class="cm"># pip install sqlmodel openai</span>
+<span class="kw">from</span> <span class="va">sqlmodel</span> <span class="kw">import</span> <span class="va">SQLModel</span><span class="dt">,</span> <span class="va">Field</span><span class="dt">,</span> <span class="va">Session</span><span class="dt">,</span> <span class="va">create_engine</span><span class="dt">,</span> <span class="va">select</span>
+<span class="kw">from</span> <span class="va">typing</span> <span class="kw">import</span> <span class="va">Optional</span>
+<span class="kw">from</span> <span class="va">datetime</span> <span class="kw">import</span> <span class="va">datetime</span>
+
+<span class="kw">class</span> <span class="tp">AIInsight</span><span class="dt">(</span><span class="tp">SQLModel</span><span class="dt">,</span> <span class="va">table</span><span class="dt">=</span><span class="kw">True</span><span class="dt">):</span>
+    <span class="va">id</span><span class="dt">:</span> <span class="tp">Optional</span><span class="dt">[</span><span class="tp">int</span><span class="dt">]</span> <span class="dt">=</span> <span class="fn">Field</span><span class="dt">(</span><span class="va">default</span><span class="dt">=</span><span class="kw">None</span><span class="dt">,</span> <span class="va">primary_key</span><span class="dt">=</span><span class="kw">True</span><span class="dt">)</span>
+    <span class="va">source_text</span><span class="dt">:</span> <span class="tp">str</span>
+    <span class="va">category</span><span class="dt">:</span> <span class="tp">str</span>
+    <span class="va">confidence</span><span class="dt">:</span> <span class="tp">float</span>
+    <span class="va">summary</span><span class="dt">:</span> <span class="tp">str</span>
+    <span class="va">created_at</span><span class="dt">:</span> <span class="tp">datetime</span> <span class="dt">=</span> <span class="fn">Field</span><span class="dt">(</span><span class="va">default_factory</span><span class="dt">=</span><span class="va">datetime</span><span class="dt">.</span><span class="va">utcnow</span><span class="dt">)</span>
+
+<span class="va">engine</span> <span class="dt">=</span> <span class="fn">create_engine</span><span class="dt">(</span><span class="st">"sqlite:///insights.db"</span><span class="dt">)</span>
+<span class="va">SQLModel</span><span class="dt">.</span><span class="va">metadata</span><span class="dt">.</span><span class="fn">create_all</span><span class="dt">(</span><span class="va">engine</span><span class="dt">)</span>
+
+<span class="kw">def</span> <span class="fn">save_insight</span><span class="dt">(</span><span class="va">insight</span><span class="dt">:</span> <span class="tp">AIInsight</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">AIInsight</span><span class="dt">:</span>
+    <span class="cm">"""Persist insight to SQLite, return with populated id."""</span>
+    <span class="cm"># TODO: open Session, add, commit, refresh, return</span>
+    <span class="dt">...</span>
+
+<span class="kw">def</span> <span class="fn">load_insights</span><span class="dt">(</span><span class="va">category</span><span class="dt">:</span> <span class="tp">str</span> <span class="dt">=</span> <span class="kw">None</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">list</span><span class="dt">[</span><span class="tp">AIInsight</span><span class="dt">]:</span>
+    <span class="cm">"""Load all insights, optionally filtered by category."""</span>
+    <span class="cm"># TODO: query with select(AIInsight), optional .where() clause</span>
+    <span class="dt">...</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex4-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Complete the SQLModel pipeline:</p>
+      <ul>
+        <li>Implement <code style="font-family:'JetBrains Mono',monospace;">save_insight()</code> using <code style="font-family:'JetBrains Mono',monospace;">with Session(engine) as session: session.add(insight); session.commit(); session.refresh(insight)</code></li>
+        <li>Implement <code style="font-family:'JetBrains Mono',monospace;">load_insights()</code> with optional <code style="font-family:'JetBrains Mono',monospace;">.where(AIInsight.category == category)</code> filter</li>
+        <li>Write an <code style="font-family:'JetBrains Mono',monospace;">analyze_and_save(text)</code> function that calls the LLM, validates output as <code style="font-family:'JetBrains Mono',monospace;">AIInsight</code>, and persists</li>
+        <li>Verify round-trip: save an insight and load it back by id, confirm all fields match</li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(4)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex4-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t4-1">T1</span><div class="test-content"><div class="test-input">saved = save_insight(AIInsight(source_text="text", category="tech", confidence=0.9, summary="AI is great"))<br>saved.id is not None</div><div class="test-expected">→ True (DB assigned id)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t4-2">T2</span><div class="test-content"><div class="test-input">insights = load_insights(category="tech")</div><div class="test-expected">→ all(i.category == "tech" for i in insights)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t4-3">T3</span><div class="test-content"><div class="test-input">Round-trip: saved.summary == loaded.summary</div><div class="test-expected">→ True (data integrity preserved)</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(4)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex4-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — Session context manager</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>with Session(engine) as session: session.add(insight); session.commit(); session.refresh(insight); return insight</code>. The <code>refresh()</code> call pulls the auto-generated <code>id</code> back from the DB.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 5: INSTRUCTOR RETRY ========== -->
+<section class="exercise" id="ex5">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 5 of 5</div>
+      <h2>Instructor max_retries &amp; Streaming</h2>
+      <p>Use <code style="font-family:'JetBrains Mono',monospace;">instructor</code> with <code style="font-family:'JetBrains Mono',monospace;">max_retries=Retrying(stop=stop_after_attempt(3))</code> and streaming partial models.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot5"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex5','visual')">Visual Explainer</button>
+    <button class="tab-btn" onclick="showTab('ex5','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex5','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex5','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex5','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex5-visual">
+    <div class="section-label purple">Instructor Retry Strategy</div>
+    <div class="visual-box">
+      <div class="flow-row">
+        <div class="flow-node purple">instructor.create()</div>
+        <div class="flow-arrow">→ fail</div>
+        <div class="flow-node red">ValidationError</div>
+        <div class="flow-arrow">→ tenacity</div>
+        <div class="flow-node yellow">Retrying(stop=3)<br><small>exponential backoff</small></div>
+        <div class="flow-arrow">→ pass</div>
+        <div class="flow-node green">Typed model ✓</div>
+      </div>
+    </div>
+    <div class="info-callout teal">
+      <strong style="color:#2dd4bf;">Streaming partials:</strong> With <code>stream=True</code>, instructor yields partially-filled Pydantic models as they stream in. Great for showing progressive UI updates as the model fills out form fields.
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex5-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>day24_instructor_retry.py</span></div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span></div>
+        <div class="code-content"><span class="cm"># pip install instructor openai tenacity</span>
+<span class="kw">import</span> <span class="va">instructor</span>
+<span class="kw">from</span> <span class="va">openai</span> <span class="kw">import</span> <span class="va">OpenAI</span>
+<span class="kw">from</span> <span class="va">pydantic</span> <span class="kw">import</span> <span class="va">BaseModel</span><span class="dt">,</span> <span class="va">Field</span>
+<span class="kw">from</span> <span class="va">tenacity</span> <span class="kw">import</span> <span class="va">Retrying</span><span class="dt">,</span> <span class="va">stop_after_attempt</span><span class="dt">,</span> <span class="va">wait_exponential</span>
+
+<span class="va">client</span> <span class="dt">=</span> <span class="va">instructor</span><span class="dt">.</span><span class="fn">from_openai</span><span class="dt">(</span><span class="fn">OpenAI</span><span class="dt">())</span>
+
+<span class="kw">class</span> <span class="tp">ResearchPaper</span><span class="dt">(</span><span class="tp">BaseModel</span><span class="dt">):</span>
+    <span class="va">title</span><span class="dt">:</span> <span class="tp">str</span>
+    <span class="va">authors</span><span class="dt">:</span> <span class="tp">list</span><span class="dt">[</span><span class="tp">str</span><span class="dt">]</span> <span class="dt">=</span> <span class="fn">Field</span><span class="dt">(</span><span class="va">min_length</span><span class="dt">=</span><span class="nm">1</span><span class="dt">)</span>
+    <span class="va">abstract</span><span class="dt">:</span> <span class="tp">str</span> <span class="dt">=</span> <span class="fn">Field</span><span class="dt">(</span><span class="va">min_length</span><span class="dt">=</span><span class="nm">50</span><span class="dt">)</span>
+    <span class="va">year</span><span class="dt">:</span> <span class="tp">int</span> <span class="dt">=</span> <span class="fn">Field</span><span class="dt">(</span><span class="va">ge</span><span class="dt">=</span><span class="nm">1900</span><span class="dt">,</span> <span class="va">le</span><span class="dt">=</span><span class="nm">2030</span><span class="dt">)</span>
+    <span class="va">keywords</span><span class="dt">:</span> <span class="tp">list</span><span class="dt">[</span><span class="tp">str</span><span class="dt">]</span> <span class="dt">=</span> <span class="fn">Field</span><span class="dt">(</span><span class="va">min_length</span><span class="dt">=</span><span class="nm">1</span><span class="dt">)</span>
+
+<span class="kw">def</span> <span class="fn">extract_paper</span><span class="dt">(</span><span class="va">raw_text</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">ResearchPaper</span><span class="dt">:</span>
+    <span class="cm">"""Extract ResearchPaper with tenacity retry strategy."""</span>
+    <span class="cm"># TODO: call client.chat.completions.create with:</span>
+    <span class="cm"># response_model=ResearchPaper,</span>
+    <span class="cm"># max_retries=Retrying(stop=stop_after_attempt(3), wait=wait_exponential(min=1))</span>
+    <span class="dt">...</span>
+
+<span class="kw">def</span> <span class="fn">stream_paper</span><span class="dt">(</span><span class="va">raw_text</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span><span class="dt">:</span>
+    <span class="cm">"""Stream partial ResearchPaper models as they fill in."""</span>
+    <span class="cm"># TODO: use create_partial() or stream=True to yield partial models</span>
+    <span class="dt">...</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex5-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Implement both extraction functions:</p>
+      <ul>
+        <li>In <code style="font-family:'JetBrains Mono',monospace;">extract_paper()</code>: pass <code style="font-family:'JetBrains Mono',monospace;">max_retries=Retrying(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=10))</code></li>
+        <li>In <code style="font-family:'JetBrains Mono',monospace;">stream_paper()</code>: use <code style="font-family:'JetBrains Mono',monospace;">client.chat.completions.create_partial(model="gpt-4o-mini", response_model=ResearchPaper, messages=[...])</code></li>
+        <li>In the streaming version, yield each partial model and print the fields that have been filled so far</li>
+        <li>Verify that the final streamed model is identical to the non-streaming extraction</li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(5)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex5-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t5-1">T1</span><div class="test-content"><div class="test-input">paper = extract_paper("Attention Is All You Need, Vaswani et al, 2017...")</div><div class="test-expected">→ paper.year == 2017 and len(paper.authors) >= 1</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t5-2">T2</span><div class="test-content"><div class="test-input">len(paper.abstract) >= 50</div><div class="test-expected">→ True (Field constraint enforced with retry)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t5-3">T3</span><div class="test-content"><div class="test-input">partials = list(stream_paper("Attention Is All You Need..."))<br>isinstance(partials[-1], ResearchPaper)</div><div class="test-expected">→ True (last streamed item is complete model)</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(5)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex5-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — Tenacity retry in instructor</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>paper = client.chat.completions.create(model="gpt-4o-mini", response_model=ResearchPaper, max_retries=Retrying(stop=stop_after_attempt(3), wait=wait_exponential(min=1)), messages=[...])</code>. Instructor catches <code>ValidationError</code> and uses tenacity to control retry timing.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <p>Day 24 of 30 — Structured Outputs & Determinism · <a href="../index.html">Dashboard</a> · <a href="day25_exercises.html">Day 25 →</a></p>
+</footer>
+
+<script>
+function showTab(exId, tab) {
+  document.querySelectorAll(`#${exId} .tab-panel`).forEach(p => p.classList.remove('active'));
+  document.querySelectorAll(`#${exId} .tab-btn`).forEach(b => b.classList.remove('active'));
+  const target = document.getElementById(`${exId}-${tab}`);
+  if (target) target.classList.add('active');
+  const idx = ['visual','code','task','tests','hints'].indexOf(tab);
+  const btns = document.querySelectorAll(`#${exId} .tab-btn`);
+  if (btns[idx]) btns[idx].classList.add('active');
+}
+let completed = 0;
+function markDone(n) {
+  const dot = document.getElementById('dot' + n);
+  if (dot && !dot.classList.contains('done')) {
+    dot.classList.add('done'); completed++;
+    document.getElementById('progress-text').textContent = `${completed} / 5 completed`;
+    document.getElementById('progress-fill').style.width = `${(completed/5)*100}%`;
+  }
+}
+function runTests(exNum) {
+  document.querySelectorAll(`#ex${exNum}-tests .test-badge`).forEach((badge, i) => {
+    setTimeout(() => { badge.className = 'test-badge pass'; badge.textContent = '✓ T' + (i+1); }, i * 300);
+  });
+}
+function toggleHint(btn) {
+  btn.classList.toggle('open');
+  const body = btn.nextElementSibling;
+  body.style.display = body.style.display === 'block' ? 'none' : 'block';
+}
+</script>
+<script src="../bg-animation.js"></script>
+</body>
+</html>

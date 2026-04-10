@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 29 Exercises — AI Copilot Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f; --card: #141420; --surface2: #1a1a2e; --border: #2a2a45;
+  --purple: #7c3aed; --purple-light: #a855f7; --teal: #0d9488; --green: #10b981;
+  --yellow: #f59e0b; --red: #ef4444; --text: #e2e8f0; --muted: #64748b;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+code, pre { font-family: 'JetBrains Mono', monospace; }
+.sticky-nav { position: sticky; top: 0; z-index: 100; background: rgba(10,10,15,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); padding: 12px 32px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.sticky-nav a { color: var(--muted); text-decoration: none; font-size: 0.85rem; padding: 6px 12px; border-radius: 6px; transition: all 0.2s; border: 1px solid transparent; }
+.sticky-nav a:hover { color: var(--text); background: var(--card); border-color: var(--border); }
+.sticky-nav .brand { color: var(--purple-light); font-weight: 600; font-size: 0.9rem; }
+.nav-sep { color: var(--border); } .nav-title { color: var(--text); font-weight: 700; font-size: 0.95rem; flex: 1; }
+.hero { padding: 56px 32px 32px; max-width: 1100px; margin: 0 auto; border-bottom: 1px solid var(--border); }
+.hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: 8px; }
+.hero h1 span { color: var(--purple-light); }
+.hero p { color: var(--muted); font-size: 1rem; max-width: 700px; }
+.hero-meta { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
+.badge-purple { background: rgba(124,58,237,0.15); color: var(--purple-light); border: 1px solid rgba(124,58,237,0.3); }
+.badge-teal { background: rgba(13,148,136,0.15); color: #2dd4bf; border: 1px solid rgba(13,148,136,0.3); }
+.badge-green { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.progress-bar-wrap { max-width: 1100px; margin: 24px auto; padding: 0 32px; }
+.progress-label { font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
+.progress-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--purple), var(--teal)); border-radius: 3px; transition: width 0.5s ease; }
+.main { max-width: 1100px; margin: 0 auto; padding: 32px; display: flex; flex-direction: column; gap: 64px; }
+.exercise { border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: var(--card); }
+.exercise-header { padding: 24px 32px; background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(13,148,136,0.05)); border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.exercise-num { font-size: 0.75rem; color: var(--purple-light); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.exercise-header h2 { font-size: 1.4rem; font-weight: 700; margin: 4px 0 8px; }
+.exercise-header p { color: var(--muted); font-size: 0.9rem; }
+.ex-status { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); transition: background 0.3s; }
+.status-dot.done { background: var(--green); }
+.tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--surface2); }
+.tab-btn { padding: 12px 20px; font-size: 0.82rem; font-weight: 600; color: var(--muted); cursor: pointer; border: none; background: none; border-bottom: 2px solid transparent; transition: all 0.2s; font-family: 'Inter', sans-serif; }
+.tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+.tab-btn.active { color: var(--purple-light); border-bottom-color: var(--purple-light); background: rgba(124,58,237,0.05); }
+.tab-panel { display: none; padding: 28px 32px; }
+.tab-panel.active { display: block; }
+.code-wrap { background: #0d0d18; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin: 12px 0; }
+.code-header { padding: 8px 16px; background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; color: var(--muted); }
+.code-dots { display: flex; gap: 6px; }
+.code-dots span { width: 10px; height: 10px; border-radius: 50%; }
+.code-dots .dot-r { background: var(--red); } .code-dots .dot-y { background: var(--yellow); } .code-dots .dot-g { background: var(--green); }
+.code-body { display: flex; }
+.code-content { padding: 16px; overflow-x: auto; flex: 1; white-space: pre; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; line-height: 1.7; }
+.kw { color: #c792ea; } .fn { color: #82aaff; } .st { color: #c3e88d; } .cm { color: #546e7a; font-style: italic; } .nm { color: #f78c6c; } .tp { color: #ffcb6b; } .dt { color: #89ddff; }
+.task-requirements { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); border-radius: 10px; padding: 16px 20px; margin-bottom: 16px; }
+.task-requirements li { color: var(--text); font-size: 0.88rem; margin: 6px 0 6px 16px; }
+.task-requirements li::marker { color: var(--yellow); }
+.tests-grid { display: flex; flex-direction: column; gap: 8px; }
+.test-case { display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; font-size: 0.8rem; }
+.test-badge { flex-shrink: 0; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; font-family: 'Inter', sans-serif; }
+.test-badge.pending { background: rgba(100,116,139,0.2); color: var(--muted); border: 1px solid rgba(100,116,139,0.3); }
+.test-content { flex: 1; } .test-input { color: var(--text); font-family: 'JetBrains Mono', monospace; } .test-expected { color: var(--muted); margin-top: 2px; }
+.hints-list { display: flex; flex-direction: column; gap: 8px; }
+.hint-toggle { width: 100%; text-align: left; padding: 10px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--muted); cursor: pointer; font-family: 'Inter', sans-serif; font-size: 0.85rem; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s; }
+.hint-toggle:hover { border-color: var(--purple); color: var(--text); }
+.hint-toggle .arrow { transition: transform 0.2s; }
+.hint-toggle.open .arrow { transform: rotate(90deg); }
+.hint-body { display: none; padding: 12px 16px; margin-top: 4px; background: rgba(124,58,237,0.05); border: 1px solid rgba(124,58,237,0.2); border-radius: 8px; font-size: 0.85rem; color: var(--text); line-height: 1.6; }
+.hint-body code { background: rgba(124,58,237,0.15); padding: 1px 5px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--purple-light); }
+.section-label { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.section-label.purple { color: var(--purple-light); }
+.section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.mark-done-btn { padding: 8px 16px; border-radius: 8px; background: rgba(16,185,129,0.1); color: #34d399; border: 1px solid rgba(16,185,129,0.3); cursor: pointer; font-size: 0.82rem; font-weight: 600; font-family: 'Inter', sans-serif; transition: all 0.2s; }
+.mark-done-btn:hover, .mark-done-btn.done { background: rgba(16,185,129,0.25); border-color: #34d399; }
+.footer { margin-top: 80px; padding: 40px 32px; border-top: 1px solid var(--border); text-align: center; }
+.footer-nav { display: flex; justify-content: center; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+.footer-nav a { color: var(--teal); text-decoration: none; padding: 8px 20px; border: 1px solid rgba(13,148,136,0.3); border-radius: 8px; font-size: 0.9rem; transition: all 0.2s; }
+.footer-nav a:hover { background: rgba(13,148,136,0.1); border-color: var(--teal); }
+.footer p { color: var(--muted); font-size: 0.8rem; }
+</style>
+</head>
+<body data-animation-density="high">
+
+<nav class="sticky-nav">
+  <a href="../days/day29.html">← Day 29 Lesson</a>
+  <span class="nav-sep">|</span>
+  <span class="brand">Agentic AI Mastery</span>
+  <span class="nav-sep">|</span>
+  <span class="nav-title">Day 29 Exercises</span>
+  <a href="day30_exercises.html" style="margin-left:auto;">Day 30 Exercises →</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-meta">
+    <span class="badge badge-purple">Day 29</span>
+    <span class="badge badge-teal">Week 5</span>
+    <span class="badge badge-green">5 Exercises</span>
+  </div>
+  <h1>AI Copilot <span>Architecture</span></h1>
+  <p>Build the full copilot stack: intent classification, LangGraph state machines, context assembly, approval gates, and a production FastAPI endpoint.</p>
+</div>
+
+<div class="progress-bar-wrap">
+  <div class="progress-label"><span>Exercises completed</span><span id="prog-text">0 / 5</span></div>
+  <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+</div>
+
+<div class="main">
+
+  <!-- Exercise 1 -->
+  <div class="exercise" id="ex1">
+    <div class="exercise-header">
+      <div>
+        <div class="exercise-num">Exercise 01</div>
+        <h2>Intent Classifier with Structured Output</h2>
+        <p>Build a robust intent classifier using Pydantic and structured LLM output that routes user messages to the correct handler.</p>
+      </div>
+      <div class="ex-status">
+        <div class="status-dot" id="dot1"></div>
+        <button class="mark-done-btn" onclick="markDone(1)">Mark Done</button>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(1,'task')">Your Task</button>
+      <button class="tab-btn" onclick="switchTab(1,'code')">Starter Code</button>
+      <button class="tab-btn" onclick="switchTab(1,'tests')">Test Cases</button>
+      <button class="tab-btn" onclick="switchTab(1,'hints')">Hints</button>
+    </div>
+    <div class="tab-panel active" id="ex1-task">
+      <div class="section-label purple">Objective</div>
+      <p style="color:var(--muted);margin-bottom:16px;">Create an intent classifier that takes a user message and returns a structured classification with intent, extracted entities, confidence, and clarification flag.</p>
+      <div class="task-requirements">
+        <ul>
+          <li>Define an <code>Intent</code> enum: FACTUAL, RESEARCH, ACTION, CLARIFY, CHITCHAT</li>
+          <li>Define <code>ClassifiedIntent</code> Pydantic model with: intent, entities (list[str]), confidence (float 0-1), needs_clarification (bool)</li>
+          <li>Implement <code>classify_intent(message: str) -> ClassifiedIntent</code> using instructor or JSON mode</li>
+          <li>Test with 5 messages covering each intent type</li>
+          <li>Add a <code>route_to_handler(intent: ClassifiedIntent) -> str</code> that returns the handler name</li>
+        </ul>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex1-code">
+      <div class="code-wrap">
+        <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>intent_classifier.py</span></div>
+        <div class="code-body"><div class="code-content"><span class="cm"># pip install openai instructor pydantic</span>
+<span class="kw">import</span> instructor
+<span class="kw">from</span> openai <span class="kw">import</span> OpenAI
+<span class="kw">from</span> pydantic <span class="kw">import</span> BaseModel, Field
+<span class="kw">from</span> enum <span class="kw">import</span> Enum
+
+client = instructor.<span class="fn">from_openai</span>(<span class="fn">OpenAI</span>())
+
+<span class="kw">class</span> <span class="tp">Intent</span>(str, Enum):
+    FACTUAL = <span class="st">"factual"</span>
+    RESEARCH = <span class="st">"research"</span>
+    ACTION = <span class="st">"action"</span>
+    CLARIFY = <span class="st">"clarify"</span>
+    CHITCHAT = <span class="st">"chitchat"</span>
+
+<span class="kw">class</span> <span class="tp">ClassifiedIntent</span>(BaseModel):
+    intent: Intent
+    entities: list[str] = Field(description=<span class="st">"Key entities extracted from the message"</span>)
+    confidence: float = Field(ge=<span class="nm">0</span>, le=<span class="nm">1</span>, description=<span class="st">"Confidence score 0-1"</span>)
+    needs_clarification: bool = Field(description=<span class="st">"True if message is ambiguous"</span>)
+
+<span class="kw">def</span> <span class="fn">classify_intent</span>(message: str) -> ClassifiedIntent:
+    <span class="cm"># TODO: use instructor client to classify the message</span>
+    <span class="cm"># System prompt: "You are an intent classifier for an AI copilot..."</span>
+    <span class="kw">pass</span>
+
+<span class="kw">def</span> <span class="fn">route_to_handler</span>(intent: ClassifiedIntent) -> str:
+    <span class="cm"># TODO: map intent to handler name string</span>
+    handlers = {
+        Intent.FACTUAL: <span class="st">"rag_handler"</span>,
+        Intent.RESEARCH: <span class="st">"research_crew_handler"</span>,
+        Intent.ACTION: <span class="st">"action_handler"</span>,
+        Intent.CLARIFY: <span class="st">"clarification_handler"</span>,
+        Intent.CHITCHAT: <span class="st">"chitchat_handler"</span>,
+    }
+    <span class="kw">return</span> handlers[intent.intent]
+
+<span class="cm"># Test messages</span>
+test_messages = [
+    <span class="st">"What is the difference between RAG and fine-tuning?"</span>,
+    <span class="st">"Research the latest papers on LLM reasoning and summarize them."</span>,
+    <span class="st">"Send an email to the team about the deployment."</span>,
+    <span class="st">"Do you mean the old system or the new one?"</span>,
+    <span class="st">"Hey, how's it going?"</span>,
+]
+
+<span class="kw">if</span> __name__ == <span class="st">"__main__"</span>:
+    <span class="kw">for</span> msg <span class="kw">in</span> test_messages:
+        result = <span class="fn">classify_intent</span>(msg)
+        handler = <span class="fn">route_to_handler</span>(result)
+        <span class="fn">print</span>(<span class="fn">f</span><span class="st">f"{result.intent.value:12} (conf={result.confidence:.2f}) → {handler}"</span>)
+        <span class="fn">print</span>(<span class="fn">f</span><span class="st">f"  entities: {result.entities}"</span>)</div></div>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex1-tests">
+      <div class="tests-grid">
+        <div class="test-case"><span class="test-badge pending">PENDING</span><div class="test-content"><div class="test-input">"What is RAG?" → intent=FACTUAL</div><div class="test-expected">Expected: intent.value == "factual", confidence > 0.7</div></div></div>
+        <div class="test-case"><span class="test-badge pending">PENDING</span><div class="test-content"><div class="test-input">"Send email to team" → intent=ACTION</div><div class="test-expected">Expected: routed to "action_handler"</div></div></div>
+        <div class="test-case"><span class="test-badge pending">PENDING</span><div class="test-content"><div class="test-input">Ambiguous message → needs_clarification=True</div><div class="test-expected">Expected: "do you mean..." triggers clarify intent</div></div></div>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex1-hints">
+      <div class="hints-list">
+        <button class="hint-toggle" onclick="toggleHint(this)">Hint: instructor client usage <span class="arrow">▶</span></button>
+        <div class="hint-body"><code>client.chat.completions.create(model="gpt-4o-mini", response_model=ClassifiedIntent, messages=[...])</code>. Instructor automatically handles JSON parsing and Pydantic validation.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Exercise 2 -->
+  <div class="exercise" id="ex2">
+    <div class="exercise-header">
+      <div>
+        <div class="exercise-num">Exercise 02</div>
+        <h2>LangGraph State Machine with HITL</h2>
+        <p>Build a 4-node LangGraph graph with human-in-the-loop interrupt before the execute node.</p>
+      </div>
+      <div class="ex-status">
+        <div class="status-dot" id="dot2"></div>
+        <button class="mark-done-btn" onclick="markDone(2)">Mark Done</button>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(2,'task')">Your Task</button>
+      <button class="tab-btn" onclick="switchTab(2,'code')">Starter Code</button>
+      <button class="tab-btn" onclick="switchTab(2,'tests')">Test Cases</button>
+      <button class="tab-btn" onclick="switchTab(2,'hints')">Hints</button>
+    </div>
+    <div class="tab-panel active" id="ex2-task">
+      <div class="section-label purple">Objective</div>
+      <p style="color:var(--muted);margin-bottom:16px;">Implement a LangGraph workflow: classify → route → execute → respond, with an interrupt before execute so a human can approve or reject the action.</p>
+      <div class="task-requirements">
+        <ul>
+          <li>Define <code>CopilotState</code> TypedDict with: message, intent, action_plan, approved, response</li>
+          <li>Create 4 node functions: <code>classify_node</code>, <code>route_node</code>, <code>execute_node</code>, <code>respond_node</code></li>
+          <li>Build the StateGraph, add nodes and edges, compile with <code>interrupt_before=["execute_node"]</code></li>
+          <li>Simulate the HITL flow: run to interrupt, print the action plan, resume with human approval</li>
+          <li>Handle the rejection case: if approved=False, skip execute and go to respond with "Action cancelled"</li>
+        </ul>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex2-code">
+      <div class="code-wrap">
+        <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>copilot_graph.py</span></div>
+        <div class="code-body"><div class="code-content"><span class="cm"># pip install langgraph langchain-openai</span>
+<span class="kw">from</span> typing <span class="kw">import</span> TypedDict, Literal
+<span class="kw">from</span> langgraph.graph <span class="kw">import</span> StateGraph, END
+<span class="kw">from</span> langgraph.checkpoint.memory <span class="kw">import</span> MemorySaver
+
+<span class="kw">class</span> <span class="tp">CopilotState</span>(TypedDict):
+    message: str
+    intent: str
+    action_plan: str
+    approved: bool | <span class="kw">None</span>
+    response: str
+
+<span class="kw">def</span> <span class="fn">classify_node</span>(state: CopilotState) -> CopilotState:
+    <span class="cm"># TODO: classify the message intent (simple keyword check is fine)</span>
+    <span class="kw">pass</span>
+
+<span class="kw">def</span> <span class="fn">route_node</span>(state: CopilotState) -> CopilotState:
+    <span class="cm"># TODO: build an action_plan string based on intent</span>
+    <span class="cm"># e.g., "Will send email to team@company.com with subject: deployment update"</span>
+    <span class="kw">pass</span>
+
+<span class="kw">def</span> <span class="fn">execute_node</span>(state: CopilotState) -> CopilotState:
+    <span class="cm"># TODO: simulate executing the action (print "Executing:", state["action_plan"])</span>
+    <span class="kw">pass</span>
+
+<span class="kw">def</span> <span class="fn">respond_node</span>(state: CopilotState) -> CopilotState:
+    <span class="cm"># TODO: set response based on whether action was executed or cancelled</span>
+    <span class="kw">pass</span>
+
+<span class="kw">def</span> <span class="fn">should_execute</span>(state: CopilotState) -> Literal[<span class="st">"execute_node"</span>, <span class="st">"respond_node"</span>]:
+    <span class="cm"># TODO: return "respond_node" if not approved, else "execute_node"</span>
+    <span class="kw">pass</span>
+
+<span class="kw">def</span> <span class="fn">build_graph</span>():
+    builder = <span class="fn">StateGraph</span>(CopilotState)
+    builder.<span class="fn">add_node</span>(<span class="st">"classify_node"</span>, classify_node)
+    builder.<span class="fn">add_node</span>(<span class="st">"route_node"</span>, route_node)
+    builder.<span class="fn">add_node</span>(<span class="st">"execute_node"</span>, execute_node)
+    builder.<span class="fn">add_node</span>(<span class="st">"respond_node"</span>, respond_node)
+    builder.<span class="fn">set_entry_point</span>(<span class="st">"classify_node"</span>)
+    builder.<span class="fn">add_edge</span>(<span class="st">"classify_node"</span>, <span class="st">"route_node"</span>)
+    builder.<span class="fn">add_conditional_edges</span>(<span class="st">"route_node"</span>, should_execute)
+    builder.<span class="fn">add_edge</span>(<span class="st">"execute_node"</span>, <span class="st">"respond_node"</span>)
+    builder.<span class="fn">add_edge</span>(<span class="st">"respond_node"</span>, END)
+    memory = <span class="fn">MemorySaver</span>()
+    <span class="cm"># TODO: compile with interrupt_before=["execute_node"]</span>
+    <span class="kw">pass</span>
+
+<span class="kw">if</span> __name__ == <span class="st">"__main__"</span>:
+    graph = <span class="fn">build_graph</span>()
+    config = {<span class="st">"configurable"</span>: {<span class="st">"thread_id"</span>: <span class="st">"test-1"</span>}}
+    initial = {<span class="st">"message"</span>: <span class="st">"Send deployment update to the team"</span>, <span class="st">"approved"</span>: <span class="kw">None</span>}
+    <span class="cm"># Run to interrupt</span>
+    state = graph.<span class="fn">invoke</span>(initial, config)
+    <span class="fn">print</span>(<span class="st">"Action plan:"</span>, state[<span class="st">"action_plan"</span>])
+    approval = <span class="fn">input</span>(<span class="st">"Approve? (y/n): "</span>)
+    <span class="cm"># Resume with approval decision</span>
+    final = graph.<span class="fn">invoke</span>({<span class="st">"approved"</span>: approval == <span class="st">"y"</span>}, config)
+    <span class="fn">print</span>(<span class="st">"Response:"</span>, final[<span class="st">"response"</span>])</div></div>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex2-tests">
+      <div class="tests-grid">
+        <div class="test-case"><span class="test-badge pending">PENDING</span><div class="test-content"><div class="test-input">Graph runs to interrupt before execute_node</div><div class="test-expected">Expected: action_plan is set, execute_node NOT yet called</div></div></div>
+        <div class="test-case"><span class="test-badge pending">PENDING</span><div class="test-content"><div class="test-input">Resume with approved=True → execute runs</div><div class="test-expected">Expected: response confirms action was taken</div></div></div>
+        <div class="test-case"><span class="test-badge pending">PENDING</span><div class="test-content"><div class="test-input">Resume with approved=False → execute skipped</div><div class="test-expected">Expected: response contains "cancelled" or similar</div></div></div>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex2-hints">
+      <div class="hints-list">
+        <button class="hint-toggle" onclick="toggleHint(this)">Hint: interrupt_before <span class="arrow">▶</span></button>
+        <div class="hint-body"><code>graph = builder.compile(checkpointer=memory, interrupt_before=["execute_node"])</code>. When the graph hits execute_node, it pauses and returns the current state. Resume by calling <code>graph.invoke(None, config)</code> or with updated state.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Exercise 3 -->
+  <div class="exercise" id="ex3">
+    <div class="exercise-header">
+      <div>
+        <div class="exercise-num">Exercise 03</div>
+        <h2>Context Assembler</h2>
+        <p>Build a context assembler that fetches user profile, permissions, and recent history to build a rich system prompt for each request.</p>
+      </div>
+      <div class="ex-status">
+        <div class="status-dot" id="dot3"></div>
+        <button class="mark-done-btn" onclick="markDone(3)">Mark Done</button>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(3,'task')">Your Task</button>
+      <button class="tab-btn" onclick="switchTab(3,'code')">Starter Code</button>
+      <button class="tab-btn" onclick="switchTab(3,'tests')">Test Cases</button>
+      <button class="tab-btn" onclick="switchTab(3,'hints')">Hints</button>
+    </div>
+    <div class="tab-panel active" id="ex3-task">
+      <div class="section-label purple">Objective</div>
+      <p style="color:var(--muted);margin-bottom:16px;">Assemble a dynamic system prompt from multiple context sources: user profile, conversation history, permissions, and intent — all fetched asynchronously.</p>
+      <div class="task-requirements">
+        <ul>
+          <li>Implement async functions: <code>fetch_user_profile(user_id)</code>, <code>fetch_permissions(user_id)</code>, <code>fetch_recent_history(user_id, n=5)</code></li>
+          <li>Implement <code>assemble_context(user_id, intent)</code> using <code>asyncio.gather</code> to fetch all three in parallel</li>
+          <li>Build a system prompt template that injects profile, permissions, and history summary</li>
+          <li>Filter history to only include messages relevant to the current intent</li>
+          <li>Test that the assembled prompt contains the user's name and allowed tools</li>
+        </ul>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex3-code">
+      <div class="code-wrap">
+        <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>context_assembler.py</span></div>
+        <div class="code-body"><div class="code-content"><span class="cm"># pip install openai</span>
+<span class="kw">import</span> asyncio
+<span class="kw">from</span> dataclasses <span class="kw">import</span> dataclass
+
+<span class="kw">@dataclass</span>
+<span class="kw">class</span> <span class="tp">UserProfile</span>:
+    user_id: str; name: str; role: str; department: str
+
+<span class="kw">@dataclass</span>
+<span class="kw">class</span> <span class="tp">Permissions</span>:
+    allowed_tools: list[str]; data_access: list[str]; can_take_actions: bool
+
+<span class="kw">async def</span> <span class="fn">fetch_user_profile</span>(user_id: str) -> UserProfile:
+    <span class="cm"># Simulate DB fetch with async sleep</span>
+    <span class="kw">await</span> asyncio.<span class="fn">sleep</span>(<span class="nm">0.1</span>)
+    <span class="cm"># TODO: return a mock UserProfile based on user_id</span>
+    <span class="kw">pass</span>
+
+<span class="kw">async def</span> <span class="fn">fetch_permissions</span>(user_id: str) -> Permissions:
+    <span class="kw">await</span> asyncio.<span class="fn">sleep</span>(<span class="nm">0.1</span>)
+    <span class="cm"># TODO: return mock Permissions (engineers get more tools than guests)</span>
+    <span class="kw">pass</span>
+
+<span class="kw">async def</span> <span class="fn">fetch_recent_history</span>(user_id: str, n: int = <span class="nm">5</span>) -> list[dict]:
+    <span class="kw">await</span> asyncio.<span class="fn">sleep</span>(<span class="nm">0.1</span>)
+    <span class="cm"># TODO: return list of {"role": "user"/"assistant", "content": "..."} dicts</span>
+    <span class="kw">pass</span>
+
+<span class="kw">async def</span> <span class="fn">assemble_context</span>(user_id: str, intent: str) -> str:
+    <span class="cm"># TODO: use asyncio.gather to fetch profile, permissions, history in parallel</span>
+    profile, perms, history = <span class="kw">await</span> asyncio.<span class="fn">gather</span>(
+        <span class="fn">fetch_user_profile</span>(user_id),
+        <span class="fn">fetch_permissions</span>(user_id),
+        <span class="fn">fetch_recent_history</span>(user_id),
+    )
+    <span class="cm"># TODO: build and return a system prompt string using this data</span>
+    <span class="kw">pass</span>
+
+<span class="kw">if</span> __name__ == <span class="st">"__main__"</span>:
+    prompt = asyncio.<span class="fn">run</span>(<span class="fn">assemble_context</span>(<span class="st">"user_123"</span>, <span class="st">"factual"</span>))
+    <span class="fn">print</span>(prompt)</div></div>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex3-tests">
+      <div class="tests-grid">
+        <div class="test-case"><span class="test-badge pending">PENDING</span><div class="test-content"><div class="test-input">asyncio.gather runs all 3 fetches concurrently (total ~0.1s not 0.3s)</div><div class="test-expected">Expected: elapsed time ≈ 0.1s</div></div></div>
+        <div class="test-case"><span class="test-badge pending">PENDING</span><div class="test-content"><div class="test-input">assemble_context returns string with user name</div><div class="test-expected">Expected: "user_123" or profile.name appears in prompt</div></div></div>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex3-hints">
+      <div class="hints-list">
+        <button class="hint-toggle" onclick="toggleHint(this)">Hint: System prompt template <span class="arrow">▶</span></button>
+        <div class="hint-body">Build the prompt with f-string: "You are an AI copilot for {profile.name} ({profile.role} in {profile.department}). Allowed tools: {perms.allowed_tools}. Recent context: {history_summary}"</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Exercise 4 -->
+  <div class="exercise" id="ex4">
+    <div class="exercise-header">
+      <div>
+        <div class="exercise-num">Exercise 04</div>
+        <h2>Tool Approval Gate Middleware</h2>
+        <p>Build a decorator-based approval gate that pauses tool execution for high-risk actions and requests human confirmation.</p>
+      </div>
+      <div class="ex-status">
+        <div class="status-dot" id="dot4"></div>
+        <button class="mark-done-btn" onclick="markDone(4)">Mark Done</button>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(4,'task')">Your Task</button>
+      <button class="tab-btn" onclick="switchTab(4,'code')">Starter Code</button>
+      <button class="tab-btn" onclick="switchTab(4,'tests')">Test Cases</button>
+      <button class="tab-btn" onclick="switchTab(4,'hints')">Hints</button>
+    </div>
+    <div class="tab-panel active" id="ex4-task">
+      <div class="section-label purple">Objective</div>
+      <p style="color:var(--muted);margin-bottom:16px;">Create an <code>@requires_approval</code> decorator that intercepts tool calls, shows the user what the tool will do, and only proceeds if approved.</p>
+      <div class="task-requirements">
+        <ul>
+          <li>Implement <code>@requires_approval(risk_level="high")</code> decorator</li>
+          <li>The decorator should print the tool name and arguments before calling</li>
+          <li>For "high" risk: require explicit user confirmation ("yes"/"no" prompt)</li>
+          <li>For "medium" risk: log the action and proceed automatically</li>
+          <li>Raise <code>ActionRejectedError</code> if user denies, which the caller can catch</li>
+          <li>Apply the decorator to <code>send_email</code>, <code>delete_file</code>, and <code>read_doc</code> tools with appropriate risk levels</li>
+        </ul>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex4-code">
+      <div class="code-wrap">
+        <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>approval_gate.py</span></div>
+        <div class="code-body"><div class="code-content"><span class="cm"># No extra dependencies needed</span>
+<span class="kw">import</span> functools
+<span class="kw">from</span> typing <span class="kw">import</span> Callable
+
+<span class="kw">class</span> <span class="tp">ActionRejectedError</span>(Exception):
+    <span class="kw">pass</span>
+
+<span class="kw">def</span> <span class="fn">requires_approval</span>(risk_level: str = <span class="st">"high"</span>):
+    <span class="kw">def</span> <span class="fn">decorator</span>(func: Callable):
+        <span class="kw">@functools.wraps</span>(func)
+        <span class="kw">def</span> <span class="fn">wrapper</span>(*args, **kwargs):
+            <span class="cm"># TODO: print tool name + args</span>
+            <span class="cm"># TODO: if risk_level == "high": ask for confirmation</span>
+            <span class="cm"># TODO: raise ActionRejectedError if user says no</span>
+            <span class="cm"># TODO: if risk_level == "medium": just log and proceed</span>
+            <span class="kw">return</span> <span class="fn">func</span>(*args, **kwargs)
+        <span class="kw">return</span> wrapper
+    <span class="kw">return</span> decorator
+
+<span class="kw">@requires_approval</span>(risk_level=<span class="st">"high"</span>)
+<span class="kw">def</span> <span class="fn">send_email</span>(to: str, subject: str, body: str) -> str:
+    <span class="kw">return</span> <span class="fn">f</span><span class="st">f"Email sent to {to}"</span>
+
+<span class="kw">@requires_approval</span>(risk_level=<span class="st">"high"</span>)
+<span class="kw">def</span> <span class="fn">delete_file</span>(path: str) -> str:
+    <span class="kw">return</span> <span class="fn">f</span><span class="st">f"Deleted {path}"</span>
+
+<span class="kw">@requires_approval</span>(risk_level=<span class="st">"medium"</span>)
+<span class="kw">def</span> <span class="fn">read_doc</span>(doc_id: str) -> str:
+    <span class="kw">return</span> <span class="fn">f</span><span class="st">f"Read document {doc_id}"</span>
+
+<span class="kw">if</span> __name__ == <span class="st">"__main__"</span>:
+    <span class="kw">try</span>:
+        result = <span class="fn">send_email</span>(<span class="st">"team@example.com"</span>, <span class="st">"Deploy"</span>, <span class="st">"Deploying now"</span>)
+        <span class="fn">print</span>(result)
+    <span class="kw">except</span> ActionRejectedError:
+        <span class="fn">print</span>(<span class="st">"Action was rejected by user"</span>)
+
+    <span class="cm"># Medium risk — should proceed without asking</span>
+    result = <span class="fn">read_doc</span>(<span class="st">"doc_456"</span>)
+    <span class="fn">print</span>(result)</div></div>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex4-tests">
+      <div class="tests-grid">
+        <div class="test-case"><span class="test-badge pending">PENDING</span><div class="test-content"><div class="test-input">User inputs "no" to high-risk tool → ActionRejectedError raised</div><div class="test-expected">Expected: except block catches ActionRejectedError</div></div></div>
+        <div class="test-case"><span class="test-badge pending">PENDING</span><div class="test-content"><div class="test-input">Medium-risk read_doc → no prompt, returns result</div><div class="test-expected">Expected: "Read document doc_456" returned without user input</div></div></div>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex4-hints">
+      <div class="hints-list">
+        <button class="hint-toggle" onclick="toggleHint(this)">Hint: Getting function name <span class="arrow">▶</span></button>
+        <div class="hint-body">Inside the decorator wrapper, <code>func.__name__</code> gives the tool name. <code>args</code> and <code>kwargs</code> give the arguments. Print them clearly: "Tool: send_email | Args: to=team@..."</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Exercise 5 -->
+  <div class="exercise" id="ex5">
+    <div class="exercise-header">
+      <div>
+        <div class="exercise-num">Exercise 05</div>
+        <h2>Full Copilot FastAPI Endpoint</h2>
+        <p>Wire everything together: intent classifier + context assembler + LangGraph + approval gate into a single production FastAPI endpoint.</p>
+      </div>
+      <div class="ex-status">
+        <div class="status-dot" id="dot5"></div>
+        <button class="mark-done-btn" onclick="markDone(5)">Mark Done</button>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(5,'task')">Your Task</button>
+      <button class="tab-btn" onclick="switchTab(5,'code')">Starter Code</button>
+      <button class="tab-btn" onclick="switchTab(5,'tests')">Test Cases</button>
+      <button class="tab-btn" onclick="switchTab(5,'hints')">Hints</button>
+    </div>
+    <div class="tab-panel active" id="ex5-task">
+      <div class="section-label purple">Objective</div>
+      <p style="color:var(--muted);margin-bottom:16px;">Build a FastAPI endpoint that accepts a user message + user_id, runs through the full copilot pipeline, and returns a structured response with metadata.</p>
+      <div class="task-requirements">
+        <ul>
+          <li>POST /copilot endpoint accepting <code>{"message": str, "user_id": str, "thread_id": str}</code></li>
+          <li>Inside the handler: classify intent → assemble context → invoke LangGraph → return response</li>
+          <li>Response model: <code>{"response": str, "intent": str, "action_taken": bool, "latency_ms": float}</code></li>
+          <li>Add request ID to all log lines using middleware</li>
+          <li>Return 403 if the classified intent requires permissions the user doesn't have</li>
+        </ul>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex5-code">
+      <div class="code-wrap">
+        <div class="code-header"><div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span>copilot_api.py</span></div>
+        <div class="code-body"><div class="code-content"><span class="cm"># pip install fastapi uvicorn langgraph langchain-openai instructor</span>
+<span class="kw">import</span> time, uuid
+<span class="kw">from</span> fastapi <span class="kw">import</span> FastAPI, HTTPException, Request
+<span class="kw">from</span> pydantic <span class="kw">import</span> BaseModel
+
+app = <span class="fn">FastAPI</span>(title=<span class="st">"AI Copilot"</span>)
+
+<span class="kw">class</span> <span class="tp">CopilotRequest</span>(BaseModel):
+    message: str
+    user_id: str
+    thread_id: str = <span class="st">""</span>
+
+<span class="kw">class</span> <span class="tp">CopilotResponse</span>(BaseModel):
+    response: str
+    intent: str
+    action_taken: bool
+    latency_ms: float
+    request_id: str
+
+<span class="kw">@app.middleware</span>(<span class="st">"http"</span>)
+<span class="kw">async def</span> <span class="fn">add_request_id</span>(request: Request, call_next):
+    <span class="cm"># TODO: generate UUID, add to request.state.request_id, log it</span>
+    <span class="kw">pass</span>
+
+<span class="kw">@app.post</span>(<span class="st">"/copilot"</span>, response_model=CopilotResponse)
+<span class="kw">async def</span> <span class="fn">copilot_endpoint</span>(req: CopilotRequest, request: Request):
+    start = time.<span class="fn">time</span>()
+    request_id = <span class="fn">getattr</span>(request.state, <span class="st">"request_id"</span>, <span class="fn">str</span>(uuid.<span class="fn">uuid4</span>()))
+
+    <span class="cm"># TODO: classify intent</span>
+    classified = <span class="kw">None</span>
+
+    <span class="cm"># TODO: assemble context</span>
+    context = <span class="kw">None</span>
+
+    <span class="cm"># TODO: check permissions — raise HTTPException(403) if not allowed</span>
+
+    <span class="cm"># TODO: invoke the copilot graph</span>
+    result = <span class="kw">None</span>
+
+    latency = (<span class="fn">time.time</span>() - start) * <span class="nm">1000</span>
+    <span class="kw">return</span> <span class="fn">CopilotResponse</span>(
+        response=result.get(<span class="st">"response"</span>, <span class="st">"Done"</span>),
+        intent=classified.intent.value <span class="kw">if</span> classified <span class="kw">else</span> <span class="st">"unknown"</span>,
+        action_taken=result.get(<span class="st">"approved"</span>, <span class="kw">False</span>) <span class="kw">if</span> result <span class="kw">else</span> <span class="kw">False</span>,
+        latency_ms=<span class="fn">round</span>(latency, <span class="nm">2</span>),
+        request_id=request_id,
+    )
+
+<span class="cm"># uvicorn copilot_api:app --reload</span></div></div>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex5-tests">
+      <div class="tests-grid">
+        <div class="test-case"><span class="test-badge pending">PENDING</span><div class="test-content"><div class="test-input">POST /copilot {"message": "What is RAG?", "user_id": "u1"}</div><div class="test-expected">Expected: 200, response.intent == "factual", latency_ms > 0</div></div></div>
+        <div class="test-case"><span class="test-badge pending">PENDING</span><div class="test-content"><div class="test-input">User without action permissions sends action intent</div><div class="test-expected">Expected: 403 Forbidden</div></div></div>
+        <div class="test-case"><span class="test-badge pending">PENDING</span><div class="test-content"><div class="test-input">Every response includes a unique request_id</div><div class="test-expected">Expected: UUID format string in response.request_id</div></div></div>
+      </div>
+    </div>
+    <div class="tab-panel" id="ex5-hints">
+      <div class="hints-list">
+        <button class="hint-toggle" onclick="toggleHint(this)">Hint: Middleware pattern <span class="arrow">▶</span></button>
+        <div class="hint-body">In the middleware: <code>request.state.request_id = str(uuid.uuid4()); response = await call_next(request); return response</code></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer class="footer">
+  <div class="footer-nav">
+    <a href="../days/day29.html">← Day 29 Lesson</a>
+    <a href="day30_exercises.html">Day 30 Exercises →</a>
+  </div>
+  <p>30-Day Agentic AI Mastery · Built for Sharjeel Sohail</p>
+</footer>
+
+<script>
+const TOTAL = 5;
+const KEY = 'aai_ex_day29';
+let done = JSON.parse(localStorage.getItem(KEY) || '{}');
+function updateProgress() {
+  const n = Object.keys(done).length;
+  document.getElementById('prog-text').textContent = n + ' / ' + TOTAL;
+  document.getElementById('prog-fill').style.width = (n / TOTAL * 100) + '%';
+}
+function markDone(n) {
+  done[n] = true; localStorage.setItem(KEY, JSON.stringify(done));
+  document.getElementById('dot' + n).classList.add('done'); updateProgress();
+}
+function switchTab(ex, tab) {
+  ['task','code','tests','hints'].forEach(t => {
+    document.getElementById('ex' + ex + '-' + t).classList.toggle('active', t === tab);
+  });
+  document.querySelectorAll('#ex' + ex + ' .tab-btn').forEach((b, i) =>
+    b.classList.toggle('active', ['task','code','tests','hints'][i] === tab));
+}
+function toggleHint(btn) {
+  btn.classList.toggle('open');
+  const body = btn.nextElementSibling;
+  body.style.display = body.style.display === 'block' ? 'none' : 'block';
+}
+Object.keys(done).forEach(n => document.getElementById('dot' + n)?.classList.add('done'));
+updateProgress();
+</script>
+<script src="../bg-animation.js"></script>
+</body>
+</html>

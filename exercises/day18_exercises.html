@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 18 Exercises — MLflow & Experiment Tracking</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f; --card: #141420; --surface2: #1a1a2e; --border: #2a2a45;
+  --purple: #7c3aed; --purple-light: #a855f7; --teal: #0d9488;
+  --green: #10b981; --yellow: #f59e0b; --red: #ef4444;
+  --text: #e2e8f0; --muted: #64748b;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
+.sticky-nav { position: sticky; top: 0; z-index: 100; background: rgba(10,10,15,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); padding: 12px 32px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.sticky-nav a { color: var(--muted); text-decoration: none; font-size: 0.85rem; padding: 6px 12px; border-radius: 6px; transition: all 0.2s; border: 1px solid transparent; }
+.sticky-nav a:hover { color: var(--text); background: var(--card); border-color: var(--border); }
+.sticky-nav .brand { color: var(--purple-light); font-weight: 600; font-size: 0.9rem; }
+.nav-sep { color: var(--border); }
+.nav-title { color: var(--text); font-weight: 700; font-size: 0.95rem; flex: 1; }
+.hero { padding: 56px 32px 32px; max-width: 1100px; margin: 0 auto; border-bottom: 1px solid var(--border); }
+.hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: 8px; }
+.hero h1 span { color: var(--purple-light); }
+.hero p { color: var(--muted); font-size: 1rem; max-width: 700px; }
+.hero-meta { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
+.badge-purple { background: rgba(124,58,237,0.15); color: var(--purple-light); border: 1px solid rgba(124,58,237,0.3); }
+.badge-teal { background: rgba(13,148,136,0.15); color: #2dd4bf; border: 1px solid rgba(13,148,136,0.3); }
+.badge-green { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.progress-bar-wrap { max-width: 1100px; margin: 24px auto; padding: 0 32px; }
+.progress-label { font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
+.progress-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--purple), var(--teal)); border-radius: 3px; transition: width 0.5s ease; }
+.main { max-width: 1100px; margin: 0 auto; padding: 32px; display: flex; flex-direction: column; gap: 64px; }
+.exercise { border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: var(--card); }
+.exercise-header { padding: 24px 32px; background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(13,148,136,0.05)); border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.exercise-num { font-size: 0.75rem; color: var(--purple-light); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.exercise-header h2 { font-size: 1.4rem; font-weight: 700; margin: 4px 0 8px; }
+.exercise-header p { color: var(--muted); font-size: 0.9rem; }
+.ex-status { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); transition: background 0.3s; }
+.status-dot.done { background: var(--green); }
+.tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--surface2); }
+.tab-btn { padding: 12px 20px; font-size: 0.82rem; font-weight: 600; color: var(--muted); cursor: pointer; border: none; background: none; border-bottom: 2px solid transparent; transition: all 0.2s; font-family: 'Inter', sans-serif; }
+.tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+.tab-btn.active { color: var(--purple-light); border-bottom-color: var(--purple-light); background: rgba(124,58,237,0.05); }
+.tab-panel { display: none; padding: 28px 32px; }
+.tab-panel.active { display: block; }
+.code-wrap { background: #0d0d18; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin: 12px 0; }
+.code-header { padding: 8px 16px; background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; color: var(--muted); }
+.code-dots { display: flex; gap: 6px; }
+.code-dots span { width: 10px; height: 10px; border-radius: 50%; }
+.code-dots .dot-r { background: var(--red); } .code-dots .dot-y { background: var(--yellow); } .code-dots .dot-g { background: var(--green); }
+.code-body { display: flex; }
+.line-nums { padding: 16px 8px; background: rgba(0,0,0,0.3); border-right: 1px solid var(--border); display: flex; flex-direction: column; min-width: 40px; text-align: right; }
+.line-nums span { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: #3a3a5c; line-height: 1.7; padding: 0 8px; }
+.code-content { padding: 16px; overflow-x: auto; flex: 1; white-space: pre; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; line-height: 1.7; }
+.kw { color: #c792ea; } .fn { color: #82aaff; } .st { color: #c3e88d; } .cm { color: #546e7a; font-style: italic; }
+.nm { color: #f78c6c; } .tp { color: #ffcb6b; } .dt { color: #89ddff; } .va { color: #eeffff; } .bi { color: #ff5370; }
+.task-requirements { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); border-radius: 10px; padding: 16px 20px; margin-bottom: 16px; }
+.task-requirements li { color: var(--text); font-size: 0.88rem; margin: 6px 0 6px 16px; }
+.task-requirements li::marker { color: var(--yellow); }
+.tests-grid { display: flex; flex-direction: column; gap: 8px; }
+.test-case { display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+.test-badge { flex-shrink: 0; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; font-family: 'Inter', sans-serif; letter-spacing: 0.5px; }
+.test-badge.pass { background: rgba(16,185,129,0.2); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.test-badge.pending { background: rgba(100,116,139,0.2); color: var(--muted); border: 1px solid rgba(100,116,139,0.3); }
+.test-content { flex: 1; } .test-input { color: var(--text); } .test-expected { color: var(--muted); margin-top: 2px; }
+.hints-list { display: flex; flex-direction: column; gap: 8px; }
+.hint-toggle { width: 100%; text-align: left; padding: 10px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--muted); cursor: pointer; font-family: 'Inter', sans-serif; font-size: 0.85rem; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s; }
+.hint-toggle:hover { border-color: var(--purple); color: var(--text); }
+.hint-toggle .arrow { transition: transform 0.2s; }
+.hint-toggle.open .arrow { transform: rotate(90deg); }
+.hint-body { display: none; padding: 12px 16px; margin-top: 4px; background: rgba(124,58,237,0.05); border: 1px solid rgba(124,58,237,0.2); border-radius: 8px; font-size: 0.85rem; color: var(--text); line-height: 1.6; }
+.hint-body code { background: rgba(124,58,237,0.15); padding: 1px 5px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--purple-light); }
+.section-label { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.section-label.purple { color: var(--purple-light); } .section-label.yellow { color: var(--yellow); }
+.section-label.green { color: #34d399; } .section-label.teal { color: #2dd4bf; }
+.section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.animate-btn { margin-top: 12px; padding: 8px 18px; border-radius: 8px; background: var(--purple); color: white; border: none; cursor: pointer; font-size: 0.82rem; font-weight: 600; font-family: 'Inter', sans-serif; transition: background 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+.animate-btn:hover { background: var(--purple-light); }
+.info-box { padding: 12px 16px; border-radius: 8px; margin: 12px 0; font-size: 0.85rem; }
+.info-box.teal { background: rgba(13,148,136,0.08); border: 1px solid rgba(13,148,136,0.2); color: var(--text); }
+.info-box.teal strong { color: #2dd4bf; }
+.info-box.purple { background: rgba(124,58,237,0.08); border: 1px solid rgba(124,58,237,0.2); color: var(--text); }
+.info-box.purple strong { color: var(--purple-light); }
+.footer { border-top: 1px solid var(--border); padding: 32px; text-align: center; color: var(--muted); font-size: 0.82rem; }
+.footer a { color: var(--purple-light); text-decoration: none; }
+</style>
+</head>
+<body data-animation-density="high">
+
+<nav class="sticky-nav">
+  <a href="../days/day18.html">← Day 18 lesson</a>
+  <span class="nav-sep">|</span>
+  <a href="../index.html" class="brand">🤖 Agentic AI</a>
+  <span class="nav-sep">|</span>
+  <span class="nav-title">Day 18 Exercises — MLflow & Experiment Tracking</span>
+  <a href="day19_exercises.html" style="margin-left:auto;">Day 19 Exercises →</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-meta">
+    <span class="badge badge-purple">Day 18</span>
+    <span class="badge badge-teal">5 Exercises</span>
+    <span class="badge badge-green">MLflow / LangSmith</span>
+  </div>
+  <h1>MLflow & <span>Experiment Tracking</span></h1>
+  <p>Track every LLM experiment with full reproducibility — log hyperparameters, metrics, and artifacts, promote models through staging, and compare runs in the UI.</p>
+</div>
+
+<div class="progress-bar-wrap">
+  <div class="progress-label"><span>Progress</span><span id="progress-text">0 / 5 completed</span></div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+</div>
+
+<main class="main">
+
+<!-- ========== EXERCISE 1: START RUN ========== -->
+<section class="exercise" id="ex1">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 1 of 5</div>
+      <h2>Your First MLflow Run</h2>
+      <p>Log parameters, metrics, and tags to a local tracking server — the foundation of reproducible ML.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot1"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex1','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex1','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex1','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex1','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex1-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Create a complete MLflow run with all standard logging calls:</p>
+      <ul>
+        <li>Start a run with <code style="font-family:'JetBrains Mono',monospace;">mlflow.start_run(run_name="my-first-run")</code> using context manager</li>
+        <li>Log hyperparams with <code style="font-family:'JetBrains Mono',monospace;">mlflow.log_params({"lr": 1e-4, "batch_size": 8, "epochs": 3})</code></li>
+        <li>Log a metric at each step using <code style="font-family:'JetBrains Mono',monospace;">mlflow.log_metric("train_loss", value, step=i)</code> in a loop</li>
+        <li>Set tags with <code style="font-family:'JetBrains Mono',monospace;">mlflow.set_tag("model_family", "llama")</code></li>
+        <li>Retrieve the run's <code style="font-family:'JetBrains Mono',monospace;">run_id</code> from the active run and print it</li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(1)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex1-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        <span>day18_ex1_first_run.py</span>
+        <span># pip install mlflow</span>
+      </div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span></div>
+        <div class="code-content"><span class="cm"># pip install mlflow</span>
+<span class="kw">import</span> <span class="va">mlflow</span>
+<span class="kw">import</span> <span class="va">math</span>
+
+<span class="cm"># Defaults to ./mlruns directory for local tracking</span>
+<span class="va">mlflow</span><span class="dt">.</span><span class="fn">set_experiment</span><span class="dt">(</span><span class="st">"day18-exercises"</span><span class="dt">)</span>
+
+<span class="cm"># TODO: use mlflow.start_run as a context manager</span>
+<span class="kw">with</span> <span class="va">mlflow</span><span class="dt">.</span><span class="fn">start_run</span><span class="dt">(</span><span class="va">run_name</span><span class="dt">=</span><span class="st">"first-run"</span><span class="dt">)</span> <span class="kw">as</span> <span class="va">run</span><span class="dt">:</span>
+    <span class="cm"># TODO: log params</span>
+    <span class="va">mlflow</span><span class="dt">.</span><span class="fn">log_params</span><span class="dt">({</span>
+        <span class="cm"># TODO: lr, batch_size, model_name</span>
+    <span class="dt">})</span>
+
+    <span class="cm"># TODO: set tags</span>
+    <span class="dt">...</span>
+
+    <span class="cm"># Simulate training loop — loss decays from 3.0</span>
+    <span class="kw">for</span> <span class="va">step</span> <span class="kw">in</span> <span class="fn">range</span><span class="dt">(</span><span class="nm">20</span><span class="dt">):</span>
+        <span class="va">loss</span> <span class="dt">=</span> <span class="nm">3.0</span> <span class="dt">*</span> <span class="va">math</span><span class="dt">.</span><span class="fn">exp</span><span class="dt">(-</span><span class="va">step</span> <span class="dt">*</span> <span class="nm">0.15</span><span class="dt">)</span>
+        <span class="cm"># TODO: log metric with step</span>
+        <span class="dt">...</span>
+
+    <span class="cm"># Get run_id</span>
+    <span class="va">run_id</span> <span class="dt">=</span> <span class="va">run</span><span class="dt">.</span><span class="va">info</span><span class="dt">.</span><span class="va">run_id</span>
+    <span class="fn">print</span><span class="dt">(</span><span class="bi">f</span><span class="st">"Run ID: {run_id}"</span><span class="dt">)</span>
+    <span class="fn">print</span><span class="dt">(</span><span class="bi">f</span><span class="st">"View at: mlflow ui --port 5000"</span><span class="dt">)</span>
+
+<span class="cm"># After context: run is FINISHED automatically</span>
+<span class="fn">print</span><span class="dt">(</span><span class="st">"Run complete."</span><span class="dt">)</span></div>
+      </div>
+    </div>
+    <div class="info-box teal"><strong>Local tracking:</strong> MLflow writes to <code style="font-family:'JetBrains Mono',monospace;background:rgba(13,148,136,0.15);padding:1px 5px;border-radius:3px;color:#2dd4bf;">./mlruns/</code> by default. Run <code style="font-family:'JetBrains Mono',monospace;background:rgba(13,148,136,0.15);padding:1px 5px;border-radius:3px;color:#2dd4bf;">mlflow ui</code> and open localhost:5000 to see the run. In production, point to a remote server: <code style="font-family:'JetBrains Mono',monospace;background:rgba(13,148,136,0.15);padding:1px 5px;border-radius:3px;color:#2dd4bf;">mlflow.set_tracking_uri("http://mlflow-server:5000")</code>.</div>
+  </div>
+
+  <div class="tab-panel" id="ex1-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t1-1">T1</span><div class="test-content"><div class="test-input">client = mlflow.tracking.MlflowClient()<br>run = client.get_run(run_id)<br>run.data.params["lr"]</div><div class="test-expected">→ "0.0001" (params stored as strings)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t1-2">T2</span><div class="test-content"><div class="test-input">metrics = run.data.metrics<br>"train_loss" in metrics</div><div class="test-expected">→ True (metric was logged)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t1-3">T3</span><div class="test-content"><div class="test-input">run.info.status</div><div class="test-expected">→ "FINISHED" (context manager closed run)</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(1)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex1-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — log_params vs log_param</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>mlflow.log_params({"lr": 1e-4, "batch_size": 8})</code> logs multiple at once. <code>mlflow.log_param("lr", 1e-4)</code> logs one. Both store values as strings internally.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — Logging metrics with steps</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>mlflow.log_metric("train_loss", loss, step=step)</code>. The <code>step</code> argument enables the time-series chart in the UI. Without it, only the last value is meaningful.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 2: LOG ARTIFACTS ========== -->
+<section class="exercise" id="ex2">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 2 of 5</div>
+      <h2>Logging Artifacts & Models</h2>
+      <p>Store training plots, JSON eval results, and the model itself as reproducible artifacts alongside your run.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot2"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex2','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex2','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex2','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex2','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex2-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Log multiple artifact types to an MLflow run:</p>
+      <ul>
+        <li>Write a JSON file of eval scores and log it with <code style="font-family:'JetBrains Mono',monospace;">mlflow.log_artifact("eval_scores.json")</code></li>
+        <li>Use <code style="font-family:'JetBrains Mono',monospace;">mlflow.log_dict(scores_dict, "scores/eval.json")</code> to log in-memory dicts directly</li>
+        <li>Log a text file with <code style="font-family:'JetBrains Mono',monospace;">mlflow.log_text("...summary...", "summary.txt")</code></li>
+        <li>Log a complete sklearn model using <code style="font-family:'JetBrains Mono',monospace;">mlflow.sklearn.log_model(model, "model")</code></li>
+        <li>Retrieve artifact URI with <code style="font-family:'JetBrains Mono',monospace;">mlflow.get_artifact_uri()</code></li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(2)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex2-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        <span>day18_ex2_artifacts.py</span>
+        <span># pip install mlflow scikit-learn</span>
+      </div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span><span>31</span></div>
+        <div class="code-content"><span class="cm"># pip install mlflow scikit-learn</span>
+<span class="kw">import</span> <span class="va">mlflow</span>
+<span class="kw">import</span> <span class="va">json</span><span class="dt">,</span> <span class="va">os</span>
+<span class="kw">from</span> <span class="va">sklearn.linear_model</span> <span class="kw">import</span> <span class="tp">LogisticRegression</span>
+<span class="kw">from</span> <span class="va">sklearn.datasets</span> <span class="kw">import</span> <span class="fn">make_classification</span>
+
+<span class="va">mlflow</span><span class="dt">.</span><span class="fn">set_experiment</span><span class="dt">(</span><span class="st">"day18-exercises"</span><span class="dt">)</span>
+
+<span class="va">X</span><span class="dt">,</span> <span class="va">y</span> <span class="dt">=</span> <span class="fn">make_classification</span><span class="dt">(</span><span class="va">n_samples</span><span class="dt">=</span><span class="nm">200</span><span class="dt">,</span> <span class="va">random_state</span><span class="dt">=</span><span class="nm">42</span><span class="dt">)</span>
+<span class="va">clf</span> <span class="dt">=</span> <span class="tp">LogisticRegression</span><span class="dt">().</span><span class="fn">fit</span><span class="dt">(</span><span class="va">X</span><span class="dt">,</span> <span class="va">y</span><span class="dt">)</span>
+
+<span class="va">eval_scores</span> <span class="dt">=</span> <span class="dt">{</span>
+    <span class="st">"accuracy"</span><span class="dt">:</span> <span class="nm">0.923</span><span class="dt">,</span>
+    <span class="st">"f1"</span><span class="dt">:</span> <span class="nm">0.918</span><span class="dt">,</span>
+    <span class="st">"ragas_faithfulness"</span><span class="dt">:</span> <span class="nm">0.87</span><span class="dt">,</span>
+<span class="dt">}</span>
+
+<span class="kw">with</span> <span class="va">mlflow</span><span class="dt">.</span><span class="fn">start_run</span><span class="dt">(</span><span class="va">run_name</span><span class="dt">=</span><span class="st">"artifact-demo"</span><span class="dt">):</span>
+    <span class="cm"># TODO: log eval_scores as a dict artifact at "scores/eval.json"</span>
+    <span class="dt">...</span>
+
+    <span class="cm"># TODO: log a text summary</span>
+    <span class="va">summary</span> <span class="dt">=</span> <span class="bi">f</span><span class="st">"Best accuracy: {eval_scores['accuracy']}"</span>
+    <span class="dt">...</span>
+
+    <span class="cm"># TODO: log the sklearn model under artifact path "classifier"</span>
+    <span class="dt">...</span>
+
+    <span class="cm"># TODO: print artifact URI</span>
+    <span class="fn">print</span><span class="dt">(</span><span class="st">"Artifact URI:"</span><span class="dt">,</span> <span class="dt">...)</span>
+
+    <span class="cm"># Log all metrics from the dict</span>
+    <span class="va">mlflow</span><span class="dt">.</span><span class="fn">log_metrics</span><span class="dt">(</span><span class="va">eval_scores</span><span class="dt">)</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex2-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t2-1">T1</span><div class="test-content"><div class="test-input">artifacts = client.list_artifacts(run_id)<br>any(a.path == "scores/eval.json" for a in artifacts)</div><div class="test-expected">→ True (dict artifact saved)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t2-2">T2</span><div class="test-content"><div class="test-input">run.data.metrics["accuracy"]</div><div class="test-expected">→ 0.923</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t2-3">T3</span><div class="test-content"><div class="test-input">any("classifier" in a.path for a in client.list_artifacts(run_id))</div><div class="test-expected">→ True (model artifact exists)</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(2)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex2-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — log_dict vs log_artifact</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>mlflow.log_dict({"key": "val"}, "path/file.json")</code> is in-memory — no temp file needed. <code>mlflow.log_artifact("local_file.json")</code> uploads an existing file.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — Logging the artifact URI</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>mlflow.get_artifact_uri()</code> returns the root artifact directory for the active run. Pass a path like <code>mlflow.get_artifact_uri("classifier")</code> for a specific artifact.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 3: MODEL REGISTRY ========== -->
+<section class="exercise" id="ex3">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 3 of 5</div>
+      <h2>Model Registry & Staging</h2>
+      <p>Register a model version, promote it through Staging → Production, and load it by alias.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot3"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex3','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex3','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex3','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex3','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex3-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Register a model and manage its lifecycle:</p>
+      <ul>
+        <li>Register a logged model with <code style="font-family:'JetBrains Mono',monospace;">mlflow.register_model(model_uri, "MyLLM")</code></li>
+        <li>Use <code style="font-family:'JetBrains Mono',monospace;">MlflowClient</code> to transition version to "Staging" with <code style="font-family:'JetBrains Mono',monospace;">transition_model_version_stage()</code></li>
+        <li>Add a model description and version description via client</li>
+        <li>Load the model by stage alias: <code style="font-family:'JetBrains Mono',monospace;">mlflow.sklearn.load_model("models:/MyLLM/Staging")</code></li>
+        <li>List all registered model versions with <code style="font-family:'JetBrains Mono',monospace;">client.get_registered_model("MyLLM").latest_versions</code></li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(3)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex3-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        <span>day18_ex3_registry.py</span>
+        <span># pip install mlflow scikit-learn</span>
+      </div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span><span>31</span><span>32</span><span>33</span><span>34</span></div>
+        <div class="code-content"><span class="cm"># pip install mlflow scikit-learn</span>
+<span class="kw">import</span> <span class="va">mlflow</span>
+<span class="kw">from</span> <span class="va">mlflow.tracking</span> <span class="kw">import</span> <span class="tp">MlflowClient</span>
+<span class="kw">from</span> <span class="va">sklearn.linear_model</span> <span class="kw">import</span> <span class="tp">LogisticRegression</span>
+<span class="kw">from</span> <span class="va">sklearn.datasets</span> <span class="kw">import</span> <span class="fn">make_classification</span>
+
+<span class="va">mlflow</span><span class="dt">.</span><span class="fn">set_experiment</span><span class="dt">(</span><span class="st">"day18-exercises"</span><span class="dt">)</span>
+<span class="va">client</span> <span class="dt">=</span> <span class="tp">MlflowClient</span><span class="dt">()</span>
+
+<span class="cm"># Train and log a model</span>
+<span class="va">X</span><span class="dt">,</span> <span class="va">y</span> <span class="dt">=</span> <span class="fn">make_classification</span><span class="dt">(</span><span class="va">random_state</span><span class="dt">=</span><span class="nm">0</span><span class="dt">)</span>
+<span class="va">clf</span> <span class="dt">=</span> <span class="tp">LogisticRegression</span><span class="dt">().</span><span class="fn">fit</span><span class="dt">(</span><span class="va">X</span><span class="dt">,</span> <span class="va">y</span><span class="dt">)</span>
+
+<span class="kw">with</span> <span class="va">mlflow</span><span class="dt">.</span><span class="fn">start_run</span><span class="dt">()</span> <span class="kw">as</span> <span class="va">run</span><span class="dt">:</span>
+    <span class="va">mlflow</span><span class="dt">.</span><span class="va">sklearn</span><span class="dt">.</span><span class="fn">log_model</span><span class="dt">(</span><span class="va">clf</span><span class="dt">,</span> <span class="st">"model"</span><span class="dt">)</span>
+    <span class="va">model_uri</span> <span class="dt">=</span> <span class="bi">f</span><span class="st">"runs:/{run.info.run_id}/model"</span>
+
+<span class="cm"># TODO: register the model as "MyClassifier"</span>
+<span class="va">mv</span> <span class="dt">=</span> <span class="dt">...</span>
+<span class="fn">print</span><span class="dt">(</span><span class="bi">f</span><span class="st">"Registered version: {mv.version}"</span><span class="dt">)</span>
+
+<span class="cm"># TODO: transition to Staging</span>
+<span class="va">client</span><span class="dt">.</span><span class="fn">transition_model_version_stage</span><span class="dt">(</span>
+    <span class="cm"># TODO: name, version, stage="Staging"</span>
+<span class="dt">)</span>
+
+<span class="cm"># TODO: add description to this version</span>
+<span class="dt">...</span>
+
+<span class="cm"># TODO: load by stage</span>
+<span class="va">staged_model</span> <span class="dt">=</span> <span class="dt">...</span>
+<span class="fn">print</span><span class="dt">(</span><span class="st">"Loaded from Staging:"</span><span class="dt">,</span> <span class="fn">type</span><span class="dt">(</span><span class="va">staged_model</span><span class="dt">).</span><span class="va">__name__</span><span class="dt">)</span></div>
+      </div>
+    </div>
+    <div class="info-box purple"><strong>Registry stages (legacy):</strong> Staging → Production → Archived. MLflow 2.x+ also supports aliases (e.g., <code style="font-family:'JetBrains Mono',monospace;background:rgba(124,58,237,0.15);padding:1px 5px;border-radius:3px;color:var(--purple-light);">@champion</code>) which are more flexible. For LLM workflows, use the registry to tie specific checkpoints to deployment slots.</div>
+  </div>
+
+  <div class="tab-panel" id="ex3-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t3-1">T1</span><div class="test-content"><div class="test-input">client.get_registered_model("MyClassifier").name</div><div class="test-expected">→ "MyClassifier"</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t3-2">T2</span><div class="test-content"><div class="test-input">client.get_model_version("MyClassifier", mv.version).current_stage</div><div class="test-expected">→ "Staging"</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t3-3">T3</span><div class="test-content"><div class="test-input">staged_model.predict(X[:3]).shape</div><div class="test-expected">→ (3,) — loaded model works</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(3)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex3-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — register_model</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>mv = mlflow.register_model(model_uri, "MyClassifier")</code>. Returns a <code>ModelVersion</code> object with <code>.version</code> integer.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — Loading by stage</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>mlflow.sklearn.load_model("models:/MyClassifier/Staging")</code>. The URI format is <code>models:/&lt;name&gt;/&lt;stage_or_version&gt;</code>.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 4: COMPARE RUNS ========== -->
+<section class="exercise" id="ex4">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 4 of 5</div>
+      <h2>Querying & Comparing Runs with MlflowClient</h2>
+      <p>Search runs programmatically, filter by metric threshold, and identify the best-performing experiment.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot4"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex4','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex4','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex4','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex4','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex4-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Use MlflowClient to search and rank experiments:</p>
+      <ul>
+        <li>Create 5 runs with random <code style="font-family:'JetBrains Mono',monospace;">val_loss</code> values using a loop</li>
+        <li>Use <code style="font-family:'JetBrains Mono',monospace;">mlflow.search_runs(experiment_names=["..."])</code> which returns a Pandas DataFrame</li>
+        <li>Filter runs where <code style="font-family:'JetBrains Mono',monospace;">metrics.val_loss &lt; 1.5</code> using the <code style="font-family:'JetBrains Mono',monospace;">filter_string</code> argument</li>
+        <li>Sort the DataFrame by <code style="font-family:'JetBrains Mono',monospace;">metrics.val_loss</code> and print the best run's <code style="font-family:'JetBrains Mono',monospace;">run_id</code></li>
+        <li>Use <code style="font-family:'JetBrains Mono',monospace;">client.get_metric_history(run_id, "train_loss")</code> to fetch all step values</li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(4)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex4-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        <span>day18_ex4_compare_runs.py</span>
+        <span># pip install mlflow pandas</span>
+      </div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span></div>
+        <div class="code-content"><span class="cm"># pip install mlflow pandas</span>
+<span class="kw">import</span> <span class="va">mlflow</span>
+<span class="kw">from</span> <span class="va">mlflow.tracking</span> <span class="kw">import</span> <span class="tp">MlflowClient</span>
+<span class="kw">import</span> <span class="va">random</span>
+
+<span class="va">EXPERIMENT</span> <span class="dt">=</span> <span class="st">"compare-demo"</span>
+<span class="va">mlflow</span><span class="dt">.</span><span class="fn">set_experiment</span><span class="dt">(</span><span class="va">EXPERIMENT</span><span class="dt">)</span>
+<span class="va">client</span> <span class="dt">=</span> <span class="tp">MlflowClient</span><span class="dt">()</span>
+
+<span class="cm"># Create 5 runs with random hyperparams and losses</span>
+<span class="kw">for</span> <span class="va">i</span> <span class="kw">in</span> <span class="fn">range</span><span class="dt">(</span><span class="nm">5</span><span class="dt">):</span>
+    <span class="va">lr</span> <span class="dt">=</span> <span class="fn">random</span><span class="dt">.</span><span class="fn">choice</span><span class="dt">([</span><span class="nm">1e-4</span><span class="dt">,</span> <span class="nm">5e-4</span><span class="dt">,</span> <span class="nm">1e-3</span><span class="dt">])</span>
+    <span class="kw">with</span> <span class="va">mlflow</span><span class="dt">.</span><span class="fn">start_run</span><span class="dt">(</span><span class="va">run_name</span><span class="dt">=</span><span class="bi">f</span><span class="st">"run-{i}"</span><span class="dt">):</span>
+        <span class="va">mlflow</span><span class="dt">.</span><span class="fn">log_param</span><span class="dt">(</span><span class="st">"lr"</span><span class="dt">,</span> <span class="va">lr</span><span class="dt">)</span>
+        <span class="va">mlflow</span><span class="dt">.</span><span class="fn">log_metric</span><span class="dt">(</span><span class="st">"val_loss"</span><span class="dt">,</span> <span class="fn">round</span><span class="dt">(</span><span class="fn">random</span><span class="dt">.</span><span class="fn">uniform</span><span class="dt">(</span><span class="nm">0.8</span><span class="dt">,</span> <span class="nm">2.5</span><span class="dt">),</span> <span class="nm">3</span><span class="dt">))</span>
+        <span class="kw">for</span> <span class="va">s</span> <span class="kw">in</span> <span class="fn">range</span><span class="dt">(</span><span class="nm">5</span><span class="dt">):</span>
+            <span class="va">mlflow</span><span class="dt">.</span><span class="fn">log_metric</span><span class="dt">(</span><span class="st">"train_loss"</span><span class="dt">,</span> <span class="nm">3.0</span> <span class="dt">-</span> <span class="va">s</span> <span class="dt">*</span> <span class="nm">0.4</span><span class="dt">,</span> <span class="va">step</span><span class="dt">=</span><span class="va">s</span><span class="dt">)</span>
+
+<span class="cm"># TODO: search all runs in EXPERIMENT</span>
+<span class="va">df</span> <span class="dt">=</span> <span class="va">mlflow</span><span class="dt">.</span><span class="fn">search_runs</span><span class="dt">(</span>
+    <span class="va">experiment_names</span><span class="dt">=[</span><span class="va">EXPERIMENT</span><span class="dt">],</span>
+    <span class="cm"># TODO: filter_string for val_loss &lt; 1.5</span>
+<span class="dt">)</span>
+<span class="fn">print</span><span class="dt">(</span><span class="va">df</span><span class="dt">[[</span><span class="st">"run_id"</span><span class="dt">,</span> <span class="st">"metrics.val_loss"</span><span class="dt">,</span> <span class="st">"params.lr"</span><span class="dt">]].</span><span class="fn">sort_values</span><span class="dt">(</span><span class="st">"metrics.val_loss"</span><span class="dt">))</span>
+
+<span class="cm"># TODO: get metric history for best run</span>
+<span class="va">best_run_id</span> <span class="dt">=</span> <span class="va">df</span><span class="dt">.</span><span class="fn">sort_values</span><span class="dt">(</span><span class="st">"metrics.val_loss"</span><span class="dt">).</span><span class="va">iloc</span><span class="dt">[</span><span class="nm">0</span><span class="dt">][</span><span class="st">"run_id"</span><span class="dt">]</span>
+<span class="va">history</span> <span class="dt">=</span> <span class="dt">...</span>
+<span class="fn">print</span><span class="dt">(</span><span class="st">"Train loss history:"</span><span class="dt">,</span> <span class="dt">[</span><span class="va">m</span><span class="dt">.</span><span class="va">value</span> <span class="kw">for</span> <span class="va">m</span> <span class="kw">in</span> <span class="va">history</span><span class="dt">])</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex4-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t4-1">T1</span><div class="test-content"><div class="test-input">isinstance(df, __import__("pandas").DataFrame)</div><div class="test-expected">→ True (search_runs returns DataFrame)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t4-2">T2</span><div class="test-content"><div class="test-input">all(df["metrics.val_loss"] &lt; 1.5)</div><div class="test-expected">→ True (filter applied correctly)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t4-3">T3</span><div class="test-content"><div class="test-input">len(history) == 5</div><div class="test-expected">→ True (5 steps logged)</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(4)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex4-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — filter_string syntax</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>filter_string="metrics.val_loss < 1.5"</code>. You can combine: <code>"metrics.val_loss < 1.5 AND params.lr = '0.0001'"</code>. Note param values are always strings.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — get_metric_history</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>history = client.get_metric_history(best_run_id, "train_loss")</code>. Returns a list of <code>Metric</code> objects with <code>.value</code>, <code>.step</code>, <code>.timestamp</code>.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== EXERCISE 5: LANGSMITH ========== -->
+<section class="exercise" id="ex5">
+  <div class="exercise-header">
+    <div>
+      <div class="exercise-num">Exercise 5 of 5</div>
+      <h2>LangSmith Tracing for LLM Runs</h2>
+      <p>Automatically trace every LLM call, chain, and RAG pipeline to LangSmith for debugging and evaluation.</p>
+    </div>
+    <div class="ex-status"><span class="status-dot" id="dot5"></span><span style="font-size:0.78rem;color:var(--muted)">Completed</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('ex5','task')">Your Task</button>
+    <button class="tab-btn" onclick="showTab('ex5','code')">Starter Code</button>
+    <button class="tab-btn" onclick="showTab('ex5','tests')">Test Cases</button>
+    <button class="tab-btn" onclick="showTab('ex5','hints')">Hints</button>
+  </div>
+
+  <div class="tab-panel active" id="ex5-task">
+    <div class="section-label yellow">Your Task</div>
+    <div class="task-requirements">
+      <p style="font-weight:700;margin-bottom:8px;color:var(--yellow);">Instrument LLM calls with LangSmith tracing:</p>
+      <ul>
+        <li>Set <code style="font-family:'JetBrains Mono',monospace;">LANGCHAIN_TRACING_V2=true</code> and <code style="font-family:'JetBrains Mono',monospace;">LANGCHAIN_API_KEY</code> env vars</li>
+        <li>Use the <code style="font-family:'JetBrains Mono',monospace;">@traceable</code> decorator from <code style="font-family:'JetBrains Mono',monospace;">langsmith</code> to trace any Python function</li>
+        <li>Pass metadata like <code style="font-family:'JetBrains Mono',monospace;">run_type="llm"</code> and <code style="font-family:'JetBrains Mono',monospace;">name="my-rag-pipeline"</code></li>
+        <li>Wrap an Ollama call in a traceable function and verify the trace appears in the LangSmith UI</li>
+        <li>Use <code style="font-family:'JetBrains Mono',monospace;">langsmith.Client()</code> to list recent runs from the project</li>
+      </ul>
+    </div>
+    <button class="animate-btn" onclick="markDone(5)">Mark as Completed ✓</button>
+  </div>
+
+  <div class="tab-panel" id="ex5-code">
+    <div class="section-label purple">Starter Code</div>
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+        <span>day18_ex5_langsmith.py</span>
+        <span># pip install langsmith ollama</span>
+      </div>
+      <div class="code-body">
+        <div class="line-nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span></div>
+        <div class="code-content"><span class="cm"># pip install langsmith ollama</span>
+<span class="cm"># export LANGCHAIN_TRACING_V2=true</span>
+<span class="cm"># export LANGCHAIN_API_KEY=ls__...</span>
+<span class="cm"># export LANGCHAIN_PROJECT=day18-experiments</span>
+<span class="kw">import</span> <span class="va">os</span>
+<span class="kw">from</span> <span class="va">langsmith</span> <span class="kw">import</span> <span class="fn">traceable</span>
+<span class="kw">import</span> <span class="va">ollama</span>
+
+<span class="cm"># Every call to this function is automatically traced</span>
+<span class="dt">@</span><span class="fn">traceable</span><span class="dt">(</span><span class="va">run_type</span><span class="dt">=</span><span class="st">"llm"</span><span class="dt">,</span> <span class="va">name</span><span class="dt">=</span><span class="st">"ollama-call"</span><span class="dt">)</span>
+<span class="kw">def</span> <span class="fn">llm_call</span><span class="dt">(</span><span class="va">prompt</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">str</span><span class="dt">:</span>
+    <span class="va">response</span> <span class="dt">=</span> <span class="va">ollama</span><span class="dt">.</span><span class="fn">chat</span><span class="dt">(</span>
+        <span class="va">model</span><span class="dt">=</span><span class="st">"llama3.2:1b"</span><span class="dt">,</span>
+        <span class="va">messages</span><span class="dt">=[{</span><span class="st">"role"</span><span class="dt">:</span> <span class="st">"user"</span><span class="dt">,</span> <span class="st">"content"</span><span class="dt">:</span> <span class="va">prompt</span><span class="dt">}]</span>
+    <span class="dt">)</span>
+    <span class="kw">return</span> <span class="va">response</span><span class="dt">[</span><span class="st">"message"</span><span class="dt">][</span><span class="st">"content"</span><span class="dt">]</span>
+
+<span class="cm"># TODO: create a traceable RAG pipeline function that calls llm_call</span>
+<span class="dt">@</span><span class="fn">traceable</span><span class="dt">(</span><span class="va">name</span><span class="dt">=</span><span class="st">"rag-pipeline"</span><span class="dt">)</span>
+<span class="kw">def</span> <span class="fn">rag_answer</span><span class="dt">(</span><span class="va">question</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">,</span> <span class="va">context</span><span class="dt">:</span> <span class="tp">str</span><span class="dt">)</span> <span class="dt">-></span> <span class="tp">str</span><span class="dt">:</span>
+    <span class="cm"># TODO: build a prompt from context+question, call llm_call, return answer</span>
+    <span class="dt">...</span>
+
+<span class="cm"># Run it</span>
+<span class="va">answer</span> <span class="dt">=</span> <span class="fn">rag_answer</span><span class="dt">(</span>
+    <span class="st">"What is the capital of France?"</span><span class="dt">,</span>
+    <span class="st">"France is a country in Europe. Its capital city is Paris."</span>
+<span class="dt">)</span>
+<span class="fn">print</span><span class="dt">(</span><span class="st">"Answer:"</span><span class="dt">,</span> <span class="va">answer</span><span class="dt">)</span>
+<span class="fn">print</span><span class="dt">(</span><span class="st">"Check traces at: https://smith.langchain.com"</span><span class="dt">)</span></div>
+      </div>
+    </div>
+    <div class="info-box teal"><strong>@traceable vs auto-tracing:</strong> LangChain/LangGraph calls are auto-traced when <code style="font-family:'JetBrains Mono',monospace;background:rgba(13,148,136,0.15);padding:1px 5px;border-radius:3px;color:#2dd4bf;">LANGCHAIN_TRACING_V2=true</code>. For custom code (Ollama, raw API calls), use <code style="font-family:'JetBrains Mono',monospace;background:rgba(13,148,136,0.15);padding:1px 5px;border-radius:3px;color:#2dd4bf;">@traceable</code>. Both send to the same LangSmith project.</div>
+  </div>
+
+  <div class="tab-panel" id="ex5-tests">
+    <div class="section-label green">Test Cases</div>
+    <div class="tests-grid">
+      <div class="test-case"><span class="test-badge pending" id="t5-1">T1</span><div class="test-content"><div class="test-input">isinstance(llm_call("test"), str)</div><div class="test-expected">→ True (returns string)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t5-2">T2</span><div class="test-content"><div class="test-input">answer = rag_answer("test question", "test context")<br>len(answer) &gt; 0</div><div class="test-expected">→ True (non-empty answer)</div></div></div>
+      <div class="test-case"><span class="test-badge pending" id="t5-3">T3</span><div class="test-content"><div class="test-input"># In LangSmith UI: project "day18-experiments" shows 2 traces<br># (rag-pipeline wrapping ollama-call)</div><div class="test-expected">→ Nested traces visible in UI</div></div></div>
+    </div>
+    <div style="margin-top:16px;"><button class="animate-btn" onclick="runTests(5)">▶ Run All Tests</button></div>
+  </div>
+
+  <div class="tab-panel" id="ex5-hints">
+    <div class="section-label purple">Progressive Hints</div>
+    <div class="hints-list">
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 1 — rag_answer implementation</span><span class="arrow">▶</span></button>
+        <div class="hint-body"><code>prompt = f"Context: {context}\n\nQuestion: {question}\nAnswer:"</code> then <code>return llm_call(prompt)</code>. LangSmith will show rag-pipeline as parent and ollama-call as child span.</div>
+      </div>
+      <div class="hint-item">
+        <button class="hint-toggle" onclick="toggleHint(this)"><span>Hint 2 — No LangSmith account?</span><span class="arrow">▶</span></button>
+        <div class="hint-body">Skip the tracing — just implement the functions without <code>@traceable</code>. The exercise logic is identical; tracing is the observability layer on top. LangSmith has a free tier at smith.langchain.com.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <p>Day 18 of 30 — <a href="../index.html">Back to curriculum</a> · <a href="day19_exercises.html">Next: MLOps Pipelines →</a></p>
+</footer>
+
+<script>
+let completedCount = 0;
+const totalExercises = 5;
+function markDone(n) {
+  const dot = document.getElementById('dot' + n);
+  if (dot && !dot.classList.contains('done')) {
+    dot.classList.add('done');
+    completedCount++;
+    document.getElementById('progress-text').textContent = completedCount + ' / ' + totalExercises + ' completed';
+    document.getElementById('progress-fill').style.width = (completedCount / totalExercises * 100) + '%';
+  }
+}
+function showTab(exId, tabName) {
+  document.querySelectorAll('#' + exId + ' .tab-panel').forEach(p => { p.classList.toggle('active', p.id === exId + '-' + tabName); });
+  document.querySelectorAll('#' + exId + ' .tab-btn').forEach(b => { b.classList.toggle('active', b.getAttribute('onclick') && b.getAttribute('onclick').includes("'" + tabName + "'")); });
+}
+function toggleHint(btn) {
+  btn.classList.toggle('open');
+  const body = btn.nextElementSibling;
+  body.style.display = body.style.display === 'block' ? 'none' : 'block';
+}
+function runTests(exNum) {
+  const tests = document.querySelectorAll('#ex' + exNum + '-tests .test-badge');
+  tests.forEach((badge, i) => { setTimeout(() => { badge.className = 'test-badge pass'; badge.textContent = '✓ T' + (i + 1); }, i * 300); });
+}
+</script>
+<script src="../bg-animation.js"></script>
+</body>
+</html>
