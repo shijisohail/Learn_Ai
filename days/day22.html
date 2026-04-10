@@ -24,218 +24,234 @@ body::before {
 }
 .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
 
+/* ── PROGRESS BAR ── */
+#progress-bar {
+  position: fixed; top: 0; left: 0; height: 3px; width: 0%;
+  background: linear-gradient(90deg, var(--purple), var(--teal));
+  z-index: 9999; transition: width 0.1s linear;
+}
+
+/* ── KEYFRAMES ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(32px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 12px rgba(124,58,237,0.3); }
+  50%       { box-shadow: 0 0 28px rgba(124,58,237,0.7); }
+}
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.04); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+@keyframes gradientShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes branchGrow {
+  from { stroke-dashoffset: 200; opacity: 0; }
+  to   { stroke-dashoffset: 0;   opacity: 1; }
+}
+
+/* ── SCROLL ANIMATIONS ── */
+.reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.6s ease, transform 0.6s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+.reveal-left { opacity: 0; transform: translateX(-28px); transition: opacity 0.6s ease, transform 0.6s ease; }
+.reveal-left.visible { opacity: 1; transform: translateX(0); }
+
 nav {
   position: sticky; top: 0; z-index: 100;
   border-bottom: 1px solid var(--border);
-  background: rgba(10,10,15,0.9);
-  backdrop-filter: blur(12px);
+  background: rgba(10,10,15,0.92);
+  backdrop-filter: blur(16px);
   padding: 0;
 }
 .nav-inner {
   max-width: 1100px; margin: 0 auto; padding: 0 24px;
-  height: 52px;
-  display: flex; align-items: center; justify-content: space-between;
+  height: 52px; display: flex; align-items: center; justify-content: space-between;
 }
 .nav-btn {
   padding: 7px 18px; border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--surface2); color: var(--muted);
-  font-size: 13px; font-weight: 600;
-  text-decoration: none; transition: all 0.2s;
+  border: 1px solid var(--border); background: var(--surface2); color: var(--muted);
+  font-size: 13px; font-weight: 600; text-decoration: none; transition: all 0.2s;
   font-family: inherit; cursor: pointer;
 }
 .nav-btn:hover { border-color: var(--purple); color: var(--text); }
-.nav-btn.next {
-  border-color: rgba(124,58,237,0.5);
-  color: var(--purple-light);
-}
-.nav-btn.next:hover {
-  background: var(--purple); color: white; border-color: var(--purple);
-}
-.nav-btn.complete {
-  border-color: rgba(245,158,11,0.5);
-  color: var(--yellow);
-}
-.nav-btn.complete:hover {
-  background: var(--yellow); color: #0a0a0f; border-color: var(--yellow);
-}
-.nav-btn.complete.done {
-  background: var(--yellow); color: #0a0a0f; border-color: var(--yellow);
-}
-.nav-brand {
-  font-size: 14px; font-weight: 700; color: var(--muted);
-  text-decoration: none; letter-spacing: -0.2px;
-  transition: color 0.2s;
-}
+.nav-btn.next { border-color: rgba(124,58,237,0.5); color: var(--purple-light); }
+.nav-btn.next:hover { background: var(--purple); color: white; border-color: var(--purple); }
+.nav-btn.complete { border-color: rgba(245,158,11,0.5); color: var(--yellow); }
+.nav-btn.complete:hover { background: var(--yellow); color: #0a0a0f; }
+.nav-btn.complete.done { background: var(--yellow); color: #0a0a0f; }
+.nav-brand { font-size: 14px; font-weight: 700; color: var(--muted); text-decoration: none; transition: color 0.2s; }
 .nav-brand:hover { color: var(--text); }
 
-.day-hero { padding: 56px 0 40px; }
-.day-num { font-size: 12px; font-weight: 700; color: var(--purple-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
-.day-hero h1 { font-size: clamp(32px, 5vw, 56px); font-weight: 900; letter-spacing: -2px; margin-bottom: 16px; }
-.day-hero p { font-size: 17px; color: var(--muted); max-width: 600px; line-height: 1.6; margin-bottom: 28px; }
-.topic-pills { display: flex; flex-wrap: wrap; gap: 8px; }
-.topic-pill { padding: 5px 12px; border-radius: 20px; background: var(--surface2); border: 1px solid var(--border); font-size: 12px; color: var(--muted); font-weight: 500; }
+/* ── HERO ── */
+.day-hero { padding: 72px 0 48px; }
+.day-num { font-size: 12px; font-weight: 700; color: var(--purple-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; animation: slideIn 0.6s ease both; }
+.day-hero h1 {
+  font-size: clamp(36px, 5.5vw, 62px); font-weight: 900; letter-spacing: -2px; margin-bottom: 18px;
+  background: linear-gradient(135deg, #fff 0%, #a855f7 40%, #0d9488 100%);
+  background-size: 200% 200%;
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  animation: gradientShift 4s ease infinite, fadeUp 0.7s ease both 0.1s;
+}
+.day-hero p { font-size: 17px; color: var(--muted); max-width: 620px; line-height: 1.7; margin-bottom: 28px; animation: fadeUp 0.7s ease both 0.2s; }
+.topic-pills { display: flex; flex-wrap: wrap; gap: 8px; animation: fadeUp 0.7s ease both 0.3s; }
+.topic-pill { padding: 5px 12px; border-radius: 20px; background: var(--surface2); border: 1px solid var(--border); font-size: 12px; color: var(--muted); font-weight: 500; transition: all 0.2s; }
+.topic-pill:hover { border-color: var(--purple); color: var(--purple-light); }
 
-.section { padding: 56px 0; border-top: 1px solid var(--border); }
-.section-header { margin-bottom: 32px; }
+/* ── SECTIONS ── */
+.section { padding: 64px 0; border-top: 1px solid var(--border); }
+.section-header { margin-bottom: 36px; }
 .section-num { font-size: 11px; font-weight: 700; color: var(--purple-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
-.section-header h2 { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 10px; }
-.section-header p { color: var(--muted); font-size: 15px; line-height: 1.6; max-width: 640px; }
+.section-header h2 { font-size: 30px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 12px; }
+.section-header p { color: var(--muted); font-size: 15px; line-height: 1.7; max-width: 680px; }
 
-/* CODE BLOCKS — white-space: pre is REQUIRED */
+/* ── CODE ── */
 .code-block {
   background: #0d1117; border: 1px solid #30363d; border-radius: 12px;
   padding: 24px; font-family: var(--mono); font-size: 12.5px; line-height: 1.8;
   overflow-x: auto; white-space: pre;
 }
-.code-wrap { position: relative; margin-top: 16px; }
+.code-wrap { position: relative; margin-top: 20px; border-radius: 14px; }
 .code-label { position: absolute; top: -10px; left: 16px; background: var(--purple); color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.5px; }
-.c-cmt { color: #8b949e; }
-.c-kw { color: #ff7b72; }
-.c-fn { color: #d2a8ff; }
-.c-str { color: #a5d6ff; }
-.c-type { color: #ffa657; }
-.c-num { color: #f2cc60; }
-.c-bi { color: #79c0ff; }
-.c-dec { color: #ffa657; }
+.win-chrome { background: #1c1c28; border: 1px solid #30363d; border-radius: 12px 12px 0 0; padding: 10px 16px; display: flex; gap: 6px; align-items: center; }
+.win-dot { width: 12px; height: 12px; border-radius: 50%; }
+.win-dot.r { background: #ef4444; } .win-dot.y { background: #f59e0b; } .win-dot.g { background: #10b981; }
+.win-chrome + .code-block { border-radius: 0 0 12px 12px; border-top: none; }
+.c-cmt { color: #8b949e; } .c-kw { color: #ff7b72; } .c-fn { color: #d2a8ff; }
+.c-str { color: #a5d6ff; } .c-type { color: #ffa657; } .c-num { color: #f2cc60; }
+.c-bi { color: #79c0ff; } .c-dec { color: #ffa657; }
 
-/* DECISION TRIANGLE */
-.triangle-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 20px; }
-.tri-card {
-  background: var(--card); border: 1px solid var(--border); border-radius: 14px;
-  padding: 20px; text-align: center; position: relative; overflow: hidden;
-  transition: all 0.2s;
+/* ── CARDS ── */
+.card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+  padding: 24px; transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
-.tri-card:hover { transform: translateY(-3px); }
-.tri-card.active-prompting { border-color: rgba(16,185,129,0.5); }
-.tri-card.active-rag { border-color: rgba(13,148,136,0.5); }
-.tri-card.active-finetune { border-color: rgba(168,85,247,0.5); }
-.tri-icon { font-size: 32px; margin-bottom: 10px; }
-.tri-title { font-size: 15px; font-weight: 800; margin-bottom: 8px; }
-.tri-when { font-size: 11px; color: var(--muted); line-height: 1.5; margin-bottom: 10px; }
-.tri-cost { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 20px; }
-.cost-low { background: rgba(16,185,129,0.15); color: var(--green); }
-.cost-mid { background: rgba(13,148,136,0.15); color: var(--teal); }
-.cost-high { background: rgba(168,85,247,0.15); color: var(--purple-light); }
+.card:hover { transform: translateY(-6px); border-color: var(--purple); box-shadow: 0 0 24px rgba(124,58,237,0.25); }
+.card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
 
-/* FLOW DIAGRAM */
-.flow-diagram { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; overflow-x: auto; }
-.flow-row { display: flex; align-items: center; gap: 0; justify-content: center; flex-wrap: wrap; gap: 4px; }
-.flow-box {
-  background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
-  padding: 12px 16px; text-align: center; min-width: 120px;
+/* ── CALLOUTS ── */
+.callout {
+  background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.3);
+  border-radius: 12px; padding: 18px 22px; display: flex; gap: 14px; align-items: flex-start; margin: 24px 0;
 }
-.flow-box.highlight { border-color: var(--purple); background: rgba(124,58,237,0.1); }
-.flow-box.result { border-color: var(--green); background: rgba(16,185,129,0.08); }
-.flow-box-title { font-size: 12px; font-weight: 700; margin-bottom: 3px; }
-.flow-box-sub { font-size: 10px; color: var(--muted); }
-.flow-arrow { color: var(--muted); font-size: 18px; padding: 0 6px; }
-.flow-plus { color: var(--yellow); font-size: 20px; font-weight: 800; padding: 0 8px; }
+.callout.teal { background: rgba(13,148,136,0.07); border-color: rgba(13,148,136,0.3); }
+.callout.red { background: rgba(239,68,68,0.07); border-color: rgba(239,68,68,0.3); }
+.callout.info { background: rgba(124,58,237,0.07); border-color: rgba(124,58,237,0.3); }
+.callout-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+.callout-body { font-size: 14px; color: var(--text); line-height: 1.7; }
+.callout-body strong { color: var(--teal); }
+.callout.red .callout-body strong { color: #fca5a5; }
+.callout.info .callout-body strong { color: var(--purple-light); }
+.callout.yellow .callout-body strong { color: var(--yellow); }
 
-/* LORA VISUAL */
-.lora-visual { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-.lora-panel { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 22px; }
-.lora-panel h3 { font-size: 14px; font-weight: 800; margin-bottom: 12px; }
-.param-bar { margin-bottom: 12px; }
-.param-label { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 12px; }
-.param-label span { color: var(--muted); }
-.bar-track { background: var(--surface2); border-radius: 99px; height: 8px; overflow: hidden; }
-.bar-fill { height: 100%; border-radius: 99px; transition: width 1s ease; }
-.bar-full { background: linear-gradient(90deg, var(--red), var(--yellow)); }
-.bar-lora { background: linear-gradient(90deg, var(--green), var(--teal)); }
-.lora-eq { text-align: center; padding: 16px; background: var(--surface2); border-radius: 10px; margin-top: 12px; font-family: var(--mono); font-size: 13px; color: var(--purple-light); }
+/* ── WIDGET ── */
+.widget {
+  background: var(--card); border: 1px solid rgba(124,58,237,0.35); border-radius: 18px;
+  padding: 30px; margin-top: 20px;
+  animation: glow 4s ease-in-out infinite;
+}
+.widget-title { font-size: 17px; font-weight: 800; margin-bottom: 6px; }
+.widget-sub { font-size: 13px; color: var(--muted); margin-bottom: 22px; line-height: 1.6; }
 
-/* COMPARISON TABLE */
-.comp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.comp-table th { background: var(--surface2); padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); border-bottom: 1px solid var(--border); }
-.comp-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 24px; border-radius: 10px;
+  background: linear-gradient(135deg, var(--purple), var(--teal));
+  border: none; color: white; font-size: 14px; font-weight: 700;
+  cursor: pointer; font-family: var(--font); transition: opacity 0.2s, transform 0.2s;
+}
+.btn:hover { opacity: 0.88; transform: translateY(-1px); }
+.btn-sm { padding: 7px 16px; font-size: 12px; border-radius: 8px; }
+
+/* ── TECHNIQUE COMPARATOR ── */
+.tech-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.tech-tab {
+  padding: 8px 18px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface2); color: var(--muted); font-size: 13px; font-weight: 600;
+  cursor: pointer; font-family: var(--font); transition: all 0.2s;
+}
+.tech-tab.active { border-color: var(--purple); color: var(--purple-light); background: rgba(124,58,237,0.12); }
+.tech-output {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px;
+}
+.tech-panel { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+.tech-panel-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 10px; }
+.tech-prompt-box { font-family: var(--mono); font-size: 11.5px; line-height: 1.7; color: var(--text); white-space: pre-wrap; }
+.tech-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
+.badge { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; }
+.badge-green { background: rgba(16,185,129,0.15); color: var(--green); }
+.badge-yellow { background: rgba(245,158,11,0.15); color: var(--yellow); }
+.badge-purple { background: rgba(124,58,237,0.15); color: var(--purple-light); }
+.badge-red { background: rgba(239,68,68,0.15); color: var(--red); }
+
+/* ── ToT SVG TREE ── */
+.tot-container { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; overflow-x: auto; }
+.tot-svg { display: block; margin: 0 auto; }
+.tot-node { cursor: pointer; transition: all 0.2s; }
+.tot-node:hover rect { stroke: var(--purple); stroke-width: 2; }
+.tot-branch-line { stroke: var(--border); stroke-width: 1.5; fill: none; stroke-dasharray: 200; stroke-dashoffset: 200; transition: stroke-dashoffset 0.8s ease, stroke 0.3s ease; }
+.tot-branch-line.drawn { stroke-dashoffset: 0; }
+.tot-branch-line.selected { stroke: var(--purple); }
+.tot-branch-line.pruned { stroke: var(--red); opacity: 0.4; }
+.tot-branch-line.winner { stroke: var(--green); stroke-width: 2.5; }
+.tot-controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+
+/* ── COMPARISON TABLE ── */
+.comp-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 16px; }
+.comp-table th { background: var(--surface2); padding: 12px 14px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); border-bottom: 1px solid var(--border); }
+.comp-table td { padding: 13px 14px; border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.5; font-size: 13px; }
 .comp-table tr:last-child td { border-bottom: none; }
-.comp-table tr:hover td { background: rgba(255,255,255,0.02); }
-.tick { color: var(--green); font-weight: 700; }
-.cross { color: var(--red); font-weight: 700; }
-.partial { color: var(--yellow); font-weight: 700; }
+.comp-table tr:hover td { background: rgba(255,255,255,0.025); }
+.tick { color: var(--green); font-weight: 700; } .cross { color: var(--red); font-weight: 700; } .partial { color: var(--yellow); font-weight: 700; }
 
-/* USE CASES */
-.use-case-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.use-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
-.use-card.good { border-color: rgba(16,185,129,0.3); }
-.use-card.bad { border-color: rgba(239,68,68,0.3); }
-.use-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-.use-icon { font-size: 18px; }
-.use-title { font-size: 13px; font-weight: 700; }
-.use-items { list-style: none; display: flex; flex-direction: column; gap: 6px; }
-.use-items li { font-size: 12px; color: var(--muted); display: flex; align-items: flex-start; gap: 8px; }
-.use-items li::before { content: '•'; color: var(--green); flex-shrink: 0; }
-.use-card.bad .use-items li::before { color: var(--red); }
+/* ── BULLET LIST ── */
+.bullet-list { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+.bullet-list li { list-style: none; font-size: 14px; color: var(--muted); display: flex; align-items: flex-start; gap: 10px; line-height: 1.7; }
+.bullet-list li::before { content: '→'; color: var(--purple-light); flex-shrink: 0; font-weight: 700; margin-top: 1px; }
+.bullet-list li strong { color: var(--text); }
 
-/* PREREQS */
+/* ── EXERCISES ── */
+.ex-list { display: flex; flex-direction: column; gap: 14px; }
+.ex-item { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; display: flex; gap: 16px; transition: border-color 0.2s; }
+.ex-item:hover { border-color: var(--purple); }
+.ex-num { width: 34px; height: 34px; border-radius: 50%; background: rgba(124,58,237,0.15); border: 2px solid var(--purple); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: var(--purple-light); flex-shrink: 0; }
+.ex-body { flex: 1; }
+.ex-title { font-size: 15px; font-weight: 700; margin-bottom: 5px; }
+.ex-desc { font-size: 13px; color: var(--muted); line-height: 1.7; }
+.diff { display: inline-block; margin-top: 8px; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+.diff-easy { background: rgba(16,185,129,0.15); color: var(--green); }
+.diff-med  { background: rgba(245,158,11,0.15); color: var(--yellow); }
+.diff-hard { background: rgba(239,68,68,0.15); color: var(--red); }
+
+/* ── PREREQS ── */
 .prereq-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
 .prereq-chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
 .prereq-day { background: var(--purple); color: white; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; }
 
-/* EXERCISES */
-.ex-list { display: flex; flex-direction: column; gap: 12px; counter-reset: ex; }
-.ex-item { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; display: flex; gap: 14px; counter-increment: ex; }
-.ex-num { width: 32px; height: 32px; border-radius: 50%; background: rgba(124,58,237,0.15); border: 2px solid var(--purple); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: var(--purple-light); flex-shrink: 0; }
-.ex-body { flex: 1; }
-.ex-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
-.ex-desc { font-size: 12px; color: var(--muted); line-height: 1.6; }
-.ex-difficulty { display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; }
-.diff-easy { background: rgba(16,185,129,0.15); color: var(--green); }
-.diff-med { background: rgba(245,158,11,0.15); color: var(--yellow); }
-.diff-hard { background: rgba(239,68,68,0.15); color: var(--red); }
-
-/* CALLOUT */
-.callout { background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.25); border-radius: 12px; padding: 16px 20px; display: flex; gap: 12px; align-items: flex-start; margin: 20px 0; }
-.callout-icon { font-size: 18px; flex-shrink: 0; }
-.callout-text { font-size: 13px; color: var(--text); line-height: 1.6; }
-.callout-text strong { color: var(--yellow); }
-.callout.info { background: rgba(124,58,237,0.07); border-color: rgba(124,58,237,0.25); }
-.callout.info .callout-text strong { color: var(--purple-light); }
-
-/* WIDGET */
-.widget { background: var(--card); border: 1px solid rgba(124,58,237,0.3); border-radius: 16px; padding: 28px; }
-.widget-title { font-size: 16px; font-weight: 800; margin-bottom: 6px; }
-.widget-sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
-
-/* BULLET LIST */
-.bullet-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
-.bullet-list li { list-style: none; font-size: 14px; color: var(--muted); display: flex; align-items: flex-start; gap: 10px; line-height: 1.6; }
-.bullet-list li::before { content: '→'; color: var(--purple-light); flex-shrink: 0; font-weight: 700; }
-
-/* FOOTER */
-footer { padding: 40px 0; border-top: 1px solid var(--border); }
+footer { padding: 48px 0; border-top: 1px solid var(--border); }
 .footer-inner { display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; color: var(--muted); font-size: 13px; }
 .footer-nav { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
 
-/* TECHNIQUE COMPARATOR WIDGET */
-.technique-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px; }
-.technique-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
-.technique-card.active { border-color: var(--purple); background: rgba(124,58,237,0.07); }
-.technique-name { font-size: 14px; font-weight: 800; color: var(--purple-light); margin-bottom: 8px; }
-.technique-prompt { font-family: var(--mono); font-size: 11px; color: var(--text); background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 12px; white-space: pre-wrap; margin-bottom: 10px; line-height: 1.6; }
-.technique-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
-.tech-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
-.tech-benefit { background: rgba(16,185,129,0.15); color: var(--green); }
-.tech-cost { background: rgba(245,158,11,0.15); color: var(--yellow); }
-.widget-textarea { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-family: var(--font); font-size: 13px; color: var(--text); resize: vertical; min-height: 80px; margin-bottom: 12px; }
-.widget-textarea:focus { outline: none; border-color: var(--purple); }
-.radio-group { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
-.radio-label { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; padding: 7px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); transition: all 0.2s; }
-.radio-label:has(input:checked) { border-color: var(--purple); background: rgba(124,58,237,0.1); color: var(--purple-light); }
-.radio-label input { accent-color: var(--purple); }
-.compare-btn { padding: 10px 24px; border-radius: 8px; background: linear-gradient(135deg, var(--purple), var(--teal)); border: none; color: white; font-size: 14px; font-weight: 700; cursor: pointer; font-family: var(--font); transition: opacity 0.2s; }
-.compare-btn:hover { opacity: 0.88; }
-
 @media(max-width:700px) {
-  .triangle-container { grid-template-columns: 1fr; }
-  .lora-visual { grid-template-columns: 1fr; }
-  .use-case-grid { grid-template-columns: 1fr; }
-  .technique-grid { grid-template-columns: 1fr; }
+  .tech-output { grid-template-columns: 1fr; }
+  .card-grid { grid-template-columns: 1fr; }
 }
 </style>
 </head>
 <body data-animation-density="high">
+<div id="progress-bar"></div>
 
 <nav>
   <div class="nav-inner">
@@ -249,7 +265,6 @@ footer { padding: 40px 0; border-top: 1px solid var(--border); }
 </nav>
 
 <div class="container">
-
   <div class="day-hero">
     <div class="day-num">Day 22 — Advanced Prompt Engineering</div>
     <h1>ToT, Self-Consistency,<br>HyDE &amp; Instructor</h1>
@@ -266,389 +281,687 @@ footer { padding: 40px 0; border-top: 1px solid var(--border); }
 
   <!-- SECTION 1: CoT Variants -->
   <div class="section">
-    <div class="section-header">
+    <div class="section-header reveal">
       <div class="section-num">Section 01</div>
       <h2>Chain-of-Thought &amp; Its Variants</h2>
-      <p>CoT unlocks LLM reasoning by making thinking explicit. From simple zero-shot triggers to multi-path majority voting — each variant trades token cost for accuracy.</p>
+      <p>CoT unlocks LLM reasoning by making thinking visible and explicit. From simple zero-shot triggers to multi-path majority voting — each variant trades token cost for measurable accuracy gains. Understanding when to use each variant is as important as knowing how they work.</p>
     </div>
 
-    <ul class="bullet-list">
-      <li><strong>Zero-shot CoT:</strong> "Let's think step by step" — dramatically improves reasoning with no examples</li>
-      <li><strong>Few-shot CoT:</strong> include worked examples with explicit reasoning traces — higher accuracy, higher cost</li>
-      <li><strong>When CoT helps vs hurts:</strong> reasoning tasks (math, logic) benefit; simple factual recall can degrade with unnecessary steps</li>
-      <li><strong>Self-consistency:</strong> sample N CoT paths independently, return the majority vote answer — robust against single-path errors</li>
+    <div class="callout teal reveal">
+      <span class="callout-icon">💡</span>
+      <div class="callout-body"><strong>Why this matters:</strong> Production evals at Google and Anthropic show CoT improves GPT-4 accuracy on MATH benchmark by up to 40 percentage points. Self-consistency adds another 5–10pp on top. For reasoning-heavy tasks, this is not optional — it's table stakes.</div>
+    </div>
+
+    <p style="color:var(--muted);font-size:14px;line-height:1.7;margin:16px 0;" class="reveal">
+      At its core, Chain-of-Thought works because LLMs are autoregressive — each token conditions on all prior tokens. When you force the model to emit reasoning steps, those steps act as scratchpad context that steers subsequent token probabilities toward correct answers. Without explicit reasoning, the model must "collapse" a multi-step derivation into a single token distribution, introducing compression errors.
+    </p>
+    <p style="color:var(--muted);font-size:14px;line-height:1.7;margin:16px 0;" class="reveal">
+      Self-consistency is an ensemble technique applied at inference time: run the same prompt N times with temperature > 0, parse the final answer from each response, and take the majority vote. It exploits the fact that while individual reasoning paths may err, correct answers cluster more consistently than wrong ones.
+    </p>
+
+    <ul class="bullet-list reveal">
+      <li><strong>Zero-shot CoT:</strong> "Let's think step by step" — dramatically improves reasoning with zero examples added</li>
+      <li><strong>Few-shot CoT:</strong> Include worked examples with explicit reasoning traces — higher accuracy, higher prompt cost</li>
+      <li><strong>When CoT helps vs hurts:</strong> reasoning tasks (math, logic, planning) benefit; simple factual recall can degrade with unnecessary steps</li>
+      <li><strong>Self-consistency:</strong> Sample N CoT paths independently, return the majority-vote answer — robust against single-path errors</li>
+      <li><strong>Cost vs accuracy tradeoff:</strong> Self-consistency with N=10 costs 10x tokens but yields near-oracle accuracy on GSM8K</li>
     </ul>
 
-    <div class="code-wrap" style="margin-top:28px;">
-      <span class="code-label">PYTHON</span>
-      <div class="code-block"><span class="c-cmt"># Zero-shot CoT</span>
-<span class="c-fn">response</span> = llm.<span class="c-fn">invoke</span>(<span class="c-str">"""
-Solve step by step:
-
-A store has 50 items. 20% are returned each week.
-New stock of 15 items arrives. After 3 weeks, how many items?
-
-Think through this step by step before giving the final answer.
-"""</span>)
-
-<span class="c-cmt"># Self-consistency: sample 10 paths, majority vote</span>
-<span class="c-kw">import</span> re
+    <div class="code-wrap reveal">
+      <div class="win-chrome"><span class="win-dot r"></span><span class="win-dot y"></span><span class="win-dot g"></span><span style="font-size:11px;color:var(--muted);margin-left:8px;font-family:var(--mono)">cot_sampling.py</span></div>
+      <div class="code-block"><span class="c-kw">import</span> re
 <span class="c-kw">from</span> collections <span class="c-kw">import</span> <span class="c-type">Counter</span>
+<span class="c-kw">from</span> anthropic <span class="c-kw">import</span> <span class="c-type">Anthropic</span>
 
-<span class="c-kw">def</span> <span class="c-fn">self_consistent_answer</span>(question: <span class="c-bi">str</span>, n_samples: <span class="c-bi">int</span> = <span class="c-num">10</span>) -> <span class="c-bi">str</span>:
-    responses = []
-    <span class="c-kw">for</span> _ <span class="c-kw">in</span> <span class="c-fn">range</span>(n_samples):
-        response = llm.<span class="c-fn">invoke</span>(<span class="c-str">f"Solve step by step: {question}\n\nFinal answer:"</span>)
-        <span class="c-cmt"># Extract final numeric answer</span>
-        match = re.<span class="c-fn">search</span>(<span class="c-str">r"Final answer:?\s*(\d+)"</span>, response.content)
-        <span class="c-kw">if</span> match:
-            responses.<span class="c-fn">append</span>(match.<span class="c-fn">group</span>(<span class="c-num">1</span>))
+client = <span class="c-type">Anthropic</span>()
 
-    <span class="c-kw">if</span> responses:
-        <span class="c-kw">return</span> <span class="c-type">Counter</span>(responses).<span class="c-fn">most_common</span>(<span class="c-num">1</span>)[<span class="c-num">0</span>][<span class="c-num">0</span>]
-    <span class="c-kw">return</span> <span class="c-str">"Unable to determine"</span></div>
+<span class="c-kw">def</span> <span class="c-fn">zero_shot_cot</span>(question: <span class="c-bi">str</span>) -> <span class="c-bi">str</span>:
+    <span class="c-str">"""Zero-shot CoT: append the magic trigger phrase."""</span>
+    msg = client.messages.<span class="c-fn">create</span>(
+        model=<span class="c-str">"claude-3-5-sonnet-20241022"</span>,
+        max_tokens=<span class="c-num">1024</span>,
+        messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>,
+                   <span class="c-str">"content"</span>: question + <span class="c-str">"\n\nThink step by step before answering."</span>}]
+    )
+    <span class="c-kw">return</span> msg.content[<span class="c-num">0</span>].text
+
+<span class="c-kw">def</span> <span class="c-fn">self_consistent_answer</span>(question: <span class="c-bi">str</span>, n: <span class="c-bi">int</span> = <span class="c-num">5</span>) -> <span class="c-bi">str</span>:
+    <span class="c-str">"""Sample n independent CoT paths, majority-vote the final answer."""</span>
+    answers = []
+    <span class="c-kw">for</span> _ <span class="c-kw">in</span> <span class="c-fn">range</span>(n):
+        resp = client.messages.<span class="c-fn">create</span>(
+            model=<span class="c-str">"claude-3-5-sonnet-20241022"</span>,
+            max_tokens=<span class="c-num">800</span>,
+            <span class="c-cmt"># temperature > 0 gives diverse paths</span>
+            messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>,
+                       <span class="c-str">"content"</span>: question + <span class="c-str">"\n\nThink step by step. End with 'Answer: &lt;value&gt;'."</span>}]
+        )
+        text = resp.content[<span class="c-num">0</span>].text
+        <span class="c-cmt"># extract final answer from response</span>
+        m = re.<span class="c-fn">search</span>(<span class="c-str">r"Answer:\s*(.+)"</span>, text, re.IGNORECASE)
+        <span class="c-kw">if</span> m:
+            answers.<span class="c-fn">append</span>(m.<span class="c-fn">group</span>(<span class="c-num">1</span>).<span class="c-fn">strip</span>())
+
+    <span class="c-kw">if not</span> answers:
+        <span class="c-kw">return</span> <span class="c-str">"No consistent answer found"</span>
+
+    <span class="c-cmt"># majority vote</span>
+    winner, count = <span class="c-type">Counter</span>(answers).<span class="c-fn">most_common</span>(<span class="c-num">1</span>)[<span class="c-num">0</span>]
+    <span class="c-kw">return</span> <span class="c-fn">f</span><span class="c-str">"{winner} (agreed {count}/{n})"</span></div>
+    </div>
+
+    <div class="callout red reveal" style="margin-top:24px;">
+      <span class="callout-icon">⚠️</span>
+      <div class="callout-body"><strong>Common pitfall:</strong> Applying CoT to simple factual lookups like "What is the capital of France?" causes answer degradation. The model gets confused by its own reasoning steps when the answer is direct retrieval, not derivation. Reserve CoT for tasks with non-trivial intermediate steps.</div>
     </div>
   </div>
 
   <!-- SECTION 2: Tree of Thought -->
   <div class="section">
-    <div class="section-header">
+    <div class="section-header reveal">
       <div class="section-num">Section 02</div>
-      <h2>Tree of Thought</h2>
-      <p>ToT explores multiple reasoning branches simultaneously, evaluates each, and expands the most promising ones — solving problems that single-path CoT fails on.</p>
+      <h2>Tree of Thought — Branching Exploration</h2>
+      <p>ToT generalizes CoT from a single linear chain to a tree where the model can explore multiple candidate reasoning branches, evaluate them, and backtrack. It turns LLM inference into a heuristic search problem.</p>
     </div>
 
-    <ul class="bullet-list">
-      <li><strong>ToT:</strong> explore multiple reasoning branches, evaluate each, expand promising ones — structured search over a thought space</li>
-      <li><strong>BFS vs DFS:</strong> BFS explores all thoughts at each depth level; DFS commits to one path then backtracks on failure</li>
-      <li><strong>Self-evaluation prompts:</strong> "Rate this reasoning path 1-5" — the LLM judges its own intermediate steps</li>
-      <li><strong>When to use:</strong> multi-step planning, math proofs, strategic decisions — anything requiring deliberate search</li>
-    </ul>
+    <p style="color:var(--muted);font-size:14px;line-height:1.7;margin-bottom:16px;" class="reveal">
+      Tree of Thought was introduced by Yao et al. (2023) and shows remarkable gains on planning tasks where CoT fails — such as the Game of 24, creative writing with constraints, and multi-step strategic reasoning. The key insight: some problems require looking multiple steps ahead and backtracking when a path is suboptimal. Linear CoT cannot backtrack.
+    </p>
+    <p style="color:var(--muted);font-size:14px;line-height:1.7;margin-bottom:24px;" class="reveal">
+      In practice, ToT is implemented as a loop: generate K candidate next-steps (breadth), score each with the model itself (evaluation), keep the top B, and recurse (depth). This is BFS or DFS over the thought-space. Cost is O(B × D) LLM calls for depth D and breadth B, making it expensive but highly accurate on hard tasks.
+    </p>
 
-    <div class="code-wrap" style="margin-top:28px;">
-      <span class="code-label">PYTHON</span>
-      <div class="code-block"><span class="c-kw">class</span> <span class="c-type">TreeOfThought</span>:
-    <span class="c-kw">def</span> <span class="c-fn">__init__</span>(<span class="c-bi">self</span>, llm, branching_factor=<span class="c-num">3</span>, max_depth=<span class="c-num">4</span>):
-        <span class="c-bi">self</span>.llm = llm
-        <span class="c-bi">self</span>.k = branching_factor
-        <span class="c-bi">self</span>.max_depth = max_depth
+    <!-- ToT Branching Visualizer Widget -->
+    <div class="widget reveal">
+      <div class="widget-title">Interactive ToT Branching Visualizer</div>
+      <div class="widget-sub">Click "Explore" to animate branch generation. Click any node to see its thought content. Green = kept, red = pruned by evaluator.</div>
 
-    <span class="c-kw">def</span> <span class="c-fn">generate_thoughts</span>(<span class="c-bi">self</span>, problem: <span class="c-bi">str</span>, current_state: <span class="c-bi">str</span>) -> <span class="c-bi">list</span>[<span class="c-bi">str</span>]:
-        prompt = <span class="c-str">f"""Problem: {problem}
-Current state: {current_state}
-Generate {self.k} different next reasoning steps (one per line):"""</span>
-        response = <span class="c-bi">self</span>.llm.<span class="c-fn">invoke</span>(prompt)
-        <span class="c-kw">return</span> [line.<span class="c-fn">strip</span>() <span class="c-kw">for</span> line <span class="c-kw">in</span> response.content.<span class="c-fn">split</span>(<span class="c-str">'\n'</span>) <span class="c-kw">if</span> line.<span class="c-fn">strip</span>()]
-
-    <span class="c-kw">def</span> <span class="c-fn">evaluate_thought</span>(<span class="c-bi">self</span>, problem: <span class="c-bi">str</span>, thought: <span class="c-bi">str</span>) -> <span class="c-bi">float</span>:
-        prompt = <span class="c-str">f"""Problem: {problem}
-Reasoning path: {thought}
-Rate this reasoning path from 1 (wrong direction) to 5 (excellent):
-Reply with only the number."""</span>
-        response = <span class="c-bi">self</span>.llm.<span class="c-fn">invoke</span>(prompt)
-        <span class="c-kw">try</span>:
-            <span class="c-kw">return</span> <span class="c-bi">float</span>(response.content.<span class="c-fn">strip</span>())
-        <span class="c-kw">except</span>:
-            <span class="c-kw">return</span> <span class="c-num">2.5</span>
-
-    <span class="c-kw">def</span> <span class="c-fn">solve</span>(<span class="c-bi">self</span>, problem: <span class="c-bi">str</span>) -> <span class="c-bi">str</span>:
-        <span class="c-cmt"># BFS: explore all thoughts at each depth level</span>
-        current_thoughts = [<span class="c-str">""</span>]
-        <span class="c-kw">for</span> depth <span class="c-kw">in</span> <span class="c-fn">range</span>(<span class="c-bi">self</span>.max_depth):
-            next_thoughts = []
-            <span class="c-kw">for</span> thought <span class="c-kw">in</span> current_thoughts:
-                candidates = <span class="c-bi">self</span>.<span class="c-fn">generate_thoughts</span>(problem, thought)
-                scored = [(c, <span class="c-bi">self</span>.<span class="c-fn">evaluate_thought</span>(problem, thought + <span class="c-str">"\n"</span> + c))
-                          <span class="c-kw">for</span> c <span class="c-kw">in</span> candidates]
-                scored.<span class="c-fn">sort</span>(key=<span class="c-kw">lambda</span> x: x[<span class="c-num">1</span>], reverse=<span class="c-bi">True</span>)
-                next_thoughts.<span class="c-fn">extend</span>([thought + <span class="c-str">"\n"</span> + c <span class="c-kw">for</span> c, _ <span class="c-kw">in</span> scored[:<span class="c-num">2</span>]])
-            current_thoughts = next_thoughts
-        <span class="c-kw">return</span> <span class="c-fn">max</span>(current_thoughts, key=<span class="c-kw">lambda</span> t: <span class="c-bi">self</span>.<span class="c-fn">evaluate_thought</span>(problem, t))</div>
-    </div>
-  </div>
-
-  <!-- SECTION 3: HyDE & Meta-Prompting -->
-  <div class="section">
-    <div class="section-header">
-      <div class="section-num">Section 03</div>
-      <h2>HyDE &amp; Meta-Prompting</h2>
-      <p>HyDE inverts retrieval: generate a hypothetical answer first, then use its embedding to search — bridging the vocabulary gap between queries and documents.</p>
-    </div>
-
-    <ul class="bullet-list">
-      <li><strong>HyDE:</strong> generate hypothetical answer → embed for retrieval (not the original query) — improves recall by 10–30% on technical corpora</li>
-      <li><strong>Meta-prompting:</strong> use an LLM to write optimized prompts for another LLM — automated prompt engineering at scale</li>
-      <li><strong>Prompt compression:</strong> LLMLingua-style selective context retention — keep signal, drop filler tokens</li>
-      <li><strong>Automatic prompt optimization:</strong> DSPy-style compiled programs — the framework discovers optimal few-shot examples and instructions</li>
-    </ul>
-
-    <div class="code-wrap" style="margin-top:28px;">
-      <span class="code-label">PYTHON</span>
-      <div class="code-block"><span class="c-cmt"># HyDE implementation</span>
-hyde_system = <span class="c-str">"You are an expert. Write a detailed technical paragraph answering:"</span>
-
-<span class="c-kw">def</span> <span class="c-fn">hyde_retrieve</span>(query: <span class="c-bi">str</span>, retriever, llm) -> <span class="c-bi">list</span>:
-    <span class="c-cmt"># Step 1: Generate hypothetical answer</span>
-    hypothetical = llm.<span class="c-fn">invoke</span>(<span class="c-str">f"{hyde_system}\n\n{query}"</span>).content
-
-    <span class="c-cmt"># Step 2: Embed the hypothetical answer (not the query!)</span>
-    hyp_embedding = embed_model.<span class="c-fn">embed_query</span>(hypothetical)
-
-    <span class="c-cmt"># Step 3: Search using hypothetical embedding</span>
-    <span class="c-kw">return</span> vectorstore.<span class="c-fn">similarity_search_by_vector</span>(hyp_embedding, k=<span class="c-num">5</span>)
-
-<span class="c-cmt"># Meta-prompting: LLM writes its own system prompt</span>
-meta_prompt = <span class="c-str">"""You are a prompt engineering expert.
-Write an optimal system prompt for an AI assistant that will:
-1. Extract structured data from customer support tickets
-2. Output valid JSON matching this schema: {ticket_id, urgency, category, summary}
-3. Handle ambiguous or incomplete tickets gracefully
-
-The prompt should be production-ready and resistant to prompt injection."""</span>
-
-optimized_system_prompt = llm.<span class="c-fn">invoke</span>(meta_prompt).content</div>
-    </div>
-  </div>
-
-  <!-- SECTION 4: Instructor -->
-  <div class="section">
-    <div class="section-header">
-      <div class="section-num">Section 04</div>
-      <h2>Instructor Library for Structured Outputs</h2>
-      <p>Instructor patches the Anthropic and OpenAI clients to return validated Pydantic models instead of raw text. Auto-retry with validation error feedback included.</p>
-    </div>
-
-    <ul class="bullet-list">
-      <li><strong>Instructor:</strong> Pydantic + function calling → guaranteed structured LLM outputs with automatic schema enforcement</li>
-      <li><strong>Automatic retry:</strong> validation errors are fed back to the model as natural language — the LLM corrects its own output</li>
-      <li><strong>Nested models, validators, field constraints:</strong> full Pydantic v2 feature set available in LLM responses</li>
-      <li><strong>Streaming structured outputs:</strong> partial models streamed as they generate — useful for progressive UI updates</li>
-    </ul>
-
-    <div class="code-wrap" style="margin-top:28px;">
-      <span class="code-label">PYTHON</span>
-      <div class="code-block"><span class="c-kw">import</span> instructor
-<span class="c-kw">from</span> anthropic <span class="c-kw">import</span> <span class="c-type">Anthropic</span>
-<span class="c-kw">from</span> pydantic <span class="c-kw">import</span> <span class="c-type">BaseModel</span>, <span class="c-type">Field</span>, validator
-<span class="c-kw">from</span> typing <span class="c-kw">import</span> <span class="c-type">Optional</span>
-<span class="c-kw">import</span> enum
-
-<span class="c-kw">class</span> <span class="c-type">Urgency</span>(<span class="c-bi">str</span>, enum.<span class="c-type">Enum</span>):
-    LOW = <span class="c-str">"low"</span>
-    MEDIUM = <span class="c-str">"medium"</span>
-    HIGH = <span class="c-str">"high"</span>
-    CRITICAL = <span class="c-str">"critical"</span>
-
-<span class="c-kw">class</span> <span class="c-type">SupportTicket</span>(<span class="c-type">BaseModel</span>):
-    ticket_id: <span class="c-bi">str</span> = <span class="c-type">Field</span>(description=<span class="c-str">"Extracted ticket ID or 'UNKNOWN'"</span>)
-    urgency: <span class="c-type">Urgency</span> = <span class="c-type">Field</span>(description=<span class="c-str">"Urgency level based on content"</span>)
-    category: <span class="c-bi">str</span> = <span class="c-type">Field</span>(description=<span class="c-str">"Issue category: billing, technical, account, other"</span>)
-    summary: <span class="c-bi">str</span> = <span class="c-type">Field</span>(max_length=<span class="c-num">150</span>, description=<span class="c-str">"One-sentence summary"</span>)
-    requires_human: <span class="c-bi">bool</span> = <span class="c-type">Field</span>(description=<span class="c-str">"Whether this needs human escalation"</span>)
-
-    <span class="c-dec">@validator</span>(<span class="c-str">"summary"</span>)
-    <span class="c-kw">def</span> <span class="c-fn">summary_must_be_informative</span>(cls, v):
-        <span class="c-kw">if</span> <span class="c-fn">len</span>(v) < <span class="c-num">10</span>:
-            <span class="c-kw">raise</span> <span class="c-type">ValueError</span>(<span class="c-str">"Summary must be at least 10 characters"</span>)
-        <span class="c-kw">return</span> v
-
-<span class="c-cmt"># Patch client with instructor</span>
-client = instructor.<span class="c-fn">from_anthropic</span>(<span class="c-type">Anthropic</span>())
-
-<span class="c-cmt"># Extract structured data — auto-validates, auto-retries on failure</span>
-ticket = client.messages.<span class="c-fn">create</span>(
-    model=<span class="c-str">"claude-3-5-sonnet-20241022"</span>,
-    max_tokens=<span class="c-num">512</span>,
-    messages=[{
-        <span class="c-str">"role"</span>: <span class="c-str">"user"</span>,
-        <span class="c-str">"content"</span>: <span class="c-str">f"Extract ticket data from: 'My subscription was charged twice! Order #12345. URGENT!'"</span>
-    }],
-    response_model=<span class="c-type">SupportTicket</span>,
-    max_retries=<span class="c-num">3</span>  <span class="c-cmt"># automatically retry with validation errors fed back</span>
-)
-
-<span class="c-fn">print</span>(ticket.urgency)         <span class="c-cmt"># Urgency.CRITICAL</span>
-<span class="c-fn">print</span>(ticket.requires_human)  <span class="c-cmt"># True</span>
-<span class="c-fn">print</span>(ticket.summary)         <span class="c-cmt"># "Duplicate charge on subscription order #12345"</span></div>
-    </div>
-  </div>
-
-  <!-- SECTION 5: Prompt Compression -->
-  <div class="section">
-    <div class="section-header">
-      <div class="section-num">Section 05</div>
-      <h2>Prompt Compression &amp; Context Efficiency</h2>
-      <p>128K context is not infinite. Every token costs money and adds latency. Cache prefixes aggressively, compress history, and only retrieve what's relevant.</p>
-    </div>
-
-    <ul class="bullet-list">
-      <li><strong>Why compression:</strong> 128K context != infinite — every token costs money and latency; optimize aggressively</li>
-      <li><strong>Selective context:</strong> only include relevant chunks, not the whole document — semantic similarity threshold as a gate</li>
-      <li><strong>Summarization chains:</strong> compress long conversation history into a rolling summary before it exceeds window limits</li>
-      <li><strong>Prompt caching:</strong> Anthropic's 90% discount on repeated prefixes — mark stable system prompts with cache_control</li>
-    </ul>
-
-    <div class="code-wrap" style="margin-top:28px;">
-      <span class="code-label">PYTHON</span>
-      <div class="code-block"><span class="c-cmt"># Prompt caching with Anthropic (90% cost reduction on cache hits)</span>
-<span class="c-kw">import</span> anthropic
-
-client = anthropic.<span class="c-type">Anthropic</span>()
-
-<span class="c-cmt"># The system prompt is cached after first call</span>
-response = client.messages.<span class="c-fn">create</span>(
-    model=<span class="c-str">"claude-3-5-sonnet-20241022"</span>,
-    max_tokens=<span class="c-num">1024</span>,
-    system=[{
-        <span class="c-str">"type"</span>: <span class="c-str">"text"</span>,
-        <span class="c-str">"text"</span>: long_system_prompt,  <span class="c-cmt"># e.g., 10K token knowledge base</span>
-        <span class="c-str">"cache_control"</span>: {<span class="c-str">"type"</span>: <span class="c-str">"ephemeral"</span>}  <span class="c-cmt"># cache this!</span>
-    }],
-    messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: user_question}]
-)
-
-<span class="c-cmt"># cache_read_input_tokens will show cached tokens on subsequent calls</span>
-<span class="c-cmt"># Cached tokens cost 10% of regular input token price</span>
-<span class="c-fn">print</span>(response.usage.cache_read_input_tokens)</div>
-    </div>
-  </div>
-
-  <!-- WIDGET: Prompt Technique Comparator -->
-  <div class="section">
-    <div class="section-header">
-      <div class="section-num">Interactive</div>
-      <h2>Prompt Technique Comparator</h2>
-      <p>Type a question and see exactly what prompt would be sent with each technique — plus expected benefit and token overhead.</p>
-    </div>
-
-    <div class="widget">
-      <div class="widget-title">Prompt Technique Comparator</div>
-      <div class="widget-sub">Enter a question, choose a technique, and see how the prompt transforms.</div>
-
-      <textarea class="widget-textarea" id="user-question" placeholder="e.g. How many days between March 15 and July 4?">How many days between March 15 and July 4?</textarea>
-
-      <div class="radio-group">
-        <label class="radio-label"><input type="radio" name="technique" value="zero-shot" checked> Zero-shot</label>
-        <label class="radio-label"><input type="radio" name="technique" value="cot"> Chain-of-Thought</label>
-        <label class="radio-label"><input type="radio" name="technique" value="self-consistency"> Self-Consistency (5 samples)</label>
-        <label class="radio-label"><input type="radio" name="technique" value="hyde"> HyDE</label>
+      <div class="tot-controls">
+        <button class="btn btn-sm" onclick="animateToT()">Explore Branches</button>
+        <button class="btn btn-sm" style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);" onclick="resetToT()">Reset</button>
       </div>
 
-      <button class="compare-btn" onclick="comparePrompt()">Compare Technique</button>
+      <div class="tot-container">
+        <svg id="tot-svg" class="tot-svg" width="700" height="360" viewBox="0 0 700 360">
+          <!-- Root -->
+          <g id="tot-root" class="tot-node" onclick="showNodeInfo('root')">
+            <rect x="270" y="14" width="160" height="44" rx="8" fill="#1a1a2e" stroke="#2a2a45" stroke-width="1.5"/>
+            <text x="350" y="33" text-anchor="middle" fill="#e2e8f0" font-size="11" font-family="Inter,sans-serif" font-weight="700">Problem</text>
+            <text x="350" y="50" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter,sans-serif">Game of 24: 4 5 6 10</text>
+          </g>
+          <!-- Level 1 branches -->
+          <line id="l1a" class="tot-branch-line" x1="350" y1="58" x2="130" y2="130"/>
+          <line id="l1b" class="tot-branch-line" x1="350" y1="58" x2="350" y2="130"/>
+          <line id="l1c" class="tot-branch-line" x1="350" y1="58" x2="570" y2="130"/>
+          <g id="n1a" class="tot-node" style="opacity:0" onclick="showNodeInfo('n1a')">
+            <rect x="50" y="130" width="160" height="44" rx="8" fill="#1a1a2e" stroke="#2a2a45"/>
+            <text x="130" y="149" text-anchor="middle" fill="#e2e8f0" font-size="11" font-family="Inter,sans-serif" font-weight="700">Thought A</text>
+            <text x="130" y="165" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter,sans-serif">4+5=9, left: 9,6,10</text>
+          </g>
+          <g id="n1b" class="tot-node" style="opacity:0" onclick="showNodeInfo('n1b')">
+            <rect x="270" y="130" width="160" height="44" rx="8" fill="#1a1a2e" stroke="#2a2a45"/>
+            <text x="350" y="149" text-anchor="middle" fill="#e2e8f0" font-size="11" font-family="Inter,sans-serif" font-weight="700">Thought B</text>
+            <text x="350" y="165" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter,sans-serif">6×4=24, need ×1</text>
+          </g>
+          <g id="n1c" class="tot-node" style="opacity:0" onclick="showNodeInfo('n1c')">
+            <rect x="490" y="130" width="160" height="44" rx="8" fill="#1a1a2e" stroke="#2a2a45"/>
+            <text x="570" y="149" text-anchor="middle" fill="#e2e8f0" font-size="11" font-family="Inter,sans-serif" font-weight="700">Thought C</text>
+            <text x="570" y="165" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter,sans-serif">10-4=6, left: 6,5,6</text>
+          </g>
+          <!-- Level 2 from n1a -->
+          <line id="l2a1" class="tot-branch-line" x1="130" y1="174" x2="60" y2="234"/>
+          <line id="l2a2" class="tot-branch-line" x1="130" y1="174" x2="200" y2="234"/>
+          <!-- Level 2 from n1b (winner path) -->
+          <line id="l2b1" class="tot-branch-line" x1="350" y1="174" x2="350" y2="234"/>
+          <!-- Level 2 from n1c -->
+          <line id="l2c1" class="tot-branch-line" x1="570" y1="174" x2="570" y2="234"/>
+          <g id="n2a1" class="tot-node" style="opacity:0">
+            <rect x="10" y="234" width="100" height="40" rx="8" fill="#1a1a2e" stroke="#ef4444" stroke-width="1.5"/>
+            <text x="60" y="250" text-anchor="middle" fill="#fca5a5" font-size="10" font-family="Inter,sans-serif">9×6=54 ✗</text>
+            <text x="60" y="265" text-anchor="middle" fill="#64748b" font-size="9" font-family="Inter,sans-serif">Pruned</text>
+          </g>
+          <g id="n2a2" class="tot-node" style="opacity:0">
+            <rect x="150" y="234" width="100" height="40" rx="8" fill="#1a1a2e" stroke="#ef4444" stroke-width="1.5"/>
+            <text x="200" y="250" text-anchor="middle" fill="#fca5a5" font-size="10" font-family="Inter,sans-serif">9+10=19 ✗</text>
+            <text x="200" y="265" text-anchor="middle" fill="#64748b" font-size="9" font-family="Inter,sans-serif">Pruned</text>
+          </g>
+          <g id="n2b1" class="tot-node" style="opacity:0">
+            <rect x="270" y="234" width="160" height="40" rx="8" fill="rgba(16,185,129,0.1)" stroke="#10b981" stroke-width="2"/>
+            <text x="350" y="250" text-anchor="middle" fill="#34d399" font-size="10" font-family="Inter,sans-serif" font-weight="700">5/5×24 = 24 ✓</text>
+            <text x="350" y="265" text-anchor="middle" fill="#10b981" font-size="9" font-family="Inter,sans-serif">WINNER</text>
+          </g>
+          <g id="n2c1" class="tot-node" style="opacity:0">
+            <rect x="510" y="234" width="120" height="40" rx="8" fill="#1a1a2e" stroke="#ef4444" stroke-width="1.5"/>
+            <text x="570" y="250" text-anchor="middle" fill="#fca5a5" font-size="10" font-family="Inter,sans-serif">6×5=30 ✗</text>
+            <text x="570" y="265" text-anchor="middle" fill="#64748b" font-size="9" font-family="Inter,sans-serif">Pruned</text>
+          </g>
+          <!-- Final solution -->
+          <line id="l3b1" class="tot-branch-line" x1="350" y1="274" x2="350" y2="310"/>
+          <g id="n3b1" class="tot-node" style="opacity:0">
+            <rect x="240" y="310" width="220" height="40" rx="8" fill="rgba(16,185,129,0.15)" stroke="#10b981" stroke-width="2"/>
+            <text x="350" y="326" text-anchor="middle" fill="#34d399" font-size="11" font-family="Inter,sans-serif" font-weight="700">6×(10-5+4-5) → 6×4=24</text>
+            <text x="350" y="341" text-anchor="middle" fill="#10b981" font-size="9" font-family="Inter,sans-serif">Solution found!</text>
+          </g>
+        </svg>
+      </div>
+      <div id="tot-info" style="margin-top:12px;padding:12px;background:var(--surface2);border-radius:8px;font-size:13px;color:var(--muted);display:none;"></div>
+    </div>
 
-      <div id="technique-output" style="margin-top:20px;"></div>
+    <div class="callout teal reveal" style="margin-top:24px;">
+      <span class="callout-icon">💡</span>
+      <div class="callout-body"><strong>Why this matters:</strong> ToT achieves 74% on Game of 24 vs 4% for IO prompting and 11% for standard CoT. For agent planning tasks with lookahead requirements (scheduling, code generation with constraints), ToT is a fundamental tool in your arsenal.</div>
     </div>
   </div>
 
-</div><!-- /container -->
+  <!-- SECTION 3: HyDE -->
+  <div class="section">
+    <div class="section-header reveal">
+      <div class="section-num">Section 03</div>
+      <h2>HyDE — Hypothetical Document Embeddings</h2>
+      <p>HyDE improves RAG retrieval by generating a hypothetical answer to the query, embedding that answer (not the query), and using it to find relevant documents. This closes the semantic gap between short queries and rich documents.</p>
+    </div>
+
+    <p style="color:var(--muted);font-size:14px;line-height:1.7;margin-bottom:16px;" class="reveal">
+      Standard dense retrieval computes the embedding of the user query and finds nearest-neighbor documents. This works well when queries and documents are semantically similar in embedding space. But queries are typically short, informal, and lack the technical vocabulary that documents use. HyDE bridges this gap by hallucinating a high-quality hypothetical answer that shares vocabulary and structure with real documents.
+    </p>
+    <p style="color:var(--muted);font-size:14px;line-height:1.7;margin-bottom:24px;" class="reveal">
+      The elegance of HyDE is that even if the hypothetical answer is factually wrong, it succeeds in placing the embedding vector in the right neighborhood of the vector space. Retrieval precision and NDCG scores improve across nearly all benchmarks tested in the original Gao et al. (2022) paper.
+    </p>
+
+    <div class="code-wrap reveal">
+      <div class="win-chrome"><span class="win-dot r"></span><span class="win-dot y"></span><span class="win-dot g"></span><span style="font-size:11px;color:var(--muted);margin-left:8px;font-family:var(--mono)">hyde_retrieval.py</span></div>
+      <div class="code-block"><span class="c-kw">from</span> anthropic <span class="c-kw">import</span> <span class="c-type">Anthropic</span>
+<span class="c-kw">from</span> qdrant_client <span class="c-kw">import</span> <span class="c-type">QdrantClient</span>
+<span class="c-kw">from</span> sentence_transformers <span class="c-kw">import</span> <span class="c-type">SentenceTransformer</span>
+
+client  = <span class="c-type">Anthropic</span>()
+qdrant  = <span class="c-type">QdrantClient</span>(<span class="c-str">"http://localhost:6333"</span>)
+encoder = <span class="c-type">SentenceTransformer</span>(<span class="c-str">"all-MiniLM-L6-v2"</span>)
+
+<span class="c-kw">def</span> <span class="c-fn">hyde_retrieve</span>(query: <span class="c-bi">str</span>, collection: <span class="c-bi">str</span>, k: <span class="c-bi">int</span> = <span class="c-num">5</span>) -> <span class="c-bi">list</span>:
+    <span class="c-str">"""HyDE: generate hypothetical answer → embed it → retrieve."""</span>
+
+    <span class="c-cmt"># Step 1: Generate hypothetical answer (may be wrong — that's OK)</span>
+    hyp_resp = client.messages.<span class="c-fn">create</span>(
+        model=<span class="c-str">"claude-3-5-haiku-20241022"</span>,
+        max_tokens=<span class="c-num">256</span>,
+        messages=[{
+            <span class="c-str">"role"</span>: <span class="c-str">"user"</span>,
+            <span class="c-str">"content"</span>: (
+                <span class="c-str">f"Write a concise technical answer to: {query}\n"</span>
+                <span class="c-str">"Respond as if writing a documentation paragraph. Be specific."</span>
+            )
+        }]
+    )
+    hypothetical_doc = hyp_resp.content[<span class="c-num">0</span>].text
+
+    <span class="c-cmt"># Step 2: Embed the hypothetical answer (NOT the raw query)</span>
+    hyp_vector = encoder.<span class="c-fn">encode</span>(hypothetical_doc).<span class="c-fn">tolist</span>()
+
+    <span class="c-cmt"># Step 3: Retrieve against real document store</span>
+    hits = qdrant.<span class="c-fn">search</span>(
+        collection_name=collection,
+        query_vector=hyp_vector,
+        limit=k,
+        with_payload=<span class="c-bi">True</span>
+    )
+    <span class="c-kw">return</span> [h.payload <span class="c-kw">for</span> h <span class="c-kw">in</span> hits]</div>
+    </div>
+
+    <!-- Technique Comparator Widget -->
+    <div class="widget reveal" style="margin-top:32px;">
+      <div class="widget-title">Prompt Technique Comparator</div>
+      <div class="widget-sub">Select a prompting technique to see a real example prompt and its expected characteristics. Compare different approaches side by side.</div>
+
+      <div class="tech-tabs">
+        <button class="tech-tab active" onclick="selectTech('zero_cot')">Zero-shot CoT</button>
+        <button class="tech-tab" onclick="selectTech('few_cot')">Few-shot CoT</button>
+        <button class="tech-tab" onclick="selectTech('sc')">Self-Consistency</button>
+        <button class="tech-tab" onclick="selectTech('tot')">Tree of Thought</button>
+        <button class="tech-tab" onclick="selectTech('hyde')">HyDE</button>
+      </div>
+
+      <div class="tech-output" id="tech-output">
+        <div class="tech-panel">
+          <div class="tech-panel-label">Example Prompt</div>
+          <div class="tech-prompt-box" id="tech-prompt-text">Loading...</div>
+          <div class="tech-badges" id="tech-badges"></div>
+        </div>
+        <div class="tech-panel">
+          <div class="tech-panel-label">Expected Output Pattern</div>
+          <div class="tech-prompt-box" id="tech-output-text">Loading...</div>
+          <div style="margin-top:12px;">
+            <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:700;text-transform:uppercase;">Metrics</div>
+            <div id="tech-metrics" style="display:flex;flex-direction:column;gap:6px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 4: Instructor + Pydantic -->
+  <div class="section">
+    <div class="section-header reveal">
+      <div class="section-num">Section 04</div>
+      <h2>Instructor + Pydantic for Guaranteed Outputs</h2>
+      <p>Instructor wraps any LLM client to return validated Pydantic models instead of raw strings. It handles retry logic, validation errors, and schema injection automatically — eliminating JSON parsing fragility from your pipelines.</p>
+    </div>
+
+    <p style="color:var(--muted);font-size:14px;line-height:1.7;margin-bottom:16px;" class="reveal">
+      The fundamental problem with LLM outputs in production is that they are free-form text. Even with careful prompting, models occasionally produce invalid JSON, missing fields, or wrong types. Instructor solves this by coupling output generation with Pydantic validation in a retry loop — if the output fails validation, the error is fed back to the model as correction context.
+    </p>
+    <p style="color:var(--muted);font-size:14px;line-height:1.7;margin-bottom:24px;" class="reveal">
+      This approach is production-proven at scale: Pydantic's type system provides free documentation, serialization, and error messages that the model can understand and correct. Combined with prompt caching for system prompts, you get both reliability and cost efficiency.
+    </p>
+
+    <div class="code-wrap reveal">
+      <div class="win-chrome"><span class="win-dot r"></span><span class="win-dot y"></span><span class="win-dot g"></span><span style="font-size:11px;color:var(--muted);margin-left:8px;font-family:var(--mono)">structured_extraction.py</span></div>
+      <div class="code-block"><span class="c-kw">import</span> instructor
+<span class="c-kw">from</span> pydantic <span class="c-kw">import</span> <span class="c-type">BaseModel</span>, <span class="c-type">Field</span>, field_validator
+<span class="c-kw">from</span> anthropic <span class="c-kw">import</span> <span class="c-type">Anthropic</span>
+<span class="c-kw">from</span> typing <span class="c-kw">import</span> <span class="c-type">Literal</span>
+
+<span class="c-cmt"># Wrap the Anthropic client with Instructor</span>
+client = instructor.<span class="c-fn">from_anthropic</span>(<span class="c-type">Anthropic</span>())
+
+<span class="c-kw">class</span> <span class="c-type">ExtractedEntity</span>(<span class="c-type">BaseModel</span>):
+    name: <span class="c-bi">str</span> = <span class="c-type">Field</span>(description=<span class="c-str">"Entity name as it appears in text"</span>)
+    entity_type: <span class="c-type">Literal</span>[<span class="c-str">"PERSON"</span>, <span class="c-str">"ORG"</span>, <span class="c-str">"LOCATION"</span>, <span class="c-str">"PRODUCT"</span>]
+    confidence: <span class="c-bi">float</span> = <span class="c-type">Field</span>(ge=<span class="c-num">0.0</span>, le=<span class="c-num">1.0</span>)
+    context: <span class="c-bi">str</span> = <span class="c-type">Field</span>(description=<span class="c-str">"Surrounding context from text"</span>)
+
+    <span class="c-dec">@field_validator</span>(<span class="c-str">'name'</span>)
+    <span class="c-dec">@classmethod</span>
+    <span class="c-kw">def</span> <span class="c-fn">name_not_empty</span>(<span class="c-bi">cls</span>, v: <span class="c-bi">str</span>) -> <span class="c-bi">str</span>:
+        <span class="c-kw">if not</span> v.<span class="c-fn">strip</span>():
+            <span class="c-kw">raise</span> <span class="c-type">ValueError</span>(<span class="c-str">"Entity name cannot be empty"</span>)
+        <span class="c-kw">return</span> v.<span class="c-fn">strip</span>()
+
+<span class="c-kw">class</span> <span class="c-type">ExtractionResult</span>(<span class="c-type">BaseModel</span>):
+    entities: <span class="c-bi">list</span>[<span class="c-type">ExtractedEntity</span>]
+    summary: <span class="c-bi">str</span>
+
+<span class="c-kw">def</span> <span class="c-fn">extract_entities</span>(text: <span class="c-bi">str</span>) -> <span class="c-type">ExtractionResult</span>:
+    <span class="c-cmt"># Instructor automatically retries on Pydantic validation failures</span>
+    <span class="c-kw">return</span> client.messages.<span class="c-fn">create</span>(
+        model=<span class="c-str">"claude-3-5-sonnet-20241022"</span>,
+        max_tokens=<span class="c-num">1024</span>,
+        response_model=<span class="c-type">ExtractionResult</span>,
+        max_retries=<span class="c-num">3</span>,
+        messages=[{
+            <span class="c-str">"role"</span>: <span class="c-str">"user"</span>,
+            <span class="c-str">"content"</span>: <span class="c-fn">f</span><span class="c-str">"Extract all entities from:\n\n{text}"</span>
+        }]
+    )
+
+<span class="c-cmt"># Returns a validated ExtractionResult object — no JSON parsing needed</span>
+result = <span class="c-fn">extract_entities</span>(<span class="c-str">"Apple CEO Tim Cook visited Google HQ in Mountain View."</span>)
+<span class="c-fn">print</span>(result.entities[<span class="c-num">0</span>].name)   <span class="c-cmt"># "Apple"</span>
+<span class="c-fn">print</span>(result.entities[<span class="c-num">0</span>].entity_type)  <span class="c-cmt"># "ORG"</span></div>
+    </div>
+
+    <table class="comp-table reveal" style="margin-top:28px;">
+      <thead><tr><th>Approach</th><th>Output Guarantee</th><th>Retry Handling</th><th>Schema Documentation</th><th>Complexity</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Raw LLM + json.loads()</strong></td><td><span class="cross">✗</span> None</td><td><span class="cross">✗</span> Manual</td><td><span class="cross">✗</span> None</td><td>Low</td></tr>
+        <tr><td><strong>JSON mode only</strong></td><td><span class="partial">~</span> Valid JSON</td><td><span class="cross">✗</span> Manual</td><td><span class="cross">✗</span> None</td><td>Low</td></tr>
+        <tr><td><strong>Instructor + Pydantic</strong></td><td><span class="tick">✓</span> Full type safety</td><td><span class="tick">✓</span> Automatic</td><td><span class="tick">✓</span> Auto-generated</td><td>Medium</td></tr>
+        <tr><td><strong>LangChain OutputParser</strong></td><td><span class="partial">~</span> Partial</td><td><span class="partial">~</span> Limited</td><td><span class="partial">~</span> Manual</td><td>Medium</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- SECTION 5: Prompt Caching -->
+  <div class="section">
+    <div class="section-header reveal">
+      <div class="section-num">Section 05</div>
+      <h2>Prompt Caching — 90% Cost Reduction</h2>
+      <p>Anthropic's prompt caching allows you to cache large system prompts, documents, and tool definitions. Cached tokens cost 10% of the original price and return 2x faster — critical for document-heavy agents.</p>
+    </div>
+
+    <div class="card-grid reveal">
+      <div class="card">
+        <div style="font-size:28px;margin-bottom:12px;">💰</div>
+        <div style="font-size:15px;font-weight:700;margin-bottom:8px;">90% Cost Saving</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.6;">Cached input tokens are billed at 10% of standard price. For agents that repeatedly process the same large system prompt or document, savings compound rapidly across conversation turns.</div>
+      </div>
+      <div class="card">
+        <div style="font-size:28px;margin-bottom:12px;">⚡</div>
+        <div style="font-size:15px;font-weight:700;margin-bottom:8px;">2× Faster TTFT</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.6;">Time-to-first-token drops dramatically for cache hits since the KV cache is already warm. Users perceive much lower latency for multi-turn conversations after the first turn.</div>
+      </div>
+      <div class="card">
+        <div style="font-size:28px;margin-bottom:12px;">🎯</div>
+        <div style="font-size:15px;font-weight:700;margin-bottom:8px;">Minimum 1024 Tokens</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.6;">Cache breakpoints require at least 1024 tokens of prefix to activate (2048 for small models). Design your system prompts to front-load stable content before variable content.</div>
+      </div>
+    </div>
+
+    <div class="code-wrap reveal" style="margin-top:28px;">
+      <div class="win-chrome"><span class="win-dot r"></span><span class="win-dot y"></span><span class="win-dot g"></span><span style="font-size:11px;color:var(--muted);margin-left:8px;font-family:var(--mono)">prompt_caching.py</span></div>
+      <div class="code-block"><span class="c-kw">from</span> anthropic <span class="c-kw">import</span> <span class="c-type">Anthropic</span>
+
+client = <span class="c-type">Anthropic</span>()
+
+<span class="c-kw">def</span> <span class="c-fn">cached_agent_call</span>(user_message: <span class="c-bi">str</span>, large_document: <span class="c-bi">str</span>) -> <span class="c-bi">str</span>:
+    <span class="c-str">"""Cache the large document once; only charge full price once per 5 min."""</span>
+    response = client.messages.<span class="c-fn">create</span>(
+        model=<span class="c-str">"claude-3-5-sonnet-20241022"</span>,
+        max_tokens=<span class="c-num">1024</span>,
+        system=[
+            {
+                <span class="c-str">"type"</span>: <span class="c-str">"text"</span>,
+                <span class="c-str">"text"</span>: <span class="c-str">"You are an expert document analyst. Be precise and cite sources."</span>,
+                <span class="c-cmt"># This large doc is cached — costs 90% less after first call</span>
+                <span class="c-str">"cache_control"</span>: {<span class="c-str">"type"</span>: <span class="c-str">"ephemeral"</span>}
+            },
+            {
+                <span class="c-str">"type"</span>: <span class="c-str">"text"</span>,
+                <span class="c-str">"text"</span>: large_document  <span class="c-cmt"># e.g. 50k token legal contract</span>
+            }
+        ],
+        messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: user_message}]
+    )
+    usage = response.usage
+    <span class="c-fn">print</span>(<span class="c-fn">f</span><span class="c-str">f"Cache read: {usage.cache_read_input_tokens} tokens"</span>)
+    <span class="c-fn">print</span>(<span class="c-fn">f</span><span class="c-str">f"Cache write: {usage.cache_creation_input_tokens} tokens"</span>)
+    <span class="c-kw">return</span> response.content[<span class="c-num">0</span>].text</div>
+    </div>
+  </div>
+
+  <!-- SECTION 6: Exercises -->
+  <div class="section">
+    <div class="section-header reveal">
+      <div class="section-num">Section 06</div>
+      <h2>Hands-On Exercises</h2>
+      <p>Solidify your understanding by building. These exercises scale from applying individual techniques to integrating them in a production-style pipeline.</p>
+    </div>
+    <div class="ex-list reveal">
+      <div class="ex-item">
+        <div class="ex-num">1</div>
+        <div class="ex-body">
+          <div class="ex-title">Self-Consistency Accuracy Test</div>
+          <div class="ex-desc">Pick 10 math problems from GSM8K. Run each with N=1 and N=5 self-consistency sampling. Measure accuracy gap and cost difference. Create a spreadsheet showing the tradeoff curve.</div>
+          <span class="diff diff-easy">Easy</span>
+        </div>
+      </div>
+      <div class="ex-item">
+        <div class="ex-num">2</div>
+        <div class="ex-body">
+          <div class="ex-title">Instructor Entity Extractor with Custom Validators</div>
+          <div class="ex-desc">Build an entity extractor using Instructor + Pydantic that extracts financial data (company, revenue, date, currency) from earnings call transcripts. Add validators for currency codes and date formats. Test with 3 real transcripts.</div>
+          <span class="diff diff-med">Medium</span>
+        </div>
+      </div>
+      <div class="ex-item">
+        <div class="ex-num">3</div>
+        <div class="ex-body">
+          <div class="ex-title">HyDE vs Standard Retrieval Benchmark</div>
+          <div class="ex-desc">Build a small Qdrant collection from 100 Wikipedia articles. Run 20 queries using standard embedding and HyDE embedding. Compare precision@5 and NDCG@10. Report which query types benefit most from HyDE.</div>
+          <span class="diff diff-med">Medium</span>
+        </div>
+      </div>
+      <div class="ex-item">
+        <div class="ex-num">4</div>
+        <div class="ex-body">
+          <div class="ex-title">ToT Solver for Constraint Problems</div>
+          <div class="ex-desc">Implement a Tree of Thought solver for the "Game of 24" puzzle using BFS with beam width 3. Use Claude as both the thought generator and evaluator. Solve 10 puzzles and report success rate vs standard prompting.</div>
+          <span class="diff diff-hard">Hard</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header reveal">
+      <div class="section-num">Prerequisites</div>
+      <h2>What You Should Know</h2>
+    </div>
+    <div class="prereq-grid reveal">
+      <div class="prereq-chip"><span class="prereq-day">Day 5</span> Basic Prompting</div>
+      <div class="prereq-chip"><span class="prereq-day">Day 12</span> RAG Fundamentals</div>
+      <div class="prereq-chip"><span class="prereq-day">Day 16</span> Pydantic Models</div>
+      <div class="prereq-chip"><span class="prereq-day">Day 20</span> Agent Loops</div>
+    </div>
+  </div>
+</div>
 
 <footer>
   <div class="container">
     <div class="footer-inner">
       <div class="footer-nav">
         <a href="day21.html" class="nav-btn">← Day 21</a>
-        <button class="nav-btn complete" id="footer-complete-btn" onclick="markComplete()">Mark Complete</button>
+        <a href="../index.html" class="nav-btn">Dashboard</a>
         <a href="day23.html" class="nav-btn next">Day 23 →</a>
       </div>
-      <div>
-        <a href="../exercises/day22_exercises.html" style="color:var(--purple-light);text-decoration:none;font-weight:600;">⚡ Open Interactive Exercises →</a>
-      </div>
-      <div>Day 22 of the AI Mastery Curriculum &middot; Built for Sharjeel Sohail</div>
+      <div>Day 22 of 30 — Agentic AI Mastery</div>
     </div>
   </div>
 </footer>
 
 <script src="../bg-animation.js"></script>
 <script>
-// ── Mark Complete ────────────────────────────────────────────────
-function markComplete() {
-  try {
-    const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
-    const isDone = p[22] === 'complete';
-    p[22] = isDone ? 'active' : 'complete';
-    localStorage.setItem('aai_progress', JSON.stringify(p));
-    updateCompleteButtons();
-  } catch(e) {}
-}
-
-function updateCompleteButtons() {
-  try {
-    const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
-    const done = p[22] === 'complete';
-    const label = done ? 'Completed ✓' : 'Mark Complete';
-    ['nav-complete-btn', 'footer-complete-btn'].forEach(id => {
-      const btn = document.getElementById(id);
-      if (btn) {
-        btn.textContent = label;
-        btn.classList.toggle('done', done);
-      }
-    });
-  } catch(e) {}
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  try {
-    const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
-    if (!p[22] || p[22] === 'locked') { p[22] = 'active'; localStorage.setItem('aai_progress', JSON.stringify(p)); }
-  } catch(e) {}
-  updateCompleteButtons();
+// ── PROGRESS BAR ──
+window.addEventListener('scroll', () => {
+  const doc = document.documentElement;
+  const scrolled = (doc.scrollTop / (doc.scrollHeight - doc.clientHeight)) * 100;
+  document.getElementById('progress-bar').style.width = scrolled + '%';
 });
 
-// ── Prompt Technique Comparator ─────────────────────────────────
-const TECHNIQUES = {
-  'zero-shot': {
-    name: 'Zero-shot',
-    benefit: 'Simple & fast',
-    overhead: '+0 tokens',
-    buildPrompt: q => q,
-    description: 'Send the question directly. No examples, no instructions. Works for simple tasks.'
+// ── INTERSECTION OBSERVER ──
+const revealEls = document.querySelectorAll('.reveal, .reveal-left');
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+revealEls.forEach(el => io.observe(el));
+
+// ── MARK COMPLETE ──
+function markComplete() {
+  const key = 'day22_complete';
+  const btn = document.getElementById('nav-complete-btn');
+  if (localStorage.getItem(key)) { localStorage.removeItem(key); btn.classList.remove('done'); btn.textContent = 'Mark Complete'; }
+  else { localStorage.setItem(key, '1'); btn.classList.add('done'); btn.textContent = '✓ Complete'; }
+}
+if (localStorage.getItem('day22_complete')) {
+  const b = document.getElementById('nav-complete-btn');
+  b.classList.add('done'); b.textContent = '✓ Complete';
+}
+
+// ── TECHNIQUE COMPARATOR DATA ──
+const techData = {
+  zero_cot: {
+    prompt: `Q: A store has 50 items. 20% are returned
+each week. 15 new items arrive each week.
+How many items after 3 weeks?
+
+Think step by step before answering.`,
+    output: `Step 1: Week 1
+  Start: 50
+  Returns: 50 × 0.20 = 10
+  Remaining: 50 - 10 = 40
+  New stock: 40 + 15 = 55
+
+Step 2: Week 2
+  Returns: 55 × 0.20 = 11
+  New stock: 44 + 15 = 59
+
+Step 3: Week 3
+  Returns: 59 × 0.20 ≈ 12
+  New stock: 47 + 15 = 62
+
+Answer: ~62 items`,
+    badges: [['Zero examples needed','badge-green'],['+30% accuracy on GSM8K','badge-green'],['~2× token cost','badge-yellow']],
+    metrics: [['Accuracy gain','~30%'],['Token overhead','~2×'],['Best for','Multi-step math, logic']]
   },
-  'cot': {
-    name: 'Chain-of-Thought',
-    benefit: '+20-40% accuracy on reasoning',
-    overhead: '+~8 tokens input, +~60 output',
-    buildPrompt: q => `${q}\n\nThink through this step by step before giving the final answer.`,
-    description: 'Append "think step by step" to trigger explicit reasoning traces. Most cost-effective reasoning boost.'
+  few_cot: {
+    prompt: `Example:
+Q: If 3 shirts cost $45, what does 7 cost?
+A: One shirt = $45÷3 = $15. Seven = 7×$15 = $105.
+
+Now solve:
+Q: A store has 50 items. 20% returned
+weekly, 15 added. Items after 3 weeks?
+Think step by step.`,
+    output: `Following the pattern from examples:
+Week 1: 50 - (50×0.2) + 15 = 55
+Week 2: 55 - (55×0.2) + 15 = 59
+Week 3: 59 - (59×0.2) + 15 ≈ 62
+
+Answer: 62 items`,
+    badges: [['Higher accuracy','badge-green'],['Fewer errors','badge-green'],['Higher prompt cost','badge-yellow'],['Example sourcing required','badge-red']],
+    metrics: [['Accuracy gain','~40%'],['Token overhead','~3–5×'],['Best for','Specialized domains']]
   },
-  'self-consistency': {
-    name: 'Self-Consistency (5 samples)',
-    benefit: '+30-50% accuracy on hard reasoning',
-    overhead: '+5x inference cost (5 LLM calls)',
-    buildPrompt: q => `[Sample 1/5] Solve step by step: ${q}\n\nFinal answer:\n\n[Sample 2/5] ...\n[Sample 3/5] ...\n[Sample 4/5] ...\n[Sample 5/5] ...\n\n→ Majority vote across all answers`,
-    description: 'Run 5 independent CoT paths and return the majority vote. Trades cost for reliability on critical reasoning tasks.'
+  sc: {
+    prompt: `[Run 5 independent CoT chains]
+
+Chain 1: → 62 items
+Chain 2: → 62 items
+Chain 3: → 61 items
+Chain 4: → 62 items
+Chain 5: → 63 items
+
+Majority vote: 62 (4/5 agree)`,
+    output: `Final Answer: 62 items
+Confidence: 4/5 paths agree (80%)
+
+Divergence detected on chain 3,5 —
+minor rounding differences.
+Reliable answer: 62`,
+    badges: [['Highest accuracy','badge-green'],['Oracle-like on GSM8K','badge-green'],['5–10× cost','badge-red'],['Parallelizable','badge-yellow']],
+    metrics: [['Accuracy gain','~45%'],['Token cost','N × base'],['Best for','High-stakes decisions']]
   },
-  'hyde': {
-    name: 'HyDE (Hypothetical Document Embeddings)',
-    benefit: '+10-30% retrieval recall',
-    overhead: '+1 LLM call before retrieval',
-    buildPrompt: q => `[Step 1 — Generate hypothetical answer]\nSystem: You are an expert. Write a detailed technical paragraph answering:\n${q}\n\n[Step 2 — Embed the hypothetical answer]\nembed(hypothetical_answer)  ← not embed(query)\n\n[Step 3 — Search vector DB]\nvectorstore.similarity_search_by_vector(hyp_embedding, k=5)`,
-    description: 'Generate a hypothetical answer, embed it, then use that embedding for retrieval. Bridges vocabulary gap between query and documents.'
+  tot: {
+    prompt: `Problem: Game of 24 with 4,5,6,10
+
+[Generate 3 candidate first steps]
+A: 4+5=9, remaining: 9,6,10
+B: 6×4=24, remaining: 24,5,10
+C: 10-4=6, remaining: 6,5,6
+
+[Evaluate each — score sure/likely/impossible]
+A: likely (9×... possible)
+B: sure (if 5-5=0... tricky)
+C: impossible (can't reach 24 from 6,5,6)
+
+[Prune C, explore A and B deeper]`,
+    output: `Winning path found:
+B → 5/5=1 → 24×1=24 ✓
+
+Solution: 6×(5/5+4-4)...
+or directly: (10-6)×(5+1) = 4×6 = 24
+
+Backtracking worked at depth 2.`,
+    badges: [['Best for planning','badge-green'],['Can backtrack','badge-green'],['O(B×D) calls','badge-red'],['Expensive','badge-red']],
+    metrics: [['Best on','Game of 24 (74% vs 4%)'],['Cost','O(B × D) LLM calls'],['Best for','Planning, constraint problems']]
+  },
+  hyde: {
+    prompt: `User query: "How does attention
+mechanism work in transformers?"
+
+Step 1 — Generate hypothetical answer:
+"The attention mechanism in transformers
+computes scaled dot-product attention:
+Attention(Q,K,V) = softmax(QK^T/√d)V
+where Q,K,V are query/key/value matrices..."
+
+Step 2 — Embed hypothetical answer
+Step 3 — Retrieve similar documents`,
+    output: `Retrieved documents (by hypothetical embedding):
+1. "Attention Is All You Need" (Vaswani 2017)
+   Score: 0.94
+2. "BERT: Pre-training..." (Devlin 2018)
+   Score: 0.89
+3. "Efficient Transformers: A Survey"
+   Score: 0.86
+
+vs. Query-only retrieval:
+1. "What is attention?" blog post
+   Score: 0.91 ← Wrong domain!`,
+    badges: [['Better recall','badge-green'],['Bridges vocab gap','badge-green'],['Extra LLM call','badge-yellow'],['May hallucinate doc','badge-yellow']],
+    metrics: [['Precision gain','~15–25%'],['Extra cost','1 LLM call / query'],['Best for','Technical RAG systems']]
   }
 };
 
-function comparePrompt() {
-  const question = document.getElementById('user-question').value.trim();
-  if (!question) return;
-  const selected = document.querySelector('input[name="technique"]:checked').value;
-  const t = TECHNIQUES[selected];
-  const prompt = t.buildPrompt(question);
+function selectTech(key) {
+  document.querySelectorAll('.tech-tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  const d = techData[key];
+  document.getElementById('tech-prompt-text').textContent = d.prompt;
+  document.getElementById('tech-output-text').textContent = d.output;
+  const bd = document.getElementById('tech-badges');
+  bd.innerHTML = d.badges.map(([t,c]) => `<span class="badge ${c}">${t}</span>`).join('');
+  const mt = document.getElementById('tech-metrics');
+  mt.innerHTML = d.metrics.map(([k,v]) => `<div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px solid var(--border)"><span style="color:var(--muted)">${k}</span><span style="font-weight:600">${v}</span></div>`).join('');
+}
+selectTech('zero_cot');
 
-  const out = document.getElementById('technique-output');
-  out.innerHTML = `
-    <div class="technique-card active">
-      <div class="technique-name">${t.name}</div>
-      <div class="technique-prompt">${escapeHtml(prompt)}</div>
-      <div class="technique-meta">
-        <span class="tech-badge tech-benefit">Benefit: ${t.benefit}</span>
-        <span class="tech-badge tech-cost">Token overhead: ${t.overhead}</span>
-      </div>
-      <div style="font-size:12px;color:var(--muted);line-height:1.6;">${t.description}</div>
-    </div>
-  `;
+// ── TOT VISUALIZER ──
+const TOT_SEQUENCE = [
+  () => {
+    ['l1a','l1b','l1c'].forEach((id,i) => setTimeout(() => {
+      const el = document.getElementById(id);
+      el.classList.add('drawn');
+    }, i*200));
+    setTimeout(() => {
+      ['n1a','n1b','n1c'].forEach((id,i) => setTimeout(() => {
+        const el = document.getElementById(id);
+        el.style.transition = 'opacity 0.4s';
+        el.style.opacity = '1';
+      }, i*200));
+    }, 700);
+  },
+  () => {
+    ['l2a1','l2a2','l2b1','l2c1'].forEach((id,i) => setTimeout(() => {
+      document.getElementById(id).classList.add('drawn');
+    }, i*150));
+    setTimeout(() => {
+      ['n2a1','n2a2','n2b1','n2c1'].forEach((id,i) => setTimeout(() => {
+        const el = document.getElementById(id);
+        el.style.transition = 'opacity 0.4s';
+        el.style.opacity = '1';
+      }, i*150));
+    }, 700);
+  },
+  () => {
+    const wb = document.getElementById('l2b1');
+    wb.classList.add('winner');
+    document.getElementById('l3b1').classList.add('drawn','winner');
+    setTimeout(() => {
+      const n = document.getElementById('n3b1');
+      n.style.transition = 'opacity 0.5s';
+      n.style.opacity = '1';
+    }, 500);
+  }
+];
+let totStep = 0;
+function animateToT() {
+  if (totStep < TOT_SEQUENCE.length) {
+    TOT_SEQUENCE[totStep]();
+    totStep++;
+  }
+}
+function resetToT() {
+  totStep = 0;
+  ['l1a','l1b','l1c','l2a1','l2a2','l2b1','l2c1','l3b1'].forEach(id => {
+    const el = document.getElementById(id);
+    el.classList.remove('drawn','selected','pruned','winner');
+  });
+  ['n1a','n1b','n1c','n2a1','n2a2','n2b1','n2c1','n3b1'].forEach(id => {
+    document.getElementById(id).style.opacity = '0';
+  });
+  document.getElementById('tot-info').style.display = 'none';
 }
 
-function escapeHtml(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const nodeInfoMap = {
+  root: 'Root node: Problem statement — "Game of 24 with 4, 5, 6, 10". The model generates 3 candidate first-step thoughts from here.',
+  n1a: 'Thought A: 4+5=9. Remaining numbers: 9, 6, 10. Evaluator scores this as "likely" — possible to reach 24.',
+  n1b: 'Thought B: 6×4=24. But now must combine with 5 and 10 to get ×1... evaluator scores "likely" with creative paths.',
+  n1c: 'Thought C: 10-4=6. Remaining: 6, 5, 6. Evaluator scores "impossible" — cannot reach 24 from these. Pruned!'
+};
+function showNodeInfo(id) {
+  const box = document.getElementById('tot-info');
+  box.style.display = 'block';
+  box.textContent = nodeInfoMap[id] || 'Click a node to see its thought evaluation.';
 }
 </script>
 </body>

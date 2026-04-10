@@ -3,2057 +3,773 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Day 2: Tool Use & The ReAct Loop | Learn Generative AI</title>
+<title>Day 2: Prompt Engineering Mastery | Agentic AI Mastery</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #0a0a0f;
-    --surface: #141420;
-    --surface2: #1c1c2e;
-    --border: #2a2a3e;
-    --purple: #7c3aed;
-    --purple-light: #a855f7;
-    --purple-dim: rgba(124,58,237,0.15);
-    --teal: #0d9488;
-    --teal-light: #2dd4bf;
-    --teal-dim: rgba(13,148,136,0.15);
-    --text: #e2e8f0;
-    --text-muted: #94a3b8;
-    --text-dim: #64748b;
-    --green: #10b981;
-    --amber: #f59e0b;
-    --red: #ef4444;
-    --blue: #3b82f6;
-    --radius: 12px;
-    --radius-sm: 8px;
-  }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Inter', sans-serif;
-    line-height: 1.7;
-    overflow-x: hidden;
-  }
-
-  #progress-bar {
-    position: fixed; top: 0; left: 0;
-    height: 3px;
-    background: linear-gradient(90deg, var(--purple), var(--teal));
-    z-index: 1000;
-    transition: width 0.3s;
-  }
-
-  nav {
-    position: sticky; top: 0; z-index: 100;
-    border-bottom: 1px solid var(--border);
-    background: rgba(10,10,15,0.9);
-    backdrop-filter: blur(12px);
-    padding: 0;
-  }
-  .nav-inner {
-    max-width: 1100px; margin: 0 auto; padding: 0 24px;
-    height: 52px;
-    display: flex; align-items: center; justify-content: space-between;
-  }
-  .nav-btn {
-    padding: 7px 18px; border-radius: 8px;
-    border: 1px solid var(--border);
-    background: var(--surface2); color: var(--muted);
-    font-size: 13px; font-weight: 600;
-    text-decoration: none; transition: all 0.2s;
-    font-family: inherit;
-  }
-  .nav-btn:hover { border-color: var(--purple); color: var(--text); }
-  .nav-btn.next {
-    border-color: rgba(124,58,237,0.5);
-    color: var(--purple-light);
-  }
-  .nav-btn.next:hover {
-    background: var(--purple); color: white; border-color: var(--purple);
-  }
-  .nav-btn.complete {
-    border-color: rgba(245,158,11,0.5);
-    color: var(--yellow);
-  }
-  .nav-btn.complete:hover {
-    background: var(--yellow); color: #0a0a0f; border-color: var(--yellow);
-  }
-  .nav-brand {
-    font-size: 14px; font-weight: 700; color: var(--muted);
-    text-decoration: none; letter-spacing: -0.2px;
-    transition: color 0.2s;
-  }
-  .nav-brand:hover { color: var(--text); }
-
-  .hero {
-    padding: 5rem 2rem 3rem;
-    text-align: center;
-    max-width: 900px;
-    margin: 0 auto;
-  }
-
-  .day-badge {
-    display: inline-flex; align-items: center; gap: 0.5rem;
-    background: var(--purple-dim); border: 1px solid var(--purple);
-    color: var(--purple-light); padding: 0.3rem 1rem;
-    border-radius: 100px; font-size: 0.8rem; font-weight: 600;
-    letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 1.5rem;
-  }
-
-  .hero h1 {
-    font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 700;
-    background: linear-gradient(135deg, #e2e8f0 0%, var(--purple-light) 50%, var(--teal-light) 100%);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-    line-height: 1.2; margin-bottom: 1rem;
-  }
-
-  .hero p { color: var(--text-muted); font-size: 1.1rem; max-width: 600px; margin: 0 auto 2rem; }
-
-  .objectives { display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: center; }
-  .obj-tag { background: var(--surface); border: 1px solid var(--border); padding: 0.35rem 0.75rem; border-radius: 100px; font-size: 0.8rem; color: var(--text-muted); }
-
-  .container { max-width: 1100px; margin: 0 auto; padding: 0 2rem; }
-
-  section { padding: 4rem 0; }
-  section + section { border-top: 1px solid var(--border); }
-
-  .section-header { display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 2.5rem; }
-  .section-num {
-    background: linear-gradient(135deg, var(--purple), var(--teal));
-    color: white; width: 36px; height: 36px; border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 0.85rem; font-weight: 700; flex-shrink: 0; margin-top: 4px;
-  }
-  .section-header h2 { font-size: 1.6rem; font-weight: 700; color: var(--text); margin-bottom: 0.25rem; }
-  .section-header p { color: var(--text-muted); font-size: 0.95rem; }
-
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; transition: border-color 0.2s; }
-  .card:hover { border-color: var(--purple); }
-
-  .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.6s, transform 0.6s; }
-  .fade-in.visible { opacity: 1; transform: translateY(0); }
-
-  .btn {
-    display: inline-flex; align-items: center; gap: 0.5rem;
-    padding: 0.6rem 1.4rem; border-radius: var(--radius-sm); border: none;
-    font-family: 'Inter', sans-serif; font-size: 0.9rem; font-weight: 500;
-    cursor: pointer; transition: all 0.2s;
-  }
-  .btn-primary { background: var(--purple); color: white; }
-  .btn-primary:hover { background: var(--purple-light); transform: translateY(-1px); }
-  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
-  .btn-secondary:hover { border-color: var(--purple); color: var(--purple-light); }
-  .btn-teal { background: var(--teal); color: white; }
-  .btn-teal:hover { background: var(--teal-light); color: var(--bg); }
-
-  .info-box { background: var(--teal-dim); border: 1px solid var(--teal); border-radius: var(--radius-sm); padding: 1rem 1.25rem; margin-bottom: 1.5rem; font-size: 0.88rem; }
-  .info-box strong { color: var(--teal-light); }
-  .warn-box { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.4); border-radius: var(--radius-sm); padding: 1rem 1.25rem; margin-bottom: 1.5rem; font-size: 0.88rem; }
-  .warn-box strong { color: var(--amber); }
-
-  /* ReAct Loop */
-  .react-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2rem;
-    padding: 2rem;
-  }
-
-  .react-cycle {
-    position: relative;
-    width: 360px;
-    height: 360px;
-  }
-
-  .react-node {
-    position: absolute;
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s;
-    border: 2px solid transparent;
-    text-align: center;
-  }
-
-  .react-node:hover, .react-node.active {
-    transform: scale(1.12);
-  }
-
-  .react-node .node-icon { font-size: 1.8rem; margin-bottom: 0.2rem; }
-  .react-node .node-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
-
-  .node-think {
-    background: var(--purple-dim);
-    border-color: var(--purple);
-    color: var(--purple-light);
-    top: 0; left: 50%; transform: translateX(-50%);
-  }
-  .node-think:hover, .node-think.active {
-    background: rgba(124,58,237,0.3);
-    transform: translateX(-50%) scale(1.12);
-    box-shadow: 0 0 30px rgba(124,58,237,0.4);
-  }
-
-  .node-act {
-    background: rgba(245,158,11,0.15);
-    border-color: var(--amber);
-    color: var(--amber);
-    bottom: 0; left: 8%;
-  }
-  .node-act:hover, .node-act.active {
-    background: rgba(245,158,11,0.3);
-    box-shadow: 0 0 30px rgba(245,158,11,0.4);
-  }
-
-  .node-observe {
-    background: var(--teal-dim);
-    border-color: var(--teal);
-    color: var(--teal-light);
-    bottom: 0; right: 8%;
-  }
-  .node-observe:hover, .node-observe.active {
-    background: rgba(13,148,136,0.3);
-    box-shadow: 0 0 30px rgba(13,148,136,0.4);
-  }
-
-  .react-arrows {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    pointer-events: none;
-  }
-
-  .react-info {
-    max-width: 500px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 1.25rem 1.5rem;
-    min-height: 120px;
-    transition: all 0.3s;
-  }
-
-  .react-info h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; }
-  .react-info p { font-size: 0.88rem; color: var(--text-muted); }
-  .react-info ul { margin-top: 0.5rem; padding-left: 1.2rem; font-size: 0.85rem; color: var(--text-muted); }
-  .react-info ul li { margin-bottom: 0.3rem; }
-
-  /* Trace Viewer */
-  .trace-container {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
-  }
-
-  .trace-header {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 1rem 1.5rem;
-    display: flex; align-items: center; justify-content: space-between;
-  }
-
-  .trace-query {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.9rem;
-    color: var(--text);
-  }
-
-  .trace-query span { color: var(--purple-light); }
-
-  .trace-steps {
-    padding: 1rem 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    min-height: 320px;
-  }
-
-  .trace-row {
-    display: flex;
-    gap: 0.75rem;
-    align-items: flex-start;
-    opacity: 0;
-    transform: translateX(-15px);
-    transition: all 0.35s;
-  }
-  .trace-row.show { opacity: 1; transform: translateX(0); }
-
-  .trace-badge {
-    flex-shrink: 0;
-    padding: 0.2rem 0.5rem;
-    border-radius: 5px;
-    font-size: 0.7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-family: 'JetBrains Mono', monospace;
-    min-width: 72px;
-    text-align: center;
-  }
-
-  .badge-think { background: var(--purple-dim); color: var(--purple-light); border: 1px solid var(--purple); }
-  .badge-act { background: rgba(245,158,11,0.15); color: var(--amber); border: 1px solid rgba(245,158,11,0.4); }
-  .badge-observe { background: var(--teal-dim); color: var(--teal-light); border: 1px solid var(--teal); }
-  .badge-answer { background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid rgba(16,185,129,0.4); }
-
-  .trace-text {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.82rem;
-    color: var(--text);
-    padding-top: 0.25rem;
-    flex: 1;
-  }
-
-  .trace-meta {
-    font-size: 0.72rem;
-    color: var(--text-dim);
-    display: block;
-    margin-top: 0.2rem;
-  }
-
-  .trace-controls { display: flex; gap: 0.75rem; padding: 1rem 1.5rem; border-top: 1px solid var(--border); align-items: center; }
-  .trace-progress { font-size: 0.85rem; color: var(--text-muted); }
-
-  /* Tool Schema Builder */
-  .schema-builder {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
-  }
-
-  @media (max-width: 768px) { .schema-builder { grid-template-columns: 1fr; } }
-
-  .builder-form {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 1.5rem;
-  }
-
-  .form-group { margin-bottom: 1rem; }
-  .form-label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.04em; }
-  .form-input {
-    width: 100%;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 0.5rem 0.75rem;
-    color: var(--text);
-    font-family: 'Inter', sans-serif;
-    font-size: 0.88rem;
-    transition: border-color 0.2s;
-    outline: none;
-  }
-  .form-input:focus { border-color: var(--purple); }
-
-  select.form-input { cursor: pointer; }
-
-  .param-row {
-    display: grid;
-    grid-template-columns: 1fr 80px auto auto;
-    gap: 0.5rem;
-    align-items: center;
-    margin-bottom: 0.5rem;
-    animation: slideIn 0.3s ease;
-  }
-
-  @keyframes slideIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
-
-  .param-req {
-    display: flex; align-items: center; gap: 0.3rem;
-    font-size: 0.75rem; color: var(--text-muted);
-  }
-
-  .remove-btn {
-    background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3);
-    color: var(--red); border-radius: 6px; width: 28px; height: 28px;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer; font-size: 0.9rem; transition: all 0.2s;
-  }
-  .remove-btn:hover { background: rgba(239,68,68,0.3); }
-
-  .schema-preview {
-    background: #0d0d14;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
-  }
-
-  .preview-header {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 0.75rem 1rem;
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    font-weight: 500;
-  }
-
-  .preview-code {
-    padding: 1.25rem;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.8rem;
-    line-height: 1.8;
-    overflow-x: auto;
-    white-space: pre;
-  }
-
-  .kj { color: #e5c07b; }
-  .ks { color: #98c379; }
-  .kb { color: #c678dd; }
-  .kn { color: #d19a66; }
-  .ko { color: #5c6370; }
-
-  /* Tool Schema Anatomy */
-  .anatomy-container {
-    position: relative;
-    display: flex;
-    gap: 2rem;
-  }
-
-  .anatomy-code {
-    background: #0d0d14;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 1.5rem;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.82rem;
-    line-height: 2;
-    flex: 1;
-    position: relative;
-  }
-
-  .annotation-marker {
-    display: inline-block;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: var(--purple);
-    color: white;
-    font-size: 0.65rem;
-    font-weight: 700;
-    text-align: center;
-    line-height: 18px;
-    margin-left: 0.5rem;
-    cursor: pointer;
-    vertical-align: middle;
-    transition: all 0.2s;
-  }
-  .annotation-marker:hover { background: var(--purple-light); transform: scale(1.2); }
-
-  .annotations-panel {
-    width: 280px;
-    flex-shrink: 0;
-  }
-
-  .annotation-item {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 0.75rem 1rem;
-    margin-bottom: 0.75rem;
-    transition: all 0.2s;
-  }
-  .annotation-item.highlighted { border-color: var(--purple); background: var(--purple-dim); }
-  .annotation-num { display: inline-flex; width: 20px; height: 20px; border-radius: 50%; background: var(--purple); color: white; font-size: 0.65rem; font-weight: 700; align-items: center; justify-content: center; margin-right: 0.5rem; }
-  .annotation-title { font-size: 0.85rem; font-weight: 600; color: var(--text); }
-  .annotation-desc { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem; }
-
-  /* Description quality comparison */
-  .desc-compare {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
-  }
-
-  @media (max-width: 700px) { .desc-compare { grid-template-columns: 1fr; } }
-
-  .desc-box {
-    border-radius: var(--radius);
-    overflow: hidden;
-    border: 1px solid var(--border);
-  }
-
-  .desc-box-header {
-    padding: 0.75rem 1rem;
-    font-weight: 600;
-    font-size: 0.85rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  .desc-box.bad-desc .desc-box-header { background: rgba(239,68,68,0.15); color: var(--red); border-bottom: 1px solid rgba(239,68,68,0.3); }
-  .desc-box.good-desc .desc-box-header { background: rgba(16,185,129,0.15); color: var(--green); border-bottom: 1px solid rgba(16,185,129,0.3); }
-
-  .desc-box-body {
-    background: var(--surface2);
-    padding: 1rem;
-    font-size: 0.85rem;
-    color: var(--text-muted);
-  }
-
-  .desc-schema {
-    background: #0d0d14;
-    border-radius: var(--radius-sm);
-    padding: 0.75rem;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.75rem;
-    margin-bottom: 0.75rem;
-    color: #98c379;
-  }
-
-  .desc-result {
-    background: var(--surface);
-    border-radius: var(--radius-sm);
-    padding: 0.75rem;
-    font-size: 0.82rem;
-  }
-  .desc-result .label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); margin-bottom: 0.3rem; }
-  .desc-result .bad-result { color: var(--red); }
-  .desc-result .good-result { color: var(--green); }
-
-  /* Code blocks */
-  .code-block { background: #0d0d14; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 1.5rem; }
-  .code-header { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; background: var(--surface); border-bottom: 1px solid var(--border); font-size: 0.8rem; }
-  .code-title { color: var(--text-muted); font-weight: 500; }
-  .code-lang { background: var(--purple-dim); color: var(--purple-light); padding: 0.2rem 0.5rem; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; }
-  .code-content { padding: 1.25rem 1.5rem; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; line-height: 1.8; white-space: pre; }
-
-  .kw { color: #c678dd; }
-  .fn { color: #61afef; }
-  .str { color: #98c379; }
-  .num { color: #d19a66; }
-  .cm { color: #5c6370; font-style: italic; }
-  .var { color: #e06c75; }
-  .py { color: #e2e8f0; }
-  .key { color: #e5c07b; }
-
-  /* Exercises */
-  .exercises-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; }
-  .exercise-card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 1.25rem; cursor: pointer;
-    transition: all 0.2s; position: relative; overflow: hidden;
-  }
-  .exercise-card::before {
-    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
-    background: linear-gradient(90deg, var(--purple), var(--teal));
-    transform: scaleX(0); transition: transform 0.3s; transform-origin: left;
-  }
-  .exercise-card:hover { border-color: var(--purple); transform: translateY(-2px); }
-  .exercise-card:hover::before { transform: scaleX(1); }
-  .exercise-card.done { border-color: var(--green); }
-  .exercise-card.done::before { background: var(--green); transform: scaleX(1); }
-  .ex-num { font-size: 0.75rem; font-weight: 700; color: var(--purple-light); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
-  .ex-title { font-weight: 600; font-size: 0.95rem; margin-bottom: 0.5rem; }
-  .ex-desc { font-size: 0.8rem; color: var(--text-muted); }
-  .ex-check { position: absolute; top: 1rem; right: 1rem; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; transition: all 0.2s; }
-  .exercise-card.done .ex-check { background: var(--green); border-color: var(--green); color: white; }
-
-  footer { border-top: 1px solid var(--border); padding: 2rem; text-align: center; color: var(--text-dim); font-size: 0.85rem; }
-  footer a { color: var(--purple-light); text-decoration: none; }
-  footer a:hover { text-decoration: underline; }
-
-  /* ── Day 2 Enhancements ── */
-  .d2-enhance-section {
-    max-width: 900px;
-    margin: 3rem auto;
-    padding: 0 2rem;
-  }
-  .d2-enhance-section h2 {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--text);
-    margin-bottom: 0.4rem;
-  }
-  .d2-section-tag {
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--purple-light);
-    margin-bottom: 1rem;
-    display: block;
-  }
-
-  /* Messages array deep dive */
-  .msg-step-nav {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-    margin-bottom: 1.25rem;
-  }
-  .msg-step-btn {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 0.4rem 0.9rem;
-    font-size: 0.8rem;
-    color: var(--text-dim);
-    cursor: pointer;
-    font-family: 'Inter', sans-serif;
-    transition: all 0.2s;
-  }
-  .msg-step-btn.active { background: var(--purple-dim); border-color: var(--purple); color: var(--purple-light); }
-  .msg-step-btn:hover { border-color: var(--purple); color: var(--text); }
-  .msg-viewer {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    overflow: hidden;
-  }
-  .msg-viewer-header {
-    background: #1a1a2e;
-    padding: 0.75rem 1.25rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-bottom: 1px solid var(--border);
-  }
-  .msg-viewer-title { font-size: 0.85rem; font-weight: 600; color: var(--text); }
-  .msg-viewer-meta { font-size: 0.75rem; color: var(--text-dim); }
-  .msg-viewer-body {
-    padding: 1.25rem;
-    overflow-x: auto;
-  }
-  .msg-code {
-    background: #0d0d18;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 1rem;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.75rem;
-    line-height: 1.6;
-    color: var(--text);
-    white-space: pre;
-    overflow-x: auto;
-  }
-  .msg-added { background: rgba(16,185,129,0.12); border-radius: 3px; box-shadow: 0 0 0 1px rgba(16,185,129,0.3); }
-  .json-key   { color: #7dd3fc; }
-  .json-str   { color: #86efac; }
-  .json-kw    { color: #c084fc; }
-  .json-num   { color: #fb923c; }
-  .msg-insight-box {
-    background: #1a1a2e;
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--teal);
-    border-radius: 8px;
-    padding: 1rem 1.25rem;
-    font-size: 0.875rem;
-    color: var(--text);
-    margin-top: 1rem;
-  }
-  .msg-insight-box strong { color: #2dd4bf; }
-
-  /* Parallel tool calls */
-  .parallel-compare {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.25rem;
-    margin-bottom: 1.25rem;
-  }
-  @media (max-width: 640px) { .parallel-compare { grid-template-columns: 1fr; } }
-  .parallel-side {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 1.25rem;
-  }
-  .parallel-side-title {
-    font-size: 0.85rem;
-    font-weight: 700;
-    margin-bottom: 1rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid var(--border);
-  }
-  .parallel-side.sequential .parallel-side-title { color: #ef4444; }
-  .parallel-side.parallel   .parallel-side-title { color: #10b981; }
-  .seq-box {
-    background: #0d0d18;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 0.5rem 0.75rem;
-    font-size: 0.78rem;
-    color: var(--text);
-    margin-bottom: 0.4rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  .seq-box .seq-icon { font-size: 0.9rem; }
-  .seq-arrow { text-align: center; color: var(--text-dim); font-size: 0.8rem; margin: 0.1rem 0; }
-  .par-boxes { display: flex; gap: 0.5rem; }
-  .par-box {
-    flex: 1;
-    background: #0d0d18;
-    border: 1px solid rgba(16,185,129,0.4);
-    border-radius: 6px;
-    padding: 0.5rem 0.5rem;
-    font-size: 0.75rem;
-    color: var(--text);
-    text-align: center;
-  }
-  .timing-badge {
-    display: inline-block;
-    padding: 0.2rem 0.6rem;
-    border-radius: 5px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    margin-top: 0.75rem;
-    font-family: 'JetBrains Mono', monospace;
-  }
-  .timing-badge.slow { background: rgba(239,68,68,0.15); color: #ef4444; }
-  .timing-badge.fast { background: rgba(16,185,129,0.15); color: #10b981; }
-  .gotcha-box {
-    background: rgba(245,158,11,0.08);
-    border: 1px solid rgba(245,158,11,0.35);
-    border-left: 3px solid #f59e0b;
-    border-radius: 8px;
-    padding: 0.85rem 1.1rem;
-    font-size: 0.875rem;
-    color: var(--text);
-    margin-top: 1rem;
-  }
-  .gotcha-box strong { color: #f59e0b; }
-
-  /* Tool description quality lab */
-  .tdq-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
-    margin-bottom: 1.25rem;
-  }
-  @media (max-width: 700px) { .tdq-grid { grid-template-columns: 1fr; } }
-  .tdq-card {
-    background: var(--surface);
-    border: 2px solid var(--border);
-    border-radius: 12px;
-    padding: 1.1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-  .tdq-card.bad    { border-color: #ef4444; }
-  .tdq-card.ok     { border-color: #f59e0b; }
-  .tdq-card.great  { border-color: #10b981; }
-  .tdq-label {
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    padding: 0.2rem 0.5rem;
-    border-radius: 4px;
-    display: inline-block;
-    width: fit-content;
-  }
-  .tdq-card.bad   .tdq-label { background: rgba(239,68,68,0.15); color: #ef4444; }
-  .tdq-card.ok    .tdq-label { background: rgba(245,158,11,0.15); color: #f59e0b; }
-  .tdq-card.great .tdq-label { background: rgba(16,185,129,0.15); color: #10b981; }
-  .tdq-desc {
-    background: #0d0d18;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 0.6rem 0.8rem;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.72rem;
-    color: var(--text);
-    white-space: pre-wrap;
-    line-height: 1.5;
-  }
-  .tdq-behavior {
-    font-size: 0.78rem;
-    color: var(--text-dim);
-    font-style: italic;
-    padding: 0.5rem;
-    border-radius: 6px;
-  }
-  .tdq-card.bad   .tdq-behavior { background: rgba(239,68,68,0.06); color: #fca5a5; }
-  .tdq-card.ok    .tdq-behavior { background: rgba(245,158,11,0.06); color: #fcd34d; }
-  .tdq-card.great .tdq-behavior { background: rgba(16,185,129,0.06); color: #6ee7b7; }
-  .tdq-rules-box {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--purple);
-    border-radius: 8px;
-    padding: 1rem 1.25rem;
-  }
-  .tdq-rules-box h4 { font-size: 0.85rem; color: var(--purple-light); margin-bottom: 0.6rem; font-weight: 600; }
-  .tdq-rules-box ol { padding-left: 1.2rem; margin: 0; }
-  .tdq-rules-box li { font-size: 0.84rem; color: var(--text); margin-bottom: 0.4rem; }
+:root {
+  --bg: #0a0a0f; --card: #141420; --surface2: #1a1a2e; --border: #2a2a45;
+  --purple: #7c3aed; --purple-light: #a855f7; --purple-dim: rgba(124,58,237,0.15);
+  --teal: #0d9488; --teal-light: #2dd4bf; --teal-dim: rgba(13,148,136,0.15);
+  --text: #e2e8f0; --muted: #64748b; --green: #10b981; --amber: #f59e0b;
+  --red: #ef4444; --blue: #3b82f6;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.7; overflow-x: hidden; }
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background: radial-gradient(ellipse 70% 50% at 80% 10%, rgba(124,58,237,0.08) 0%, transparent 60%),
+              radial-gradient(ellipse 60% 40% at 10% 85%, rgba(13,148,136,0.06) 0%, transparent 60%);
+  pointer-events: none; z-index: 0;
+}
+@keyframes fadeIn { from{opacity:0}to{opacity:1} }
+@keyframes slideUp { from{opacity:0;transform:translateY(32px)}to{opacity:1;transform:translateY(0)} }
+@keyframes slideDown { from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)} }
+@keyframes pulse { 0%,100%{transform:scale(1)}50%{transform:scale(1.05)} }
+@keyframes glow { 0%,100%{box-shadow:0 0 8px rgba(124,58,237,0.3)}50%{box-shadow:0 0 24px rgba(124,58,237,0.6)} }
+@keyframes shimmer { 0%{background-position:-200% center}100%{background-position:200% center} }
+@keyframes gradientShift { 0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%} }
+@keyframes float { 0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)} }
+@keyframes borderPulse { 0%,100%{border-color:rgba(124,58,237,0.3)}50%{border-color:rgba(124,58,237,0.8)} }
+@keyframes typeIn { from{width:0}to{width:100%} }
+@keyframes blink { 0%,100%{opacity:1}50%{opacity:0} }
+
+.reveal { opacity:0; transform:translateY(28px); transition:opacity 0.7s ease,transform 0.7s ease; }
+.reveal.visible { opacity:1; transform:translateY(0); }
+.reveal-left { opacity:0; transform:translateX(-28px); transition:opacity 0.7s ease,transform 0.7s ease; }
+.reveal-left.visible { opacity:1; transform:translateX(0); }
+.reveal-right { opacity:0; transform:translateX(28px); transition:opacity 0.7s ease,transform 0.7s ease; }
+.reveal-right.visible { opacity:1; transform:translateX(0); }
+.reveal-delay-1{transition-delay:0.1s} .reveal-delay-2{transition-delay:0.2s}
+.reveal-delay-3{transition-delay:0.3s} .reveal-delay-4{transition-delay:0.4s}
+
+#progress-bar { position:fixed;top:0;left:0;height:3px;width:0%;background:linear-gradient(90deg,var(--purple),var(--teal),var(--purple));background-size:200% 100%;animation:shimmer 2s linear infinite;z-index:1000;transition:width 0.15s linear; }
+#back-to-top { position:fixed;bottom:32px;right:32px;z-index:500;width:44px;height:44px;border-radius:50%;background:var(--teal);border:none;color:white;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transform:translateY(20px);transition:all 0.3s;box-shadow:0 4px 20px rgba(13,148,136,0.4); }
+#back-to-top.visible { opacity:1;transform:translateY(0); }
+#back-to-top:hover { background:var(--teal-light);transform:translateY(-4px); }
+
+.container { max-width:1100px;margin:0 auto;padding:0 24px;position:relative;z-index:1; }
+
+nav { position:sticky;top:3px;z-index:100;border-bottom:1px solid var(--border);background:rgba(10,10,15,0.92);backdrop-filter:blur(20px);animation:slideDown 0.5s ease; }
+.nav-inner { max-width:1100px;margin:0 auto;padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between; }
+.nav-brand { font-size:14px;font-weight:700;color:var(--muted);text-decoration:none;transition:color 0.2s; }
+.nav-brand:hover { color:var(--text); }
+.nav-right { display:flex;gap:8px;align-items:center; }
+.nav-btn { padding:7px 18px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:13px;font-weight:600;text-decoration:none;transition:all 0.2s;cursor:pointer;font-family:inherit; }
+.nav-btn:hover { border-color:var(--purple);color:var(--text); }
+.nav-btn.prev { border-color:rgba(124,58,237,0.3);color:var(--purple-light); }
+.nav-btn.next { border-color:rgba(13,148,136,0.5);color:var(--teal-light); }
+.nav-btn.next:hover { background:var(--teal);color:white;border-color:var(--teal); }
+.nav-btn.complete { border-color:rgba(245,158,11,0.5);color:var(--amber); }
+.nav-btn.complete:hover { background:var(--amber);color:#0a0a0f; }
+
+.hero { padding:72px 0 48px;text-align:center; }
+.day-badge { display:inline-flex;align-items:center;gap:8px;background:var(--teal-dim);border:1px solid var(--teal);color:var(--teal-light);padding:6px 16px;border-radius:100px;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:24px;animation:slideDown 0.6s ease 0.2s both; }
+.day-badge .dot { width:6px;height:6px;border-radius:50%;background:var(--teal-light);animation:pulse 2s infinite; }
+.hero h1 { font-size:clamp(2.2rem,6vw,4rem);font-weight:900;letter-spacing:-2px;background:linear-gradient(135deg,#e2e8f0 0%,var(--teal-light) 40%,var(--purple-light) 70%,#e2e8f0 100%);background-size:300% 300%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:slideUp 0.7s ease 0.3s both,gradientShift 6s ease infinite;margin-bottom:16px;line-height:1.15; }
+.hero-sub { color:var(--muted);font-size:1.1rem;max-width:620px;margin:0 auto 32px;animation:slideUp 0.7s ease 0.4s both; }
+.hero-stats { display:flex;gap:32px;justify-content:center;flex-wrap:wrap;animation:slideUp 0.7s ease 0.5s both;margin-bottom:32px; }
+.stat-item { text-align:center; }
+.stat-num { font-size:2rem;font-weight:900;color:var(--teal-light);line-height:1; }
+.stat-label { font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-top:4px; }
+.topic-pills { display:flex;gap:8px;flex-wrap:wrap;justify-content:center;animation:slideUp 0.7s ease 0.6s both; }
+.topic-pill { padding:5px 14px;border-radius:100px;background:var(--surface2);border:1px solid var(--border);font-size:12px;color:var(--muted);font-weight:500;transition:all 0.2s; }
+.topic-pill:hover { border-color:var(--teal);color:var(--teal-light); }
+
+.section { padding:64px 0;border-top:1px solid var(--border); }
+.section-header { margin-bottom:36px; }
+.section-num { font-size:11px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px; }
+.section-header h2 { font-size:28px;font-weight:800;letter-spacing:-0.5px;margin-bottom:12px; }
+.section-header p { color:var(--muted);font-size:15px;line-height:1.65;max-width:680px; }
+
+.card { background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;transition:transform 0.25s ease,border-color 0.25s ease,box-shadow 0.25s ease; }
+.card:hover { transform:translateY(-4px);border-color:rgba(13,148,136,0.4);box-shadow:0 12px 40px rgba(0,0,0,0.4),0 0 20px rgba(13,148,136,0.08); }
+.card-grid { display:grid;grid-template-columns:1fr 1fr;gap:20px; }
+.card-grid-3 { display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px; }
+@media(max-width:700px){.card-grid,.card-grid-3{grid-template-columns:1fr}}
+.card-icon { font-size:28px;margin-bottom:12px;animation:float 4s ease-in-out infinite; }
+.card h3 { font-size:16px;font-weight:700;margin-bottom:8px; }
+.card p { font-size:14px;color:var(--muted);line-height:1.6; }
+
+.code-window { background:#0d0d14;border:1px solid var(--border);border-radius:12px;overflow:hidden;margin:20px 0;box-shadow:0 8px 32px rgba(0,0,0,0.5);transition:border-color 0.3s; }
+.code-window:hover { border-color:rgba(13,148,136,0.3); }
+.code-chrome { display:flex;align-items:center;gap:8px;padding:12px 16px;background:#13131f;border-bottom:1px solid var(--border); }
+.dot-r{width:12px;height:12px;border-radius:50%;background:#ff5f57}
+.dot-y{width:12px;height:12px;border-radius:50%;background:#febc2e}
+.dot-g{width:12px;height:12px;border-radius:50%;background:#28c840}
+.code-label { margin-left:auto;font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace; }
+pre { padding:20px 24px;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.7; }
+.c-kw{color:#c792ea}.c-fn{color:#82aaff}.c-str{color:#c3e88d}.c-cmt{color:#546e7a;font-style:italic}.c-num{color:#f78c6c}.c-cls{color:#ffcb6b}.c-op{color:#89ddff}
+
+.callout { border-radius:12px;padding:20px 24px;margin:20px 0;display:flex;gap:16px;align-items:flex-start; }
+.callout-icon { font-size:20px;flex-shrink:0;margin-top:2px; }
+.callout-body h4 { font-size:14px;font-weight:700;margin-bottom:6px; }
+.callout-body p { font-size:14px;line-height:1.65; }
+.callout.why { background:rgba(13,148,136,0.08);border:1px solid rgba(13,148,136,0.25); }
+.callout.why .callout-body h4{color:var(--teal-light)}.callout.why .callout-body p{color:#94a3b8}
+.callout.warn { background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25); }
+.callout.warn .callout-body h4{color:#fca5a5}.callout.warn .callout-body p{color:#94a3b8}
+.callout.info { background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.25); }
+.callout.info .callout-body h4{color:#93c5fd}.callout.info .callout-body p{color:#94a3b8}
+.callout.tip { background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25); }
+.callout.tip .callout-body h4{color:#fcd34d}.callout.tip .callout-body p{color:#94a3b8}
+
+.compare-table { width:100%;border-collapse:collapse;margin:20px 0; }
+.compare-table th,.compare-table td { padding:12px 16px;text-align:left;border-bottom:1px solid var(--border);font-size:14px; }
+.compare-table th { background:var(--surface2);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted); }
+.compare-table tr:hover td { background:rgba(13,148,136,0.04); }
+.badge{display:inline-block;padding:2px 10px;border-radius:100px;font-size:11px;font-weight:600}
+.badge-green{background:rgba(16,185,129,0.15);color:#34d399}
+.badge-red{background:rgba(239,68,68,0.15);color:#f87171}
+.badge-yellow{background:rgba(245,158,11,0.15);color:#fcd34d}
+.badge-blue{background:rgba(59,130,246,0.15);color:#93c5fd}
+.badge-teal{background:rgba(13,148,136,0.15);color:var(--teal-light)}
+
+.widget { background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;margin:24px 0;transition:border-color 0.3s; }
+.widget:focus-within { border-color:rgba(13,148,136,0.5);box-shadow:0 0 0 3px rgba(13,148,136,0.1); }
+.widget-title { font-size:16px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:8px; }
+.widget-sub { font-size:13px;color:var(--muted);margin-bottom:20px; }
+.widget-label { font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px; }
+
+select,input[type=text] {
+  background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);
+  font-family:'Inter',sans-serif;font-size:13px;padding:10px 14px;width:100%;transition:border-color 0.2s;
+}
+select:focus,input[type=text]:focus { outline:none;border-color:var(--teal); }
+select { cursor:pointer; }
+textarea { width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;padding:14px;resize:vertical;min-height:80px;transition:border-color 0.2s; }
+textarea:focus { outline:none;border-color:var(--teal); }
+input[type=range] { width:100%;-webkit-appearance:none;height:6px;border-radius:99px;background:var(--border);outline:none;cursor:pointer; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--teal-light);cursor:pointer;box-shadow:0 0 0 3px rgba(13,148,136,0.3); }
+
+/* Technique pills */
+.technique-pills { display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px; }
+.technique-pill { padding:8px 16px;border-radius:10px;border:2px solid var(--border);background:var(--surface2);color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;transition:all 0.25s;font-family:inherit; }
+.technique-pill.active { border-color:var(--teal);color:var(--teal-light);background:var(--teal-dim); }
+.technique-pill:hover { border-color:rgba(13,148,136,0.4);color:var(--text); }
+
+/* Prompt output box */
+.prompt-output {
+  background:#0d0d14;border:1px solid rgba(13,148,136,0.3);border-radius:12px;padding:20px;
+  font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.75;color:var(--text);
+  min-height:180px;white-space:pre-wrap;position:relative;
+  transition:border-color 0.3s;
+}
+.prompt-output .sys-label { color:#546e7a;font-size:11px;text-transform:uppercase;letter-spacing:0.08em; }
+.prompt-output .sys-text { color:var(--purple-light); }
+.prompt-output .user-label { color:#546e7a;font-size:11px;text-transform:uppercase;letter-spacing:0.08em; }
+.prompt-output .user-text { color:var(--teal-light); }
+.prompt-output .few-shot { color:#c3e88d; }
+.prompt-output .cot { color:#f78c6c; }
+
+/* A/B Tester */
+.ab-grid { display:grid;grid-template-columns:1fr 1fr;gap:20px; }
+@media(max-width:650px){.ab-grid{grid-template-columns:1fr}}
+.ab-card { background:var(--surface2);border:1px solid var(--border);border-radius:12px;overflow:hidden; }
+.ab-header { padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px; }
+.ab-badge { width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800; }
+.ab-badge.a { background:rgba(124,58,237,0.3);color:var(--purple-light); }
+.ab-badge.b { background:rgba(13,148,136,0.3);color:var(--teal-light); }
+.ab-card textarea { border-radius:0;border:none;border-bottom:1px solid var(--border);min-height:60px;resize:none;background:var(--surface2); }
+.ab-output { padding:14px 16px;font-size:13px;color:var(--muted);line-height:1.7;min-height:120px;font-family:'JetBrains Mono',monospace;font-size:12px; }
+.ab-metric { padding:10px 16px;border-top:1px solid var(--border);display:flex;gap:12px; }
+.ab-score { font-size:12px;font-weight:700; }
+
+/* CoT visualization */
+.cot-chain { display:flex;flex-direction:column;gap:4px;margin-top:12px; }
+.cot-step { padding:10px 14px;border-radius:8px;font-size:13px;line-height:1.6;transition:all 0.3s; }
+.cot-step.thought { background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);color:var(--amber); }
+.cot-step.calculation { background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);color:#93c5fd; }
+.cot-step.conclusion { background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);color:#34d399; }
+.cot-step-label { font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;opacity:0.7; }
+
+.footer { padding:40px 0;border-top:1px solid var(--border);text-align:center; }
+.nav-row { display:flex;gap:16px;justify-content:center;margin-top:16px; }
 </style>
 </head>
-<body>
-
-<div id="progress-bar" style="width:0%"></div>
+<body data-animation-density="high">
+<div id="progress-bar"></div>
+<button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
 
 <nav>
   <div class="nav-inner">
-    <a href="day1.html" class="nav-btn">← Day 1: LLMs</a>
-    <a href="../index.html" class="nav-brand">🤖 Agentic AI</a>
-    <a href="day3.html" class="nav-btn next">Day 3: RAG →</a>
+    <a href="../index.html" class="nav-brand">← Agentic AI Mastery</a>
+    <div class="nav-right">
+      <a href="day1.html" class="nav-btn prev">← Day 1</a>
+      <button class="nav-btn complete" onclick="markComplete()">✓ Mark Complete</button>
+      <a href="day3.html" class="nav-btn next">Day 3 →</a>
+    </div>
   </div>
 </nav>
 
-<div class="hero">
-  <div class="day-badge">📅 Day 2 of 30</div>
-  <h1>Tool Use &<br>The ReAct Loop</h1>
-  <p>Learn how agents reason, act, and observe in cycles — and master the tool schema patterns that make or break agent reliability.</p>
-  <div class="objectives">
-    <span class="obj-tag">🔁 ReAct Pattern</span>
-    <span class="obj-tag">🔧 Tool Schemas</span>
-    <span class="obj-tag">📊 Agent Traces</span>
-    <span class="obj-tag">📝 Good Descriptions</span>
-    <span class="obj-tag">💻 Full Loop Code</span>
-  </div>
-</div>
-
 <div class="container">
-
-<!-- ============================================================ -->
-<!-- SECTION 1: ReAct Loop -->
-<!-- ============================================================ -->
-<section class="fade-in">
-  <div class="section-header">
-    <div class="section-num">1</div>
-    <div>
-      <h2>The ReAct Loop</h2>
-      <p>Reason → Act → Observe. The fundamental cycle that powers all LLM agents. Click each node to explore.</p>
+  <div class="hero">
+    <div class="day-badge"><span class="dot"></span> Day 2 of 30 &nbsp;·&nbsp; Week 1 — Foundations</div>
+    <h1>Prompt Engineering<br>Mastery</h1>
+    <p class="hero-sub">Zero-shot, few-shot, chain-of-thought, and persona techniques — with a live prompt builder and A/B tester to see the difference in real time.</p>
+    <div class="hero-stats">
+      <div class="stat-item"><div class="stat-num" data-target="5">0</div><div class="stat-label">Techniques</div></div>
+      <div class="stat-item"><div class="stat-num" data-target="2">0</div><div class="stat-label">Live Widgets</div></div>
+      <div class="stat-item"><div class="stat-num" data-target="8">0</div><div class="stat-label">Code Examples</div></div>
+      <div class="stat-item"><div class="stat-num" data-target="60">0</div><div class="stat-label">Min Read</div></div>
+    </div>
+    <div class="topic-pills">
+      <span class="topic-pill">Zero-Shot</span>
+      <span class="topic-pill">Few-Shot</span>
+      <span class="topic-pill">Chain-of-Thought</span>
+      <span class="topic-pill">System Prompts</span>
+      <span class="topic-pill">Persona Design</span>
+      <span class="topic-pill">Output Formatting</span>
     </div>
   </div>
 
-  <div class="info-box">
-    <strong>ReAct</strong> (Reasoning + Acting) is a prompting framework where the model interleaves thinking with tool calls. Each iteration through the loop brings the agent closer to the answer. Most production agents are just this loop with good tools and error handling.
-  </div>
+  <!-- ── SECTION 1: WHY PROMPT ENGINEERING ─────────── -->
+  <section class="section">
+    <div class="section-header reveal">
+      <div class="section-num">Section 01</div>
+      <h2>Why Prompt Engineering is Engineering</h2>
+      <p>Prompt engineering isn't about magic tricks or "jailbreaks" — it's a systematic discipline of communicating intent to a stochastic system. The fundamentals have a direct analogy to software design.</p>
+    </div>
 
-  <div class="react-container">
-    <div class="react-cycle">
-      <!-- SVG arrows between nodes -->
-      <svg class="react-arrows" viewBox="0 0 360 360">
-        <defs>
-          <!-- arrowhead pointing TO act (yellow) -->
-          <marker id="aA" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#f59e0b"/></marker>
-          <!-- arrowhead pointing TO observe (teal) -->
-          <marker id="aT" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#0d9488"/></marker>
-          <!-- arrowhead pointing TO think (purple) -->
-          <marker id="aP" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#7c3aed"/></marker>
-        </defs>
+    <p class="reveal" style="color:var(--muted);font-size:15px;line-height:1.8;margin-bottom:20px;">
+      Think of a prompt as a function signature plus type annotations. The system prompt is your module's interface contract — it declares what the function does, its constraints, its output format, and its error behaviors. The user turn is the function call. A poorly specified interface leads to unpredictable outputs; a well-designed one leads to reliable, testable behavior.
+    </p>
+    <p class="reveal" style="color:var(--muted);font-size:15px;line-height:1.8;margin-bottom:20px;">
+      As a backend engineer, you likely already think about: input validation, output schemas, error cases, performance, and maintainability. Apply the same thinking to prompts. Treat them as code — version control them, test them across edge cases, measure their performance, and refactor them when requirements change.
+    </p>
 
-        <!-- THINK → ACT: from bottom-left of THINK down to top of ACT -->
-        <path d="M148 93 C115 160 88 210 88 262"
-              stroke="#f59e0b" stroke-width="2" fill="none"
-              stroke-dasharray="6,4" marker-end="url(#aA)"/>
-
-        <!-- ACT → OBSERVE: from right of ACT across to left of OBSERVE -->
-        <path d="M129 308 C165 332 215 332 251 308"
-              stroke="#0d9488" stroke-width="2" fill="none"
-              stroke-dasharray="6,4" marker-end="url(#aT)"/>
-
-        <!-- OBSERVE → THINK: from top of OBSERVE up to right of THINK -->
-        <path d="M252 262 C288 195 250 128 218 93"
-              stroke="#7c3aed" stroke-width="2" fill="none"
-              stroke-dasharray="6,4" marker-end="url(#aP)"/>
-
-        <!-- Animated dots travelling THINK → ACT → OBSERVE → THINK -->
-        <path id="loop1"
-              d="M180 100 C130 175 88 240 88 305
-                 C115 338 165 342 200 342
-                 C230 342 268 335 272 305
-                 C285 240 255 165 215 100
-                 C205 78 192 68 180 100Z"
-              fill="none"/>
-
-        <circle r="5" fill="#7c3aed" opacity="0.9">
-          <animateMotion dur="2.4s" repeatCount="indefinite" begin="0s">
-            <mpath href="#loop1"/>
-          </animateMotion>
-        </circle>
-        <circle r="5" fill="#f59e0b" opacity="0.9">
-          <animateMotion dur="2.4s" repeatCount="indefinite" begin="0.8s">
-            <mpath href="#loop1"/>
-          </animateMotion>
-        </circle>
-        <circle r="5" fill="#0d9488" opacity="0.9">
-          <animateMotion dur="2.4s" repeatCount="indefinite" begin="1.6s">
-            <mpath href="#loop1"/>
-          </animateMotion>
-        </circle>
-      </svg>
-
-      <div class="react-node node-think" onclick="showReactInfo('think')" id="node-think">
-        <div class="node-icon">🧠</div>
-        <div class="node-label">Think</div>
+    <div class="card-grid reveal reveal-delay-1">
+      <div class="card">
+        <div class="card-icon">📐</div>
+        <h3>Prompts Are Interface Contracts</h3>
+        <p>A good system prompt specifies: the model's role, the task domain, the output format, constraints, and how to handle ambiguity. Miss any of these and you'll get inconsistent outputs at scale.</p>
       </div>
-
-      <div class="react-node node-act" onclick="showReactInfo('act')" id="node-act">
-        <div class="node-icon">⚡</div>
-        <div class="node-label">Act</div>
-      </div>
-
-      <div class="react-node node-observe" onclick="showReactInfo('observe')" id="node-observe">
-        <div class="node-icon">👁️</div>
-        <div class="node-label">Observe</div>
+      <div class="card">
+        <div class="card-icon">🧪</div>
+        <h3>Treat Prompts as Code</h3>
+        <p>Store prompts in version control. Run automated evals against a golden dataset. Log prompt versions alongside model responses. Use Anthropic's Prompt Workbench for systematic testing before deployment.</p>
       </div>
     </div>
 
-    <div class="react-info" id="react-info">
-      <h3 style="color:var(--purple-light)">🧠 THINK — Reasoning Step</h3>
-      <p>The model analyzes the current state: what is the goal? What information is missing? Which tool should I call next? This is the <code style="color:var(--teal-light)">text</code> or chain-of-thought part of the response.</p>
-      <ul>
-        <li>Model reads all messages + tool results</li>
-        <li>Plans the next action or recognizes completion</li>
-        <li>Can produce intermediate reasoning text</li>
-        <li>Extended thinking (Claude 3.7+) does this explicitly</li>
-      </ul>
-    </div>
-  </div>
-
-  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;margin-top:1rem">
-    <div class="card" style="border-color:var(--purple)">
-      <div style="font-size:1.2rem;margin-bottom:0.5rem">🧠 THINK</div>
-      <div style="font-size:0.82rem;color:var(--text-muted)">Model reads context and decides: do I have enough info to answer, or do I need to call a tool?</div>
-    </div>
-    <div class="card" style="border-color:var(--amber)">
-      <div style="font-size:1.2rem;margin-bottom:0.5rem">⚡ ACT</div>
-      <div style="font-size:0.82rem;color:var(--text-muted)">Model outputs a <code style="color:var(--amber)">tool_use</code> block. YOUR code runs the actual function. Model can't touch real systems.</div>
-    </div>
-    <div class="card" style="border-color:var(--teal)">
-      <div style="font-size:1.2rem;margin-bottom:0.5rem">👁️ OBSERVE</div>
-      <div style="font-size:0.82rem;color:var(--text-muted)">You send back a <code style="color:var(--teal-light)">tool_result</code>. Model now has new info and loops back to THINK with updated context.</div>
-    </div>
-    <div class="card" style="border-color:var(--green)">
-      <div style="font-size:1.2rem;margin-bottom:0.5rem">✅ DONE</div>
-      <div style="font-size:0.82rem;color:var(--text-muted)">When <code style="color:var(--green)">stop_reason == "end_turn"</code>, the model has enough info and gives its final answer.</div>
-    </div>
-  </div>
-</section>
-
-<!-- ============================================================ -->
-<!-- SECTION 2: Agent Decision Trace -->
-<!-- ============================================================ -->
-<section class="fade-in">
-  <div class="section-header">
-    <div class="section-num">2</div>
-    <div>
-      <h2>Agent Decision Trace</h2>
-      <p>Watch an agent reason through a multi-step calculation. Click "Next Step" to advance through each API call.</p>
-    </div>
-  </div>
-
-  <div class="trace-container">
-    <div class="trace-header">
-      <div>
-        <div style="font-size:0.75rem;color:var(--text-dim);margin-bottom:0.25rem;">USER QUERY</div>
-        <div class="trace-query">"What is <span>15% of 847</span>, then <span>double it</span>?"</div>
-      </div>
-      <div style="font-size:0.75rem;color:var(--text-dim)">Tools: <span style="color:var(--teal-light)">calculate(expression)</span></div>
-    </div>
-
-    <div class="trace-steps" id="trace-steps">
-      <!-- Steps injected by JS -->
-    </div>
-
-    <div class="trace-controls">
-      <button class="btn btn-primary" onclick="traceNext()">Next Step →</button>
-      <button class="btn btn-secondary" onclick="traceReset()">↺ Reset</button>
-      <span class="trace-progress" id="trace-progress">Step 0 / 7 — Click "Next Step" to begin</span>
-    </div>
-  </div>
-</section>
-
-<!-- ============================================================ -->
-<!-- SECTION 3: Interactive Tool Schema Builder -->
-<!-- ============================================================ -->
-<section class="fade-in">
-  <div class="section-header">
-    <div class="section-num">3</div>
-    <div>
-      <h2>Interactive Tool Schema Builder</h2>
-      <p>Fill in the form — watch the JSON schema update live. This is exactly what the model sees.</p>
-    </div>
-  </div>
-
-  <div class="schema-builder">
-    <div class="builder-form">
-      <div class="form-group">
-        <label class="form-label">Tool Name</label>
-        <input class="form-input" id="sb-name" type="text" value="get_weather" oninput="buildSchema()" placeholder="e.g. search_database">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Description <span style="color:var(--amber);font-size:0.75em">(The model reads this to decide WHEN to call the tool)</span></label>
-        <textarea class="form-input" id="sb-desc" rows="3" oninput="buildSchema()" style="resize:vertical">Get the current weather conditions for a specified city. Returns temperature in Celsius and weather condition.</textarea>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Parameters</label>
-        <div id="params-list"></div>
-        <button class="btn btn-secondary" onclick="addParam()" style="margin-top:0.5rem;font-size:0.8rem;padding:0.4rem 0.8rem">+ Add Parameter</button>
+    <div class="callout why reveal">
+      <span class="callout-icon">💡</span>
+      <div class="callout-body">
+        <h4>Why This Matters at Scale</h4>
+        <p>A prompt that works 90% of the time with 100 users will fail 1,000 times per day with 10,000 users. The 10% failure rate doesn't change — the absolute failures multiply with scale. Systematic prompt engineering is the difference between a demo and a production system.</p>
       </div>
     </div>
+  </section>
 
-    <div class="schema-preview">
-      <div class="preview-header">Live JSON Schema Preview — what the model receives</div>
-      <pre class="preview-code" id="schema-output"></pre>
-    </div>
-  </div>
-</section>
-
-<!-- ============================================================ -->
-<!-- SECTION 4: Tool Schema Anatomy -->
-<!-- ============================================================ -->
-<section class="fade-in">
-  <div class="section-header">
-    <div class="section-num">4</div>
-    <div>
-      <h2>Tool Schema Anatomy</h2>
-      <p>Every field matters. Click the numbered markers to see what each does.</p>
-    </div>
-  </div>
-
-  <div class="anatomy-container" style="flex-wrap:wrap;">
-    <div class="anatomy-code">
-      <div style="color:#5c6370">{</div>
-      <div>&nbsp;&nbsp;<span style="color:#e5c07b">"name"</span>: <span style="color:#98c379">"get_stock_price"</span><span class="annotation-marker" onclick="highlightAnnotation(1)">1</span>,</div>
-      <div>&nbsp;&nbsp;<span style="color:#e5c07b">"description"</span>: <span style="color:#98c379">"Fetch the current stock price for a given ticker symbol. Use this when the user asks about stock prices, market values, or wants to know how a specific company is trading."</span><span class="annotation-marker" onclick="highlightAnnotation(2)">2</span>,</div>
-      <div>&nbsp;&nbsp;<span style="color:#e5c07b">"input_schema"</span>: <span class="annotation-marker" onclick="highlightAnnotation(3)">3</span> {</div>
-      <div>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#e5c07b">"type"</span>: <span style="color:#98c379">"object"</span>,</div>
-      <div>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#e5c07b">"properties"</span>: <span class="annotation-marker" onclick="highlightAnnotation(4)">4</span> {</div>
-      <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#e5c07b">"ticker"</span>: {</div>
-      <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#e5c07b">"type"</span>: <span style="color:#98c379">"string"</span>,</div>
-      <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#e5c07b">"description"</span>: <span style="color:#98c379">"Stock ticker symbol (e.g. AAPL, MSFT, TSLA)"</span><span class="annotation-marker" onclick="highlightAnnotation(5)">5</span></div>
-      <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;},</div>
-      <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#e5c07b">"currency"</span>: {</div>
-      <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#e5c07b">"type"</span>: <span style="color:#98c379">"string"</span>,</div>
-      <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#e5c07b">"enum"</span>: [<span style="color:#98c379">"USD"</span>, <span style="color:#98c379">"EUR"</span>, <span style="color:#98c379">"GBP"</span>]<span class="annotation-marker" onclick="highlightAnnotation(6)">6</span></div>
-      <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</div>
-      <div>&nbsp;&nbsp;&nbsp;&nbsp;},</div>
-      <div>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#e5c07b">"required"</span>: [<span style="color:#98c379">"ticker"</span>]<span class="annotation-marker" onclick="highlightAnnotation(7)">7</span></div>
-      <div>&nbsp;&nbsp;}</div>
-      <div style="color:#5c6370">}</div>
+  <!-- ── SECTION 2: TECHNIQUES ──────────────────────── -->
+  <section class="section">
+    <div class="section-header reveal">
+      <div class="section-num">Section 02</div>
+      <h2>The Five Core Prompting Techniques</h2>
+      <p>These techniques exist on a spectrum from simple to complex. Each has its ideal use case — combining them strategically is the mark of an expert prompt engineer.</p>
     </div>
 
-    <div class="annotations-panel">
-      <div class="annotation-item" id="ann-1">
-        <span class="annotation-num">1</span>
-        <span class="annotation-title">name</span>
-        <div class="annotation-desc">Snake_case identifier. The model uses this in its <code>tool_use</code> block. Must match what your dispatcher routes on. Be specific — <code>get_stock_price</code> not <code>get_data</code>.</div>
-      </div>
-      <div class="annotation-item" id="ann-2">
-        <span class="annotation-num">2</span>
-        <span class="annotation-title">description (tool level)</span>
-        <div class="annotation-desc">This is the most important field. The model reads this to decide WHEN to call the tool. Include: what it does, when to use it, example scenarios. Vague descriptions → wrong tool calls.</div>
-      </div>
-      <div class="annotation-item" id="ann-3">
-        <span class="annotation-num">3</span>
-        <span class="annotation-title">input_schema</span>
-        <div class="annotation-desc">JSON Schema object describing the function signature. Always type: "object". The model generates inputs that match this schema — so be precise about types and constraints.</div>
-      </div>
-      <div class="annotation-item" id="ann-4">
-        <span class="annotation-num">4</span>
-        <span class="annotation-title">properties</span>
-        <div class="annotation-desc">Each key is a parameter name. Value is a JSON Schema definition with type, description, optional constraints. These become the function arguments your code receives.</div>
-      </div>
-      <div class="annotation-item" id="ann-5">
-        <span class="annotation-num">5</span>
-        <span class="annotation-title">parameter description</span>
-        <div class="annotation-desc">Include examples in descriptions! "e.g. AAPL, MSFT" teaches the model the exact format expected. Without this, you'll get "Apple" instead of "AAPL".</div>
-      </div>
-      <div class="annotation-item" id="ann-6">
-        <span class="annotation-num">6</span>
-        <span class="annotation-title">enum constraints</span>
-        <div class="annotation-desc">Use enums to restrict to known valid values. The model will always choose from this list. Prevents hallucinated or invalid parameter values.</div>
-      </div>
-      <div class="annotation-item" id="ann-7">
-        <span class="annotation-num">7</span>
-        <span class="annotation-title">required array</span>
-        <div class="annotation-desc">Parameters in this array MUST be provided. Others are optional. The model will refuse to call the tool without required fields — use this for validation.</div>
-      </div>
-    </div>
-  </div>
-</section>
+    <table class="compare-table reveal">
+      <thead><tr><th>Technique</th><th>When to Use</th><th>Cost</th><th>Accuracy Gain</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Zero-Shot</strong></td><td>Simple, well-defined tasks the model already knows</td><td><span class="badge badge-green">Lowest</span></td><td>Baseline</td></tr>
+        <tr><td><strong>One-Shot</strong></td><td>Showing format/style with a single example</td><td><span class="badge badge-blue">Low</span></td><td>+10-20%</td></tr>
+        <tr><td><strong>Few-Shot</strong></td><td>Classification, extraction with specific format requirements</td><td><span class="badge badge-yellow">Medium</span></td><td>+20-40%</td></tr>
+        <tr><td><strong>Chain-of-Thought</strong></td><td>Reasoning, math, multi-step logic, planning</td><td><span class="badge badge-yellow">Medium</span></td><td>+30-60%</td></tr>
+        <tr><td><strong>CoT + Few-Shot</strong></td><td>Complex reasoning where format and reasoning both matter</td><td><span class="badge badge-red">High</span></td><td>+50-80%</td></tr>
+      </tbody>
+    </table>
 
-<!-- ============================================================ -->
-<!-- SECTION 5: Why Descriptions Matter -->
-<!-- ============================================================ -->
-<section class="fade-in">
-  <div class="section-header">
-    <div class="section-num">5</div>
-    <div>
-      <h2>Why Tool Descriptions Matter</h2>
-      <p>The model can only use what you describe. Bad descriptions = wrong tools = agent failures.</p>
-    </div>
-  </div>
+    <h3 class="reveal" style="font-size:18px;font-weight:700;margin:32px 0 16px;">Zero-Shot Prompting</h3>
+    <p class="reveal" style="color:var(--muted);font-size:15px;line-height:1.8;margin-bottom:16px;">
+      Zero-shot means giving the model a task with no examples. Works well for tasks the model has seen extensively during training: summarization, translation, basic classification, code generation in popular languages. The key is being precise and unambiguous in your instruction.
+    </p>
 
-  <div class="desc-compare">
-    <div class="desc-box bad-desc">
-      <div class="desc-box-header">❌ Vague Description</div>
-      <div class="desc-box-body">
-        <div class="desc-schema">"description": "Gets data from the database"</div>
-        <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.75rem;">User asks: "How many orders came in last week from Germany?"</div>
-        <div class="desc-result">
-          <div class="label">Model behavior:</div>
-          <div class="bad-result">❌ Model unsure when to use this. Might try to answer from training data. If it does call the tool, it halluccinates a reasonable-looking but wrong query. No clear contract.</div>
-        </div>
-      </div>
-    </div>
-    <div class="desc-box good-desc">
-      <div class="desc-box-header">✅ Precise Description</div>
-      <div class="desc-box-body">
-        <div class="desc-schema">"description": "Query the orders database to aggregate sales data. Use this when the user asks about order counts, revenue, customer data, or any business metrics. Accepts SQL WHERE clauses for filtering by date, country, status, etc."</div>
-        <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.75rem;">User asks: "How many orders came in last week from Germany?"</div>
-        <div class="desc-result">
-          <div class="label">Model behavior:</div>
-          <div class="good-result">✅ Immediately recognizes this is a database query scenario. Calls the tool with <code>where="country='Germany' AND created_at >= NOW()-INTERVAL 7 DAYS"</code>. Returns accurate count.</div>
-        </div>
-      </div>
-    </div>
-  </div>
+    <div class="code-window reveal">
+      <div class="code-chrome"><div class="dot-r"></div><div class="dot-y"></div><div class="dot-g"></div><div class="code-label">zero_shot.py</div></div>
+      <pre><span class="c-kw">import</span> anthropic
 
-  <div style="margin-top:1.5rem;background:var(--surface2);border-radius:var(--radius);padding:1.5rem;border:1px solid var(--border);">
-    <div style="font-weight:600;margin-bottom:0.75rem;font-size:0.95rem;">Description Writing Checklist</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;font-size:0.85rem;color:var(--text-muted);">
-      <div>✓ What the tool does (1 sentence)</div>
-      <div>✓ When to use it (trigger scenarios)</div>
-      <div>✓ What it returns (format + fields)</div>
-      <div>✓ Constraints / limitations</div>
-      <div>✓ Parameter examples in descriptions</div>
-      <div>✓ Enums for constrained values</div>
-    </div>
-  </div>
-</section>
+client = anthropic.<span class="c-cls">Anthropic</span>()
 
-<!-- ============================================================ -->
-<!-- SECTION 6: Code — Full ReAct Loop -->
-<!-- ============================================================ -->
-<section class="fade-in">
-  <div class="section-header">
-    <div class="section-num">6</div>
-    <div>
-      <h2>Full ReAct Loop Implementation</h2>
-      <p>Production-ready agent loop with error handling, tool dispatch, and iteration guard.</p>
-    </div>
-  </div>
-
-  <div class="code-block">
-    <div class="code-header">
-      <span class="code-title">react_agent.py — complete implementation</span>
-      <span class="code-lang">python</span>
-    </div>
-    <div class="code-content"><span class="kw">import</span> <span class="fn">anthropic</span>
-<span class="kw">import</span> <span class="fn">json</span>
-
-<span class="var">client</span> = <span class="fn">anthropic</span>.<span class="fn">Anthropic</span>()
-
-<span class="cm"># ── Tool implementations ──────────────────────────────────────</span>
-<span class="kw">def</span> <span class="fn">calculate</span>(<span class="var">expression</span>: <span class="fn">str</span>) -> <span class="fn">str</span>:
-    <span class="cm">"""Safe math eval — in production use a proper math parser."""</span>
-    <span class="kw">try</span>:
-        <span class="var">result</span> = <span class="fn">eval</span>(<span class="var">expression</span>, {<span class="str">"__builtins__"</span>: {}}, {})
-        <span class="kw">return</span> <span class="fn">str</span>(<span class="var">result</span>)
-    <span class="kw">except</span> <span class="fn">Exception</span> <span class="kw">as</span> <span class="var">e</span>:
-        <span class="kw">return</span> <span class="fn">f</span><span class="str">"Error: {e}"</span>
-
-<span class="kw">def</span> <span class="fn">get_weather</span>(<span class="var">city</span>: <span class="fn">str</span>) -> <span class="fn">str</span>:
-    <span class="cm"># Real impl: call OpenWeatherMap API</span>
-    <span class="kw">return</span> <span class="fn">json</span>.<span class="fn">dumps</span>({<span class="str">"city"</span>: <span class="var">city</span>, <span class="str">"temp_c"</span>: <span class="num">18</span>, <span class="str">"condition"</span>: <span class="str">"Cloudy"</span>})
-
-<span class="cm"># ── Tool registry ──────────────────────────────────────────────</span>
-<span class="var">TOOLS</span> = {
-    <span class="str">"calculate"</span>: <span class="fn">calculate</span>,
-    <span class="str">"get_weather"</span>: <span class="fn">get_weather</span>,
-}
-
-<span class="cm"># ── Tool schemas (what the model sees) ────────────────────────</span>
-<span class="var">TOOL_SCHEMAS</span> = [
-    {
-        <span class="str">"name"</span>: <span class="str">"calculate"</span>,
-        <span class="str">"description"</span>: <span class="str">"Evaluate a math expression. Use for ANY arithmetic, percentages, unit conversions. Input must be a valid Python expression. Examples: '847 * 0.15', '(100 + 50) / 3'"</span>,
-        <span class="str">"input_schema"</span>: {
-            <span class="str">"type"</span>: <span class="str">"object"</span>,
-            <span class="str">"properties"</span>: {
-                <span class="str">"expression"</span>: {<span class="str">"type"</span>: <span class="str">"string"</span>, <span class="str">"description"</span>: <span class="str">"Python math expression"</span>}
-            },
-            <span class="str">"required"</span>: [<span class="str">"expression"</span>]
-        }
-    },
-]
-
-<span class="cm"># ── The agent loop ─────────────────────────────────────────────</span>
-<span class="kw">def</span> <span class="fn">run_agent</span>(<span class="var">user_message</span>: <span class="fn">str</span>, <span class="var">max_iterations</span>: <span class="fn">int</span> = <span class="num">10</span>) -> <span class="fn">str</span>:
-    <span class="var">messages</span> = [{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: <span class="var">user_message</span>}]
-
-    <span class="kw">for</span> <span class="var">iteration</span> <span class="kw">in</span> <span class="fn">range</span>(<span class="var">max_iterations</span>):  <span class="cm"># safety limit</span>
-        <span class="var">response</span> = <span class="var">client</span>.<span class="var">messages</span>.<span class="fn">create</span>(
-            <span class="key">model</span>=<span class="str">"claude-haiku-4-5-20251001"</span>,
-            <span class="key">max_tokens</span>=<span class="num">4096</span>,
-            <span class="key">tools</span>=<span class="var">TOOL_SCHEMAS</span>,
-            <span class="key">messages</span>=<span class="var">messages</span>,
-        )
-
-        <span class="cm"># Always append the full response (may contain mixed text+tool_use)</span>
-        <span class="var">messages</span>.<span class="fn">append</span>({<span class="str">"role"</span>: <span class="str">"assistant"</span>, <span class="str">"content"</span>: <span class="var">response</span>.<span class="var">content</span>})
-
-        <span class="kw">if</span> <span class="var">response</span>.<span class="var">stop_reason</span> == <span class="str">"end_turn"</span>:
-            <span class="cm"># Extract final text response</span>
-            <span class="kw">for</span> <span class="var">block</span> <span class="kw">in</span> <span class="var">response</span>.<span class="var">content</span>:
-                <span class="kw">if</span> <span class="fn">hasattr</span>(<span class="var">block</span>, <span class="str">"text"</span>):
-                    <span class="kw">return</span> <span class="var">block</span>.<span class="var">text</span>
-
-        <span class="cm"># Process all tool_use blocks in this response</span>
-        <span class="var">tool_results</span> = []
-        <span class="kw">for</span> <span class="var">block</span> <span class="kw">in</span> <span class="var">response</span>.<span class="var">content</span>:
-            <span class="kw">if</span> <span class="var">block</span>.<span class="var">type</span> != <span class="str">"tool_use"</span>:
-                <span class="kw">continue</span>
-
-            <span class="fn">print</span>(<span class="fn">f</span><span class="str">"[{iteration+1}] TOOL: {block.name}({block.input})"</span>)
-
-            <span class="kw">if</span> <span class="var">block</span>.<span class="var">name</span> <span class="kw">not in</span> <span class="var">TOOLS</span>:
-                <span class="var">result</span> = <span class="fn">f</span><span class="str">"Error: unknown tool '{block.name}'"</span>
-            <span class="kw">else</span>:
-                <span class="kw">try</span>:
-                    <span class="var">result</span> = <span class="var">TOOLS</span>[<span class="var">block</span>.<span class="var">name</span>](**<span class="var">block</span>.<span class="var">input</span>)
-                <span class="kw">except</span> <span class="fn">Exception</span> <span class="kw">as</span> <span class="var">e</span>:
-                    <span class="var">result</span> = <span class="fn">f</span><span class="str">"Tool error: {e}"</span>  <span class="cm"># don't crash the loop</span>
-
-            <span class="fn">print</span>(<span class="fn">f</span><span class="str">"       → {result}"</span>)
-            <span class="var">tool_results</span>.<span class="fn">append</span>({
-                <span class="str">"type"</span>: <span class="str">"tool_result"</span>,
-                <span class="str">"tool_use_id"</span>: <span class="var">block</span>.<span class="var">id</span>,
-                <span class="str">"content"</span>: <span class="fn">str</span>(<span class="var">result</span>),
-            })
-
-        <span class="var">messages</span>.<span class="fn">append</span>({<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: <span class="var">tool_results</span>})
-
-    <span class="kw">return</span> <span class="str">"Agent exceeded max iterations"</span></div>
-  </div>
-</section>
-
-<!-- ============================================================ -->
-<!-- SECTION 6B: Advanced Reasoning Patterns -->
-<!-- ============================================================ -->
-<section class="fade-in" style="margin-top:2rem;">
-  <div class="section-header">
-    <div class="section-num" style="background:linear-gradient(135deg,#7c3aed,#0d9488);">★</div>
-    <div>
-      <h2>Advanced Reasoning Patterns</h2>
-      <p>Beyond ReAct — when vanilla loops aren't enough.</p>
-    </div>
-  </div>
-
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem;">
-
-    <!-- Chain of Thought -->
-    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1.25rem;">
-      <div style="color:#3b82f6;font-size:0.75rem;font-weight:700;text-transform:uppercase;margin-bottom:0.5rem;">Chain of Thought (CoT)</div>
-      <div style="font-size:0.9rem;color:var(--text-muted);margin-bottom:0.75rem;">Prompt the model to "think step by step" before answering. The reasoning is in one linear sequence. Most LLMs do this by default inside <code style="color:var(--amber)">&lt;thinking&gt;</code> blocks.</div>
-      <div style="display:flex;gap:6px;align-items:center;font-size:0.8rem;">
-        <span style="background:#1e3a5f;color:#60a5fa;padding:2px 8px;border-radius:4px;">Simple</span>
-        <span style="background:#1a2e1a;color:#4ade80;padding:2px 8px;border-radius:4px;">Low cost</span>
-        <span style="background:#2d1a4e;color:#a78bfa;padding:2px 8px;border-radius:4px;">Linear</span>
-      </div>
-    </div>
-
-    <!-- ReAct recap -->
-    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1.25rem;">
-      <div style="color:var(--amber);font-size:0.75rem;font-weight:700;text-transform:uppercase;margin-bottom:0.5rem;">ReAct (Reasoning + Acting)</div>
-      <div style="font-size:0.9rem;color:var(--text-muted);margin-bottom:0.75rem;">Interleaves CoT with tool calls. The model thinks, acts (calls a tool), observes the result, then thinks again. This is Section 1 of this day. Handles 90% of real agent tasks.</div>
-      <div style="display:flex;gap:6px;align-items:center;font-size:0.8rem;">
-        <span style="background:#1e3a5f;color:#60a5fa;padding:2px 8px;border-radius:4px;">Standard</span>
-        <span style="background:#3b2a00;color:#fbbf24;padding:2px 8px;border-radius:4px;">Medium cost</span>
-        <span style="background:#1a2e1a;color:#4ade80;padding:2px 8px;border-radius:4px;">Loop</span>
-      </div>
-    </div>
-
-    <!-- Reflexion -->
-    <div style="background:var(--bg-card);border:1px solid #a78bfa;border-radius:12px;padding:1.25rem;">
-      <div style="color:#a78bfa;font-size:0.75rem;font-weight:700;text-transform:uppercase;margin-bottom:0.5rem;">Reflexion — Self-Critique Loop</div>
-      <div style="font-size:0.9rem;color:var(--text-muted);margin-bottom:0.75rem;">Agent evaluates its own output, generates verbal critique, retries with feedback in context. Like a programmer who runs tests, reads the failure, and fixes the code.</div>
-      <div class="code-block" style="margin-bottom:0.75rem;">
-        <div class="code-header"><span class="code-title">reflexion_loop.py</span><span class="code-lang">python</span></div>
-        <div class="code-content"><span class="kw">def</span> <span class="fn">reflexion</span>(<span class="var">task</span>, <span class="var">max_attempts</span>=<span class="num">3</span>):
-    <span class="var">history</span> = []
-    <span class="kw">for</span> <span class="var">attempt</span> <span class="kw">in</span> <span class="fn">range</span>(<span class="var">max_attempts</span>):
-        <span class="var">answer</span> = <span class="fn">call_llm</span>(<span class="var">task</span>, <span class="var">history</span>)
-        <span class="var">passed</span>, <span class="var">feedback</span> = <span class="fn">evaluate</span>(<span class="var">answer</span>)
-        <span class="kw">if</span> <span class="var">passed</span>:
-            <span class="kw">return</span> <span class="var">answer</span>
-        <span class="cm"># Critique becomes context for next attempt</span>
-        <span class="var">history</span>.<span class="fn">append</span>({
-            <span class="str">"answer"</span>: <span class="var">answer</span>,
-            <span class="str">"critique"</span>: <span class="var">feedback</span>
-        })
-    <span class="kw">return</span> <span class="var">answer</span>  <span class="cm"># best attempt</span></div>
-      </div>
-      <div style="display:flex;gap:6px;align-items:center;font-size:0.8rem;flex-wrap:wrap;">
-        <span style="background:#2d1a4e;color:#a78bfa;padding:2px 8px;border-radius:4px;">Iterative</span>
-        <span style="background:#3b2a00;color:#fbbf24;padding:2px 8px;border-radius:4px;">2–3× cost</span>
-        <span style="background:#1a2e1a;color:#4ade80;padding:2px 8px;border-radius:4px;">Best for: code gen, structured output</span>
-      </div>
-    </div>
-
-    <!-- Tree of Thoughts -->
-    <div style="background:var(--bg-card);border:1px solid #10b981;border-radius:12px;padding:1.25rem;">
-      <div style="color:#10b981;font-size:0.75rem;font-weight:700;text-transform:uppercase;margin-bottom:0.5rem;">Tree of Thoughts (ToT)</div>
-      <div style="font-size:0.9rem;color:var(--text-muted);margin-bottom:0.75rem;">Generate multiple candidate thoughts at each reasoning step, score them, keep the best branches. Like a chess engine exploring possible moves and pruning bad ones (BFS or DFS over thought space).</div>
-      <!-- Visual tree -->
-      <div style="margin:0.75rem 0;display:flex;justify-content:center;">
-        <svg viewBox="0 0 260 130" style="width:100%;max-width:260px;height:auto;">
-          <!-- Root -->
-          <circle cx="130" cy="18" r="10" fill="#0d9488" opacity="0.9"/>
-          <text x="130" y="22" text-anchor="middle" fill="white" font-size="7" font-weight="700">Task</text>
-          <!-- Lines to level 2 -->
-          <line x1="130" y1="28" x2="65" y2="55" stroke="#4b5563" stroke-width="1.5"/>
-          <line x1="130" y1="28" x2="130" y2="55" stroke="#4b5563" stroke-width="1.5"/>
-          <line x1="130" y1="28" x2="195" y2="55" stroke="#4b5563" stroke-width="1.5"/>
-          <!-- Level 2 thoughts -->
-          <circle cx="65" cy="65" r="9" fill="#7c3aed" opacity="0.8"/>
-          <text x="65" y="69" text-anchor="middle" fill="white" font-size="6">T1</text>
-          <circle cx="130" cy="65" r="9" fill="#7c3aed" opacity="0.8"/>
-          <text x="130" y="69" text-anchor="middle" fill="white" font-size="6">T2</text>
-          <circle cx="195" cy="65" r="9" fill="#4b5563" opacity="0.5"/>
-          <text x="195" y="69" text-anchor="middle" fill="#9ca3af" font-size="6">T3✗</text>
-          <!-- Lines from T1 -->
-          <line x1="65" y1="74" x2="40" y2="100" stroke="#4b5563" stroke-width="1"/>
-          <line x1="65" y1="74" x2="90" y2="100" stroke="#4b5563" stroke-width="1"/>
-          <!-- Lines from T2 (best) -->
-          <line x1="130" y1="74" x2="115" y2="100" stroke="#10b981" stroke-width="1.5"/>
-          <line x1="130" y1="74" x2="150" y2="100" stroke="#4b5563" stroke-width="1"/>
-          <!-- Level 3 -->
-          <circle cx="40" cy="110" r="7" fill="#374151"/>
-          <text x="40" y="114" text-anchor="middle" fill="#6b7280" font-size="5">✗</text>
-          <circle cx="90" cy="110" r="7" fill="#374151"/>
-          <text x="90" y="114" text-anchor="middle" fill="#6b7280" font-size="5">✗</text>
-          <circle cx="115" cy="110" r="8" fill="#10b981"/>
-          <text x="115" y="114" text-anchor="middle" fill="white" font-size="6" font-weight="700">✓</text>
-          <circle cx="150" cy="110" r="7" fill="#374151"/>
-          <text x="150" y="114" text-anchor="middle" fill="#6b7280" font-size="5">✗</text>
-          <!-- Score labels -->
-          <text x="65" y="88" text-anchor="middle" fill="#f59e0b" font-size="6">0.4</text>
-          <text x="130" y="88" text-anchor="middle" fill="#10b981" font-size="6" font-weight="700">0.9</text>
-          <text x="195" y="88" text-anchor="middle" fill="#6b7280" font-size="6">0.1</text>
-        </svg>
-      </div>
-      <div style="display:flex;gap:6px;align-items:center;font-size:0.8rem;flex-wrap:wrap;">
-        <span style="background:#1a3b2a;color:#10b981;padding:2px 8px;border-radius:4px;">Branching</span>
-        <span style="background:#7f1d1d;color:#fca5a5;padding:2px 8px;border-radius:4px;">5–20× cost</span>
-        <span style="background:#1a2e1a;color:#4ade80;padding:2px 8px;border-radius:4px;">Best for: strategy, math, writing</span>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- Decision guide -->
-  <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:1.25rem;">
-    <div style="font-weight:700;font-size:0.9rem;margin-bottom:0.75rem;">Decision Guide — Which Pattern?</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0.5rem;font-size:0.78rem;">
-      <div style="text-align:center;padding:0.5rem;background:#0f1729;border-radius:6px;">
-        <div style="color:#60a5fa;font-weight:700;margin-bottom:0.25rem;">Simple Q&A</div>
-        <div style="color:var(--text-dim);">Vanilla CoT<br>or direct</div>
-      </div>
-      <div style="text-align:center;padding:0.5rem;background:#0f1729;border-radius:6px;">
-        <div style="color:var(--amber);font-weight:700;margin-bottom:0.25rem;">Needs tools</div>
-        <div style="color:var(--text-dim);">ReAct<br>loop</div>
-      </div>
-      <div style="text-align:center;padding:0.5rem;background:#0f1729;border-radius:6px;">
-        <div style="color:#a78bfa;font-weight:700;margin-bottom:0.25rem;">Verifiable output</div>
-        <div style="color:var(--text-dim);">Reflexion<br>(code, JSON)</div>
-      </div>
-      <div style="text-align:center;padding:0.5rem;background:#0f1729;border-radius:6px;">
-        <div style="color:#10b981;font-weight:700;margin-bottom:0.25rem;">Many valid paths</div>
-        <div style="color:var(--text-dim);">Tree of Thoughts<br>(budget permitting)</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ============================================================
-     SECTION 6B — Extended Thinking
-     ============================================================ -->
-<section class="d2-enhance-section">
-  <span class="d2-section-tag">Claude Native Feature</span>
-  <h2>Extended Thinking: Internal Scratchpad Before the Answer</h2>
-
-  <p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:1.5rem;line-height:1.7;">
-    When you pass <code style="background:var(--surface);padding:0.1rem 0.4rem;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:0.82rem;">thinking: {type: "extended", budget_tokens: N}</code> to the API,
-    Claude allocates up to <em>N</em> tokens for an internal scratchpad. These appear in the response as
-    <strong style="color:var(--purple-light);">thinking content blocks</strong> — before the final text answer.
-    The model can explore, backtrack, and reason freely inside the scratchpad; those tokens do not constrain
-    the final response quality and appear <em>before</em> it in <code style="background:var(--surface);padding:0.1rem 0.4rem;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:0.82rem;">response.content</code>.
-    Available on <strong style="color:var(--teal-light);">claude-opus-4-6</strong> and newer models.
-  </p>
-
-  <!-- Comparison diagram -->
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1.75rem;">
-    <!-- Col 1: Regular -->
-    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1.25rem;text-align:center;">
-      <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-dim);margin-bottom:1rem;">Regular</div>
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.8rem;color:var(--text-muted);margin-bottom:0.5rem;">Prompt</div>
-      <div style="color:var(--text-dim);font-size:1.1rem;margin:0.35rem 0;">&#8595;</div>
-      <div style="background:var(--surface);border:1px solid rgba(16,185,129,0.4);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.8rem;color:var(--green);">Answer</div>
-    </div>
-    <!-- Col 2: Chain of Thought -->
-    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1.25rem;text-align:center;">
-      <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-dim);margin-bottom:1rem;">Chain of Thought (prompted)</div>
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.8rem;color:var(--text-muted);margin-bottom:0.5rem;">Prompt</div>
-      <div style="color:var(--text-dim);font-size:1.1rem;margin:0.35rem 0;">&#8595;</div>
-      <div style="background:var(--surface);border:1px solid rgba(245,158,11,0.35);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.78rem;color:var(--amber);margin-bottom:0.5rem;">"Let me think step by step…"</div>
-      <div style="color:var(--text-dim);font-size:1.1rem;margin:0.35rem 0;">&#8595;</div>
-      <div style="background:var(--surface);border:1px solid rgba(16,185,129,0.4);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.8rem;color:var(--green);">Answer</div>
-      <div style="font-size:0.7rem;color:var(--text-dim);margin-top:0.5rem;">tokens billed + visible in text</div>
-    </div>
-    <!-- Col 3: Extended Thinking -->
-    <div style="background:var(--bg-card);border:1px solid var(--purple);border-radius:12px;padding:1.25rem;text-align:center;">
-      <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--purple-light);margin-bottom:1rem;">Extended Thinking &#10024;</div>
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.8rem;color:var(--text-muted);margin-bottom:0.5rem;">Prompt</div>
-      <div style="color:var(--text-dim);font-size:1.1rem;margin:0.35rem 0;">&#8595;</div>
-      <div style="background:var(--purple-dim);border:1px solid var(--purple);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.78rem;color:var(--purple-light);margin-bottom:0.5rem;">&#x1F9E0; thinking block<br><span style="font-size:0.7rem;opacity:0.75;">internal scratchpad (N tokens)</span></div>
-      <div style="color:var(--text-dim);font-size:1.1rem;margin:0.35rem 0;">&#8595;</div>
-      <div style="background:var(--surface);border:1px solid rgba(16,185,129,0.4);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.8rem;color:var(--green);">Answer (text block)</div>
-      <div style="font-size:0.7rem;color:var(--text-dim);margin-top:0.5rem;">thinking tokens billed separately</div>
-    </div>
-  </div>
-
-  <!-- API code example -->
-  <div class="code-block">
-    <div class="code-header">
-      <span class="code-title">extended_thinking.py</span>
-      <span class="code-lang">python</span>
-    </div>
-    <div class="code-content"><span class="kw">import</span> <span class="var">anthropic</span>
-<span class="var">client</span> = <span class="fn">anthropic</span>.<span class="fn">Anthropic</span>()
-
-<span class="var">response</span> = <span class="var">client</span>.<span class="fn">messages</span>.<span class="fn">create</span>(
-    <span class="key">model</span>=<span class="str">"claude-opus-4-6"</span>,
-    <span class="key">max_tokens</span>=<span class="num">16000</span>,
-    <span class="key">thinking</span>={
-        <span class="str">"type"</span>: <span class="str">"extended"</span>,
-        <span class="str">"budget_tokens"</span>: <span class="num">10000</span>  <span class="cm"># up to 10k tokens of internal reasoning</span>
-    },
-    <span class="key">messages</span>=[{
-        <span class="str">"role"</span>: <span class="str">"user"</span>,
-        <span class="str">"content"</span>: <span class="str">"Solve this step by step: If a train travels 120km in 1.5 hours, then stops for 30 minutes, then travels 180km in 2 hours, what is the average speed for the entire journey?"</span>
-    }]
+<span class="c-cmt"># BAD zero-shot: vague instruction</span>
+bad_response = client.messages.<span class="c-fn">create</span>(
+    model=<span class="c-str">"claude-sonnet-4-5"</span>, max_tokens=<span class="c-num">256</span>,
+    messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>,
+               <span class="c-str">"content"</span>: <span class="c-str">"Analyze this review: 'The product is okay I guess'"</span>}]
 )
 
-<span class="cm"># Response contains BOTH thinking blocks AND text blocks</span>
-<span class="kw">for</span> <span class="var">block</span> <span class="kw">in</span> <span class="var">response</span>.<span class="var">content</span>:
-    <span class="kw">if</span> <span class="var">block</span>.<span class="var">type</span> == <span class="str">"thinking"</span>:
-        <span class="fn">print</span>(<span class="fn">f</span><span class="str">"[THINKING]\n{</span><span class="var">block</span>.<span class="var">thinking</span><span class="str">}\n"</span>)  <span class="cm"># internal scratchpad</span>
-    <span class="kw">elif</span> <span class="var">block</span>.<span class="var">type</span> == <span class="str">"text"</span>:
-        <span class="fn">print</span>(<span class="fn">f</span><span class="str">"[ANSWER]\n{</span><span class="var">block</span>.<span class="var">text</span><span class="str">}"</span>)</div>
+<span class="c-cmt"># GOOD zero-shot: precise instruction + output format specified</span>
+good_response = client.messages.<span class="c-fn">create</span>(
+    model=<span class="c-str">"claude-sonnet-4-5"</span>, max_tokens=<span class="c-num">256</span>,
+    system=<span class="c-str">"Classify customer reviews. Output ONLY one word: POSITIVE, NEGATIVE, or NEUTRAL."</span>,
+    messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>,
+               <span class="c-str">"content"</span>: <span class="c-str">"Review: 'The product is okay I guess'"</span>}]
+)
+<span class="c-fn">print</span>(good_response.content[<span class="c-num">0</span>].text)  <span class="c-cmt"># NEUTRAL</span></pre>
+    </div>
+
+    <h3 class="reveal" style="font-size:18px;font-weight:700;margin:32px 0 16px;">Few-Shot Prompting</h3>
+    <p class="reveal" style="color:var(--muted);font-size:15px;line-height:1.8;margin-bottom:16px;">
+      Few-shot prompting provides examples of input→output pairs before the actual task. This teaches the model about format, tone, classification schema, and edge case handling — in-context, without fine-tuning. The quality of your examples matters enormously: use diverse, representative, correctly-labeled examples.
+    </p>
+
+    <div class="code-window reveal">
+      <div class="code-chrome"><div class="dot-r"></div><div class="dot-y"></div><div class="dot-g"></div><div class="code-label">few_shot.py</div></div>
+      <pre><span class="c-kw">import</span> anthropic
+
+client = anthropic.<span class="c-cls">Anthropic</span>()
+
+<span class="c-cmt"># Few-shot for sentiment analysis with nuanced labels</span>
+response = client.messages.<span class="c-fn">create</span>(
+    model=<span class="c-str">"claude-sonnet-4-5"</span>,
+    max_tokens=<span class="c-num">100</span>,
+    messages=[
+        {<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: <span class="c-str">"Text: 'This product changed my life!'\nSentiment:"</span>},
+        {<span class="c-str">"role"</span>: <span class="c-str">"assistant"</span>, <span class="c-str">"content"</span>: <span class="c-str">"STRONGLY_POSITIVE"</span>},
+        {<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: <span class="c-str">"Text: 'It arrived broken and support ignored me.'\nSentiment:"</span>},
+        {<span class="c-str">"role"</span>: <span class="c-str">"assistant"</span>, <span class="c-str">"content"</span>: <span class="c-str">"STRONGLY_NEGATIVE"</span>},
+        {<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: <span class="c-str">"Text: 'Works as advertised, nothing special.'\nSentiment:"</span>},
+        {<span class="c-str">"role"</span>: <span class="c-str">"assistant"</span>, <span class="c-str">"content"</span>: <span class="c-str">"NEUTRAL"</span>},
+        <span class="c-cmt"># Actual query</span>
+        {<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: <span class="c-str">"Text: 'Honestly expected better for the price.'\nSentiment:"</span>}
+    ]
+)
+<span class="c-fn">print</span>(response.content[<span class="c-num">0</span>].text)  <span class="c-cmt"># MILDLY_NEGATIVE (learned from examples)</span></pre>
+    </div>
+
+    <h3 class="reveal" style="font-size:18px;font-weight:700;margin:32px 0 16px;">Chain-of-Thought (CoT)</h3>
+    <p class="reveal" style="color:var(--muted);font-size:15px;line-height:1.8;margin-bottom:16px;">
+      CoT prompting instructs the model to "think step by step" before answering. This works because generating reasoning tokens allocates model capacity to actually solving the problem before committing to an answer. For complex reasoning tasks, CoT can improve accuracy by 40-80%. The magic phrase is literally "Think step by step:" or "Let's reason through this carefully:" in the prompt.
+    </p>
+
+    <div class="code-window reveal">
+      <div class="code-chrome"><div class="dot-r"></div><div class="dot-y"></div><div class="dot-g"></div><div class="code-label">chain_of_thought.py</div></div>
+      <pre><span class="c-kw">import</span> anthropic
+
+client = anthropic.<span class="c-cls">Anthropic</span>()
+
+<span class="c-cmt"># WITHOUT CoT — often wrong on complex reasoning</span>
+bad = client.messages.<span class="c-fn">create</span>(
+    model=<span class="c-str">"claude-sonnet-4-5"</span>, max_tokens=<span class="c-num">200</span>,
+    messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>,
+               <span class="c-str">"content"</span>: <span class="c-str">"A store has 12 red balls and 8 blue balls. If you remove 3 red and add 5 blue, what fraction are blue? Just give the answer."</span>}]
+)
+
+<span class="c-cmt"># WITH CoT — structured reasoning produces correct answer</span>
+good = client.messages.<span class="c-fn">create</span>(
+    model=<span class="c-str">"claude-sonnet-4-5"</span>, max_tokens=<span class="c-num">500</span>,
+    messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>,
+               <span class="c-str">"content"</span>: <span class="c-str">"""A store has 12 red balls and 8 blue balls. If you remove 3 red and add 5 blue, what fraction are blue?
+
+Let's think step by step:"""</span>}]
+)
+
+<span class="c-cmt"># Force extended thinking for harder problems (Claude 3.7+)</span>
+thinking = client.messages.<span class="c-fn">create</span>(
+    model=<span class="c-str">"claude-3-7-sonnet-20250219"</span>,
+    max_tokens=<span class="c-num">8000</span>,
+    thinking={<span class="c-str">"type"</span>: <span class="c-str">"enabled"</span>, <span class="c-str">"budget_tokens"</span>: <span class="c-num">5000</span>},
+    messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>,
+               <span class="c-str">"content"</span>: <span class="c-str">"Prove that sqrt(2) is irrational."</span>}]
+)</pre>
+    </div>
+
+    <!-- CoT visualization -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;margin:20px 0;" class="reveal">
+      <div class="widget-label">Chain-of-Thought: Step Visualization</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Problem: "A bakery sells 40 loaves Mon-Fri and 60 on weekends. How many in 4 weeks?"</p>
+      <div class="cot-chain">
+        <div class="cot-step thought"><div class="cot-step-label">Thought 1 — Parse Problem</div>Mon-Fri = 5 days × 40 loaves = 200 per weekday week. Weekend = 2 days × 60 = 120. So per week = 200 + 120 = 320 loaves.</div>
+        <div class="cot-step calculation"><div class="cot-step-label">Thought 2 — Calculate</div>4 weeks × 320 loaves/week = 1,280 loaves total.</div>
+        <div class="cot-step conclusion"><div class="cot-step-label">Conclusion</div>The bakery sells <strong>1,280 loaves</strong> over 4 weeks.</div>
+      </div>
+    </div>
+
+    <div class="callout warn reveal">
+      <span class="callout-icon">⚠️</span>
+      <div class="callout-body">
+        <h4>CoT Pitfall: Verbose Reasoning ≠ Correct Reasoning</h4>
+        <p>CoT doesn't guarantee correctness — it makes the model's reasoning observable. The model can produce confidently-stated but wrong reasoning chains (called "sycophantic chains of thought"). For high-stakes decisions, always validate CoT conclusions independently, and use Extended Thinking mode for problems that truly require deep reasoning.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SECTION 3: PROMPT BUILDER WIDGET ──────────── -->
+  <section class="section">
+    <div class="section-header reveal">
+      <div class="section-num">Section 03</div>
+      <h2>Interactive Prompt Builder</h2>
+      <p>Select a technique and task to generate a production-ready prompt with the correct structure. See exactly how the messages array is formatted.</p>
+    </div>
+
+    <!-- WIDGET 1: Prompt Builder -->
+    <div class="widget reveal">
+      <div class="widget-title"><span class="w-icon">🏗️</span> Prompt Builder</div>
+      <div class="widget-sub">Configure technique and task to generate the optimal prompt structure with working Python code.</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+        <div>
+          <div class="widget-label">Technique</div>
+          <select id="pb-technique" onchange="buildPrompt()">
+            <option value="zero">Zero-Shot</option>
+            <option value="few">Few-Shot</option>
+            <option value="cot">Chain-of-Thought</option>
+            <option value="persona">Persona + System Prompt</option>
+            <option value="structured">Structured Output</option>
+          </select>
+        </div>
+        <div>
+          <div class="widget-label">Task Domain</div>
+          <select id="pb-task" onchange="buildPrompt()">
+            <option value="sentiment">Sentiment Classification</option>
+            <option value="extraction">Entity Extraction</option>
+            <option value="summarize">Document Summarization</option>
+            <option value="code">Code Generation</option>
+            <option value="qa">Question Answering</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="widget-label">Custom Input (optional)</div>
+      <input type="text" id="pb-custom" placeholder="Your specific task description (leave blank for example)..." oninput="buildPrompt()" style="margin-bottom:16px;">
+
+      <div class="widget-label">Generated Prompt Structure</div>
+      <div class="prompt-output" id="pb-output">Loading...</div>
+
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <button onclick="copyPrompt()" style="padding:8px 16px;background:var(--teal);border:none;border-radius:8px;color:white;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">⧉ Copy</button>
+        <button onclick="buildPrompt()" style="padding:8px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">↻ Regenerate</button>
+        <span id="copy-confirm" style="font-size:13px;color:var(--green);padding:8px 0;opacity:0;transition:opacity 0.3s;">Copied!</span>
+      </div>
+    </div>
+
+    <!-- WIDGET 2: A/B Tester -->
+    <div class="widget reveal" style="margin-top:32px;">
+      <div class="widget-title"><span class="w-icon">⚖️</span> A/B Prompt Tester</div>
+      <div class="widget-sub">Write two versions of a prompt and see simulated quality scores to understand which formulation is stronger. Great for comparing vague vs. specific instructions.</div>
+
+      <div class="ab-grid">
+        <div class="ab-card">
+          <div class="ab-header">
+            <div class="ab-badge a">A</div>
+            <span style="font-size:13px;font-weight:600;">Prompt Version A</span>
+            <span style="margin-left:auto;font-size:11px;color:var(--muted);">Weak / Vague</span>
+          </div>
+          <textarea id="ab-prompt-a" rows="4" style="border-radius:0;border:none;border-bottom:1px solid var(--border);min-height:70px;resize:none;background:var(--surface2);width:100%;padding:12px 16px;" placeholder="Write a weak, vague prompt here...">Summarize this text.</textarea>
+          <div class="ab-output" id="ab-out-a" style="color:var(--muted);font-style:italic;">Click "Run Test" to simulate output...</div>
+          <div class="ab-metric">
+            <div class="ab-score" id="ab-score-a" style="color:var(--muted);">Score: —</div>
+          </div>
+        </div>
+        <div class="ab-card">
+          <div class="ab-header">
+            <div class="ab-badge b">B</div>
+            <span style="font-size:13px;font-weight:600;">Prompt Version B</span>
+            <span style="margin-left:auto;font-size:11px;color:var(--muted);">Strong / Specific</span>
+          </div>
+          <textarea id="ab-prompt-b" rows="4" style="border-radius:0;border:none;border-bottom:1px solid var(--border);min-height:70px;resize:none;background:var(--surface2);width:100%;padding:12px 16px;" placeholder="Write a strong, specific prompt here...">You are a technical content analyst. Summarize the following technical document in exactly 3 bullet points, each starting with a key action verb. Focus on the main technical decisions, their rationale, and expected outcomes. Target audience: senior engineers.</textarea>
+          <div class="ab-output" id="ab-out-b" style="color:var(--muted);font-style:italic;">Click "Run Test" to simulate output...</div>
+          <div class="ab-metric">
+            <div class="ab-score" id="ab-score-b" style="color:var(--muted);">Score: —</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="text-align:center;margin-top:16px;">
+        <button onclick="runABTest()" style="padding:10px 28px;background:linear-gradient(135deg,var(--purple),var(--teal));border:none;border-radius:10px;color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">▶ Run A/B Test</button>
+      </div>
+      <div id="ab-verdict" style="margin-top:16px;padding:16px;border-radius:10px;background:var(--surface2);font-size:14px;display:none;"></div>
+    </div>
+  </section>
+
+  <!-- ── SECTION 4: SYSTEM PROMPTS ─────────────────── -->
+  <section class="section">
+    <div class="section-header reveal">
+      <div class="section-num">Section 04</div>
+      <h2>System Prompt Architecture</h2>
+      <p>The system prompt is your most powerful tool. A well-structured system prompt can fundamentally change the model's behavior, persona, and output quality across all subsequent turns.</p>
+    </div>
+
+    <p class="reveal" style="color:var(--muted);font-size:15px;line-height:1.8;margin-bottom:20px;">
+      Think of the system prompt as the "constructor" of your LLM component. It's called once (per conversation) and sets the environment for everything that follows. Claude gives significantly more weight to system prompt instructions than user turn instructions — this asymmetry is by design and should be used deliberately.
+    </p>
+
+    <div class="code-window reveal">
+      <div class="code-chrome"><div class="dot-r"></div><div class="dot-y"></div><div class="dot-g"></div><div class="code-label">system_prompt_template.py</div></div>
+      <pre><span class="c-cmt"># Production system prompt template — use this as a starting structure</span>
+SYSTEM_PROMPT = <span class="c-str">"""
+## Role & Identity
+You are a {role_name}, specialized in {domain}.
+You work at {company_context} and assist {target_users}.
+
+## Core Capabilities
+- {capability_1}
+- {capability_2}
+- {capability_3}
+
+## Output Format
+Always structure your responses as:
+1. Direct answer first (1-2 sentences)
+2. Detailed explanation with examples
+3. Code snippet if applicable (Python, using type hints)
+4. Edge cases or caveats
+
+## Constraints
+- DO: {what_to_do}
+- DON'T: {what_not_to_do}
+- When unsure: ask for clarification rather than guessing
+
+## Tone & Style
+- Technical but accessible — assume senior engineer background
+- Concise: prefer specific examples over abstract explanations
+- Honest: say "I don't know" rather than hallucinating
+
+## Context
+Today is {date}. The user's tech stack is {stack}.
+"""</span></pre>
+    </div>
+
+    <div class="card-grid reveal reveal-delay-1">
+      <div class="card" style="border-color:rgba(16,185,129,0.3);">
+        <h3 style="color:var(--green);">✓ System Prompt Best Practices</h3>
+        <ul style="font-size:14px;color:var(--muted);line-height:2;list-style:none;padding:0;">
+          <li>→ Define role before capabilities</li>
+          <li>→ Use markdown headers for structure</li>
+          <li>→ Specify output format explicitly</li>
+          <li>→ List constraints as DO/DON'T</li>
+          <li>→ Include example if format is complex</li>
+          <li>→ Keep under 2K tokens for cachability</li>
+        </ul>
+      </div>
+      <div class="card" style="border-color:rgba(239,68,68,0.3);">
+        <h3 style="color:var(--red);">✗ Common Mistakes</h3>
+        <ul style="font-size:14px;color:var(--muted);line-height:2;list-style:none;padding:0;">
+          <li>→ Vague instructions ("be helpful")</li>
+          <li>→ Contradictory constraints</li>
+          <li>→ No output format specified</li>
+          <li>→ Over-constraining with long rules</li>
+          <li>→ Mixing system + user concerns</li>
+          <li>→ Not testing edge cases</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout info reveal">
+      <span class="callout-icon">📌</span>
+      <div class="callout-body">
+        <h4>Prompt Injection Defense</h4>
+        <p>When users can supply input that gets embedded in your prompts, you're vulnerable to prompt injection attacks — where user content overrides your system prompt instructions. Defense: use explicit delimiters around user content (<code style="color:inherit;background:rgba(255,255,255,0.1);padding:1px 5px;border-radius:4px;">&lt;user_input&gt;...&lt;/user_input&gt;</code>), instruct the model to treat content within those tags as data not instructions, and validate critical outputs programmatically.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SECTION 5: OUTPUT FORMATTING ──────────────── -->
+  <section class="section">
+    <div class="section-header reveal">
+      <div class="section-num">Section 05</div>
+      <h2>Output Formatting & Controlling Response Structure</h2>
+      <p>Reliable output formatting is what turns a demo into a production feature. Without it, you're doing string parsing on unpredictable text — a maintenance nightmare.</p>
+    </div>
+
+    <div class="card-grid-3 reveal">
+      <div class="card">
+        <div class="card-icon">📝</div>
+        <h3>XML Tags</h3>
+        <p>Ask the model to wrap output sections in XML tags. Easy to parse reliably, even if there's surrounding text. Great for multi-part responses.</p>
+      </div>
+      <div class="card" style="border-color:rgba(13,148,136,0.3);">
+        <div class="card-icon">🔧</div>
+        <h3>Tool Use (Best)</h3>
+        <p>Force a JSON schema via tool_choice. API-level guarantee on format validity. No prompt engineering needed for the JSON itself.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">⤶</div>
+        <h3>Prefilling</h3>
+        <p>Pre-fill assistant turn with <code style="font-size:11px">{"</code> to force JSON start. Simple but doesn't guarantee schema validity.</p>
+      </div>
+    </div>
+
+    <div class="code-window reveal reveal-delay-1">
+      <div class="code-chrome"><div class="dot-r"></div><div class="dot-y"></div><div class="dot-g"></div><div class="code-label">xml_formatting.py</div></div>
+      <pre><span class="c-kw">import</span> anthropic
+<span class="c-kw">import</span> re
+
+client = anthropic.<span class="c-cls">Anthropic</span>()
+
+<span class="c-kw">def</span> <span class="c-fn">parse_xml_tag</span>(text: <span class="c-cls">str</span>, tag: <span class="c-cls">str</span>) -> <span class="c-cls">str</span>:
+    <span class="c-str">"""Extract content from XML tag in model output."""</span>
+    pattern = <span class="c-str">f"&lt;{tag}&gt;(.*?)&lt;/{tag}&gt;"</span>
+    match = re.<span class="c-fn">search</span>(pattern, text, re.<span class="c-cls">DOTALL</span>)
+    <span class="c-kw">return</span> match.<span class="c-fn">group</span>(<span class="c-num">1</span>).<span class="c-fn">strip</span>() <span class="c-kw">if</span> match <span class="c-kw">else</span> <span class="c-str">""</span>
+
+response = client.messages.<span class="c-fn">create</span>(
+    model=<span class="c-str">"claude-sonnet-4-5"</span>,
+    max_tokens=<span class="c-num">1024</span>,
+    system=<span class="c-str">"""Analyze code for bugs. Structure your response EXACTLY as:
+&lt;summary&gt;One sentence assessment&lt;/summary&gt;
+&lt;bugs&gt;List of bugs found, one per line&lt;/bugs&gt;
+&lt;fix&gt;The corrected code&lt;/fix&gt;
+&lt;severity&gt;LOW | MEDIUM | HIGH | CRITICAL&lt;/severity&gt;"""</span>,
+    messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: <span class="c-str">"def divide(a, b): return a / b"</span>}]
+)
+
+raw = response.content[<span class="c-num">0</span>].text
+summary = <span class="c-fn">parse_xml_tag</span>(raw, <span class="c-str">"summary"</span>)
+bugs    = <span class="c-fn">parse_xml_tag</span>(raw, <span class="c-str">"bugs"</span>)
+fix     = <span class="c-fn">parse_xml_tag</span>(raw, <span class="c-str">"fix"</span>)
+severity = <span class="c-fn">parse_xml_tag</span>(raw, <span class="c-str">"severity"</span>)
+
+<span class="c-fn">print</span>(<span class="c-str">f"Severity: {severity}"</span>)
+<span class="c-fn">print</span>(<span class="c-str">f"Summary: {summary}"</span>)</pre>
+    </div>
+
+    <div class="callout warn reveal">
+      <span class="callout-icon">⚠️</span>
+      <div class="callout-body">
+        <h4>Pitfall: Markdown in Production APIs</h4>
+        <p>Claude often responds with markdown formatting (** for bold, ``` for code blocks) by default. If your application displays the raw text (e.g., in a database, log file, or API response), you'll get markdown symbols as literal characters. In your system prompt, explicitly say: "Do not use markdown formatting. Output plain text only." OR handle markdown rendering in your frontend.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="footer">
+    <p style="color:var(--muted);margin-bottom:16px;">Day 2 complete — you now have a systematic toolkit for reliable prompt engineering.</p>
+    <div class="nav-row">
+      <a href="day1.html" class="nav-btn">← Day 1</a>
+      <button class="nav-btn complete" onclick="markComplete()" style="cursor:pointer;">✓ Mark Day 2 Complete</button>
+      <a href="day3.html" class="nav-btn next">Day 3: Embeddings & RAG →</a>
+    </div>
   </div>
-
-  <!-- Use / skip two-column card -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;">
-    <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.35);border-radius:12px;padding:1.25rem;">
-      <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--green);margin-bottom:0.75rem;">&#10004; USE Extended Thinking when…</div>
-      <ul style="list-style:none;padding:0;margin:0;font-size:0.85rem;color:var(--text-muted);line-height:1.9;">
-        <li>&#x1F9EE; Complex math or multi-step calculation</li>
-        <li>&#x1F500; Multi-hop reasoning across facts</li>
-        <li>&#x2753; Ambiguous problems needing exploration</li>
-        <li>&#x1F4BB; Hard coding / algorithm challenges</li>
-        <li>&#x1F5FA;&#xFE0F; Long planning or strategy tasks</li>
-      </ul>
-    </div>
-    <div style="background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:1.25rem;">
-      <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#f87171;margin-bottom:0.75rem;">&#10008; SKIP when…</div>
-      <ul style="list-style:none;padding:0;margin:0;font-size:0.85rem;color:var(--text-muted);line-height:1.9;">
-        <li>&#x2705; Simple Q&amp;A or lookup tasks</li>
-        <li>&#x1F527; Tool use / agentic loops — use ReAct instead</li>
-        <li>&#x1F4B8; Cost-sensitive paths — thinking tokens are billed</li>
-        <li>&#x26A1; Real-time streaming UX (adds latency)</li>
-        <li>&#x1F4AC; Conversational chitchat</li>
-      </ul>
-    </div>
-  </div>
-
-  <!-- Cost & limits callout -->
-  <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.4);border-radius:10px;padding:1.1rem 1.25rem;font-size:0.85rem;color:var(--text-muted);line-height:1.75;">
-    <strong style="color:var(--amber);">Cost &amp; Limits:</strong>
-    Thinking tokens are billed at the <strong>same rate as output tokens</strong>.
-    Minimum <code style="background:var(--surface);padding:0.1rem 0.35rem;border-radius:4px;font-family:'JetBrains Mono',monospace;">budget_tokens = 1024</code>.
-    Maximum depends on the model (claude-opus-4-6 supports up to 32k).
-    Extended thinking is compatible with <strong>streaming</strong> — thinking deltas arrive before text deltas.
-    It is <em>not</em> compatible with <code style="background:var(--surface);padding:0.1rem 0.35rem;border-radius:4px;font-family:'JetBrains Mono',monospace;">temperature</code> overrides or <code style="background:var(--surface);padding:0.1rem 0.35rem;border-radius:4px;font-family:'JetBrains Mono',monospace;">top_p</code>/<code style="background:var(--surface);padding:0.1rem 0.35rem;border-radius:4px;font-family:'JetBrains Mono',monospace;">top_k</code>.
-  </div>
-</section>
-
-<!-- ============================================================ -->
-<!-- SECTION 7: Exercises -->
-<!-- ============================================================ -->
-<section class="fade-in">
-  <div class="section-header">
-    <div class="section-num">7</div>
-    <div>
-      <h2>Day 2 Exercises</h2>
-      <p>Build tools, understand schemas, implement real agents. Click to mark complete.</p>
-    </div>
-  </div>
-
-  <a href="../exercises/day2_exercises.html" style="display:inline-flex;align-items:center;gap:0.5rem;margin-bottom:1.5rem;padding:0.6rem 1.25rem;background:linear-gradient(135deg,var(--purple),var(--teal));color:white;font-weight:700;font-size:0.9rem;border-radius:8px;text-decoration:none;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">⚡ Open Interactive Exercises →</a>
-
-  <div class="exercises-grid">
-    <div class="exercise-card" id="d2-ex-1" onclick="toggleExercise('d2-ex-1')">
-      <div class="ex-check" id="d2-ex-1-check">✓</div>
-      <div class="ex-num">Exercise 1</div>
-      <div class="ex-title">Write Your First Tool</div>
-      <div class="ex-desc">Create a <code>search_docs(query, category)</code> tool with a proper JSON schema. Use enums for category. Write a description that passes the checklist.</div>
-    </div>
-    <div class="exercise-card" id="d2-ex-2" onclick="toggleExercise('d2-ex-2')">
-      <div class="ex-check" id="d2-ex-2-check">✓</div>
-      <div class="ex-num">Exercise 2</div>
-      <div class="ex-title">3-Tool Agent</div>
-      <div class="ex-desc">Build an agent with: <code>calculate</code>, <code>get_time</code>, and <code>format_number</code>. Test with: "What's 847 * 15%, and format the result with 2 decimal places?"</div>
-    </div>
-    <div class="exercise-card" id="d2-ex-3" onclick="toggleExercise('d2-ex-3')">
-      <div class="ex-check" id="d2-ex-3-check">✓</div>
-      <div class="ex-num">Exercise 3</div>
-      <div class="ex-title">Trace Logger</div>
-      <div class="ex-desc">Add structured logging to the ReAct loop. Print: iteration number, tool name, inputs, result, token count per API call, and total cost when done.</div>
-    </div>
-    <div class="exercise-card" id="d2-ex-4" onclick="toggleExercise('d2-ex-4')">
-      <div class="ex-check" id="d2-ex-4-check">✓</div>
-      <div class="ex-num">Exercise 4</div>
-      <div class="ex-title">Error Handling Agent</div>
-      <div class="ex-desc">Make the agent robust: handle tool errors gracefully (pass error string as tool_result, let model recover). Test with a tool that randomly fails 50% of the time.</div>
-    </div>
-  </div>
-</section>
-
 </div>
 
-<footer>
-  <p>
-    <a href="day1.html">← Day 1: LLMs & The API</a>
-    &nbsp;·&nbsp;
-    Day 2 of 30
-    &nbsp;·&nbsp;
-    <a href="day3.html">Day 3: Memory & RAG →</a>
-  </p>
-  <p style="margin-top:0.5rem">Sharjeel Sohail's GenAI Learning Journey · April 2026</p>
-</footer>
-
+<script src="../bg-animation.js"></script>
 <script>
-// Progress bar
 window.addEventListener('scroll', () => {
-  const total = document.documentElement.scrollHeight - window.innerHeight;
-  document.getElementById('progress-bar').style.width = (window.scrollY / total * 100) + '%';
+  const bar = document.getElementById('progress-bar');
+  const btn = document.getElementById('back-to-top');
+  const pct = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
+  bar.style.width = pct + '%';
+  btn.classList.toggle('visible', window.scrollY > 300);
 });
 
-// Scroll animations
-const observer = new IntersectionObserver(entries => {
-  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
-}, { threshold: 0.1 });
-document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+const obs = new IntersectionObserver(entries => entries.forEach(e => { if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target);} }), {threshold:0.08,rootMargin:'0px 0px -40px 0px'});
+document.querySelectorAll('.reveal,.reveal-left,.reveal-right').forEach(el => obs.observe(el));
 
-// ============================================================
-// ReAct Node Info
-// ============================================================
-const reactInfoData = {
-  think: {
-    color: 'var(--purple-light)',
-    html: `<h3 style="color:var(--purple-light)">🧠 THINK — Reasoning Step</h3>
-    <p>The model reads all messages and tool results in context, then decides: do I have enough information to answer, or do I need another tool call?</p>
-    <ul>
-      <li>Reads the full conversation history</li>
-      <li>Plans the next action (or final answer)</li>
-      <li>Can output thinking text before tool calls</li>
-      <li>Extended thinking (Claude 3.7+) externalizes this</li>
-    </ul>`
+const cntObs = new IntersectionObserver(entries => entries.forEach(e => {
+  if(!e.isIntersecting) return;
+  const el = e.target, target = parseInt(el.dataset.target), dur = 1200;
+  let start = 0; const step = Math.ceil(target/(dur/16));
+  const t = setInterval(() => { start = Math.min(start+step,target); el.textContent = start; if(start>=target) clearInterval(t); }, 16);
+  cntObs.unobserve(el);
+}), {threshold:0.5});
+document.querySelectorAll('[data-target]').forEach(el => cntObs.observe(el));
+
+function markComplete() {
+  const prog = JSON.parse(localStorage.getItem('aai_progress')||'{}');
+  prog.day2 = {completed:true,date:new Date().toISOString()};
+  localStorage.setItem('aai_progress',JSON.stringify(prog));
+  document.querySelectorAll('.nav-btn.complete').forEach(b => { b.textContent='✓ Day 2 Complete!'; b.style.background='var(--green)'; b.style.color='#0a0a0f'; b.style.borderColor='var(--green)'; });
+}
+const sp = JSON.parse(localStorage.getItem('aai_progress')||'{}');
+if(sp.day2?.completed) document.querySelectorAll('.nav-btn.complete').forEach(b => { b.textContent='✓ Day 2 Complete!'; b.style.background='var(--green)'; b.style.color='#0a0a0f'; b.style.borderColor='var(--green)'; });
+
+// PROMPT BUILDER
+const prompts = {
+  zero: {
+    sentiment: `messages=[\n  {"role": "user", "content": "Classify sentiment as POSITIVE, NEGATIVE, or NEUTRAL.\\n\\nText: {{your_text}}\\n\\nSentiment:"}\n]`,
+    extraction: `system="Extract entities as JSON: {name, email, company}. Output only JSON, no markdown."\nmessages=[\n  {"role": "user", "content": "Text: {{your_text}}"}\n]`,
+    summarize: `system="Summarize in 3 bullet points. Each bullet starts with an action verb."\nmessages=[\n  {"role": "user", "content": "{{your_text}}"}\n]`,
+    code: `messages=[\n  {"role": "user", "content": "Write a Python function that {{your_text}}. Include type hints, docstring, and error handling."}\n]`,
+    qa: `system="Answer based on provided context only. If unsure, say 'I don't have enough information.'"\nmessages=[\n  {"role": "user", "content": "Context: {{context}}\\n\\nQuestion: {{your_text}}"}\n]`
   },
-  act: {
-    color: 'var(--amber)',
-    html: `<h3 style="color:var(--amber)">⚡ ACT — Tool Call Step</h3>
-    <p>When the model decides it needs more information, it outputs a <code style="color:var(--teal-light)">tool_use</code> content block. The stop_reason is "tool_use" — not "end_turn".</p>
-    <ul>
-      <li>Model outputs structured <code>tool_use</code> block</li>
-      <li>Contains tool name + typed input arguments</li>
-      <li>YOUR code must detect and dispatch this</li>
-      <li>Model has zero ability to execute real code</li>
-    </ul>`
+  few: {
+    sentiment: `messages=[\n  {"role":"user","content":"Text: 'Amazing product!'\nSentiment:"},\n  {"role":"assistant","content":"POSITIVE"},\n  {"role":"user","content":"Text: 'Total waste of money.'\nSentiment:"},\n  {"role":"assistant","content":"NEGATIVE"},\n  {"role":"user","content":"Text: '{{your_text}}'\nSentiment:"}\n]`,
+    extraction: `messages=[\n  {"role":"user","content":"Text: 'Call John at john@co.com'\nJSON:"},\n  {"role":"assistant","content":'{"name":"John","email":"john@co.com"}'},\n  {"role":"user","content":"Text: '{{your_text}}'\nJSON:"}\n]`,
+    summarize: `messages=[\n  {"role":"user","content":"Doc: 'FastAPI is fast...'\nBullets:"},\n  {"role":"assistant","content":"• FastAPI delivers high performance\\n• Type hints enable auto-validation\\n• OpenAPI docs generated automatically"},\n  {"role":"user","content":"Doc: '{{your_text}}'\nBullets:"}\n]`,
+    code: `messages=[\n  {"role":"user","content":"Task: retry with backoff\nCode:"},\n  {"role":"assistant","content":"def retry(fn, retries=3, delay=1.0):\\n    ..."},\n  {"role":"user","content":"Task: {{your_text}}\nCode:"}\n]`,
+    qa: `messages=[\n  {"role":"user","content":"Q: What is the capital of France?\nA:"},\n  {"role":"assistant","content":"Paris"},\n  {"role":"user","content":"Q: {{your_text}}\nA:"}\n]`
   },
-  observe: {
-    color: 'var(--teal-light)',
-    html: `<h3 style="color:var(--teal-light)">👁️ OBSERVE — Result Ingestion</h3>
-    <p>You run the tool and send back a <code style="color:var(--teal-light)">tool_result</code> message. The model now has new grounded information and re-enters the THINK phase.</p>
-    <ul>
-      <li>Your code runs the real function</li>
-      <li>Result (any string) becomes tool_result content</li>
-      <li>Can include error messages — model can recover</li>
-      <li>Full context grows with each loop iteration</li>
-    </ul>`
+  cot: {
+    sentiment: `messages=[\n  {"role":"user","content":"Analyze the sentiment of: '{{your_text}}'\\n\\nLet's think step by step about the emotional cues, context, and tone before concluding:"}\n]`,
+    extraction: `messages=[\n  {"role":"user","content":"Extract all entities from: '{{your_text}}'\\n\\nStep 1: Identify all person names\\nStep 2: Find email addresses\\nStep 3: Identify company names\\nStep 4: Format as JSON"}\n]`,
+    summarize: `messages=[\n  {"role":"user","content":"Summarize this text:\\n\\n{{your_text}}\\n\\nFirst, identify the main topic. Then list 3 key points. Finally, write a one-paragraph summary."}\n]`,
+    code: `messages=[\n  {"role":"user","content":"Implement: {{your_text}}\\n\\nThink through the algorithm step by step before writing code. Consider: edge cases, time complexity, space complexity."}\n]`,
+    qa: `messages=[\n  {"role":"user","content":"Question: {{your_text}}\\n\\nLet me think through this carefully:\\n1. What do I know for certain?\\n2. What can I infer?\\n3. What's my conclusion?"}\n]`
+  },
+  persona: {
+    sentiment: `system="""You are Dr. Sarah Chen, a computational linguist specializing in\nsentiment analysis for financial markets. You:\n- Classify text as POSITIVE/NEGATIVE/NEUTRAL/MIXED\n- Note market implications of the sentiment\n- Flag sarcasm or irony when detected\n- Output your analysis with confidence score 0-100"""\nmessages=[{"role":"user","content":"Analyze: '{{your_text}}'"}]`,
+    extraction: `system="""You are an expert data extraction AI for a CRM system.\nAlways output valid JSON. Never guess — if a field is absent, use null.\nSchema: {name: str|null, email: str|null, phone: str|null, company: str|null}"""\nmessages=[{"role":"user","content":"Extract from: '{{your_text}}'"}]`,
+    summarize: `system="""You are a technical writing expert at a top engineering firm.\nYour summaries are used by executives who need:\n- Main decision/finding (1 sentence)\n- Why it matters (1 sentence)\n- Recommended action (1 sentence)\nNo bullet points. Professional prose only."""\nmessages=[{"role":"user","content":"{{your_text}}"}]`,
+    code: `system="""You are a senior Python engineer with 15 years experience.\nYou always write: type-annotated, tested, documented, secure code.\nYou comment on time/space complexity and flag potential issues."""\nmessages=[{"role":"user","content":"Implement: {{your_text}}"}]`,
+    qa: `system="""You are Socrates — you answer questions by asking clarifying questions first,\nthen building up to the answer through dialogue. Never give direct answers\nuntil you've established the questioner's existing knowledge level."""\nmessages=[{"role":"user","content":"{{your_text}}"}]`
+  },
+  structured: {
+    sentiment: `tools=[{"name":"sentiment_result","description":"Return sentiment analysis","input_schema":{"type":"object","properties":{"sentiment":{"type":"string","enum":["POSITIVE","NEGATIVE","NEUTRAL","MIXED"]},"confidence":{"type":"number"},"reasoning":{"type":"string"}},"required":["sentiment","confidence"]}}]\ntool_choice={"type":"tool","name":"sentiment_result"}\nmessages=[{"role":"user","content":"Analyze: '{{your_text}}'"}]`,
+    extraction: `tools=[{"name":"extract_entities","description":"Extract contact info","input_schema":{"type":"object","properties":{"name":{"type":"string"},"email":{"type":"string"},"company":{"type":"string"}},"required":["name"]}}]\ntool_choice={"type":"tool","name":"extract_entities"}\nmessages=[{"role":"user","content":"{{your_text}}"}]`,
+    summarize: `tools=[{"name":"summary","input_schema":{"type":"object","properties":{"headline":{"type":"string"},"bullets":{"type":"array","items":{"type":"string"}},"word_count":{"type":"integer"}},"required":["headline","bullets"]}}]\ntool_choice={"type":"tool","name":"summary"}`,
+    code: `tools=[{"name":"code_result","input_schema":{"type":"object","properties":{"code":{"type":"string"},"language":{"type":"string"},"complexity":{"type":"string"},"tests":{"type":"array","items":{"type":"string"}}}}}]\ntool_choice={"type":"tool","name":"code_result"}`,
+    qa: `tools=[{"name":"answer","input_schema":{"type":"object","properties":{"answer":{"type":"string"},"confidence":{"type":"number","minimum":0,"maximum":1},"sources_needed":{"type":"boolean"}},"required":["answer","confidence"]}}]`
   }
 };
 
-function showReactInfo(node) {
-  document.querySelectorAll('.react-node').forEach(n => n.classList.remove('active'));
-  document.getElementById('node-' + node).classList.add('active');
-  const data = reactInfoData[node];
-  const info = document.getElementById('react-info');
-  info.innerHTML = data.html;
-  info.style.borderColor = data.color;
+function buildPrompt() {
+  const tech = document.getElementById('pb-technique').value;
+  const task = document.getElementById('pb-task').value;
+  const custom = document.getElementById('pb-custom').value;
+  const template = prompts[tech][task] || 'Template not found';
+  const filled = template.replace(/\{\{your_text\}\}/g, custom || '{{your_text}}');
+  const el = document.getElementById('pb-output');
+  el.textContent = `client.messages.create(\n  model="claude-sonnet-4-5",\n  max_tokens=1024,\n  ${filled}\n)`;
 }
 
-// ============================================================
-// Agent Trace Viewer
-// ============================================================
-const traceSteps = [
-  { badge: 'think', text: 'I need to calculate 15% of 847 first, then double the result. Let me use the calculate tool.', meta: 'API call #1 · stop_reason: tool_use' },
-  { badge: 'act', text: 'call calculate(expression="847 * 0.15")', meta: 'tool_use block in response.content' },
-  { badge: 'observe', text: 'result: "127.05"', meta: 'tool_result sent back to API' },
-  { badge: 'think', text: 'Got 127.05. Now I need to double it.', meta: 'API call #2 · stop_reason: tool_use' },
-  { badge: 'act', text: 'call calculate(expression="127.05 * 2")', meta: 'tool_use block in response.content' },
-  { badge: 'observe', text: 'result: "254.1"', meta: 'tool_result sent back to API' },
-  { badge: 'answer', text: '15% of 847 is 127.05, and doubling that gives you 254.1.', meta: 'API call #3 · stop_reason: end_turn ✓' },
-];
-
-let traceIdx = 0;
-
-function renderTraceStep(i) {
-  const step = traceSteps[i];
-  const row = document.createElement('div');
-  row.className = 'trace-row';
-  row.innerHTML = `
-    <span class="trace-badge badge-${step.badge}">${step.badge.toUpperCase()}</span>
-    <div class="trace-text">${step.text}<span class="trace-meta">${step.meta}</span></div>
-  `;
-  document.getElementById('trace-steps').appendChild(row);
-  setTimeout(() => row.classList.add('show'), 30);
+function copyPrompt() {
+  navigator.clipboard.writeText(document.getElementById('pb-output').textContent);
+  const c = document.getElementById('copy-confirm');
+  c.style.opacity = '1';
+  setTimeout(() => c.style.opacity = '0', 2000);
 }
 
-function traceNext() {
-  if (traceIdx >= traceSteps.length) return;
-  renderTraceStep(traceIdx);
-  traceIdx++;
-  document.getElementById('trace-progress').textContent = `Step ${traceIdx} / ${traceSteps.length}${traceIdx === traceSteps.length ? ' — Complete!' : ''}`;
+buildPrompt();
+
+// A/B TESTER
+const abOutputs = {
+  vague: ["The text talks about some things. There are several points mentioned. The author discusses various topics and makes some statements about the subject matter. Overall it covers the main ideas.","This is a summary of the content. It mentions important information and provides details about the topic discussed in the text."],
+  specific: ["• Implements token bucket rate limiting with configurable burst capacity and steady-state refill rate\n• Prioritizes distributed Redis backend over in-memory fallback to support horizontal scaling\n• Exposes prometheus-compatible metrics for real-time throttling observability","• Adopts event-sourcing architecture with CQRS separation to enable temporal queries and audit logging\n• Reduces read latency 60% via materialized views updated asynchronously on domain event publication\n• Achieves zero-downtime deployments through blue-green switching coordinated by feature flags"]
+};
+
+function scorePrompt(prompt) {
+  let score = 50;
+  if (prompt.length > 50) score += 10;
+  if (prompt.includes('You are') || prompt.includes('you are')) score += 10;
+  if (/format|structure|output|json|bullet|list/i.test(prompt)) score += 15;
+  if (/don't|do not|never|always|only/i.test(prompt)) score += 10;
+  if (/example|such as|e\.g\./i.test(prompt)) score += 5;
+  return Math.min(score, 98);
 }
 
-function traceReset() {
-  traceIdx = 0;
-  document.getElementById('trace-steps').innerHTML = '';
-  document.getElementById('trace-progress').textContent = 'Step 0 / 7 — Click "Next Step" to begin';
+function runABTest() {
+  const pA = document.getElementById('ab-prompt-a').value;
+  const pB = document.getElementById('ab-prompt-b').value;
+  const sA = scorePrompt(pA);
+  const sB = scorePrompt(pB);
+
+  const outA = document.getElementById('ab-out-a');
+  const outB = document.getElementById('ab-out-b');
+  outA.style.color = 'var(--text)'; outB.style.color = 'var(--text)';
+  outA.textContent = abOutputs.vague[Math.floor(Math.random()*abOutputs.vague.length)];
+  outB.textContent = abOutputs.specific[Math.floor(Math.random()*abOutputs.specific.length)];
+
+  document.getElementById('ab-score-a').textContent = `Quality Score: ${sA}/100`;
+  document.getElementById('ab-score-a').style.color = sA < 70 ? 'var(--red)' : 'var(--amber)';
+  document.getElementById('ab-score-b').textContent = `Quality Score: ${sB}/100`;
+  document.getElementById('ab-score-b').style.color = sB >= 80 ? 'var(--green)' : 'var(--amber)';
+
+  const verdict = document.getElementById('ab-verdict');
+  verdict.style.display = 'block';
+  const winner = sB > sA ? 'B' : 'A';
+  const diff = Math.abs(sB - sA);
+  verdict.innerHTML = `<strong style="color:var(--teal-light)">Version ${winner} wins</strong> by ${diff} points. ${diff > 20 ? 'A significant improvement — the more specific prompt with role, format, and constraints produces reliably better outputs.' : 'Marginal difference — consider adding more specific output format requirements to prompt B.'}`;
 }
-
-// ============================================================
-// Tool Schema Builder
-// ============================================================
-let params = [
-  { name: 'city', type: 'string', desc: 'City name, e.g. "Tokyo", "London"', required: true }
-];
-
-function addParam() {
-  params.push({ name: '', type: 'string', desc: '', required: false });
-  renderParams();
-  buildSchema();
-}
-
-function removeParam(i) {
-  params.splice(i, 1);
-  renderParams();
-  buildSchema();
-}
-
-function renderParams() {
-  const list = document.getElementById('params-list');
-  list.innerHTML = '';
-  params.forEach((p, i) => {
-    const row = document.createElement('div');
-    row.className = 'param-row';
-    row.innerHTML = `
-      <input class="form-input" style="font-size:0.8rem" value="${p.name}" placeholder="param name"
-        oninput="params[${i}].name=this.value;buildSchema()">
-      <select class="form-input" style="font-size:0.8rem" onchange="params[${i}].type=this.value;buildSchema()">
-        ${['string','number','boolean','array'].map(t => `<option ${t===p.type?'selected':''}>${t}</option>`).join('')}
-      </select>
-      <label class="param-req">
-        <input type="checkbox" ${p.required?'checked':''} onchange="params[${i}].required=this.checked;buildSchema()"> req
-      </label>
-      <div class="remove-btn" onclick="removeParam(${i})">×</div>
-    `;
-    list.appendChild(row);
-  });
-}
-
-function buildSchema() {
-  const name = document.getElementById('sb-name').value || 'my_tool';
-  const desc = document.getElementById('sb-desc').value || '';
-
-  const properties = {};
-  const required = [];
-
-  params.forEach(p => {
-    if (!p.name) return;
-    properties[p.name] = { type: p.type };
-    if (p.desc) properties[p.name].description = p.desc;
-    if (p.required) required.push(p.name);
-  });
-
-  const schema = {
-    name,
-    description: desc,
-    input_schema: {
-      type: 'object',
-      properties,
-      required
-    }
-  };
-
-  const json = JSON.stringify(schema, null, 2);
-  document.getElementById('schema-output').innerHTML = syntaxHighlightJSON(json);
-}
-
-function syntaxHighlightJSON(json) {
-  return json
-    .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, match => {
-      let cls = 'kn';
-      if (/^"/.test(match)) {
-        cls = /:$/.test(match) ? 'kj' : 'ks';
-      } else if (/true|false/.test(match)) {
-        cls = 'kb';
-      }
-      return `<span class="${cls}">${match}</span>`;
-    });
-}
-
-renderParams();
-buildSchema();
-
-// ============================================================
-// Anatomy annotations
-// ============================================================
-let lastAnnotation = null;
-
-function highlightAnnotation(n) {
-  document.querySelectorAll('.annotation-item').forEach(el => el.classList.remove('highlighted'));
-  const target = document.getElementById('ann-' + n);
-  target.classList.add('highlighted');
-  target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
-
-// ============================================================
-// Exercises localStorage
-// ============================================================
-function toggleExercise(id) {
-  const card = document.getElementById(id);
-  const done = card.classList.toggle('done');
-  localStorage.setItem('day2_' + id, done ? '1' : '0');
-}
-
-['d2-ex-1','d2-ex-2','d2-ex-3','d2-ex-4'].forEach(id => {
-  if (localStorage.getItem('day2_' + id) === '1') {
-    document.getElementById(id).classList.add('done');
-  }
-});
 </script>
-
-<!-- ============================================================
-     NEW SECTION A — Message History Deep Dive
-     ============================================================ -->
-<section class="d2-enhance-section">
-  <span class="d2-section-tag">Deep Dive</span>
-  <h2>What the Messages Array Looks Like During Tool Use</h2>
-
-  <div class="msg-step-nav">
-    <button class="msg-step-btn active" onclick="showMsgStep(0,this)">Step 0: Initial</button>
-    <button class="msg-step-btn" onclick="showMsgStep(1,this)">Step 1: tool_use</button>
-    <button class="msg-step-btn" onclick="showMsgStep(2,this)">Step 2: tool_result</button>
-    <button class="msg-step-btn" onclick="showMsgStep(3,this)">Step 3: 2nd tool</button>
-    <button class="msg-step-btn" onclick="showMsgStep(4,this)">Step 4: Final</button>
-  </div>
-
-  <div class="msg-viewer">
-    <div class="msg-viewer-header">
-      <span class="msg-viewer-title" id="msgStepTitle">Step 0 — Initial messages array (user query only)</span>
-      <span class="msg-viewer-meta" id="msgStepMeta">1 message · ~15 tokens</span>
-    </div>
-    <div class="msg-viewer-body">
-      <div class="msg-code" id="msgCode"></div>
-    </div>
-  </div>
-
-  <div class="msg-insight-box">
-    <strong>Key insight:</strong> The messages array is your entire agent state. Debug by printing it at each step.
-    When something goes wrong — wrong tool called, bad arguments, unexpected stop — the answer is in here.
-    Every tool call and result is fully preserved in the conversation history.
-  </div>
-</section>
-
-<!-- ============================================================
-     NEW SECTION B — Parallel Tool Calls
-     ============================================================ -->
-<section class="d2-enhance-section">
-  <span class="d2-section-tag">Performance Pattern</span>
-  <h2>Parallel Tool Calls: One Round-Trip, Multiple Tools</h2>
-
-  <div class="parallel-compare">
-    <div class="parallel-side sequential">
-      <div class="parallel-side-title">&#10008; Sequential (slow)</div>
-      <div class="seq-box"><span class="seq-icon">&#128269;</span> search("Paris weather")</div>
-      <div class="seq-arrow">&#8595; wait 1.2s</div>
-      <div class="seq-box"><span class="seq-icon">&#128269;</span> search("Paris hotels")</div>
-      <div class="seq-arrow">&#8595; wait 1.2s</div>
-      <div class="seq-box"><span class="seq-icon">&#128269;</span> search("Paris flights")</div>
-      <div class="seq-arrow">&#8595; wait 1.2s</div>
-      <div>
-        <span class="timing-badge slow">Total: 3.6 seconds</span>
-      </div>
-    </div>
-    <div class="parallel-side parallel">
-      <div class="parallel-side-title">&#10004; Parallel (fast)</div>
-      <div class="par-boxes">
-        <div class="par-box">&#128269;<br>weather</div>
-        <div class="par-box">&#128269;<br>hotels</div>
-        <div class="par-box">&#128269;<br>flights</div>
-      </div>
-      <div class="seq-arrow" style="margin-top:0.5rem;">&#8595; all 3 at once, wait 1.2s</div>
-      <div class="seq-box" style="margin-top:0.5rem;border-color:rgba(16,185,129,0.4);">
-        <span class="seq-icon">&#9989;</span> All 3 results received
-      </div>
-      <div>
-        <span class="timing-badge fast">Total: 1.2 seconds</span>
-      </div>
-    </div>
-  </div>
-
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.25rem;margin-bottom:1rem;">
-    <div style="font-size:0.82rem;font-weight:600;color:var(--text-dim);margin-bottom:0.75rem;text-transform:uppercase;letter-spacing:0.06em;">API response with parallel tool_use blocks</div>
-    <div class="msg-code"><span class="json-kw">{</span>
-  <span class="json-key">"role"</span>: <span class="json-str">"assistant"</span>,
-  <span class="json-key">"content"</span>: <span class="json-kw">[</span>
-    <span class="json-kw">{</span> <span class="json-key">"type"</span>: <span class="json-str">"tool_use"</span>, <span class="json-key">"id"</span>: <span class="json-str">"tu_1"</span>, <span class="json-key">"name"</span>: <span class="json-str">"web_search"</span>, <span class="json-key">"input"</span>: <span class="json-kw">{</span><span class="json-key">"query"</span>: <span class="json-str">"Paris weather"</span><span class="json-kw">}</span> <span class="json-kw">}</span>,
-    <span class="json-kw">{</span> <span class="json-key">"type"</span>: <span class="json-str">"tool_use"</span>, <span class="json-key">"id"</span>: <span class="json-str">"tu_2"</span>, <span class="json-key">"name"</span>: <span class="json-str">"web_search"</span>, <span class="json-key">"input"</span>: <span class="json-kw">{</span><span class="json-key">"query"</span>: <span class="json-str">"Paris hotels"</span><span class="json-kw">}</span> <span class="json-kw">}</span>,
-    <span class="json-kw">{</span> <span class="json-key">"type"</span>: <span class="json-str">"tool_use"</span>, <span class="json-key">"id"</span>: <span class="json-str">"tu_3"</span>, <span class="json-key">"name"</span>: <span class="json-str">"web_search"</span>, <span class="json-key">"input"</span>: <span class="json-kw">{</span><span class="json-key">"query"</span>: <span class="json-str">"Paris flights"</span><span class="json-kw">}</span> <span class="json-kw">}</span>
-  <span class="json-kw">]</span>
-<span class="json-kw">}</span></div>
-
-    <div style="font-size:0.82rem;font-weight:600;color:var(--text-dim);margin:1rem 0 0.75rem;text-transform:uppercase;letter-spacing:0.06em;">Handling parallel blocks + sending ALL results in ONE user message</div>
-    <div class="msg-code"><span class="json-key">import</span> asyncio
-
-<span class="json-key">async def</span> <span class="json-str">handle_parallel_tools</span>(response, tools_map):
-    tool_uses = [b <span class="json-key">for</span> b <span class="json-key">in</span> response.content <span class="json-key">if</span> b.type == <span class="json-str">"tool_use"</span>]
-
-    <span class="json-num"># Run all tools concurrently</span>
-    results = <span class="json-key">await</span> asyncio.gather(*[
-        tools_map[t.name](**t.input) <span class="json-key">for</span> t <span class="json-key">in</span> tool_uses
-    ])
-
-    <span class="json-num"># CRITICAL: send ALL results in ONE user message</span>
-    tool_results_message = {
-        <span class="json-str">"role"</span>: <span class="json-str">"user"</span>,
-        <span class="json-str">"content"</span>: [
-            {
-                <span class="json-str">"type"</span>: <span class="json-str">"tool_result"</span>,
-                <span class="json-str">"tool_use_id"</span>: tool_uses[i].id,
-                <span class="json-str">"content"</span>: str(results[i])
-            }
-            <span class="json-key">for</span> i <span class="json-key">in</span> range(len(tool_uses))
-        ]
-    }
-    <span class="json-key">return</span> tool_results_message</div>
-  </div>
-
-  <div class="gotcha-box">
-    <strong>Gotcha:</strong> Always send ALL tool_results in ONE user message. Never send them separately —
-    the API expects every tool_use id to be resolved in a single response.
-    Missing any id causes an API error.
-  </div>
-</section>
-
-<!-- ============================================================
-     NEW SECTION C — Tool Description Quality Lab
-     ============================================================ -->
-<section class="d2-enhance-section">
-  <span class="d2-section-tag">Quality Lab</span>
-  <h2>Tool Description Quality: It Changes Everything</h2>
-
-  <div style="font-size:0.875rem;color:var(--text-dim);margin-bottom:1.25rem;">
-    Same tool, same model, same query — but description quality dramatically changes behavior.
-    Query used: <em style="color:var(--text);">"Notify the user that their order shipped."</em>
-  </div>
-
-  <div class="tdq-grid">
-    <div class="tdq-card bad">
-      <div class="tdq-label">Bad</div>
-      <div class="tdq-desc">"Send an email"</div>
-      <div style="font-size:0.75rem;color:var(--text-dim);margin-top:0.25rem;">What model does:</div>
-      <div class="tdq-behavior">
-        Calls send_email immediately. Subject: "Order Shipped". Uses a generic template.
-        Also calls it for every subsequent notification — including error messages and alerts.
-        Model treats it as a general notification tool.
-      </div>
-    </div>
-
-    <div class="tdq-card ok">
-      <div class="tdq-label">OK</div>
-      <div class="tdq-desc">"Send an email to a user"</div>
-      <div style="font-size:0.75rem;color:var(--text-dim);margin-top:0.25rem;">What model does:</div>
-      <div class="tdq-behavior">
-        Better — asks for recipient before sending.
-        But still uses it for notifications and alerts.
-        Doesn't know the tool has side effects or constraints.
-        May send to wrong addresses if user context is ambiguous.
-      </div>
-    </div>
-
-    <div class="tdq-card great">
-      <div class="tdq-label">Great</div>
-      <div class="tdq-desc">"Send a transactional email
-to a single recipient. Use ONLY
-when the user explicitly requests
-an email be sent. Do NOT use for
-notifications or alerts. Recipient
-must be explicitly specified by
-the user. Has real-world side
-effects — cannot be undone."</div>
-      <div style="font-size:0.75rem;color:var(--text-dim);margin-top:0.25rem;">What model does:</div>
-      <div class="tdq-behavior">
-        Correctly identifies this as a notification (not user-requested email).
-        Chooses a different tool or asks the user how they want to be notified.
-        Only uses send_email when user says "email me" explicitly.
-      </div>
-    </div>
-  </div>
-
-  <div class="tdq-rules-box">
-    <h4>&#128073; Key Rules for Great Tool Descriptions</h4>
-    <ol>
-      <li><strong>Specify WHEN to use</strong> — and explicitly state when NOT to use it</li>
-      <li><strong>Describe what the tool CANNOT do</strong> — scope boundaries prevent misuse</li>
-      <li><strong>Be explicit about side effects</strong> — "sends real email", "charges card", "deletes data"</li>
-      <li><strong>Include input constraints</strong> — "recipient must be explicitly provided by the user, not inferred"</li>
-    </ol>
-  </div>
-</section>
-
-<script>
-// ============================================================
-// Message History Deep Dive
-// ============================================================
-(function() {
-  const steps = [
-    {
-      title: 'Step 0 — Initial messages array (user query only)',
-      meta: '1 message · ~15 tokens',
-      code: `<span class="json-kw">[</span>
-  <span class="msg-added"><span class="json-kw">{</span>
-    <span class="json-key">"role"</span>:    <span class="json-str">"user"</span>,
-    <span class="json-key">"content"</span>: <span class="json-str">"What's the weather in Paris and what flights are available?"</span>
-  <span class="json-kw">}</span></span>
-<span class="json-kw">]</span>
-
-<span class="json-num">// 1 message. Clean. Simple. No history yet.</span>`
-    },
-    {
-      title: 'Step 1 — After first API call: assistant adds tool_use',
-      meta: '2 messages · ~85 tokens',
-      code: `<span class="json-kw">[</span>
-  <span class="json-kw">{</span>
-    <span class="json-key">"role"</span>:    <span class="json-str">"user"</span>,
-    <span class="json-key">"content"</span>: <span class="json-str">"What's the weather in Paris and what flights are available?"</span>
-  <span class="json-kw">}</span>,
-  <span class="msg-added"><span class="json-kw">{</span>                                         <span class="json-num">// ← ADDED: assistant response</span>
-    <span class="json-key">"role"</span>: <span class="json-str">"assistant"</span>,
-    <span class="json-key">"content"</span>: <span class="json-kw">[</span>
-      <span class="json-kw">{</span>
-        <span class="json-key">"type"</span>:  <span class="json-str">"tool_use"</span>,
-        <span class="json-key">"id"</span>:    <span class="json-str">"tu_abc123"</span>,
-        <span class="json-key">"name"</span>:  <span class="json-str">"get_weather"</span>,
-        <span class="json-key">"input"</span>: <span class="json-kw">{</span> <span class="json-key">"city"</span>: <span class="json-str">"Paris"</span> <span class="json-kw">}</span>
-      <span class="json-kw">}</span>
-    <span class="json-kw">]</span>,
-    <span class="json-key">"stop_reason"</span>: <span class="json-str">"tool_use"</span>
-  <span class="json-kw">}</span></span>
-<span class="json-kw">]</span>
-
-<span class="json-num">// stop_reason = "tool_use" → must execute tool and continue</span>`
-    },
-    {
-      title: 'Step 2 — After tool execution: user adds tool_result',
-      meta: '3 messages · ~140 tokens',
-      code: `<span class="json-kw">[</span>
-  <span class="json-kw">{</span> <span class="json-key">"role"</span>: <span class="json-str">"user"</span>, <span class="json-key">"content"</span>: <span class="json-str">"What's the weather in Paris..."</span> <span class="json-kw">}</span>,
-  <span class="json-kw">{</span>
-    <span class="json-key">"role"</span>: <span class="json-str">"assistant"</span>,
-    <span class="json-key">"content"</span>: <span class="json-kw">[{</span> <span class="json-key">"type"</span>: <span class="json-str">"tool_use"</span>, <span class="json-key">"id"</span>: <span class="json-str">"tu_abc123"</span>, <span class="json-key">"name"</span>: <span class="json-str">"get_weather"</span>, ... <span class="json-kw">}]</span>
-  <span class="json-kw">}</span>,
-  <span class="msg-added"><span class="json-kw">{</span>                                         <span class="json-num">// ← ADDED: tool result</span>
-    <span class="json-key">"role"</span>: <span class="json-str">"user"</span>,
-    <span class="json-key">"content"</span>: <span class="json-kw">[</span>
-      <span class="json-kw">{</span>
-        <span class="json-key">"type"</span>:        <span class="json-str">"tool_result"</span>,
-        <span class="json-key">"tool_use_id"</span>: <span class="json-str">"tu_abc123"</span>,
-        <span class="json-key">"content"</span>:     <span class="json-str">"Paris: 18°C, partly cloudy, wind 12km/h"</span>
-      <span class="json-kw">}</span>
-    <span class="json-kw">]</span>
-  <span class="json-kw">}</span></span>
-<span class="json-kw">]</span>
-
-<span class="json-num">// tool_use_id must EXACTLY match the id in the assistant message</span>`
-    },
-    {
-      title: 'Step 3 — API calls again: second tool_use + result',
-      meta: '5 messages · ~230 tokens',
-      code: `<span class="json-kw">[</span>
-  <span class="json-kw">{</span> <span class="json-key">"role"</span>: <span class="json-str">"user"</span>,      <span class="json-key">"content"</span>: <span class="json-str">"What's the weather in Paris..."</span>          <span class="json-kw">}</span>,
-  <span class="json-kw">{</span> <span class="json-key">"role"</span>: <span class="json-str">"assistant"</span>, <span class="json-key">"content"</span>: <span class="json-kw">[{</span> <span class="json-key">"type"</span>: <span class="json-str">"tool_use"</span>, <span class="json-key">"name"</span>: <span class="json-str">"get_weather"</span>, ... <span class="json-kw">}]</span>   <span class="json-kw">}</span>,
-  <span class="json-kw">{</span> <span class="json-key">"role"</span>: <span class="json-str">"user"</span>,      <span class="json-key">"content"</span>: <span class="json-kw">[{</span> <span class="json-key">"type"</span>: <span class="json-str">"tool_result"</span>, ... <span class="json-kw">}]</span>               <span class="json-kw">}</span>,
-  <span class="msg-added"><span class="json-kw">{</span>                                         <span class="json-num">// ← ADDED: 2nd tool_use</span>
-    <span class="json-key">"role"</span>: <span class="json-str">"assistant"</span>,
-    <span class="json-key">"content"</span>: <span class="json-kw">[{</span>
-      <span class="json-key">"type"</span>: <span class="json-str">"tool_use"</span>, <span class="json-key">"id"</span>: <span class="json-str">"tu_def456"</span>,
-      <span class="json-key">"name"</span>: <span class="json-str">"search_flights"</span>,
-      <span class="json-key">"input"</span>: <span class="json-kw">{</span> <span class="json-key">"destination"</span>: <span class="json-str">"Paris"</span>, <span class="json-key">"date"</span>: <span class="json-str">"2026-05-01"</span> <span class="json-kw">}</span>
-    <span class="json-kw">}]</span>
-  <span class="json-kw">}</span>,
-  <span class="json-kw">{</span>
-    <span class="json-key">"role"</span>: <span class="json-str">"user"</span>,
-    <span class="json-key">"content"</span>: <span class="json-kw">[{</span> <span class="json-key">"type"</span>: <span class="json-str">"tool_result"</span>, <span class="json-key">"tool_use_id"</span>: <span class="json-str">"tu_def456"</span>, <span class="json-key">"content"</span>: <span class="json-str">"3 flights found..."</span> <span class="json-kw">}]</span>
-  <span class="json-kw">}</span></span>
-<span class="json-kw">]</span>`
-    },
-    {
-      title: 'Step 4 — Final response: stop_reason = end_turn',
-      meta: '6 messages · ~310 tokens · DONE',
-      code: `<span class="json-kw">[</span>
-  <span class="json-kw">{</span> <span class="json-key">"role"</span>: <span class="json-str">"user"</span>,      <span class="json-key">"content"</span>: <span class="json-str">"What's the weather in Paris..."</span> <span class="json-kw">}</span>,
-  <span class="json-kw">{</span> <span class="json-key">"role"</span>: <span class="json-str">"assistant"</span>, <span class="json-key">"content"</span>: <span class="json-kw">[{</span> <span class="json-key">"type"</span>: <span class="json-str">"tool_use"</span>, <span class="json-key">"name"</span>: <span class="json-str">"get_weather"</span>      <span class="json-kw">}]</span> <span class="json-kw">}</span>,
-  <span class="json-kw">{</span> <span class="json-key">"role"</span>: <span class="json-str">"user"</span>,      <span class="json-key">"content"</span>: <span class="json-kw">[{</span> <span class="json-key">"type"</span>: <span class="json-str">"tool_result"</span>, ... <span class="json-kw">}]</span>          <span class="json-kw">}</span>,
-  <span class="json-kw">{</span> <span class="json-key">"role"</span>: <span class="json-str">"assistant"</span>, <span class="json-key">"content"</span>: <span class="json-kw">[{</span> <span class="json-key">"type"</span>: <span class="json-str">"tool_use"</span>, <span class="json-key">"name"</span>: <span class="json-str">"search_flights"</span>   <span class="json-kw">}]</span> <span class="json-kw">}</span>,
-  <span class="json-kw">{</span> <span class="json-key">"role"</span>: <span class="json-str">"user"</span>,      <span class="json-key">"content"</span>: <span class="json-kw">[{</span> <span class="json-key">"type"</span>: <span class="json-str">"tool_result"</span>, ... <span class="json-kw">}]</span>          <span class="json-kw">}</span>,
-  <span class="msg-added"><span class="json-kw">{</span>                                         <span class="json-num">// ← ADDED: final assistant text</span>
-    <span class="json-key">"role"</span>: <span class="json-str">"assistant"</span>,
-    <span class="json-key">"content"</span>: <span class="json-kw">[{</span>
-      <span class="json-key">"type"</span>: <span class="json-str">"text"</span>,
-      <span class="json-key">"text"</span>: <span class="json-str">"Paris is currently 18°C and partly cloudy. I found 3 flights: Air France at 09:00 (€320), EasyJet at 14:30 (€189), and British Airways at 18:00 (€410)."</span>
-    <span class="json-kw">}]</span>,
-    <span class="json-key">"stop_reason"</span>: <span class="json-str">"end_turn"</span>    <span class="json-num">// ← loop exits here</span>
-  <span class="json-kw">}</span></span>
-<span class="json-kw">]</span>
-
-<span class="json-num">// stop_reason = "end_turn" → agent loop complete. Return final text to user.</span>`
-    }
-  ];
-
-  function showMsgStep(idx, btn) {
-    document.querySelectorAll('.msg-step-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('msgStepTitle').textContent = steps[idx].title;
-    document.getElementById('msgStepMeta').textContent  = steps[idx].meta;
-    document.getElementById('msgCode').innerHTML = steps[idx].code;
-  }
-
-  // Init
-  document.getElementById('msgCode').innerHTML = steps[0].code;
-})();
-</script>
-<script src="../bg-animation.js"></script>
 </body>
 </html>

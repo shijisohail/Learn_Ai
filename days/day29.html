@@ -3,569 +3,411 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Day 29: AI Copilot Architecture — Intent routing, workflow state machine & approval flows</title>
+<title>Day 29: AI Copilot Architecture — Intent Routing, State Machine &amp; Approval Flows</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --bg: #0a0a0f; --card: #141420; --surface2: #1a1a2e; --border: #2a2a45;
-  --purple: #7c3aed; --purple-light: #a855f7; --teal: #0d9488; --green: #10b981;
-  --red: #ef4444; --yellow: #f59e0b; --text: #e2e8f0; --muted: #64748b;
-  --font: 'Inter', sans-serif; --mono: 'JetBrains Mono', monospace;
-}
-html { scroll-behavior: smooth; }
-body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; overflow-x: hidden; }
-body::before {
-  content: ''; position: fixed; inset: 0;
-  background:
-    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(124,58,237,0.08) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 40% at 90% 80%, rgba(13,148,136,0.05) 0%, transparent 60%);
-  pointer-events: none; z-index: 0;
-}
-.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
-
-nav { border-bottom: 1px solid var(--border); padding: 14px 0; background: rgba(10,10,15,0.85); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; }
-.nav-inner { max-width: 1100px; margin: 0 auto; padding: 0 24px; height: 52px; display: flex; align-items: center; justify-content: space-between; }
-.nav-btn { padding: 7px 18px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 13px; font-weight: 600; text-decoration: none; transition: all 0.2s; font-family: inherit; cursor: pointer; }
-.nav-btn:hover { border-color: var(--purple); color: var(--text); }
-.nav-btn.next { border-color: rgba(124,58,237,0.5); color: var(--purple-light); }
-.nav-btn.next:hover { background: var(--purple); color: white; border-color: var(--purple); }
-.nav-btn.complete { border-color: rgba(245,158,11,0.5); color: var(--yellow); }
-.nav-btn.complete:hover { background: var(--yellow); color: #0a0a0f; border-color: var(--yellow); }
-.nav-btn.done { background: rgba(16,185,129,0.15); border-color: var(--green); color: var(--green); }
-.nav-brand { font-size: 14px; font-weight: 700; color: var(--muted); text-decoration: none; letter-spacing: -0.2px; transition: color 0.2s; }
-.nav-brand:hover { color: var(--text); }
-
-.day-hero { padding: 56px 0 40px; }
-.day-num { font-size: 12px; font-weight: 700; color: var(--yellow); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
-.day-hero h1 { font-size: clamp(32px, 5vw, 56px); font-weight: 900; letter-spacing: -2px; margin-bottom: 16px; }
-.day-hero h1 span { background: linear-gradient(135deg, #a855f7, #34d399); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-.day-hero p { font-size: 17px; color: var(--muted); max-width: 600px; line-height: 1.6; margin-bottom: 28px; }
-.topic-pills { display: flex; flex-wrap: wrap; gap: 8px; }
-.topic-pill { padding: 5px 12px; border-radius: 20px; background: var(--surface2); border: 1px solid var(--border); font-size: 12px; color: var(--muted); font-weight: 500; }
-
-.section { padding: 56px 0; border-top: 1px solid var(--border); }
-.section-header { margin-bottom: 32px; }
-.section-num { font-size: 11px; font-weight: 700; color: var(--purple-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
-.section-header h2 { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 10px; }
-.section-header p { color: var(--muted); font-size: 15px; line-height: 1.6; max-width: 640px; }
-
-.code-block { background: #0d1117; border: 1px solid #30363d; border-radius: 12px; padding: 24px; font-family: var(--mono); font-size: 12.5px; line-height: 1.8; overflow-x: auto; white-space: pre; }
-.code-wrap { position: relative; margin-top: 16px; }
-.code-label { position: absolute; top: -10px; left: 16px; background: var(--purple); color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.5px; }
-.c-cmt { color: #8b949e; }
-.c-kw { color: #ff7b72; }
-.c-fn { color: #d2a8ff; }
-.c-str { color: #a5d6ff; }
-.c-type { color: #ffa657; }
-.c-num { color: #f2cc60; }
-.c-bi { color: #79c0ff; }
-.c-dec { color: #ffa657; }
-
-.callout { background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.25); border-radius: 12px; padding: 16px 20px; display: flex; gap: 12px; align-items: flex-start; margin: 20px 0; }
-.callout-icon { font-size: 18px; flex-shrink: 0; }
-.callout-text { font-size: 13px; color: var(--text); line-height: 1.6; }
-.callout-text strong { color: var(--yellow); }
-.callout.info { background: rgba(124,58,237,0.07); border-color: rgba(124,58,237,0.25); }
-.callout.info .callout-text strong { color: var(--purple-light); }
-.callout-example { background: rgba(13,148,136,0.07); border: 1px solid rgba(13,148,136,0.25); border-radius: 12px; padding: 16px 20px; margin: 20px 0; }
-.callout-example-title { font-size: 11px; font-weight: 700; color: var(--teal); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
-
-.bullet-list { list-style: none; display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
-.bullet-list li { font-size: 14px; color: var(--text); display: flex; align-items: flex-start; gap: 10px; line-height: 1.6; }
-.bullet-list li::before { content: '▸'; color: var(--purple-light); flex-shrink: 0; margin-top: 1px; }
-
-/* Architecture Diagram */
-.arch-diagram { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 24px; overflow-x: auto; }
-.arch-row { display: flex; align-items: center; gap: 0; flex-wrap: wrap; justify-content: center; gap: 4px; margin-bottom: 8px; }
-.arch-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; text-align: center; font-size: 11px; font-weight: 600; white-space: nowrap; }
-.arch-box.input { border-color: rgba(245,158,11,0.5); color: var(--yellow); }
-.arch-box.guard { border-color: rgba(239,68,68,0.5); color: var(--red); }
-.arch-box.intent { border-color: rgba(124,58,237,0.5); color: var(--purple-light); }
-.arch-box.context { border-color: rgba(168,85,247,0.4); color: var(--purple-light); }
-.arch-box.orch { border-color: rgba(13,148,136,0.5); color: var(--teal); background: rgba(13,148,136,0.05); }
-.arch-box.tool { border-color: rgba(16,185,129,0.5); color: var(--green); }
-.arch-box.backend { border-color: rgba(100,116,139,0.5); color: var(--muted); }
-.arch-box.format { border-color: rgba(245,158,11,0.4); color: var(--yellow); }
-.arch-arrow { color: var(--muted); font-size: 16px; padding: 0 3px; }
-
-/* Checklist */
-.checklist { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
-.check-row { display: flex; align-items: flex-start; gap: 10px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; }
-.check-row span { font-size: 13px; color: var(--text); line-height: 1.5; }
-.check-badge { font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; background: rgba(16,185,129,0.15); color: var(--green); white-space: nowrap; }
-
-/* Simulator Widget */
-.widget-box { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-top: 24px; }
-.widget-title { font-size: 16px; font-weight: 800; margin-bottom: 6px; }
-.widget-desc { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
-.sim-input-row { display: flex; gap: 10px; margin-bottom: 16px; }
-.sim-input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; color: var(--text); font-size: 14px; font-family: var(--font); outline: none; }
-.sim-input:focus { border-color: var(--purple); }
-.sim-input::placeholder { color: var(--muted); }
-.run-btn { padding: 10px 20px; border-radius: 8px; background: linear-gradient(135deg, var(--purple), var(--teal)); border: none; color: white; font-size: 14px; font-weight: 700; font-family: var(--font); cursor: pointer; white-space: nowrap; }
-.run-btn:hover { opacity: 0.85; }
-.sim-presets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
-.preset-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--muted); padding: 5px 10px; font-size: 11px; cursor: pointer; font-family: var(--font); transition: all 0.15s; }
-.preset-btn:hover { border-color: var(--purple); color: var(--text); }
-
-.pipeline-stages { display: flex; gap: 0; overflow-x: auto; margin-bottom: 20px; }
-.pipe-stage { flex: 1; min-width: 100px; background: var(--surface2); border: 1px solid var(--border); border-radius: 0; padding: 10px 8px; text-align: center; font-size: 11px; font-weight: 600; color: var(--muted); transition: all 0.3s; position: relative; }
-.pipe-stage:first-child { border-radius: 8px 0 0 8px; }
-.pipe-stage:last-child { border-radius: 0 8px 8px 0; }
-.pipe-stage.active { background: rgba(124,58,237,0.15); border-color: var(--purple); color: var(--purple-light); }
-.pipe-stage.done { background: rgba(16,185,129,0.1); border-color: var(--green); color: var(--green); }
-.pipe-label { font-size: 9px; color: var(--muted); margin-top: 3px; }
-
-.sim-result { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; display: none; }
-.result-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 10px; font-size: 13px; }
-.result-label { color: var(--muted); font-weight: 600; min-width: 130px; }
-.result-val { color: var(--text); font-weight: 500; flex: 1; }
-.result-val.intent { color: var(--purple-light); font-weight: 700; }
-.result-val.entity { color: var(--teal); font-family: var(--mono); font-size: 12px; }
-.result-val.conf-high { color: var(--green); font-weight: 700; }
-.result-val.conf-med { color: var(--yellow); font-weight: 700; }
-.result-val.conf-low { color: var(--red); font-weight: 700; }
-.result-val.clarification { color: var(--yellow); font-style: italic; }
-
-footer { padding: 40px 0; border-top: 1px solid var(--border); text-align: center; color: var(--muted); font-size: 13px; }
-
-@media(max-width:700px) {
-  .arch-row { flex-direction: column; align-items: flex-start; }
-  .pipeline-stages { flex-wrap: wrap; }
-}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{--bg:#0a0a0f;--card:#141420;--surface2:#1a1a2e;--border:#2a2a45;--purple:#7c3aed;--purple-light:#a855f7;--teal:#0d9488;--green:#10b981;--red:#ef4444;--yellow:#f59e0b;--text:#e2e8f0;--muted:#64748b;--font:'Inter',sans-serif;--mono:'JetBrains Mono',monospace;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 50% 0%,rgba(124,58,237,0.07) 0%,transparent 60%),radial-gradient(ellipse 50% 40% at 90% 80%,rgba(13,148,136,0.05) 0%,transparent 60%);pointer-events:none;z-index:0;}
+.container{max-width:1100px;margin:0 auto;padding:0 24px;position:relative;z-index:1;}
+#progress-bar{position:fixed;top:0;left:0;height:3px;width:0%;background:linear-gradient(90deg,var(--teal),var(--purple));z-index:9999;transition:width 0.1s linear;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(32px);}to{opacity:1;transform:translateY(0);}}
+@keyframes slideIn{from{opacity:0;transform:translateX(-24px);}to{opacity:1;transform:translateX(0);}}
+@keyframes glow{0%,100%{box-shadow:0 0 12px rgba(13,148,136,0.25);}50%{box-shadow:0 0 28px rgba(13,148,136,0.5);}}
+@keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.04);}}
+@keyframes shimmer{0%{background-position:-200% center;}100%{background-position:200% center;}}
+@keyframes gradientShift{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
+@keyframes pipelineStep{from{opacity:0;transform:translateX(-16px);}to{opacity:1;transform:translateX(0);}}
+.reveal{opacity:0;transform:translateY(28px);transition:opacity 0.6s ease,transform 0.6s ease;}
+.reveal.visible{opacity:1;transform:translateY(0);}
+nav{position:sticky;top:0;z-index:100;border-bottom:1px solid var(--border);background:rgba(10,10,15,0.92);backdrop-filter:blur(16px);}
+.nav-inner{max-width:1100px;margin:0 auto;padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between;}
+.nav-btn{padding:7px 18px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:13px;font-weight:600;text-decoration:none;transition:all 0.2s;font-family:inherit;cursor:pointer;}
+.nav-btn:hover{border-color:var(--purple);color:var(--text);}
+.nav-btn.next{border-color:rgba(124,58,237,0.5);color:var(--purple-light);}
+.nav-btn.next:hover{background:var(--purple);color:white;}
+.nav-btn.complete{border-color:rgba(245,158,11,0.5);color:var(--yellow);}
+.nav-btn.complete:hover{background:var(--yellow);color:#0a0a0f;}
+.nav-btn.complete.done{background:var(--yellow);color:#0a0a0f;}
+.nav-brand{font-size:14px;font-weight:700;color:var(--muted);text-decoration:none;transition:color 0.2s;}
+.nav-brand:hover{color:var(--text);}
+.day-hero{padding:72px 0 48px;}
+.day-num{font-size:12px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;animation:slideIn 0.6s ease both;}
+.day-hero h1{font-size:clamp(36px,5.5vw,62px);font-weight:900;letter-spacing:-2px;margin-bottom:18px;background:linear-gradient(135deg,#fff 0%,#0d9488 40%,#7c3aed 100%);background-size:200% 200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:gradientShift 4s ease infinite,fadeUp 0.7s ease both 0.1s;}
+.day-hero p{font-size:17px;color:var(--muted);max-width:620px;line-height:1.7;margin-bottom:28px;animation:fadeUp 0.7s ease both 0.2s;}
+.topic-pills{display:flex;flex-wrap:wrap;gap:8px;animation:fadeUp 0.7s ease both 0.3s;}
+.topic-pill{padding:5px 12px;border-radius:20px;background:var(--surface2);border:1px solid var(--border);font-size:12px;color:var(--muted);font-weight:500;transition:all 0.2s;}
+.topic-pill:hover{border-color:var(--teal);color:var(--teal);}
+.section{padding:64px 0;border-top:1px solid var(--border);}
+.section-header{margin-bottom:36px;}
+.section-num{font-size:11px;font-weight:700;color:var(--purple-light);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.section-header h2{font-size:30px;font-weight:800;letter-spacing:-0.5px;margin-bottom:12px;}
+.section-header p{color:var(--muted);font-size:15px;line-height:1.7;max-width:680px;}
+.code-block{background:#0d1117;border:1px solid #30363d;border-radius:12px;padding:24px;font-family:var(--mono);font-size:12.5px;line-height:1.8;overflow-x:auto;white-space:pre;}
+.code-wrap{position:relative;margin-top:20px;}
+.win-chrome{background:#1c1c28;border:1px solid #30363d;border-radius:12px 12px 0 0;padding:10px 16px;display:flex;gap:6px;align-items:center;}
+.win-dot{width:12px;height:12px;border-radius:50%;}
+.win-dot.r{background:#ef4444;}.win-dot.y{background:#f59e0b;}.win-dot.g{background:#10b981;}
+.win-chrome+.code-block{border-radius:0 0 12px 12px;border-top:none;}
+.c-cmt{color:#8b949e;}.c-kw{color:#ff7b72;}.c-fn{color:#d2a8ff;}
+.c-str{color:#a5d6ff;}.c-type{color:#ffa657;}.c-num{color:#f2cc60;}
+.c-bi{color:#79c0ff;}.c-dec{color:#ffa657;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;transition:transform 0.3s ease,border-color 0.3s ease,box-shadow 0.3s ease;}
+.card:hover{transform:translateY(-6px);border-color:var(--teal);box-shadow:0 0 24px rgba(13,148,136,0.2);}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;}
+.callout{background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.3);border-radius:12px;padding:18px 22px;display:flex;gap:14px;align-items:flex-start;margin:24px 0;}
+.callout.teal{background:rgba(13,148,136,0.07);border-color:rgba(13,148,136,0.3);}
+.callout.red{background:rgba(239,68,68,0.07);border-color:rgba(239,68,68,0.3);}
+.callout.info{background:rgba(124,58,237,0.07);border-color:rgba(124,58,237,0.3);}
+.callout-icon{font-size:20px;flex-shrink:0;}
+.callout-body{font-size:14px;color:var(--text);line-height:1.7;}
+.callout-body strong{color:var(--teal);}
+.callout.red .callout-body strong{color:#fca5a5;}
+.callout.info .callout-body strong{color:var(--purple-light);}
+.widget{background:var(--card);border:1px solid rgba(13,148,136,0.35);border-radius:18px;padding:30px;margin-top:20px;animation:glow 4s ease-in-out infinite;}
+.widget-title{font-size:17px;font-weight:800;margin-bottom:6px;}
+.widget-sub{font-size:13px;color:var(--muted);margin-bottom:22px;line-height:1.6;}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 24px;border-radius:10px;background:linear-gradient(135deg,var(--teal),var(--purple));border:none;color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font);transition:opacity 0.2s,transform 0.2s;}
+.btn:hover{opacity:0.88;transform:translateY(-1px);}
+.btn-sm{padding:7px 16px;font-size:12px;border-radius:8px;}
+.btn-outline{background:var(--surface2);border:1px solid var(--border);color:var(--muted);}
+.btn-outline:hover{border-color:var(--teal);color:var(--teal);}
+/* INTENT ROUTER */
+.intent-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;font-family:var(--font);font-size:13px;color:var(--text);resize:none;min-height:70px;margin-bottom:14px;transition:border-color 0.2s;}
+.intent-input:focus{outline:none;border-color:var(--teal);}
+.pipeline-steps{display:flex;flex-direction:column;gap:8px;margin-top:16px;display:none;}
+.pipeline-step{display:flex;align-items:flex-start;gap:12px;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;transition:border-color 0.3s;}
+.pipeline-step.active{border-color:var(--teal);background:rgba(13,148,136,0.06);animation:pipelineStep 0.4s ease both;}
+.pipeline-step.done{border-color:var(--green);background:rgba(16,185,129,0.05);}
+.step-icon{font-size:18px;flex-shrink:0;margin-top:1px;}
+.step-label{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:3px;}
+.step-value{font-size:13px;color:var(--text);font-family:var(--mono);}
+.intent-badge{display:inline-block;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:700;font-family:var(--mono);}
+.intent-question{background:rgba(13,148,136,0.15);color:var(--teal);}
+.intent-action{background:rgba(124,58,237,0.15);color:var(--purple-light);}
+.intent-search{background:rgba(245,158,11,0.15);color:var(--yellow);}
+.intent-smalltalk{background:rgba(100,116,139,0.2);color:var(--muted);}
+.intent-alert{background:rgba(239,68,68,0.15);color:#fca5a5;}
+/* STATE MACHINE */
+.sm-nodes{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;}
+.sm-node{padding:10px 18px;border-radius:10px;border:2px solid var(--border);background:var(--surface2);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);transition:all 0.2s;text-align:center;}
+.sm-node.active{border-color:var(--teal);background:rgba(13,148,136,0.12);color:var(--teal);box-shadow:0 0 16px rgba(13,148,136,0.3);animation:pulse 2s ease infinite;}
+.sm-node.done{border-color:var(--green);color:var(--green);}
+.sm-node.error{border-color:var(--red);color:#fca5a5;}
+.sm-info{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-top:12px;font-size:13px;color:var(--muted);line-height:1.7;}
+.comp-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:16px;}
+.comp-table th{background:var(--surface2);padding:12px 14px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);border-bottom:1px solid var(--border);}
+.comp-table td{padding:13px 14px;border-bottom:1px solid var(--border);vertical-align:top;line-height:1.5;font-size:13px;}
+.comp-table tr:last-child td{border-bottom:none;}
+.comp-table tr:hover td{background:rgba(255,255,255,0.025);}
+.tick{color:var(--green);font-weight:700;}.cross{color:var(--red);font-weight:700;}.partial{color:var(--yellow);font-weight:700;}
+.ex-list{display:flex;flex-direction:column;gap:14px;}
+.ex-item{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;display:flex;gap:16px;transition:border-color 0.2s;}
+.ex-item:hover{border-color:var(--teal);}
+.ex-num{width:34px;height:34px;border-radius:50%;background:rgba(13,148,136,0.12);border:2px solid var(--teal);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--teal);flex-shrink:0;}
+.ex-body{flex:1;}
+.ex-title{font-size:15px;font-weight:700;margin-bottom:5px;}
+.ex-desc{font-size:13px;color:var(--muted);line-height:1.7;}
+.diff{display:inline-block;margin-top:8px;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;}
+.diff-easy{background:rgba(16,185,129,0.15);color:var(--green);}
+.diff-med{background:rgba(245,158,11,0.15);color:var(--yellow);}
+.diff-hard{background:rgba(239,68,68,0.15);color:var(--red);}
+.prereq-grid{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;}
+.prereq-chip{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px;}
+.prereq-day{background:var(--teal);color:white;font-size:10px;font-weight:800;padding:2px 6px;border-radius:4px;}
+footer{padding:48px 0;border-top:1px solid var(--border);}
+.footer-inner{display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center;color:var(--muted);font-size:13px;}
+.footer-nav{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;}
+@media(max-width:700px){.sm-nodes{gap:8px;}.card-grid{grid-template-columns:1fr;}}
 </style>
 </head>
 <body data-animation-density="high">
-
+<div id="progress-bar"></div>
 <nav>
   <div class="nav-inner">
     <a href="day28.html" class="nav-btn">← Day 28</a>
-    <a href="../index.html" class="nav-brand">Agentic AI Mastery</a>
+    <a href="../index.html" class="nav-brand">🤖 Agentic AI</a>
     <div style="display:flex;gap:8px;align-items:center;">
+      <button class="nav-btn complete" id="nav-complete-btn" onclick="markComplete()">Mark Complete</button>
       <a href="day30.html" class="nav-btn next">Day 30 →</a>
-      <button class="nav-btn complete" id="complete-btn" onclick="markComplete()">Mark Complete</button>
     </div>
   </div>
 </nav>
-
 <div class="container">
   <div class="day-hero">
     <div class="day-num">Day 29 — AI Copilot Architecture</div>
-    <h1>Intent Routing,<br><span>State Machine &amp; Approval</span></h1>
-    <p>Enterprise AI copilots are not chatbots. They interpret natural language, route to business workflows, manage multi-step state, enforce RBAC, and require human approval before irreversible actions. Today you design the full architecture.</p>
+    <h1>Intent Routing, State Machines<br>&amp; Approval Flows</h1>
+    <p>Design production AI copilots that handle complex, multi-turn workflows. Master intent classification and routing, LangGraph state machines, human-in-the-loop approval flows, and the architecture patterns that separate toy chatbots from enterprise copilots.</p>
     <div class="topic-pills">
       <span class="topic-pill">Intent Classification</span>
-      <span class="topic-pill">LangGraph State Machine</span>
-      <span class="topic-pill">HITL Approval</span>
-      <span class="topic-pill">Context Model</span>
-      <span class="topic-pill">RBAC</span>
-      <span class="topic-pill">SSE Streaming</span>
+      <span class="topic-pill">LangGraph</span>
+      <span class="topic-pill">State Machines</span>
+      <span class="topic-pill">Approval Flows</span>
+      <span class="topic-pill">Tool Routing</span>
+      <span class="topic-pill">Multi-turn State</span>
     </div>
   </div>
-</div>
 
-<!-- SECTION 1 -->
-<div class="container">
   <div class="section">
-    <div class="section-header">
-      <div class="section-num">01 — The Copilot Pattern</div>
-      <h2>The AI Copilot Pattern</h2>
-      <p>A copilot is an AI layer between the user and business workflows — translating natural language into structured actions while keeping humans in control of irreversible operations.</p>
+    <div class="section-header reveal">
+      <div class="section-num">Section 01</div>
+      <h2>The Copilot Architecture Problem</h2>
+      <p>A copilot must handle ambiguous user intent, route to different specialized agents, maintain conversational state across turns, and know when to pause for human approval — all while being fast and reliable.</p>
     </div>
-
-    <div class="callout-example">
-      <div class="callout-example-title">Full Copilot Architecture</div>
-      <div class="arch-diagram">
-        <div class="arch-row">
-          <div class="arch-box input">User Input</div>
-          <div class="arch-arrow">→</div>
-          <div class="arch-box guard">Input Guardrails</div>
-          <div class="arch-arrow">→</div>
-          <div class="arch-box intent">Intent Classifier</div>
-          <div class="arch-arrow">→</div>
-          <div class="arch-box context">Context Enrichment</div>
-        </div>
-        <div class="arch-row" style="margin-top:4px;">
-          <div style="width:100%;display:flex;justify-content:center;"><div class="arch-arrow" style="transform:rotate(90deg);font-size:20px;">↓</div></div>
-        </div>
-        <div class="arch-row">
-          <div class="arch-box orch" style="min-width:160px;">LangGraph Orchestrator</div>
-          <div class="arch-arrow">→</div>
-          <div class="arch-box tool">Tool Layer (RBAC)</div>
-          <div class="arch-arrow">→</div>
-          <div class="arch-box backend">Backend Services</div>
-        </div>
-        <div class="arch-row" style="margin-top:4px;">
-          <div style="width:100%;display:flex;justify-content:center;"><div class="arch-arrow" style="transform:rotate(90deg);font-size:20px;">↓</div></div>
-        </div>
-        <div class="arch-row">
-          <div class="arch-box format">Response Formatter</div>
-          <div class="arch-arrow">→</div>
-          <div class="arch-box guard">Output Guardrails</div>
-          <div class="arch-arrow">→</div>
-          <div class="arch-box input">User</div>
-        </div>
+    <p style="color:var(--muted);font-size:14px;line-height:1.7;margin-bottom:16px;" class="reveal">
+      The naive copilot architecture sends every message to a single large LLM with a massive system prompt. This fails at scale: the model must simultaneously classify intent, route to tools, maintain state, handle errors, and generate responses. It becomes a 6000-token system prompt with unpredictable behavior. Production copilots decompose this into specialized components, each with a clear responsibility boundary.
+    </p>
+    <p style="color:var(--muted);font-size:14px;line-height:1.7;margin-bottom:24px;" class="reveal">
+      The production pattern: (1) A fast intent classifier (Haiku class model, <100ms) categorizes the message. (2) The router selects the appropriate handler — RAG search, action executor, chitchat responder. (3) The selected handler processes with appropriate tools and context. (4) An approval gating layer intercepts high-risk actions for human review before execution. (5) A state manager persists conversation context across turns for multi-step workflows.
+    </p>
+    <div class="card-grid reveal">
+      <div class="card">
+        <div style="font-size:24px;margin-bottom:10px;">🎯</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:8px;">Intent Classification</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.6;">Fast model classifies intent (question, action, search, escalation) before the main LLM is invoked. Saves cost by routing chitchat to lightweight responders and escalations to human agents.</div>
+      </div>
+      <div class="card">
+        <div style="font-size:24px;margin-bottom:10px;">🔀</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:8px;">Dynamic Routing</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.6;">Route to specialized sub-agents based on classified intent. Each sub-agent has its own system prompt, tool set, and context window optimized for its task. Avoid monolithic agents.</div>
+      </div>
+      <div class="card">
+        <div style="font-size:24px;margin-bottom:10px;">✋</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:8px;">Human-in-the-Loop</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.6;">High-risk actions (delete, send email, execute code) pause the workflow and request human approval via Slack/UI. The state machine persists the approval request and resumes when approved or rejected.</div>
       </div>
     </div>
-
-    <ul class="bullet-list" style="margin-top:20px;">
-      <li><strong>Transparent:</strong> Every copilot action is explainable — "I'm going to schedule a visit for Customer X on Tuesday. Confirm?"</li>
-      <li><strong>Bounded:</strong> RBAC enforced at every tool call — the copilot cannot take actions outside the user's permissions</li>
-      <li><strong>Approval-gated:</strong> Irreversible actions (delete, submit, send) always pause for explicit confirmation — LangGraph interrupt_before</li>
-      <li><strong>Enterprise vs chatbot:</strong> Business process integration, multi-tenant auth, audit trail, and compliance — not just conversation</li>
-    </ul>
   </div>
-</div>
 
-<!-- SECTION 2 -->
-<div class="container">
   <div class="section">
-    <div class="section-header">
-      <div class="section-num">02 — Intent Classification</div>
-      <h2>Intent Classification &amp; Command Routing</h2>
-      <p>The intent classifier is the gateway. It determines what the user wants, how confident we are, and whether we have enough information to act — or need to ask for clarification.</p>
+    <div class="section-header reveal">
+      <div class="section-num">Section 02</div>
+      <h2>Intent Routing Simulator</h2>
+      <p>Type any message and watch the full pipeline: intent classification → routing decision → sub-agent selection → response strategy. Animated step-by-step with timing and confidence scores.</p>
+    </div>
+    <div class="widget reveal">
+      <div class="widget-title">Live Intent Routing Pipeline</div>
+      <div class="widget-sub">Type a user message and click Analyze. The simulator shows each pipeline stage: tokenization, intent classification, confidence scoring, routing decision, and handler selection.</div>
+      <textarea class="intent-input" id="intent-input" placeholder="Try:&#10;'What is our Q3 revenue forecast?' (question → RAG)&#10;'Delete the customer record for ID 7823' (action → approval gate)&#10;'Search for all invoices over $10k' (search → search agent)&#10;'Hey, how's your day?' (smalltalk → lightweight responder)"></textarea>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-sm" onclick="runIntentRouter()">Analyze Message</button>
+        <button class="btn btn-sm btn-outline" onclick="loadIntentSample('question')">Question</button>
+        <button class="btn btn-sm btn-outline" onclick="loadIntentSample('action')">High-Risk Action</button>
+        <button class="btn btn-sm btn-outline" onclick="loadIntentSample('search')">Search</button>
+      </div>
+      <div class="pipeline-steps" id="pipeline-steps">
+        <div class="pipeline-step" id="ps-tokenize"><span class="step-icon">🔤</span><div><div class="step-label">Stage 1: Tokenization + Preprocessing</div><div class="step-value" id="sv-tokenize"></div></div></div>
+        <div class="pipeline-step" id="ps-classify"><span class="step-icon">🧠</span><div><div class="step-label">Stage 2: Intent Classification (Haiku, ~80ms)</div><div class="step-value" id="sv-classify"></div></div></div>
+        <div class="pipeline-step" id="ps-confidence"><span class="step-icon">📊</span><div><div class="step-label">Stage 3: Confidence Scores</div><div class="step-value" id="sv-confidence"></div></div></div>
+        <div class="pipeline-step" id="ps-route"><span class="step-icon">🔀</span><div><div class="step-label">Stage 4: Routing Decision</div><div class="step-value" id="sv-route"></div></div></div>
+        <div class="pipeline-step" id="ps-handler"><span class="step-icon">⚡</span><div><div class="step-label">Stage 5: Handler + Response Strategy</div><div class="step-value" id="sv-handler"></div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header reveal">
+      <div class="section-num">Section 03</div>
+      <h2>LangGraph State Machine Visualizer</h2>
+      <p>LangGraph models agent workflows as state machines — nodes are processing steps, edges are conditional transitions. Click any node to see its function and the conditions that route to/from it.</p>
+    </div>
+    <div class="widget reveal" style="border-color:rgba(124,58,237,0.35);">
+      <div class="widget-title">Clickable LangGraph State Machine</div>
+      <div class="widget-sub">This visualizes a customer service copilot workflow. Click any node to see its role, inputs/outputs, and transition conditions. The active node is highlighted with a pulse animation.</div>
+      <div class="sm-nodes" id="sm-nodes">
+        <div class="sm-node active" id="sn-start" onclick="selectNode('start')">START</div>
+        <div class="sm-node" id="sn-classify" onclick="selectNode('classify')">classify_intent</div>
+        <div class="sm-node" id="sn-rag" onclick="selectNode('rag')">rag_search</div>
+        <div class="sm-node" id="sn-action" onclick="selectNode('action')">action_planner</div>
+        <div class="sm-node" id="sn-approval" onclick="selectNode('approval')">human_approval</div>
+        <div class="sm-node" id="sn-execute" onclick="selectNode('execute')">execute_action</div>
+        <div class="sm-node" id="sn-respond" onclick="selectNode('respond')">generate_response</div>
+        <div class="sm-node" id="sn-end" onclick="selectNode('end')">END</div>
+      </div>
+      <div class="sm-info" id="sm-info">Click any node above to see its role in the LangGraph workflow.</div>
+      <svg viewBox="0 0 700 80" style="width:100%;margin-top:12px;">
+        <defs><marker id="arr" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3 Z" fill="#2a2a45"/></marker></defs>
+        <line x1="70" y1="40" x2="125" y2="40" stroke="#2a2a45" stroke-width="1.5" marker-end="url(#arr)"/>
+        <text x="97" y="35" fill="#64748b" font-size="9" text-anchor="middle" font-family="Inter">always</text>
+        <line x1="225" y1="40" x2="275" y2="20" stroke="#2a2a45" stroke-width="1.5" marker-end="url(#arr)"/>
+        <text x="248" y="20" fill="#0d9488" font-size="9" font-family="Inter">question</text>
+        <line x1="225" y1="40" x2="275" y2="58" stroke="#2a2a45" stroke-width="1.5" marker-end="url(#arr)"/>
+        <text x="248" y="68" fill="#a855f7" font-size="9" font-family="Inter">action</text>
+        <line x1="375" y1="20" x2="420" y2="40" stroke="#2a2a45" stroke-width="1.5" marker-end="url(#arr)"/>
+        <line x1="375" y1="58" x2="420" y2="42" stroke="#2a2a45" stroke-width="1.5" marker-end="url(#arr)"/>
+        <text x="150" y="60" fill="#64748b" font-size="8" font-family="Inter">START→classify→rag/action→respond→END</text>
+      </svg>
     </div>
 
-    <ul class="bullet-list">
-      <li><strong>Intent taxonomy:</strong> Informational (ask), transactional (create/update/delete), navigational (go to), operational (run a process)</li>
-      <li><strong>Function calling for routing:</strong> LLM selects which function (route) to invoke — same mechanism as tool use, but the tools are business workflow handlers</li>
-      <li><strong>Confidence thresholds:</strong> Confidence below 0.7 → ask for clarification rather than acting on ambiguous intent</li>
-      <li><strong>Entity extraction:</strong> Pull customer_id, date, product_code from natural language — structured output into Pydantic models</li>
-    </ul>
+    <div class="code-wrap reveal" style="margin-top:28px;">
+      <div class="win-chrome"><span class="win-dot r"></span><span class="win-dot y"></span><span class="win-dot g"></span><span style="font-size:11px;color:var(--muted);margin-left:8px;font-family:var(--mono)">langgraph_copilot.py</span></div>
+      <div class="code-block"><span class="c-kw">from</span> langgraph.graph <span class="c-kw">import</span> <span class="c-type">StateGraph</span>, <span class="c-type">END</span>
+<span class="c-kw">from</span> langgraph.checkpoint.memory <span class="c-kw">import</span> <span class="c-type">MemorySaver</span>
+<span class="c-kw">from</span> typing <span class="c-kw">import</span> <span class="c-type">TypedDict</span>, <span class="c-type">Literal</span>
+<span class="c-kw">from</span> anthropic <span class="c-kw">import</span> <span class="c-type">Anthropic</span>
 
-    <div class="code-wrap">
-      <span class="code-label">PYTHON — Intent Classifier (Instructor + Pydantic)</span>
-      <div class="code-block"><span class="c-kw">from</span> langchain_anthropic <span class="c-kw">import</span> ChatAnthropic
-<span class="c-kw">from</span> pydantic <span class="c-kw">import</span> BaseModel, Field
-<span class="c-kw">from</span> typing <span class="c-kw">import</span> Optional
-<span class="c-kw">import</span> instructor
+client = <span class="c-type">Anthropic</span>()
 
-<span class="c-kw">class</span> <span class="c-type">IntentResult</span>(BaseModel):
-    intent: <span class="c-type">str</span>              <span class="c-cmt"># "schedule_visit" | "check_inventory" | "view_orders" | "ask_question"</span>
-    confidence: <span class="c-type">float</span>        <span class="c-cmt"># 0.0 - 1.0</span>
-    entities: <span class="c-type">dict</span>           <span class="c-cmt"># extracted parameters</span>
-    requires_clarification: <span class="c-type">bool</span>
+<span class="c-kw">class</span> <span class="c-type">CopilotState</span>(<span class="c-type">TypedDict</span>):
+    messages: <span class="c-bi">list</span>[<span class="c-bi">dict</span>]
+    intent: <span class="c-bi">str</span>
+    confidence: <span class="c-bi">float</span>
+    pending_approval: <span class="c-bi">bool</span>
+    action_plan: <span class="c-bi">dict</span> | <span class="c-bi">None</span>
+    rag_results: <span class="c-bi">list</span>
+    final_response: <span class="c-bi">str</span>
 
-instructor_client = instructor.<span class="c-fn">from_anthropic</span>(<span class="c-fn">ChatAnthropic</span>())
-
-<span class="c-kw">async def</span> <span class="c-fn">classify_intent</span>(user_message: <span class="c-type">str</span>, context: <span class="c-type">dict</span>) -> <span class="c-type">IntentResult</span>:
-    system = <span class="c-fn">f</span><span class="c-str">"""You are an intent classifier for a retail execution platform.
-User context: role={context['role']}, current_view={context['current_page']}
-
-Available intents:
-- schedule_visit: User wants to schedule a customer visit
-- check_inventory: User wants to check product inventory
-- view_orders: User wants to see customer orders
-- update_visit_status: User wants to mark a visit complete/incomplete
-- ask_question: Informational question, no action needed
-
-Extract the intent and relevant entities from the user message."""</span>
-
-    result = <span class="c-kw">await</span> instructor_client.messages.<span class="c-fn">acreate</span>(
-        model=<span class="c-str">"claude-3-5-sonnet-20241022"</span>,
-        max_tokens=<span class="c-num">256</span>,
-        system=system,
-        messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: user_message}],
-        response_model=<span class="c-type">IntentResult</span>
+<span class="c-kw">def</span> <span class="c-fn">classify_intent</span>(state: <span class="c-type">CopilotState</span>) -> <span class="c-type">CopilotState</span>:
+    user_msg = state[<span class="c-str">"messages"</span>][-<span class="c-num">1</span>][<span class="c-str">"content"</span>]
+    resp = client.messages.<span class="c-fn">create</span>(
+        model=<span class="c-str">"claude-3-5-haiku-20241022"</span>,
+        max_tokens=<span class="c-num">50</span>,
+        system=<span class="c-str">'Classify: question|action|search|smalltalk. JSON: {"intent":"...","confidence":0-1}'</span>,
+        messages=[{<span class="c-str">"role"</span>:<span class="c-str">"user"</span>,<span class="c-str">"content"</span>:user_msg}]
     )
-    <span class="c-kw">return</span> result</div>
-    </div>
-  </div>
-</div>
+    <span class="c-kw">import</span> json
+    clf = json.<span class="c-fn">loads</span>(resp.content[<span class="c-num">0</span>].text)
+    <span class="c-kw">return</span> {**state, <span class="c-str">"intent"</span>: clf[<span class="c-str">"intent"</span>], <span class="c-str">"confidence"</span>: clf[<span class="c-str">"confidence"</span>]}
 
-<!-- SECTION 3 -->
-<div class="container">
-  <div class="section">
-    <div class="section-header">
-      <div class="section-num">03 — Workflow State Machine</div>
-      <h2>Conversational Workflow State Machine</h2>
-      <p>Multi-step copilot workflows need explicit state — what the user is trying to do, what information has been collected, and what actions are pending approval. LangGraph is the engine.</p>
+<span class="c-kw">def</span> <span class="c-fn">route_by_intent</span>(state: <span class="c-type">CopilotState</span>) -> <span class="c-type">Literal</span>[<span class="c-str">"rag_search"</span>,<span class="c-str">"action_planner"</span>,<span class="c-str">"generate_response"</span>]:
+    <span class="c-kw">if</span> state[<span class="c-str">"intent"</span>] <span class="c-kw">in</span> [<span class="c-str">"question"</span>,<span class="c-str">"search"</span>]: <span class="c-kw">return</span> <span class="c-str">"rag_search"</span>
+    <span class="c-kw">if</span> state[<span class="c-str">"intent"</span>] == <span class="c-str">"action"</span>: <span class="c-kw">return</span> <span class="c-str">"action_planner"</span>
+    <span class="c-kw">return</span> <span class="c-str">"generate_response"</span>
+
+<span class="c-kw">def</span> <span class="c-fn">check_approval_needed</span>(state) -> <span class="c-type">Literal</span>[<span class="c-str">"human_approval"</span>,<span class="c-str">"execute_action"</span>]:
+    <span class="c-kw">if</span> state[<span class="c-str">"action_plan"</span>] <span class="c-kw">and</span> state[<span class="c-str">"action_plan"</span>].<span class="c-fn">get</span>(<span class="c-str">"risk"</span>) == <span class="c-str">"high"</span>:
+        <span class="c-kw">return</span> <span class="c-str">"human_approval"</span>
+    <span class="c-kw">return</span> <span class="c-str">"execute_action"</span>
+
+<span class="c-cmt"># Build graph</span>
+graph = <span class="c-type">StateGraph</span>(<span class="c-type">CopilotState</span>)
+graph.<span class="c-fn">add_node</span>(<span class="c-str">"classify_intent"</span>, classify_intent)
+graph.<span class="c-fn">add_node</span>(<span class="c-str">"rag_search"</span>, rag_search)
+graph.<span class="c-fn">add_node</span>(<span class="c-str">"action_planner"</span>, action_planner)
+graph.<span class="c-fn">add_node</span>(<span class="c-str">"human_approval"</span>, human_approval)
+graph.<span class="c-fn">add_node</span>(<span class="c-str">"execute_action"</span>, execute_action)
+graph.<span class="c-fn">add_node</span>(<span class="c-str">"generate_response"</span>, generate_response)
+
+graph.<span class="c-fn">add_edge</span>(<span class="c-str">"__start__"</span>, <span class="c-str">"classify_intent"</span>)
+graph.<span class="c-fn">add_conditional_edges</span>(<span class="c-str">"classify_intent"</span>, route_by_intent)
+graph.<span class="c-fn">add_conditional_edges</span>(<span class="c-str">"action_planner"</span>, check_approval_needed)
+
+app = graph.<span class="c-fn">compile</span>(checkpointer=<span class="c-type">MemorySaver</span>())</div>
     </div>
 
-    <div class="callout info">
+    <div class="callout teal reveal">
       <span class="callout-icon">💡</span>
-      <div class="callout-text"><strong>LangGraph interrupt_before:</strong> Set <code style="background:var(--bg);padding:1px 5px;border-radius:3px;font-family:var(--mono);">interrupt_before=["execute_action"]</code> when compiling the graph — the graph pauses at that node and serializes state to the checkpointer. The next request from the user resumes from exactly that point.</div>
-    </div>
-
-    <div class="code-wrap">
-      <span class="code-label">PYTHON — LangGraph Copilot State Machine</span>
-      <div class="code-block"><span class="c-kw">from</span> langgraph.graph <span class="c-kw">import</span> StateGraph, END
-<span class="c-kw">from</span> langgraph.checkpoint.postgres <span class="c-kw">import</span> PostgresSaver
-<span class="c-kw">from</span> typing <span class="c-kw">import</span> TypedDict, Optional, Annotated
-<span class="c-kw">from</span> langchain_core.messages <span class="c-kw">import</span> BaseMessage, AIMessage
-<span class="c-kw">import</span> operator
-
-<span class="c-kw">class</span> <span class="c-type">CopilotState</span>(TypedDict):
-    messages: <span class="c-type">Annotated</span>[list[BaseMessage], operator.add]
-    current_workflow: <span class="c-type">Optional</span>[<span class="c-type">str</span>]  <span class="c-cmt"># "schedule_visit" | "check_order" | None</span>
-    accumulated_entities: <span class="c-type">dict</span>       <span class="c-cmt"># customer_id, date, etc.</span>
-    auth: <span class="c-type">dict</span>                        <span class="c-cmt"># user_id, tenant_id, scopes</span>
-    pending_action: <span class="c-type">Optional</span>[<span class="c-type">dict</span>]   <span class="c-cmt"># action awaiting approval</span>
-    needs_clarification: <span class="c-type">Optional</span>[<span class="c-type">str</span>]
-
-<span class="c-kw">async def</span> <span class="c-fn">intent_node</span>(state: <span class="c-type">CopilotState</span>) -> <span class="c-type">dict</span>:
-    latest_msg = state[<span class="c-str">"messages"</span>][-<span class="c-num">1</span>].content
-    intent = <span class="c-kw">await</span> <span class="c-fn">classify_intent</span>(latest_msg, state[<span class="c-str">"auth"</span>])
-
-    <span class="c-kw">if</span> intent.confidence &lt; <span class="c-num">0.7</span>:
-        <span class="c-kw">return</span> {
-            <span class="c-str">"needs_clarification"</span>: <span class="c-fn">f</span><span class="c-str">"I'm not sure what you'd like to do. Did you mean to {intent.intent.replace('_', ' ')}?"</span>
-        }
-
-    <span class="c-kw">return</span> {
-        <span class="c-str">"current_workflow"</span>: intent.intent,
-        <span class="c-str">"accumulated_entities"</span>: intent.entities,
-        <span class="c-str">"needs_clarification"</span>: <span class="c-bi">None</span>
-    }
-
-<span class="c-kw">async def</span> <span class="c-fn">propose_action_node</span>(state: <span class="c-type">CopilotState</span>) -> <span class="c-type">dict</span>:
-    action = <span class="c-fn">build_action_from_state</span>(state)
-    summary = <span class="c-fn">generate_human_readable_summary</span>(action)
-    <span class="c-kw">return</span> {
-        <span class="c-str">"pending_action"</span>: action,
-        <span class="c-str">"messages"</span>: [<span class="c-fn">AIMessage</span>(content=<span class="c-fn">f</span><span class="c-str">"I'll {summary}. Confirm to proceed, or say 'cancel'.")]</span>
-    }
-
-<span class="c-cmt"># Build the graph</span>
-graph = <span class="c-fn">StateGraph</span>(<span class="c-type">CopilotState</span>)
-graph.<span class="c-fn">add_node</span>(<span class="c-str">"classify_intent"</span>, intent_node)
-graph.<span class="c-fn">add_node</span>(<span class="c-str">"collect_entities"</span>, collect_entities_node)
-graph.<span class="c-fn">add_node</span>(<span class="c-str">"propose_action"</span>, propose_action_node)
-graph.<span class="c-fn">add_node</span>(<span class="c-str">"execute_action"</span>, execute_action_node)
-graph.<span class="c-fn">set_entry_point</span>(<span class="c-str">"classify_intent"</span>)
-graph.<span class="c-fn">add_edge</span>(<span class="c-str">"propose_action"</span>, END)  <span class="c-cmt"># pause for human approval</span>
-
-app = graph.<span class="c-fn">compile</span>(
-    checkpointer=PostgresSaver.<span class="c-fn">from_conn_string</span>(DATABASE_URL),
-    interrupt_before=[<span class="c-str">"execute_action"</span>]  <span class="c-cmt"># always approve before execute</span>
-)</div>
+      <div class="callout-body"><strong>Why this matters:</strong> LangGraph's checkpointing enables true multi-turn state persistence. If a human approval workflow is paused waiting for sign-off, the graph state is serialized to storage. When the approver responds (hours or days later), the workflow resumes exactly where it left off. This is the foundation of enterprise-grade AI copilots that handle multi-day, multi-stakeholder workflows.</div>
     </div>
   </div>
-</div>
 
-<!-- SECTION 4 -->
-<div class="container">
   <div class="section">
-    <div class="section-header">
-      <div class="section-num">04 — Context Model</div>
-      <h2>Context Model &amp; Prompt Assembly</h2>
-      <p>The context model is what the copilot knows about the current user, tenant, and session. Assembling the right context — and only the right context — is critical for both quality and token efficiency.</p>
-    </div>
-
-    <ul class="bullet-list">
-      <li><strong>Business context to include:</strong> User role &amp; permissions, tenant config, current task/page, selected customer/entity, relevant targets (monthly goals)</li>
-      <li><strong>Token budget management:</strong> Prioritize most relevant context for the current workflow stage — don't dump everything into every prompt</li>
-      <li><strong>Dynamic context:</strong> Schedule-view prompts include today's visits. Inventory-view prompts include product catalog. Context is workflow-specific</li>
-      <li><strong>Context caching:</strong> Cache static system context (tenant config, role permissions) using Anthropic's prompt caching — 90% cost reduction on repeated calls</li>
-    </ul>
-
-    <div class="code-wrap">
-      <span class="code-label">PYTHON — Context Model + Prompt Assembly</span>
-      <div class="code-block"><span class="c-kw">class</span> <span class="c-type">ContextModel</span>(BaseModel):
-    <span class="c-str">"""All business context the copilot needs"""</span>
-    <span class="c-cmt"># Identity</span>
-    user_name: <span class="c-type">str</span>
-    user_role: <span class="c-type">str</span>
-    user_permissions: <span class="c-type">list</span>[<span class="c-type">str</span>]
-    tenant_name: <span class="c-type">str</span>
-    tenant_plan: <span class="c-type">str</span>
-
-    <span class="c-cmt"># Current state (workflow-specific)</span>
-    current_page: <span class="c-type">str</span>
-    selected_customer: <span class="c-type">Optional</span>[<span class="c-type">dict</span>] = <span class="c-bi">None</span>  <span class="c-cmt"># id, name, tier</span>
-    todays_schedule: <span class="c-type">Optional</span>[<span class="c-type">list</span>[<span class="c-type">dict</span>]] = <span class="c-bi">None</span>
-
-    <span class="c-cmt"># Targets</span>
-    monthly_target: <span class="c-type">Optional</span>[<span class="c-type">int</span>] = <span class="c-bi">None</span>
-    visits_completed: <span class="c-type">Optional</span>[<span class="c-type">int</span>] = <span class="c-bi">None</span>
-
-<span class="c-kw">def</span> <span class="c-fn">build_system_prompt</span>(ctx: <span class="c-type">ContextModel</span>, workflow: <span class="c-type">str</span>) -> <span class="c-type">str</span>:
-    <span class="c-str">"""Assemble system prompt with relevant context only"""</span>
-    base = <span class="c-fn">f</span><span class="c-str">"""You are an AI copilot for {ctx.tenant_name}'s retail execution platform.
-User: {ctx.user_name} ({ctx.user_role})
-Permissions: {', '.join(ctx.user_permissions)}
-Current page: {ctx.current_page}"""</span>
-
-    <span class="c-cmt"># Add workflow-specific context</span>
-    <span class="c-kw">if</span> workflow == <span class="c-str">"schedule_visit"</span> <span class="c-kw">and</span> ctx.todays_schedule:
-        base += <span class="c-fn">f</span><span class="c-str">"\nToday's schedule: {len(ctx.todays_schedule)} visits planned"</span>
-
-    <span class="c-kw">if</span> ctx.selected_customer:
-        base += <span class="c-fn">f</span><span class="c-str">"\nSelected customer: {ctx.selected_customer['name']} ({ctx.selected_customer['tier']} tier)"</span>
-
-    <span class="c-kw">return</span> base + <span class="c-str">"\n\nYou can only suggest actions within the user's permissions. Always confirm before irreversible actions."</span></div>
+    <div class="section-header reveal"><div class="section-num">Section 04</div><h2>Exercises</h2></div>
+    <div class="ex-list reveal">
+      <div class="ex-item"><div class="ex-num">1</div><div class="ex-body"><div class="ex-title">Intent Classifier with 6 Categories</div><div class="ex-desc">Build an intent classifier for a SaaS copilot: question, action_safe, action_risky, search, escalate_human, smalltalk. Use Instructor to return structured ClassifiedIntent(intent, confidence, reasoning). Measure latency and accuracy on 50 test messages.</div><span class="diff diff-easy">Easy</span></div></div>
+      <div class="ex-item"><div class="ex-num">2</div><div class="ex-body"><div class="ex-title">LangGraph Customer Service Bot</div><div class="ex-desc">Build a LangGraph workflow for a customer service copilot: classify → route → (search KB | create ticket | escalate). Add MemorySaver checkpointing. Test a 5-turn conversation where the user asks a follow-up that requires remembering earlier context.</div><span class="diff diff-med">Medium</span></div></div>
+      <div class="ex-item"><div class="ex-num">3</div><div class="ex-body"><div class="ex-title">Human-in-the-Loop Approval Flow</div><div class="ex-desc">Extend the LangGraph bot with a Slack webhook approval gate for risky actions. When an action is flagged, send a Slack message with approve/reject buttons. Serialize LangGraph state to Redis. Resume on approval. Implement a 24-hour timeout that auto-rejects.</div><span class="diff diff-hard">Hard</span></div></div>
     </div>
   </div>
-</div>
 
-<!-- SECTION 5 -->
-<div class="container">
   <div class="section">
-    <div class="section-header">
-      <div class="section-num">05 — Production Patterns</div>
-      <h2>Production Copilot Patterns</h2>
-      <p>Streaming, graceful degradation, multi-turn context management, and continuous evaluation — what separates a demo copilot from a production one.</p>
-    </div>
-
-    <div class="checklist">
-      <div class="check-row"><span class="check-badge">Streaming</span><span>SSE (Server-Sent Events) for real-time typing — LangGraph supports streaming node outputs. Users expect to see tokens, not wait 10 seconds for a full response.</span></div>
-      <div class="check-row"><span class="check-badge">Multi-turn</span><span>Keep last 10 messages in state. Summarize older context with the LLM rather than truncating — preserve intent across long conversations.</span></div>
-      <div class="check-row"><span class="check-badge">Degradation</span><span>LLM timeout or rate limit → return structured fallback: "I'm having trouble processing your request. Here are the options you can take manually: [...]"</span></div>
-      <div class="check-row"><span class="check-badge">Evaluation</span><span>Track: task completion rate (did user get what they asked for?), clarification rate (how often did copilot need to ask?), approval rate (how often user confirmed?), error rate.</span></div>
-      <div class="check-row"><span class="check-badge">Auth context</span><span>Inject JWT claims directly into LangGraph state at the API gateway layer — copilot never trusts client-provided permissions. RBAC is enforced at tool-call time, not prompt time.</span></div>
-    </div>
-
-    <!-- Interactive Widget: Intent Routing Simulator -->
-    <div class="widget-box">
-      <div class="widget-title">Intent Routing Flow Simulator</div>
-      <div class="widget-desc">Type a message or pick a preset — watch it route through the pipeline.</div>
-
-      <div class="sim-presets">
-        <button class="preset-btn" onclick="setPreset('Schedule a visit with customer ABC123 for next Tuesday')">Schedule visit</button>
-        <button class="preset-btn" onclick="setPreset('Check inventory for product SKU-4492')">Check inventory</button>
-        <button class="preset-btn" onclick="setPreset('Show me orders for customer 789')">View orders</button>
-        <button class="preset-btn" onclick="setPreset('Mark my visit with Walmart done')">Update status</button>
-        <button class="preset-btn" onclick="setPreset('What is the capital of France?')">Off-topic question</button>
-      </div>
-
-      <div class="sim-input-row">
-        <input class="sim-input" id="sim-input" type="text" placeholder="Type a message to the copilot..." />
-        <button class="run-btn" onclick="runSimulator()">Route</button>
-      </div>
-
-      <div class="pipeline-stages" id="pipeline-stages">
-        <div class="pipe-stage" id="pipe-input">Input<div class="pipe-label">received</div></div>
-        <div class="pipe-stage" id="pipe-guard">Guardrails<div class="pipe-label">check</div></div>
-        <div class="pipe-stage" id="pipe-intent">Intent<div class="pipe-label">classify</div></div>
-        <div class="pipe-stage" id="pipe-entity">Entities<div class="pipe-label">extract</div></div>
-        <div class="pipe-stage" id="pipe-result">Result<div class="pipe-label">route</div></div>
-      </div>
-
-      <div class="sim-result" id="sim-result">
-        <div class="result-row"><span class="result-label">Intent Detected</span><span class="result-val intent" id="r-intent">—</span></div>
-        <div class="result-row"><span class="result-label">Entities Found</span><span class="result-val entity" id="r-entities">—</span></div>
-        <div class="result-row"><span class="result-label">Confidence</span><span class="result-val" id="r-confidence">—</span></div>
-        <div class="result-row"><span class="result-label">Action / Clarification</span><span class="result-val clarification" id="r-action">—</span></div>
-      </div>
+    <div class="section-header reveal"><div class="section-num">Prerequisites</div><h2>What You Should Know</h2></div>
+    <div class="prereq-grid reveal">
+      <div class="prereq-chip"><span class="prereq-day">Day 18</span> Agent Patterns</div>
+      <div class="prereq-chip"><span class="prereq-day">Day 24</span> Structured Outputs</div>
+      <div class="prereq-chip"><span class="prereq-day">Day 28</span> RLHF &amp; Alignment</div>
     </div>
   </div>
 </div>
-
-<section style="max-width:1100px;margin:2rem auto;padding:0 24px 3rem;">
-  <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;">
-    <div style="font-size:0.75rem;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:1px;">Practice</div>
-    <h2 style="margin:0;font-size:1.4rem;font-weight:700;color:white;">Exercises</h2>
-  </div>
-  <p style="color:#9ca3af;margin-bottom:1.5rem;">Design and build a complete copilot: implement the intent classifier, wire up a 3-node LangGraph, add RBAC tool enforcement, and test the approval gate with a mock backend.</p>
-  <a href="../exercises/day29_exercises.html" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.6rem 1.25rem;background:linear-gradient(135deg,#7c3aed,#0d9488);color:white;font-weight:700;font-size:0.9rem;border-radius:8px;text-decoration:none;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">Open Interactive Exercises →</a>
-</section>
-
 <footer>
   <div class="container">
-    <p>Agentic AI Mastery &mdash; Day 29: AI Copilot Architecture &mdash; Built for Sharjeel Sohail</p>
-    <div style="margin-top:16px;display:flex;justify-content:center;gap:16px;">
-      <a href="day28.html" style="color:var(--muted);text-decoration:none;font-size:13px;">← Day 28</a>
-      <a href="../index.html" style="color:var(--muted);text-decoration:none;font-size:13px;">Dashboard</a>
-      <a href="day30.html" style="color:var(--muted);text-decoration:none;font-size:13px;">Day 30 →</a>
+    <div class="footer-inner">
+      <div class="footer-nav">
+        <a href="day28.html" class="nav-btn">← Day 28</a>
+        <a href="../index.html" class="nav-btn">Dashboard</a>
+        <a href="day30.html" class="nav-btn next">Day 30 →</a>
+      </div>
+      <div>Day 29 of 30 — Agentic AI Mastery</div>
     </div>
   </div>
 </footer>
-
 <script src="../bg-animation.js"></script>
 <script>
-// ── Mark Complete ─────────────────────────────────────────────────────────────
-function markComplete() {
-  try {
-    const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
-    p[29] = 'done';
-    localStorage.setItem('aai_progress', JSON.stringify(p));
-    const btn = document.getElementById('complete-btn');
-    btn.textContent = 'Completed!';
-    btn.classList.remove('complete');
-    btn.classList.add('done');
-  } catch(e) {}
+window.addEventListener('scroll',()=>{const d=document.documentElement;document.getElementById('progress-bar').style.width=(d.scrollTop/(d.scrollHeight-d.clientHeight)*100)+'%';});
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');io.unobserve(e.target);}}),{threshold:0.1,rootMargin:'0px 0px -40px 0px'});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+function markComplete(){const key='day29_complete',btn=document.getElementById('nav-complete-btn');if(localStorage.getItem(key)){localStorage.removeItem(key);btn.classList.remove('done');btn.textContent='Mark Complete';}else{localStorage.setItem(key,'1');btn.classList.add('done');btn.textContent='✓ Complete';}}
+if(localStorage.getItem('day29_complete')){const b=document.getElementById('nav-complete-btn');b.classList.add('done');b.textContent='✓ Complete';}
+
+// INTENT ROUTER
+const INTENT_PATTERNS = [
+  {re:/delete|remove|drop|wipe|destroy/i, intent:'action', risk:'high', handler:'Action Planner → Approval Gate → Execute', badge:'intent-alert'},
+  {re:/create|update|modify|set|change|send email|submit/i, intent:'action', risk:'medium', handler:'Action Planner → Execute (with confirmation)', badge:'intent-action'},
+  {re:/search|find|look up|list|show me|retrieve/i, intent:'search', risk:'none', handler:'Search Agent → Format Results', badge:'intent-search'},
+  {re:/what|how|why|when|explain|tell me|describe|is it/i, intent:'question', risk:'none', handler:'RAG Search Agent → Summarize', badge:'intent-question'},
+  {re:/hi|hello|hey|thanks|bye|how are you/i, intent:'smalltalk', risk:'none', handler:'Lightweight Responder (no tools)', badge:'intent-smalltalk'},
+];
+const INTENTS_ALL = ['question','action','search','smalltalk'];
+function classifyIntent(text) {
+  for (const p of INTENT_PATTERNS) { if (p.re.test(text)) return p; }
+  return {intent:'question', risk:'none', handler:'RAG Search Agent → Default', badge:'intent-question'};
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-  try {
-    const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
-    if (!p[29] || p[29] === 'locked') {
-      p[29] = 'active';
-      localStorage.setItem('aai_progress', JSON.stringify(p));
-    }
-    if (p[29] === 'done') {
-      const btn = document.getElementById('complete-btn');
-      btn.textContent = 'Completed!';
-      btn.classList.remove('complete');
-      btn.classList.add('done');
-    }
-  } catch(e) {}
-});
-
-// ── Intent Router Simulator ───────────────────────────────────────────────────
-function setPreset(text) {
-  document.getElementById('sim-input').value = text;
+function calcScores(text, classified) {
+  return INTENTS_ALL.map(i => {
+    const base = classified.intent===i ? Math.random()*0.15+0.75 : Math.random()*0.2;
+    return {intent:i, score:Math.round(base*100)/100};
+  }).sort((a,b)=>b.score-a.score);
 }
-
-function detectIntent(msg) {
-  const lower = msg.toLowerCase();
-  if (lower.includes('schedul') || lower.includes('visit') || lower.includes('appointment') || lower.includes('tuesday') || lower.includes('wednesday')) {
-    const custMatch = msg.match(/[A-Z]{2,}[0-9]+|customer\s+\w+/i);
-    const dateMatch = msg.match(/monday|tuesday|wednesday|thursday|friday|next week|tomorrow/i);
-    const entities = {};
-    if (custMatch) entities['customer_id'] = custMatch[0];
-    if (dateMatch) entities['proposed_date'] = dateMatch[0];
-    return { intent: 'schedule_visit', confidence: 0.92, entities, action: custMatch && dateMatch ? `Schedule visit with ${custMatch[0]} for ${dateMatch[0]}. Confirm to proceed.` : null, clarification: !custMatch ? 'Which customer would you like to schedule a visit with?' : !dateMatch ? 'What date would you like to schedule the visit?' : null };
-  }
-  if (lower.includes('inventor') || lower.includes('sku') || lower.includes('stock') || lower.includes('product')) {
-    const skuMatch = msg.match(/SKU[-\s]?[0-9A-Z]+/i);
-    const entities = {};
-    if (skuMatch) entities['product_sku'] = skuMatch[0];
-    return { intent: 'check_inventory', confidence: 0.88, entities, action: skuMatch ? `Checking inventory for ${skuMatch[0]}...` : null, clarification: !skuMatch ? 'Which product SKU would you like to check?' : null };
-  }
-  if (lower.includes('order') || lower.includes('purchase')) {
-    const custMatch = msg.match(/customer\s+\w+|\d{3,}/i);
-    const entities = {};
-    if (custMatch) entities['customer_id'] = custMatch[0];
-    return { intent: 'view_orders', confidence: 0.85, entities, action: custMatch ? `Fetching orders for ${custMatch[0]}...` : null, clarification: !custMatch ? 'Which customer\'s orders would you like to view?' : null };
-  }
-  if (lower.includes('mark') || lower.includes('done') || lower.includes('complete') || lower.includes('status')) {
-    return { intent: 'update_visit_status', confidence: 0.79, entities: {}, action: 'Mark visit as complete? Please confirm.', clarification: null };
-  }
-  return { intent: 'ask_question', confidence: 0.55, entities: {}, action: null, clarification: 'This seems like a general question rather than a copilot action. I can help with scheduling visits, checking inventory, viewing orders, or updating visit status.' };
-}
-
-async function runSimulator() {
-  const msg = document.getElementById('sim-input').value.trim();
-  if (!msg) return;
-
-  const stages = ['pipe-input', 'pipe-guard', 'pipe-intent', 'pipe-entity', 'pipe-result'];
-  stages.forEach(id => {
-    const el = document.getElementById(id);
-    el.classList.remove('active', 'done');
+async function runIntentRouter() {
+  const text = document.getElementById('intent-input').value.trim();
+  if (!text) return;
+  const steps = document.getElementById('pipeline-steps');
+  steps.style.display='flex';
+  ['ps-tokenize','ps-classify','ps-confidence','ps-route','ps-handler'].forEach(id=>{
+    const el=document.getElementById(id);
+    el.className='pipeline-step';
   });
-  document.getElementById('sim-result').style.display = 'none';
-
-  for (let i = 0; i < stages.length; i++) {
-    await new Promise(r => setTimeout(r, 400));
-    if (i > 0) document.getElementById(stages[i-1]).classList.replace('active', 'done');
-    document.getElementById(stages[i]).classList.add('active');
+  const cls = classifyIntent(text);
+  const scores = calcScores(text, cls);
+  const steps_data = [
+    {id:'ps-tokenize', val:`Tokens: ${text.split(' ').length} words, ~${text.split(' ').length*1.3|0} tokens\nNormalized: "${text.toLowerCase().trim().substring(0,50)}..."`},
+    {id:'ps-classify', val:`Model: claude-3-5-haiku-20241022 (~85ms)\nTop intent: ${cls.intent}\nRisk level: ${cls.risk||'none'}`},
+    {id:'ps-confidence', val:scores.map(s=>`${s.intent}: ${s.score}`).join(' | ')},
+    {id:'ps-route', val:`Intent: ${cls.intent} → ${cls.risk==='high'?'HIGH RISK — APPROVAL REQUIRED':cls.intent==='question'?'RAG route':cls.intent==='search'?'Search route':'Standard route'}`},
+    {id:'ps-handler', val:`Handler: ${cls.handler}`},
+  ];
+  for (let i=0; i<steps_data.length; i++) {
+    await new Promise(r=>setTimeout(r,400));
+    const el = document.getElementById(steps_data[i].id);
+    el.className='pipeline-step active';
+    el.querySelector('.step-value').textContent = steps_data[i].val;
+    await new Promise(r=>setTimeout(r,200));
+    el.className='pipeline-step done';
   }
-  await new Promise(r => setTimeout(r, 400));
-  document.getElementById(stages[stages.length-1]).classList.replace('active', 'done');
-
-  const result = detectIntent(msg);
-  document.getElementById('r-intent').textContent = result.intent.replace(/_/g, ' ');
-  document.getElementById('r-entities').textContent = Object.keys(result.entities).length ? JSON.stringify(result.entities) : 'none extracted';
-  const confEl = document.getElementById('r-confidence');
-  confEl.textContent = `${Math.round(result.confidence * 100)}%`;
-  confEl.className = 'result-val ' + (result.confidence > 0.8 ? 'conf-high' : result.confidence > 0.65 ? 'conf-med' : 'conf-low');
-  document.getElementById('r-action').textContent = result.clarification || result.action || 'Routing to ' + result.intent;
-  document.getElementById('sim-result').style.display = 'block';
+}
+function loadIntentSample(type) {
+  const s={question:'What is our Q3 2024 revenue forecast based on current pipeline?',action:'Delete the customer record for account ID 7823 and all associated invoices.',search:'Search for all support tickets from enterprise customers in the last 30 days.'};
+  document.getElementById('intent-input').value=s[type];
 }
 
-document.getElementById('sim-input').addEventListener('keydown', e => { if (e.key === 'Enter') runSimulator(); });
+// STATE MACHINE
+const NODE_INFO = {
+  start:'START: Entry point. Receives user message + session context. Initializes CopilotState with message history. Always transitions to → classify_intent.',
+  classify:'classify_intent: Calls claude-3-5-haiku (fast, cheap) to classify message intent. Returns structured: {intent, confidence, entities}. Transitions conditionally based on classified intent.',
+  rag:'rag_search: Executes hybrid semantic + keyword search against Qdrant. Applies tenant_id filter from JWT. Returns top-5 ranked chunks. Feeds context into → generate_response.',
+  action:'action_planner: Parses the requested action into structured plan: {tool, params, risk_level}. Checks permission registry. Transitions to → human_approval if risk=high, else → execute_action.',
+  approval:'human_approval: INTERRUPT node — pauses graph execution. Sends Slack/webhook notification to approver. Serializes state to Redis. Resumes when webhook callback received (approved/rejected).',
+  execute:'execute_action: Executes planned action against backend APIs with retry logic. Logs action + result to audit trail. Transitions to → generate_response with result.',
+  respond:'generate_response: Final response generation using claude-3-5-sonnet. Has full context: RAG results, action results, conversation history. Streams response to user.',
+  end:'END: Conversation turn complete. State persisted to checkpoint store for next turn. Session metrics logged.'
+};
+function selectNode(id) {
+  document.querySelectorAll('.sm-node').forEach(n=>n.classList.remove('active'));
+  document.getElementById(`sn-${id}`).classList.add('active');
+  document.getElementById('sm-info').innerHTML=`<strong style="color:var(--teal)">${id.charAt(0).toUpperCase()+id.slice(1)}</strong>: ${NODE_INFO[id]}`;
+}
 </script>
 </body>
 </html>

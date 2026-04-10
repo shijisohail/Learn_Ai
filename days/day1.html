@@ -3,2631 +3,1203 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Day 1: How LLMs Work + The API | Learn Generative AI</title>
+<title>Day 1: How LLMs Work + The API | Agentic AI Mastery</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #0a0a0f;
-    --surface: #141420;
-    --surface2: #1c1c2e;
-    --border: #2a2a3e;
-    --purple: #7c3aed;
-    --purple-light: #a855f7;
-    --purple-dim: rgba(124,58,237,0.15);
-    --teal: #0d9488;
-    --teal-light: #2dd4bf;
-    --teal-dim: rgba(13,148,136,0.15);
-    --text: #e2e8f0;
-    --text-muted: #94a3b8;
-    --text-dim: #64748b;
-    --green: #10b981;
-    --amber: #f59e0b;
-    --red: #ef4444;
-    --blue: #3b82f6;
-    --radius: 12px;
-    --radius-sm: 8px;
-  }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Inter', sans-serif;
-    line-height: 1.7;
-    overflow-x: hidden;
-  }
-
-  /* Progress bar */
-  #progress-bar {
-    position: fixed;
-    top: 0; left: 0;
-    height: 3px;
-    background: linear-gradient(90deg, var(--purple), var(--teal));
-    z-index: 1000;
-    transition: width 0.3s;
-  }
-
-  nav {
-    position: sticky; top: 0; z-index: 100;
-    border-bottom: 1px solid var(--border);
-    background: rgba(10,10,15,0.9);
-    backdrop-filter: blur(12px);
-    padding: 0;
-  }
-  .nav-inner {
-    max-width: 1100px; margin: 0 auto; padding: 0 24px;
-    height: 52px;
-    display: flex; align-items: center; justify-content: space-between;
-  }
-  .nav-btn {
-    padding: 7px 18px; border-radius: 8px;
-    border: 1px solid var(--border);
-    background: var(--surface2); color: var(--muted);
-    font-size: 13px; font-weight: 600;
-    text-decoration: none; transition: all 0.2s;
-    font-family: inherit;
-  }
-  .nav-btn:hover { border-color: var(--purple); color: var(--text); }
-  .nav-btn.next {
-    border-color: rgba(124,58,237,0.5);
-    color: var(--purple-light);
-  }
-  .nav-btn.next:hover {
-    background: var(--purple); color: white; border-color: var(--purple);
-  }
-  .nav-btn.complete {
-    border-color: rgba(245,158,11,0.5);
-    color: var(--yellow);
-  }
-  .nav-btn.complete:hover {
-    background: var(--yellow); color: #0a0a0f; border-color: var(--yellow);
-  }
-  .nav-brand {
-    font-size: 14px; font-weight: 700; color: var(--muted);
-    text-decoration: none; letter-spacing: -0.2px;
-    transition: color 0.2s;
-  }
-  .nav-brand:hover { color: var(--text); }
-
-  .hero {
-    padding: 5rem 2rem 3rem;
-    text-align: center;
-    max-width: 900px;
-    margin: 0 auto;
-  }
-
-  .day-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: var(--purple-dim);
-    border: 1px solid var(--purple);
-    color: var(--purple-light);
-    padding: 0.3rem 1rem;
-    border-radius: 100px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    margin-bottom: 1.5rem;
-  }
-
-  .hero h1 {
-    font-size: clamp(2rem, 5vw, 3.5rem);
-    font-weight: 700;
-    background: linear-gradient(135deg, #e2e8f0 0%, var(--purple-light) 50%, var(--teal-light) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    line-height: 1.2;
-    margin-bottom: 1rem;
-  }
-
-  .hero p {
-    color: var(--text-muted);
-    font-size: 1.1rem;
-    max-width: 600px;
-    margin: 0 auto 2rem;
-  }
-
-  .objectives {
-    display: flex;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  .obj-tag {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    padding: 0.35rem 0.75rem;
-    border-radius: 100px;
-    font-size: 0.8rem;
-    color: var(--text-muted);
-  }
-
-  .container { max-width: 1100px; margin: 0 auto; padding: 0 2rem; }
-
-  section { padding: 4rem 0; }
-  section + section { border-top: 1px solid var(--border); }
-
-  .section-header {
-    display: flex;
-    align-items: flex-start;
-    gap: 1rem;
-    margin-bottom: 2.5rem;
-  }
-
-  .section-num {
-    background: linear-gradient(135deg, var(--purple), var(--teal));
-    color: white;
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.85rem;
-    font-weight: 700;
-    flex-shrink: 0;
-    margin-top: 4px;
-  }
-
-  .section-header h2 {
-    font-size: 1.6rem;
-    font-weight: 700;
-    color: var(--text);
-    margin-bottom: 0.25rem;
-  }
-
-  .section-header p { color: var(--text-muted); font-size: 0.95rem; }
-
-  /* Cards */
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 1.5rem;
-    transition: border-color 0.2s;
-  }
-  .card:hover { border-color: var(--purple); }
-
-  /* Token Visualizer */
-  .token-input-area {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .token-input-area textarea {
-    width: 100%;
-    background: transparent;
-    border: none;
-    outline: none;
-    color: var(--text);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 1rem;
-    resize: none;
-    min-height: 80px;
-  }
-
-  .token-stats {
-    display: flex;
-    gap: 1.5rem;
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--border);
-  }
-
-  .stat-item { display: flex; flex-direction: column; gap: 0.2rem; }
-  .stat-label { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; }
-  .stat-value { font-size: 1.4rem; font-weight: 700; color: var(--teal-light); font-family: 'JetBrains Mono', monospace; }
-
-  #token-display {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-    min-height: 60px;
-    padding: 1rem;
-    background: var(--surface2);
-    border-radius: var(--radius);
-    border: 1px solid var(--border);
-  }
-
-  .token-box {
-    padding: 0.25rem 0.5rem;
-    border-radius: 6px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.8rem;
-    font-weight: 500;
-    animation: tokenAppear 0.3s ease;
-    cursor: default;
-    position: relative;
-  }
-
-  .token-box:hover::after {
-    content: attr(data-index);
-    position: absolute;
-    bottom: calc(100% + 4px);
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--bg);
-    border: 1px solid var(--border);
-    padding: 0.2rem 0.4rem;
-    border-radius: 4px;
-    font-size: 0.7rem;
-    white-space: nowrap;
-    color: var(--text-muted);
-  }
-
-  @keyframes tokenAppear {
-    from { transform: scale(0.7) translateY(10px); opacity: 0; }
-    to { transform: scale(1) translateY(0); opacity: 1; }
-  }
-
-  .token-colors {
-    --tc1: rgba(124,58,237,0.3); --tc1b: #a855f7;
-    --tc2: rgba(13,148,136,0.3); --tc2b: #2dd4bf;
-    --tc3: rgba(59,130,246,0.3); --tc3b: #60a5fa;
-    --tc4: rgba(245,158,11,0.3); --tc4b: #fbbf24;
-    --tc5: rgba(239,68,68,0.3);  --tc5b: #f87171;
-    --tc6: rgba(16,185,129,0.3); --tc6b: #34d399;
-  }
-
-  /* Transformer Architecture */
-  .arch-container {
-    overflow-x: auto;
-    padding: 1rem 0;
-  }
-
-  .arch-svg-wrap {
-    min-width: 700px;
-  }
-
-  .arch-tooltip {
-    position: fixed;
-    background: var(--surface2);
-    border: 1px solid var(--purple);
-    border-radius: var(--radius-sm);
-    padding: 0.75rem 1rem;
-    max-width: 260px;
-    font-size: 0.85rem;
-    color: var(--text);
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.2s;
-    z-index: 500;
-  }
-  .arch-tooltip.visible { opacity: 1; }
-  .arch-tooltip strong { color: var(--purple-light); display: block; margin-bottom: 0.25rem; }
-
-  /* Autoregressive */
-  .generation-demo {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 2rem;
-    text-align: center;
-  }
-
-  #gen-output {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 1.1rem;
-    color: var(--text);
-    min-height: 40px;
-    margin: 1.5rem 0;
-    letter-spacing: 0.02em;
-  }
-
-  .cursor {
-    display: inline-block;
-    width: 2px;
-    height: 1.2em;
-    background: var(--teal-light);
-    margin-left: 2px;
-    vertical-align: text-bottom;
-    animation: blink 1s step-end infinite;
-  }
-
-  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
-
-  .gen-token-history {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.3rem;
-    justify-content: center;
-    margin-top: 1rem;
-  }
-
-  .gen-token {
-    padding: 0.15rem 0.4rem;
-    border-radius: 4px;
-    font-size: 0.75rem;
-    font-family: 'JetBrains Mono', monospace;
-    background: var(--purple-dim);
-    border: 1px solid var(--purple);
-    color: var(--purple-light);
-    animation: tokenAppear 0.3s ease;
-  }
-
-  .gen-token.new {
-    background: var(--teal-dim);
-    border-color: var(--teal);
-    color: var(--teal-light);
-  }
-
-  /* Buttons */
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.6rem 1.4rem;
-    border-radius: var(--radius-sm);
-    border: none;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.9rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .btn-primary {
-    background: var(--purple);
-    color: white;
-  }
-  .btn-primary:hover { background: var(--purple-light); transform: translateY(-1px); }
-  .btn-primary:active { transform: translateY(0); }
-
-  .btn-secondary {
-    background: var(--surface2);
-    color: var(--text);
-    border: 1px solid var(--border);
-  }
-  .btn-secondary:hover { border-color: var(--purple); color: var(--purple-light); }
-
-  .btn-teal {
-    background: var(--teal);
-    color: white;
-  }
-  .btn-teal:hover { background: var(--teal-light); color: var(--bg); }
-
-  /* Stateless API */
-  .api-comparison {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
-  }
-
-  @media (max-width: 700px) { .api-comparison { grid-template-columns: 1fr; } }
-
-  .api-box {
-    background: var(--surface2);
-    border-radius: var(--radius);
-    overflow: hidden;
-  }
-
-  .api-box-header {
-    padding: 0.75rem 1rem;
-    font-weight: 600;
-    font-size: 0.85rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .api-box.good .api-box-header { background: rgba(16,185,129,0.15); color: var(--green); border-bottom: 1px solid rgba(16,185,129,0.3); }
-  .api-box.bad .api-box-header { background: rgba(239,68,68,0.15); color: var(--red); border-bottom: 1px solid rgba(239,68,68,0.3); }
-
-  .api-messages {
-    padding: 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.75rem;
-  }
-
-  .msg-row {
-    padding: 0.4rem 0.6rem;
-    border-radius: 6px;
-    opacity: 0;
-    transform: translateX(-10px);
-    transition: all 0.4s;
-  }
-  .msg-row.visible { opacity: 1; transform: translateX(0); }
-  .msg-row.user { background: var(--purple-dim); border-left: 2px solid var(--purple); color: var(--purple-light); }
-  .msg-row.assistant { background: var(--teal-dim); border-left: 2px solid var(--teal); color: var(--teal-light); }
-  .msg-row.system { background: rgba(245,158,11,0.1); border-left: 2px solid var(--amber); color: var(--amber); }
-
-  /* Tool Sequence */
-  .sequence-diagram {
-    position: relative;
-  }
-
-  .seq-step {
-    display: grid;
-    grid-template-columns: 80px 1fr;
-    gap: 1rem;
-    margin-bottom: 1rem;
-    opacity: 0.3;
-    transition: opacity 0.4s;
-  }
-  .seq-step.active { opacity: 1; }
-
-  .seq-actor {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.3rem;
-  }
-
-  .seq-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2rem;
-  }
-
-  .seq-icon.user-icon { background: var(--purple-dim); border: 1px solid var(--purple); }
-  .seq-icon.model-icon { background: var(--teal-dim); border: 1px solid var(--teal); }
-  .seq-icon.code-icon { background: rgba(245,158,11,0.15); border: 1px solid var(--amber); }
-
-  .seq-label { font-size: 0.7rem; color: var(--text-dim); text-align: center; }
-
-  .seq-content {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 0.75rem 1rem;
-  }
-  .seq-step.active .seq-content { border-color: var(--purple); }
-
-  .seq-title { font-weight: 600; font-size: 0.85rem; color: var(--text); margin-bottom: 0.3rem; }
-  .seq-desc { font-size: 0.8rem; color: var(--text-muted); }
-  .seq-code {
-    margin-top: 0.5rem;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.75rem;
-    background: var(--bg);
-    border-radius: 6px;
-    padding: 0.5rem 0.75rem;
-    color: var(--teal-light);
-  }
-
-  .seq-controls { display: flex; gap: 0.75rem; align-items: center; margin-top: 1.5rem; }
-  .seq-progress { font-size: 0.85rem; color: var(--text-muted); }
-
-  /* Code blocks */
-  .code-block {
-    background: #0d0d14;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
-    margin-bottom: 1.5rem;
-  }
-
-  .code-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.75rem 1rem;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    font-size: 0.8rem;
-  }
-
-  .code-title { color: var(--text-muted); font-weight: 500; }
-  .code-lang {
-    background: var(--purple-dim);
-    color: var(--purple-light);
-    padding: 0.2rem 0.5rem;
-    border-radius: 4px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.7rem;
-  }
-
-  .code-content {
-    padding: 1.25rem 1.5rem;
-    overflow-x: auto;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.82rem;
-    line-height: 1.8;
-    white-space: pre;
-  }
-
-  .kw { color: #c678dd; }
-  .fn { color: #61afef; }
-  .str { color: #98c379; }
-  .num { color: #d19a66; }
-  .cm { color: #5c6370; font-style: italic; }
-  .var { color: #e06c75; }
-  .py { color: #e2e8f0; }
-  .key { color: #e5c07b; }
-
-  /* Exercises */
-  .exercises-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 1rem;
-  }
-
-  .exercise-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 1.25rem;
-    cursor: pointer;
-    transition: all 0.2s;
-    position: relative;
-    overflow: hidden;
-  }
-  .exercise-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, var(--purple), var(--teal));
-    transform: scaleX(0);
-    transition: transform 0.3s;
-    transform-origin: left;
-  }
-  .exercise-card:hover { border-color: var(--purple); transform: translateY(-2px); }
-  .exercise-card:hover::before { transform: scaleX(1); }
-  .exercise-card.done { border-color: var(--green); }
-  .exercise-card.done::before { background: var(--green); transform: scaleX(1); }
-
-  .ex-num {
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: var(--purple-light);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 0.5rem;
-  }
-  .ex-title { font-weight: 600; font-size: 0.95rem; margin-bottom: 0.5rem; }
-  .ex-desc { font-size: 0.8rem; color: var(--text-muted); }
-  .ex-check {
-    position: absolute;
-    top: 1rem; right: 1rem;
-    width: 22px; height: 22px;
-    border-radius: 50%;
-    border: 2px solid var(--border);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 0.7rem;
-    transition: all 0.2s;
-  }
-  .exercise-card.done .ex-check { background: var(--green); border-color: var(--green); color: white; }
-
-  /* Concept cards grid */
-  .concept-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 1rem;
-  }
-
-  .concept-card {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 1rem;
-    transition: all 0.2s;
-  }
-  .concept-card:hover { border-color: var(--teal); transform: translateY(-2px); }
-  .concept-icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
-  .concept-title { font-weight: 600; font-size: 0.85rem; margin-bottom: 0.3rem; }
-  .concept-desc { font-size: 0.78rem; color: var(--text-muted); }
-
-  /* Scroll animations */
-  .fade-in {
-    opacity: 0;
-    transform: translateY(20px);
-    transition: opacity 0.6s, transform 0.6s;
-  }
-  .fade-in.visible { opacity: 1; transform: translateY(0); }
-
-  /* Info boxes */
-  .info-box {
-    background: var(--teal-dim);
-    border: 1px solid var(--teal);
-    border-radius: var(--radius-sm);
-    padding: 1rem 1.25rem;
-    margin-bottom: 1.5rem;
-    font-size: 0.88rem;
-    color: var(--text);
-  }
-  .info-box strong { color: var(--teal-light); }
-
-  .warn-box {
-    background: rgba(245,158,11,0.1);
-    border: 1px solid rgba(245,158,11,0.4);
-    border-radius: var(--radius-sm);
-    padding: 1rem 1.25rem;
-    margin-bottom: 1.5rem;
-    font-size: 0.88rem;
-    color: var(--text);
-  }
-  .warn-box strong { color: var(--amber); }
-
-  footer {
-    border-top: 1px solid var(--border);
-    padding: 2rem;
-    text-align: center;
-    color: var(--text-dim);
-    font-size: 0.85rem;
-  }
-  footer a { color: var(--purple-light); text-decoration: none; }
-  footer a:hover { text-decoration: underline; }
-
-  .tabs {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 0;
-  }
-  .tab-btn {
-    background: none;
-    border: none;
-    color: var(--text-muted);
-    font-family: 'Inter', sans-serif;
-    font-size: 0.85rem;
-    padding: 0.5rem 1rem;
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    transition: all 0.2s;
-    margin-bottom: -1px;
-  }
-  .tab-btn.active { color: var(--purple-light); border-bottom-color: var(--purple); }
-  .tab-panel { display: none; }
-  .tab-panel.active { display: block; }
-
-  /* ── Day 1 Enhancements ── */
-  .enhance-section {
-    max-width: 900px;
-    margin: 3rem auto;
-    padding: 0 2rem;
-  }
-  .enhance-section h2 {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--text);
-    margin-bottom: 0.4rem;
-  }
-  .enhance-section .section-tag {
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--purple-light);
-    margin-bottom: 1rem;
-    display: block;
-  }
-
-  /* Temperature visualizer */
-  .temp-slider-wrap {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 1.5rem;
-    margin-bottom: 1.25rem;
-  }
-  .temp-slider-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 1rem;
-  }
-  .temp-value-badge {
-    font-size: 1.6rem;
-    font-weight: 700;
-    font-family: 'JetBrains Mono', monospace;
-    padding: 0.2rem 0.7rem;
-    border-radius: 8px;
-    transition: background 0.3s, color 0.3s;
-  }
-  .temp-badge-det  { background: rgba(16,185,129,0.15); color: #10b981; }
-  .temp-badge-bal  { background: rgba(59,130,246,0.15); color: #3b82f6; }
-  .temp-badge-cre  { background: rgba(245,158,11,0.15); color: #f59e0b; }
-  .temp-badge-cha  { background: rgba(239,68,68,0.15);  color: #ef4444; }
-  input[type=range].temp-range {
-    width: 100%;
-    accent-color: var(--purple);
-    height: 6px;
-    cursor: pointer;
-  }
-  .temp-label-row {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.72rem;
-    color: var(--text-dim);
-    margin-top: 0.3rem;
-  }
-  .temp-output-box {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 1rem 1.2rem;
-    margin-top: 1rem;
-    font-style: italic;
-    color: var(--text);
-    font-size: 0.95rem;
-    min-height: 2.5rem;
-    transition: border-color 0.3s;
-  }
-  .temp-mode-label {
-    font-size: 0.78rem;
-    font-weight: 600;
-    margin-top: 0.5rem;
-    transition: color 0.3s;
-  }
-
-  /* Probability bars */
-  .prob-chart {
-    display: flex;
-    align-items: flex-end;
-    gap: 8px;
-    height: 100px;
-    margin-top: 1.2rem;
-    padding: 0 0.25rem;
-  }
-  .prob-bar-wrap {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    height: 100%;
-    justify-content: flex-end;
-  }
-  .prob-bar {
-    width: 100%;
-    border-radius: 4px 4px 0 0;
-    transition: height 0.4s ease;
-    min-height: 4px;
-  }
-  .prob-bar-label {
-    font-size: 0.65rem;
-    color: var(--text-dim);
-    text-align: center;
-    font-family: 'JetBrains Mono', monospace;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
-  }
-
-  /* Model comparison cards */
-  .model-cards-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1.25rem;
-    margin-bottom: 1.25rem;
-  }
-  @media (max-width: 680px) { .model-cards-grid { grid-template-columns: 1fr; } }
-  .model-card {
-    background: var(--surface);
-    border: 2px solid var(--border);
-    border-radius: 12px;
-    padding: 1.25rem;
-    transition: transform 0.2s, box-shadow 0.2s;
-  }
-  .model-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
-  .model-card.haiku  { border-color: #10b981; }
-  .model-card.sonnet { border-color: #7c3aed; }
-  .model-card.opus   { border-color: #f59e0b; }
-  .model-card-name {
-    font-size: 1.1rem;
-    font-weight: 700;
-    margin-bottom: 0.75rem;
-  }
-  .model-card.haiku  .model-card-name { color: #10b981; }
-  .model-card.sonnet .model-card-name { color: #a855f7; }
-  .model-card.opus   .model-card-name { color: #f59e0b; }
-  .model-stat {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.35rem 0;
-    border-bottom: 1px solid var(--border);
-    font-size: 0.82rem;
-  }
-  .model-stat:last-of-type { border-bottom: none; }
-  .model-stat-key { color: var(--text-dim); }
-  .model-stat-val { color: var(--text); font-weight: 500; }
-  .model-use-title {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--text-dim);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    margin: 0.75rem 0 0.35rem;
-  }
-  .model-use-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    font-size: 0.8rem;
-    color: var(--text);
-  }
-  .model-use-list li::before { content: "→ "; color: var(--text-dim); }
-  .model-use-list li { margin-bottom: 0.2rem; }
-  .model-decision-box {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--purple);
-    border-radius: 8px;
-    padding: 1rem 1.25rem;
-    font-size: 0.875rem;
-    color: var(--text);
-  }
-  .model-decision-box strong { color: var(--purple-light); }
-
-  /* Context window visualizer */
-  .ctx-memory-bar-outer {
-    background: #1a1a2e;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    height: 28px;
-    overflow: hidden;
-    margin: 1rem 0 0.5rem;
-    position: relative;
-  }
-  .ctx-memory-bar-inner {
-    height: 100%;
-    border-radius: 6px;
-    transition: width 0.5s ease, background 0.5s ease;
-    display: flex;
-    align-items: center;
-    padding-left: 8px;
-    font-size: 0.72rem;
-    font-weight: 600;
-    color: white;
-    white-space: nowrap;
-    overflow: hidden;
-  }
-  .ctx-scenario-btns {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-bottom: 1.25rem;
-  }
-  .ctx-btn {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 0.45rem 0.85rem;
-    font-size: 0.8rem;
-    color: var(--text);
-    cursor: pointer;
-    transition: all 0.2s;
-    font-family: 'Inter', sans-serif;
-  }
-  .ctx-btn:hover, .ctx-btn.active { background: var(--purple-dim); border-color: var(--purple); color: var(--purple-light); }
-  .ctx-stats-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.75rem;
-    margin: 1rem 0;
-  }
-  @media (max-width: 600px) { .ctx-stats-grid { grid-template-columns: repeat(2, 1fr); } }
-  .ctx-stat-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 0.75rem;
-    text-align: center;
-  }
-  .ctx-stat-num {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--teal-light);
-    font-family: 'JetBrains Mono', monospace;
-  }
-  .ctx-stat-label { font-size: 0.7rem; color: var(--text-dim); margin-top: 0.2rem; }
-  .ctx-insight-box {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--teal);
-    border-radius: 8px;
-    padding: 1rem 1.25rem;
-    font-size: 0.875rem;
-    color: var(--text);
-    margin-top: 1rem;
-  }
-  .ctx-insight-box strong { color: #2dd4bf; }
-  .temp-agent-tip {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-left: 3px solid #10b981;
-    border-radius: 8px;
-    padding: 1rem 1.25rem;
-    font-size: 0.875rem;
-    color: var(--text);
-    margin-top: 1rem;
-  }
-  .temp-agent-tip strong { color: #10b981; }
+:root {
+  --bg: #0a0a0f; --card: #141420; --surface2: #1a1a2e; --border: #2a2a45;
+  --purple: #7c3aed; --purple-light: #a855f7; --purple-dim: rgba(124,58,237,0.15);
+  --teal: #0d9488; --teal-light: #2dd4bf; --teal-dim: rgba(13,148,136,0.15);
+  --text: #e2e8f0; --muted: #64748b; --green: #10b981; --amber: #f59e0b;
+  --red: #ef4444; --blue: #3b82f6;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.7; overflow-x: hidden; }
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 10% 10%, rgba(124,58,237,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 90% 80%, rgba(13,148,136,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 30% at 50% 50%, rgba(124,58,237,0.03) 0%, transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+
+/* ── KEYFRAME ANIMATIONS ─────────────────────────────── */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(32px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.85; } }
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 8px rgba(124,58,237,0.3), 0 0 20px rgba(124,58,237,0.1); }
+  50% { box-shadow: 0 0 16px rgba(124,58,237,0.6), 0 0 40px rgba(124,58,237,0.2); }
+}
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes counterUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes borderPulse {
+  0%, 100% { border-color: rgba(124,58,237,0.3); }
+  50% { border-color: rgba(124,58,237,0.8); }
+}
+@keyframes particleFloat {
+  0% { transform: translateY(0) translateX(0) scale(1); opacity: 0.6; }
+  50% { transform: translateY(-30px) translateX(15px) scale(1.1); opacity: 1; }
+  100% { transform: translateY(-60px) translateX(-10px) scale(0.8); opacity: 0; }
+}
+
+/* ── SCROLL ENTRANCE ─────────────────────────────────── */
+.reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.7s ease, transform 0.7s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+.reveal-left { opacity: 0; transform: translateX(-28px); transition: opacity 0.7s ease, transform 0.7s ease; }
+.reveal-left.visible { opacity: 1; transform: translateX(0); }
+.reveal-right { opacity: 0; transform: translateX(28px); transition: opacity 0.7s ease, transform 0.7s ease; }
+.reveal-right.visible { opacity: 1; transform: translateX(0); }
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.2s; }
+.reveal-delay-3 { transition-delay: 0.3s; }
+.reveal-delay-4 { transition-delay: 0.4s; }
+
+/* ── PROGRESS BAR ────────────────────────────────────── */
+#progress-bar {
+  position: fixed; top: 0; left: 0; height: 3px; width: 0%;
+  background: linear-gradient(90deg, var(--purple), var(--teal), var(--purple));
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+  z-index: 1000; transition: width 0.15s linear;
+}
+
+/* ── BACK TO TOP ─────────────────────────────────────── */
+#back-to-top {
+  position: fixed; bottom: 32px; right: 32px; z-index: 500;
+  width: 44px; height: 44px; border-radius: 50%;
+  background: var(--purple); border: none; color: white;
+  font-size: 18px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transform: translateY(20px);
+  transition: all 0.3s; box-shadow: 0 4px 20px rgba(124,58,237,0.4);
+}
+#back-to-top.visible { opacity: 1; transform: translateY(0); }
+#back-to-top:hover { background: var(--purple-light); transform: translateY(-4px); animation: glow 1.5s ease-in-out infinite; }
+
+/* ── LAYOUT ──────────────────────────────────────────── */
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+/* ── NAV ─────────────────────────────────────────────── */
+nav {
+  position: sticky; top: 3px; z-index: 100;
+  border-bottom: 1px solid var(--border);
+  background: rgba(10,10,15,0.92);
+  backdrop-filter: blur(20px);
+  animation: slideDown 0.5s ease;
+}
+.nav-inner {
+  max-width: 1100px; margin: 0 auto; padding: 0 24px;
+  height: 52px; display: flex; align-items: center; justify-content: space-between;
+}
+.nav-brand { font-size: 14px; font-weight: 700; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+.nav-brand:hover { color: var(--text); }
+.nav-right { display: flex; gap: 8px; align-items: center; }
+.nav-btn {
+  padding: 7px 18px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface2); color: var(--muted); font-size: 13px; font-weight: 600;
+  text-decoration: none; transition: all 0.2s; cursor: pointer; font-family: inherit;
+}
+.nav-btn:hover { border-color: var(--purple); color: var(--text); }
+.nav-btn.next { border-color: rgba(124,58,237,0.5); color: var(--purple-light); }
+.nav-btn.next:hover { background: var(--purple); color: white; border-color: var(--purple); }
+.nav-btn.complete { border-color: rgba(245,158,11,0.5); color: var(--amber); }
+.nav-btn.complete:hover { background: var(--amber); color: #0a0a0f; }
+
+/* ── HERO ────────────────────────────────────────────── */
+.hero { padding: 72px 0 48px; text-align: center; }
+.day-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--purple-dim); border: 1px solid var(--purple);
+  color: var(--purple-light); padding: 6px 16px; border-radius: 100px;
+  font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  margin-bottom: 24px;
+  animation: slideDown 0.6s ease 0.2s both, borderPulse 3s ease-in-out infinite;
+}
+.day-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--purple-light); animation: pulse 2s infinite; }
+.hero h1 {
+  font-size: clamp(2.2rem, 6vw, 4rem); font-weight: 900; letter-spacing: -2px;
+  background: linear-gradient(135deg, #e2e8f0 0%, var(--purple-light) 40%, var(--teal-light) 70%, #e2e8f0 100%);
+  background-size: 300% 300%;
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  animation: slideUp 0.7s ease 0.3s both, gradientShift 6s ease infinite;
+  margin-bottom: 16px; line-height: 1.15;
+}
+.hero-sub { color: var(--muted); font-size: 1.1rem; max-width: 600px; margin: 0 auto 32px; animation: slideUp 0.7s ease 0.4s both; }
+.hero-stats {
+  display: flex; gap: 32px; justify-content: center; flex-wrap: wrap;
+  animation: slideUp 0.7s ease 0.5s both;
+  margin-bottom: 32px;
+}
+.stat-item { text-align: center; }
+.stat-num { font-size: 2rem; font-weight: 900; color: var(--purple-light); line-height: 1; }
+.stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 4px; }
+.topic-pills { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; animation: slideUp 0.7s ease 0.6s both; }
+.topic-pill {
+  padding: 5px 14px; border-radius: 100px; background: var(--surface2);
+  border: 1px solid var(--border); font-size: 12px; color: var(--muted); font-weight: 500;
+  transition: all 0.2s;
+}
+.topic-pill:hover { border-color: var(--purple); color: var(--purple-light); }
+
+/* ── SECTIONS ────────────────────────────────────────── */
+.section { padding: 64px 0; border-top: 1px solid var(--border); }
+.section-header { margin-bottom: 36px; }
+.section-num { font-size: 11px; font-weight: 700; color: var(--purple); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+.section-header h2 { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 12px; }
+.section-header p { color: var(--muted); font-size: 15px; line-height: 1.65; max-width: 680px; }
+
+/* ── CARDS ───────────────────────────────────────────── */
+.card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px;
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+.card:hover { transform: translateY(-4px); border-color: rgba(124,58,237,0.4); box-shadow: 0 12px 40px rgba(0,0,0,0.4), 0 0 20px rgba(124,58,237,0.08); }
+.card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.card-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+@media(max-width:700px) { .card-grid, .card-grid-3 { grid-template-columns: 1fr; } }
+.card-icon { font-size: 28px; margin-bottom: 12px; animation: float 4s ease-in-out infinite; }
+.card h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+.card p { font-size: 14px; color: var(--muted); line-height: 1.6; }
+
+/* ── CODE BLOCKS ─────────────────────────────────────── */
+.code-window {
+  background: #0d0d14; border: 1px solid var(--border); border-radius: 12px;
+  overflow: hidden; margin: 20px 0;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  transition: border-color 0.3s;
+}
+.code-window:hover { border-color: rgba(124,58,237,0.3); }
+.code-chrome { display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: #13131f; border-bottom: 1px solid var(--border); }
+.dot-r { width: 12px; height: 12px; border-radius: 50%; background: #ff5f57; }
+.dot-y { width: 12px; height: 12px; border-radius: 50%; background: #febc2e; }
+.dot-g { width: 12px; height: 12px; border-radius: 50%; background: #28c840; }
+.code-label { margin-left: auto; font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+pre { padding: 20px 24px; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.7; }
+.c-kw { color: #c792ea; } .c-fn { color: #82aaff; } .c-str { color: #c3e88d; }
+.c-cmt { color: #546e7a; font-style: italic; } .c-num { color: #f78c6c; }
+.c-cls { color: #ffcb6b; } .c-op { color: #89ddff; }
+
+/* ── CALLOUT BOXES ───────────────────────────────────── */
+.callout {
+  border-radius: 12px; padding: 20px 24px; margin: 20px 0;
+  display: flex; gap: 16px; align-items: flex-start;
+}
+.callout-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+.callout-body h4 { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+.callout-body p { font-size: 14px; line-height: 1.65; }
+.callout.why { background: rgba(13,148,136,0.08); border: 1px solid rgba(13,148,136,0.25); }
+.callout.why .callout-body h4 { color: var(--teal-light); }
+.callout.why .callout-body p { color: #94a3b8; }
+.callout.warn { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25); }
+.callout.warn .callout-body h4 { color: #fca5a5; }
+.callout.warn .callout-body p { color: #94a3b8; }
+.callout.info { background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.25); }
+.callout.info .callout-body h4 { color: #93c5fd; }
+.callout.info .callout-body p { color: #94a3b8; }
+.callout.tip { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.25); }
+.callout.tip .callout-body h4 { color: #fcd34d; }
+.callout.tip .callout-body p { color: #94a3b8; }
+
+/* ── COMPARISON TABLES ───────────────────────────────── */
+.compare-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+.compare-table th, .compare-table td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border); font-size: 14px; }
+.compare-table th { background: var(--surface2); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.compare-table tr:hover td { background: rgba(124,58,237,0.04); }
+.badge { display: inline-block; padding: 2px 10px; border-radius: 100px; font-size: 11px; font-weight: 600; }
+.badge-green { background: rgba(16,185,129,0.15); color: #34d399; }
+.badge-red { background: rgba(239,68,68,0.15); color: #f87171; }
+.badge-yellow { background: rgba(245,158,11,0.15); color: #fcd34d; }
+.badge-blue { background: rgba(59,130,246,0.15); color: #93c5fd; }
+.badge-purple { background: rgba(124,58,237,0.15); color: var(--purple-light); }
+
+/* ── INTERACTIVE WIDGETS ─────────────────────────────── */
+.widget {
+  background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+  padding: 28px; margin: 24px 0;
+  transition: border-color 0.3s;
+}
+.widget:focus-within { border-color: rgba(124,58,237,0.5); box-shadow: 0 0 0 3px rgba(124,58,237,0.1); }
+.widget-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+.widget-title .w-icon { font-size: 20px; }
+.widget-sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+.widget-label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+
+textarea {
+  width: 100%; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; color: var(--text); font-family: 'JetBrains Mono', monospace;
+  font-size: 13px; padding: 14px; resize: vertical; min-height: 100px;
+  transition: border-color 0.2s;
+}
+textarea:focus { outline: none; border-color: var(--purple); }
+.token-results { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 16px; }
+@media(max-width:600px) { .token-results { grid-template-columns: 1fr 1fr; } }
+.token-stat { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 14px; text-align: center; }
+.token-stat .t-val { font-size: 22px; font-weight: 800; color: var(--purple-light); font-family: 'JetBrains Mono', monospace; }
+.token-stat .t-label { font-size: 11px; color: var(--muted); margin-top: 4px; }
+.token-bar { height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; margin-top: 16px; }
+.token-bar-fill { height: 100%; background: linear-gradient(90deg, var(--purple), var(--teal)); border-radius: 99px; transition: width 0.4s ease; animation: shimmer 2s linear infinite; background-size: 200% 100%; }
+.model-tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.model-tab { padding: 6px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.model-tab.active { border-color: var(--purple); color: var(--purple-light); background: var(--purple-dim); }
+
+/* Temperature slider widget */
+.temp-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+@media(max-width:600px) { .temp-layout { grid-template-columns: 1fr; } }
+.temp-left { display: flex; flex-direction: column; gap: 16px; }
+.temp-display { font-size: 48px; font-weight: 900; text-align: center; font-family: 'JetBrains Mono', monospace; transition: color 0.3s; }
+.slider-wrap { display: flex; flex-direction: column; gap: 8px; }
+.slider-label-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+input[type=range] {
+  width: 100%; -webkit-appearance: none; height: 6px; border-radius: 99px;
+  background: linear-gradient(90deg, var(--purple) 0%, var(--border) 0%);
+  outline: none; cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%;
+  background: var(--purple-light); cursor: pointer;
+  box-shadow: 0 0 0 3px rgba(124,58,237,0.3), 0 0 12px rgba(124,58,237,0.4);
+  transition: box-shadow 0.2s;
+}
+input[type=range]::-webkit-slider-thumb:hover { box-shadow: 0 0 0 5px rgba(124,58,237,0.3), 0 0 20px rgba(124,58,237,0.6); }
+.temp-output {
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
+  padding: 16px; font-size: 14px; line-height: 1.7; min-height: 120px;
+  font-family: 'Inter', sans-serif; color: var(--text);
+  transition: all 0.4s; position: relative; overflow: hidden;
+}
+.temp-output::before {
+  content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(124,58,237,0.06), transparent);
+  transition: left 0.6s;
+}
+.temp-output.updating::before { left: 100%; }
+.temp-tag { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; margin-bottom: 8px; }
+.temp-tag.cold { background: rgba(59,130,246,0.2); color: #93c5fd; }
+.temp-tag.hot { background: rgba(239,68,68,0.2); color: #fca5a5; }
+.temp-tag.warm { background: rgba(245,158,11,0.2); color: #fcd34d; }
+
+/* ── CONCEPT GRID ────────────────────────────────────── */
+.concept-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+@media(max-width:700px) { .concept-grid { grid-template-columns: 1fr; } }
+.concept-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+  padding: 20px; cursor: pointer;
+  transition: transform 0.25s, border-color 0.25s, box-shadow 0.25s;
+  position: relative; overflow: hidden;
+}
+.concept-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--purple), var(--teal));
+  transform: scaleX(0); transform-origin: left; transition: transform 0.3s;
+}
+.concept-card:hover::before { transform: scaleX(1); }
+.concept-card:hover { transform: translateY(-4px); border-color: rgba(124,58,237,0.35); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+.concept-icon { font-size: 24px; margin-bottom: 10px; }
+.concept-card h4 { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+.concept-card p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+/* ── ANATOMY DIAGRAM ─────────────────────────────────── */
+.anatomy { display: flex; flex-direction: column; gap: 2px; margin: 24px 0; }
+.anatomy-row { display: flex; align-items: stretch; gap: 2px; }
+.anatomy-label { width: 130px; padding: 10px 14px; font-size: 12px; font-weight: 600; display: flex; align-items: center; color: var(--muted); flex-shrink: 0; }
+.anatomy-block {
+  flex: 1; padding: 10px 14px; border-radius: 8px; font-size: 13px;
+  font-family: 'JetBrains Mono', monospace; line-height: 1.5;
+  transition: opacity 0.2s;
+}
+.anatomy-block:hover { opacity: 0.85; }
+.ab-system { background: rgba(124,58,237,0.15); border: 1px solid rgba(124,58,237,0.3); color: var(--purple-light); }
+.ab-user { background: rgba(13,148,136,0.15); border: 1px solid rgba(13,148,136,0.3); color: var(--teal-light); }
+.ab-assistant { background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3); color: #34d399; }
+.ab-token { background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.3); color: #93c5fd; }
+
+/* ── STEP TIMELINE ───────────────────────────────────── */
+.timeline { position: relative; padding-left: 32px; }
+.timeline::before { content: ''; position: absolute; left: 10px; top: 0; bottom: 0; width: 2px; background: linear-gradient(to bottom, var(--purple), var(--teal)); }
+.timeline-item { position: relative; margin-bottom: 32px; }
+.timeline-dot {
+  position: absolute; left: -28px; top: 4px; width: 18px; height: 18px;
+  border-radius: 50%; background: var(--purple); border: 3px solid var(--bg);
+  box-shadow: 0 0 0 2px var(--purple), 0 0 12px rgba(124,58,237,0.5);
+}
+.timeline-content { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+.timeline-content h4 { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+.timeline-content p { font-size: 14px; color: var(--muted); line-height: 1.65; }
+
+/* ── FOOTER ──────────────────────────────────────────── */
+.footer { padding: 40px 0; border-top: 1px solid var(--border); text-align: center; }
+.footer p { color: var(--muted); font-size: 14px; }
+.footer .nav-row { display: flex; gap: 16px; justify-content: center; margin-top: 16px; }
 </style>
 </head>
-<body>
-
-<div id="progress-bar" style="width:0%"></div>
+<body data-animation-density="high">
+<div id="progress-bar"></div>
+<button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
 
 <nav>
   <div class="nav-inner">
-    <a href="../index.html" class="nav-btn">← Dashboard</a>
-    <a href="../index.html" class="nav-brand">🤖 Agentic AI</a>
-    <a href="day2.html" class="nav-btn next">Day 2: Tool Use →</a>
+    <a href="../index.html" class="nav-brand">← Agentic AI Mastery</a>
+    <div class="nav-right">
+      <button class="nav-btn complete" onclick="markComplete()">✓ Mark Complete</button>
+      <a href="day2.html" class="nav-btn next">Day 2 →</a>
+    </div>
   </div>
 </nav>
 
-<div class="hero">
-  <div class="day-badge">📅 Day 1 of 30</div>
-  <h1>How LLMs Work<br>+ The Claude API</h1>
-  <p>From tokens to transformers — understand the machinery that makes large language models work, then wire up your first API calls.</p>
-  <div class="objectives">
-    <span class="obj-tag">🔤 Tokenization</span>
-    <span class="obj-tag">🏗 Transformer Architecture</span>
-    <span class="obj-tag">🔁 Autoregressive Generation</span>
-    <span class="obj-tag">📡 Stateless API</span>
-    <span class="obj-tag">🔧 Tool Use</span>
-    <span class="obj-tag">💻 Code</span>
-  </div>
-</div>
-
-<!-- ============================================================ -->
-<!-- SECTION 1: Token Visualizer -->
-<!-- ============================================================ -->
 <div class="container">
-<section class="fade-in">
-  <div class="section-header">
-    <div class="section-num">1</div>
-    <div>
-      <h2>Token Visualizer</h2>
-      <p>LLMs don't see words — they see <em>tokens</em>. Type anything below to see it tokenized.</p>
+  <!-- ── HERO ─────────────────────────────────── -->
+  <div class="hero">
+    <div class="day-badge"><span class="dot"></span> Day 1 of 30 &nbsp;·&nbsp; Week 1 — Foundations</div>
+    <h1>How LLMs Work<br>+ The Anthropic API</h1>
+    <p class="hero-sub">Understand what happens inside a Large Language Model — from tokens to probability distributions — then make your first real API call.</p>
+    <div class="hero-stats">
+      <div class="stat-item"><div class="stat-num" data-target="4">0</div><div class="stat-label">Key Concepts</div></div>
+      <div class="stat-item"><div class="stat-num" data-target="2">0</div><div class="stat-label">Live Widgets</div></div>
+      <div class="stat-item"><div class="stat-num" data-target="6">0</div><div class="stat-label">Code Examples</div></div>
+      <div class="stat-item"><div class="stat-num" data-target="45">0</div><div class="stat-label">Min Read</div></div>
+    </div>
+    <div class="topic-pills">
+      <span class="topic-pill">Transformers</span>
+      <span class="topic-pill">Tokenization</span>
+      <span class="topic-pill">Temperature</span>
+      <span class="topic-pill">Anthropic SDK</span>
+      <span class="topic-pill">Context Windows</span>
+      <span class="topic-pill">Sampling Strategies</span>
     </div>
   </div>
 
-  <div class="info-box">
-    <strong>What's a token?</strong> Roughly 4 characters or ¾ of a word. "ChatGPT" = 2 tokens. "Hello!" = 2 tokens. Your API costs scale linearly with tokens — this is why token awareness is a senior engineer superpower.
-  </div>
+  <!-- ── SECTION 1: HOW LLMs WORK ──────────────────── -->
+  <section class="section">
+    <div class="section-header reveal">
+      <div class="section-num">Section 01</div>
+      <h2>What Is a Large Language Model?</h2>
+      <p>Before writing a single line of API code, you need a mental model of what's actually happening inside the black box. This isn't magic — it's matrix multiplication at an almost incomprehensible scale.</p>
+    </div>
 
-  <div class="token-input-area">
-    <textarea id="token-input" placeholder="Type or paste any text here..." rows="3">The transformer architecture enables LLMs to understand context across long sequences of tokens.</textarea>
-    <div class="token-stats">
-      <div class="stat-item">
-        <span class="stat-label">Tokens (approx)</span>
-        <span class="stat-value" id="token-count">0</span>
+    <div class="card-grid reveal reveal-delay-1">
+      <div class="card">
+        <div class="card-icon">🧠</div>
+        <h3>Neural Network at its Core</h3>
+        <p>An LLM is a deep neural network — specifically a Transformer — trained to predict the next token in a sequence. After training on hundreds of billions of tokens, the weights encode an implicit world model: grammar, facts, reasoning patterns, code syntax, and more.</p>
       </div>
-      <div class="stat-item">
-        <span class="stat-label">Characters</span>
-        <span class="stat-value" id="char-count">0</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">Cost @ Haiku</span>
-        <span class="stat-value" id="token-cost">$0.00</span>
-      </div>
-    </div>
-  </div>
-
-  <div id="token-display"></div>
-
-  <div class="concept-grid" style="margin-top:2rem">
-    <div class="concept-card">
-      <div class="concept-icon">📏</div>
-      <div class="concept-title">Context Window</div>
-      <div class="concept-desc">Claude 3.5 Haiku: 200k tokens max. Think of it as working memory.</div>
-    </div>
-    <div class="concept-card">
-      <div class="concept-icon">💰</div>
-      <div class="concept-title">Pricing Model</div>
-      <div class="concept-desc">Input tokens + Output tokens billed separately. Output is ~4× more expensive.</div>
-    </div>
-    <div class="concept-card">
-      <div class="concept-icon">🌐</div>
-      <div class="concept-title">Multilingual</div>
-      <div class="concept-desc">Non-English text uses more tokens per word. Arabic/Chinese can be 2-3× English.</div>
-    </div>
-    <div class="concept-card">
-      <div class="concept-icon">⚡</div>
-      <div class="concept-title">Special Tokens</div>
-      <div class="concept-desc">&lt;|im_start|&gt;, &lt;|end_of_text|&gt; etc. are structural tokens the model uses internally.</div>
-    </div>
-  </div>
-</section>
-
-<!-- ============================================================ -->
-<!-- SECTION 2: Transformer Architecture -->
-<!-- ============================================================ -->
-<section class="fade-in">
-  <div class="section-header">
-    <div class="section-num">2</div>
-    <div>
-      <h2>Transformer Architecture</h2>
-      <p>The neural network that changed everything. Hover each component to learn what it does.</p>
-    </div>
-  </div>
-
-  <div class="arch-container">
-    <div class="arch-svg-wrap">
-      <svg viewBox="0 0 760 460" width="100%" style="font-family:'Inter',sans-serif">
-        <!-- Background -->
-        <rect width="760" height="460" fill="#0a0a0f"/>
-
-        <!-- Input tokens -->
-        <rect x="20" y="190" width="90" height="80" rx="10" fill="#141420" stroke="#2a2a3e" stroke-width="1.5" class="arch-node" data-name="Input Tokens" data-desc="Text split into tokens — the raw integer IDs your model actually sees. 'Hello world' might be [15496, 995]."/>
-        <text x="65" y="232" text-anchor="middle" fill="#94a3b8" font-size="11">Input</text>
-        <text x="65" y="248" text-anchor="middle" fill="#94a3b8" font-size="11">Tokens</text>
-
-        <!-- Token boxes inside -->
-        <rect x="28" y="195" width="18" height="14" rx="3" fill="#7c3aed" opacity="0.7"/>
-        <rect x="50" y="195" width="18" height="14" rx="3" fill="#0d9488" opacity="0.7"/>
-        <rect x="72" y="195" width="18" height="14" rx="3" fill="#3b82f6" opacity="0.7"/>
-
-        <!-- Arrow 1 -->
-        <path d="M110 230 L150 230" stroke="#7c3aed" stroke-width="2" marker-end="url(#arrowPurple)"/>
-        <animateTransform attributeName="..." type="translate"/>
-
-        <!-- Embedding layer -->
-        <rect x="150" y="175" width="100" height="110" rx="10" fill="#1c1c2e" stroke="#7c3aed" stroke-width="1.5" class="arch-node" data-name="Embedding Layer" data-desc="Converts each token ID into a dense vector of numbers (768 or 1024 dimensions typically). These vectors encode semantic meaning — similar words are close together in this high-dimensional space."/>
-        <text x="200" y="220" text-anchor="middle" fill="#a855f7" font-size="11" font-weight="600">Embedding</text>
-        <text x="200" y="238" text-anchor="middle" fill="#94a3b8" font-size="10">token → vector</text>
-        <text x="200" y="256" text-anchor="middle" fill="#5c6370" font-size="10">[0.2, -0.8, 1.4...]</text>
-
-        <!-- Arrow 2 -->
-        <path d="M250 230 L290 230" stroke="#7c3aed" stroke-width="2" marker-end="url(#arrowPurple)"/>
-
-        <!-- Transformer block (big box) -->
-        <rect x="290" y="140" width="200" height="180" rx="12" fill="#141420" stroke="#7c3aed" stroke-width="2"/>
-        <text x="390" y="162" text-anchor="middle" fill="#a855f7" font-size="11" font-weight="700">N× TRANSFORMER BLOCK</text>
-
-        <!-- Self-Attention inside -->
-        <rect x="305" y="175" width="170" height="55" rx="8" fill="#1c1c2e" stroke="#0d9488" stroke-width="1.5" class="arch-node" data-name="Multi-Head Self-Attention" data-desc="The key innovation. Each token looks at every other token and computes 'how relevant is token X to understanding me?'. Multiple 'heads' do this in parallel, each learning different relationship types (syntax, semantics, coreference...)."/>
-        <text x="390" y="197" text-anchor="middle" fill="#2dd4bf" font-size="11" font-weight="600">Multi-Head</text>
-        <text x="390" y="213" text-anchor="middle" fill="#2dd4bf" font-size="11" font-weight="600">Self-Attention</text>
-        <text x="390" y="225" text-anchor="middle" fill="#5c6370" font-size="9">Q · K^T / √d × V</text>
-
-        <!-- Add & Norm -->
-        <rect x="305" y="240" width="170" height="24" rx="5" fill="#2a2a3e"/>
-        <text x="390" y="256" text-anchor="middle" fill="#64748b" font-size="10">Add &amp; Layer Norm</text>
-
-        <!-- FFN inside -->
-        <rect x="305" y="274" width="170" height="36" rx="8" fill="#1c1c2e" stroke="#f59e0b" stroke-width="1.5" class="arch-node" data-name="Feed-Forward Network" data-desc="Two linear layers with a non-linearity (GELU) between them. Expands the representation to a larger dimension (4× typically), applies the activation, then projects back. This is where most of the model's 'knowledge' is stored as weights."/>
-        <text x="390" y="296" text-anchor="middle" fill="#fbbf24" font-size="11" font-weight="600">Feed-Forward Network</text>
-        <text x="390" y="308" text-anchor="middle" fill="#5c6370" font-size="9">Linear → GELU → Linear</text>
-
-        <!-- Arrow 3 -->
-        <path d="M490 230 L530 230" stroke="#7c3aed" stroke-width="2" marker-end="url(#arrowPurple)"/>
-
-        <!-- Unembedding / LM Head -->
-        <rect x="530" y="175" width="100" height="110" rx="10" fill="#1c1c2e" stroke="#10b981" stroke-width="1.5" class="arch-node" data-name="LM Head (Unembedding)" data-desc="Projects the final hidden state back to vocabulary size (32k-100k tokens). Produces logits — raw scores for each possible next token. Softmax turns these into probabilities. Then sampling picks the actual next token."/>
-        <text x="580" y="218" text-anchor="middle" fill="#34d399" font-size="11" font-weight="600">LM Head</text>
-        <text x="580" y="236" text-anchor="middle" fill="#94a3b8" font-size="10">vector → logits</text>
-        <text x="580" y="254" text-anchor="middle" fill="#5c6370" font-size="9">32k scores</text>
-
-        <!-- Arrow 4 -->
-        <path d="M630 230 L670 230" stroke="#10b981" stroke-width="2" marker-end="url(#arrowGreen)"/>
-
-        <!-- Output token -->
-        <rect x="670" y="195" width="70" height="70" rx="10" fill="#141420" stroke="#10b981" stroke-width="1.5"/>
-        <text x="705" y="228" text-anchor="middle" fill="#34d399" font-size="11" font-weight="600">Next</text>
-        <text x="705" y="244" text-anchor="middle" fill="#34d399" font-size="11" font-weight="600">Token</text>
-
-        <!-- Feedback arrow -->
-        <path d="M705 265 C705 400 65 400 65 270" stroke="#5c6370" stroke-width="1.5" stroke-dasharray="6,4" fill="none" marker-end="url(#arrowGray)"/>
-        <text x="385" y="415" text-anchor="middle" fill="#5c6370" font-size="10">Autoregressive loop — output becomes next input</text>
-
-        <!-- Animated flow dots -->
-        <circle r="5" fill="#7c3aed" opacity="0.9">
-          <animateMotion dur="3s" repeatCount="indefinite" begin="0s">
-            <mpath href="#flowPath"/>
-          </animateMotion>
-        </circle>
-
-        <path id="flowPath" d="M110 230 L150 230 L250 230 L290 230 L490 230 L530 230 L630 230 L670 230" fill="none"/>
-
-        <!-- Arrow markers -->
-        <defs>
-          <marker id="arrowPurple" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-            <path d="M0,0 L0,6 L8,3 z" fill="#7c3aed"/>
-          </marker>
-          <marker id="arrowGreen" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-            <path d="M0,0 L0,6 L8,3 z" fill="#10b981"/>
-          </marker>
-          <marker id="arrowGray" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-            <path d="M0,0 L0,6 L8,3 z" fill="#5c6370"/>
-          </marker>
-        </defs>
-
-        <!-- Labels at bottom -->
-        <text x="390" y="448" text-anchor="middle" fill="#5c6370" font-size="10">Hover components for details • The block repeats 32–96× in large models</text>
-      </svg>
-    </div>
-  </div>
-
-  <div id="arch-tooltip" class="arch-tooltip"></div>
-
-  <div class="concept-grid" style="margin-top:1.5rem">
-    <div class="concept-card">
-      <div class="concept-icon">🧠</div>
-      <div class="concept-title">Attention = Lookup</div>
-      <div class="concept-desc">Query × Key matrix gives attention weights. Value matrix produces the output. O(n²) in sequence length.</div>
-    </div>
-    <div class="concept-card">
-      <div class="concept-icon">📐</div>
-      <div class="concept-title">Scale Matters</div>
-      <div class="concept-desc">Claude 3: ~52B+ params. Each param is ~2 bytes (bfloat16). That's 100GB+ just for weights.</div>
-    </div>
-    <div class="concept-card">
-      <div class="concept-icon">🎯</div>
-      <div class="concept-title">RLHF Alignment</div>
-      <div class="concept-desc">After pretraining, Claude is fine-tuned with human feedback (Constitutional AI) to be helpful and safe.</div>
-    </div>
-  </div>
-</section>
-
-<!-- ============================================================ -->
-<!-- SECTION 3: Autoregressive Generation -->
-<!-- ============================================================ -->
-<section class="fade-in">
-  <div class="section-header">
-    <div class="section-num">3</div>
-    <div>
-      <h2>Autoregressive Generation</h2>
-      <p>LLMs are next-token predictors — they generate one token at a time, feeding each back as input.</p>
-    </div>
-  </div>
-
-  <div class="warn-box">
-    <strong>Key insight:</strong> The model doesn't "plan" a sentence. It predicts the most likely next token given all previous tokens. Intelligence emerges from doing this very well at massive scale.
-  </div>
-
-  <div class="generation-demo">
-    <div style="font-size:0.85rem;color:var(--text-dim);margin-bottom:0.5rem;">PROMPT</div>
-    <div style="font-family:'JetBrains Mono',monospace;font-size:0.9rem;color:var(--text-muted);margin-bottom:1rem;">The transformer architecture</div>
-    <div style="font-size:0.85rem;color:var(--text-dim);margin-bottom:0.5rem;">COMPLETION</div>
-    <div id="gen-output"><span class="cursor"></span></div>
-    <div id="gen-tokens" class="gen-token-history"></div>
-    <div style="margin-top:1.5rem;display:flex;gap:0.75rem;justify-content:center;align-items:center;">
-      <button class="btn btn-primary" id="gen-btn" onclick="toggleGeneration()">▶ Generate</button>
-      <button class="btn btn-secondary" onclick="resetGeneration()">↺ Reset</button>
-      <span id="gen-status" style="font-size:0.8rem;color:var(--text-muted)">Ready</span>
-    </div>
-  </div>
-
-  <div style="margin-top:1.5rem;background:var(--surface2);border-radius:var(--radius);padding:1.25rem;border:1px solid var(--border);">
-    <div style="font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:0.75rem;">Why this matters for building agents:</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;font-size:0.85rem;color:var(--text-muted);">
-      <div>✓ Token-by-token = streamable (use streaming APIs)</div>
-      <div>✓ Higher <code style="color:var(--teal-light)">temperature</code> = more creative/random</div>
-      <div>✓ Stop sequences let you halt generation early</div>
-      <div>✓ <code style="color:var(--teal-light)">max_tokens</code> caps output to control cost</div>
-    </div>
-  </div>
-</section>
-
-<!-- ============================================================ -->
-<!-- SECTION 4: Stateless API Visualizer -->
-<!-- ============================================================ -->
-<section class="fade-in">
-  <div class="section-header">
-    <div class="section-num">4</div>
-    <div>
-      <h2>The Stateless API</h2>
-      <p>Claude has no memory between requests. YOU must send the full conversation every time.</p>
-    </div>
-  </div>
-
-  <div class="api-comparison">
-    <div class="api-box good">
-      <div class="api-box-header">✅ With Full History (Correct)</div>
-      <div class="api-messages" id="good-messages">
-        <div class="msg-row system" data-delay="0">system: "You are a Python expert."</div>
-        <div class="msg-row user" data-delay="400">user: "My name is Sharjeel."</div>
-        <div class="msg-row assistant" data-delay="800">assistant: "Nice to meet you, Sharjeel!"</div>
-        <div class="msg-row user" data-delay="1200">user: "What's my name?"</div>
-        <div class="msg-row assistant" data-delay="1600" style="color:var(--green)">assistant: "Your name is Sharjeel!" ✓</div>
-      </div>
-    </div>
-    <div class="api-box bad">
-      <div class="api-box-header">❌ Fresh Context (Wrong)</div>
-      <div class="api-messages" id="bad-messages">
-        <div class="msg-row system" data-delay="0">system: "You are a Python expert."</div>
-        <div class="msg-row user" data-delay="400" style="opacity:0.3">← (turn 1 missing!)</div>
-        <div class="msg-row assistant" data-delay="800" style="opacity:0.3">← (turn 2 missing!)</div>
-        <div class="msg-row user" data-delay="1200">user: "What's my name?"</div>
-        <div class="msg-row assistant" data-delay="1600" style="color:var(--red)">assistant: "I don't know your name." ✗</div>
-      </div>
-    </div>
-  </div>
-
-  <div style="text-align:center;margin:1.5rem 0">
-    <button class="btn btn-teal" onclick="animateAPIComparison()">▶ Animate Conversation</button>
-  </div>
-
-  <div class="code-block">
-    <div class="code-header">
-      <span class="code-title">conversation_memory.py — build history manually</span>
-      <span class="code-lang">python</span>
-    </div>
-    <div class="code-content"><span class="var">messages</span> <span class="py">= []</span>  <span class="cm"># this IS your memory</span>
-
-<span class="kw">def</span> <span class="fn">chat</span>(<span class="var">user_input</span>: <span class="fn">str</span>) -> <span class="fn">str</span>:
-    <span class="var">messages</span>.<span class="fn">append</span>({<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: <span class="var">user_input</span>})
-
-    <span class="var">response</span> = <span class="var">client</span>.<span class="var">messages</span>.<span class="fn">create</span>(
-        <span class="key">model</span>=<span class="str">"claude-haiku-4-5-20251001"</span>,
-        <span class="key">max_tokens</span>=<span class="num">1024</span>,
-        <span class="key">messages</span>=<span class="var">messages</span>,  <span class="cm"># ALL prior turns sent every time</span>
-    )
-
-    <span class="var">reply</span> = <span class="var">response</span>.<span class="var">content</span>[<span class="num">0</span>].<span class="var">text</span>
-    <span class="var">messages</span>.<span class="fn">append</span>({<span class="str">"role"</span>: <span class="str">"assistant"</span>, <span class="str">"content"</span>: <span class="var">reply</span>})
-    <span class="kw">return</span> <span class="var">reply</span></div>
-  </div>
-</section>
-
-<!-- ============================================================ -->
-<!-- SECTION 5: Tool Use Sequence Diagram -->
-<!-- ============================================================ -->
-<section class="fade-in">
-  <div class="section-header">
-    <div class="section-num">5</div>
-    <div>
-      <h2>Tool Use Flow</h2>
-      <p>Tool use is a 5-step dance between your code and the model. Click through each step.</p>
-    </div>
-  </div>
-
-  <div class="sequence-diagram">
-    <div class="seq-step active" id="seq-0">
-      <div class="seq-actor">
-        <div class="seq-icon user-icon">👤</div>
-        <div class="seq-label">User</div>
-      </div>
-      <div class="seq-content">
-        <div class="seq-title">Step 1 — User sends message + tool definitions</div>
-        <div class="seq-desc">Your code sends a request that includes both the conversation AND the list of available tools (as JSON schemas). The model can only use tools you describe.</div>
-        <div class="seq-code">messages=[{"role":"user","content":"What's the weather in Tokyo?"}]<br>tools=[weather_tool_schema]</div>
+      <div class="card">
+        <div class="card-icon">📊</div>
+        <h3>Probability Distributions</h3>
+        <p>When you send a prompt, the model doesn't "think" — it passes your tokens through ~96 layers of attention and feed-forward operations, producing a probability distribution over its entire vocabulary (~100K tokens). The highest probability token is sampled as the next word.</p>
       </div>
     </div>
 
-    <div class="seq-step" id="seq-1">
-      <div class="seq-actor">
-        <div class="seq-icon model-icon">🤖</div>
-        <div class="seq-label">Model</div>
-      </div>
-      <div class="seq-content">
-        <div class="seq-title">Step 2 — Model returns tool_use block (not end_turn!)</div>
-        <div class="seq-desc">Instead of text, the model returns a <strong style="color:var(--teal-light)">tool_use</strong> content block. The <code style="color:var(--amber)">stop_reason</code> is <code style="color:var(--amber)">"tool_use"</code> — your code must check this!</div>
-        <div class="seq-code">stop_reason: "tool_use"<br>content: [{type:"tool_use", name:"get_weather",<br>  input:{"city":"Tokyo"}}]</div>
-      </div>
-    </div>
+    <p class="reveal reveal-delay-2" style="color:var(--muted);font-size:15px;line-height:1.8;margin:24px 0;">
+      The Transformer architecture, introduced in 2017's "Attention is All You Need" paper, relies on a mechanism called <strong style="color:var(--text)">self-attention</strong>. Every token can directly attend to every other token in the context window simultaneously — unlike older RNNs that processed tokens sequentially. This parallelism is why Transformers can train on massive datasets and why GPUs are so essential.
+    </p>
+    <p class="reveal reveal-delay-3" style="color:var(--muted);font-size:15px;line-height:1.8;margin:24px 0;">
+      Modern LLMs like Claude 3.5 Sonnet have billions of parameters. These parameters — the weights — are what store the model's "knowledge." Fine-tuning and RLHF (Reinforcement Learning from Human Feedback) align these base capabilities toward following instructions helpfully and safely. As a backend engineer, think of the model as a stateless function: <code style="color:var(--purple-light);background:var(--surface2);padding:2px 6px;border-radius:4px;">tokens_in → probability_distribution → sample → token_out</code>.
+    </p>
 
-    <div class="seq-step" id="seq-2">
-      <div class="seq-actor">
-        <div class="seq-icon code-icon">⚙️</div>
-        <div class="seq-label">Your Code</div>
-      </div>
-      <div class="seq-content">
-        <div class="seq-title">Step 3 — YOUR code executes the real tool</div>
-        <div class="seq-desc">The model cannot run code. It just says what it wants. You extract the tool name + inputs, call the actual function, and capture the result. This is where your backend logic lives.</div>
-        <div class="seq-code">result = get_weather(city="Tokyo")<br><span style="color:var(--green)"># → {"temp": 18, "condition": "Cloudy"}</span></div>
+    <div class="callout why reveal">
+      <span class="callout-icon">💡</span>
+      <div class="callout-body">
+        <h4>Why This Matters for Engineers</h4>
+        <p>Understanding that LLMs are probabilistic next-token predictors — not databases or search engines — changes how you architect applications. You can't rely on deterministic outputs, but you CAN control temperature, top-p, and use structured output schemas to constrain behavior. Every design decision in LLM engineering flows from this fundamental model.</p>
       </div>
     </div>
 
-    <div class="seq-step" id="seq-3">
-      <div class="seq-actor">
-        <div class="seq-icon user-icon">👤</div>
-        <div class="seq-label">Your Code</div>
+    <!-- Transformer Concept Cards -->
+    <h3 class="reveal" style="font-size:18px;font-weight:700;margin:32px 0 16px;">Core Transformer Concepts</h3>
+    <div class="concept-grid reveal">
+      <div class="concept-card">
+        <div class="concept-icon">🎯</div>
+        <h4>Self-Attention</h4>
+        <p>Every token computes a weighted sum over all other tokens. "The cat sat on the mat" — "sat" attends strongly to "cat" as subject. O(n²) complexity per layer.</p>
       </div>
-      <div class="seq-content">
-        <div class="seq-title">Step 4 — Send tool_result back to the model</div>
-        <div class="seq-desc">You construct a <strong style="color:var(--purple-light)">tool_result</strong> message and send the full conversation history (including the model's tool_use) back to the API. The result can be any string — JSON, text, error messages.</div>
-        <div class="seq-code">{"role":"user","content":[<br>  {type:"tool_result", tool_use_id:"...",<br>   content:"temp:18°C, Cloudy"}]}</div>
+      <div class="concept-card">
+        <div class="concept-icon">🏗️</div>
+        <h4>Multi-Head Attention</h4>
+        <p>Multiple attention patterns run in parallel — each head captures different relationships: syntax, coreference, semantic similarity. Claude 3.5 Sonnet uses 96 heads.</p>
+      </div>
+      <div class="concept-card">
+        <div class="concept-icon">📍</div>
+        <h4>Positional Encoding</h4>
+        <p>Since attention is order-agnostic, position is injected via encodings. Modern models use RoPE (Rotary Position Encoding) to handle very long contexts.</p>
+      </div>
+      <div class="concept-card">
+        <div class="concept-icon">⚡</div>
+        <h4>Feed-Forward Layers</h4>
+        <p>After attention, each token passes through a 2-layer MLP independently. These store factual knowledge — "Paris is the capital of France" lives in these weights.</p>
+      </div>
+      <div class="concept-card">
+        <div class="concept-icon">🔄</div>
+        <h4>Layer Normalization</h4>
+        <p>Applied before attention and FFN in modern architectures (pre-norm). Stabilizes training by normalizing activations, preventing gradient explosion.</p>
+      </div>
+      <div class="concept-card">
+        <div class="concept-icon">📐</div>
+        <h4>KV Cache</h4>
+        <p>During inference, Key/Value matrices from previous tokens are cached. This is why prefill (first token) is slower than decode (subsequent tokens).</p>
       </div>
     </div>
 
-    <div class="seq-step" id="seq-4">
-      <div class="seq-actor">
-        <div class="seq-icon model-icon">🤖</div>
-        <div class="seq-label">Model</div>
+    <!-- The generation loop diagram -->
+    <h3 class="reveal" style="font-size:18px;font-weight:700;margin:32px 0 16px;">The Autoregressive Generation Loop</h3>
+    <div class="timeline reveal">
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-content">
+          <h4>1. Tokenize Input</h4>
+          <p>Your text is split into subword tokens using a learned vocabulary (BPE or SentencePiece). "Hello world" → [9906, 1917]. Each token is an integer ID mapped to an embedding vector.</p>
+        </div>
       </div>
-      <div class="seq-content">
-        <div class="seq-title">Step 5 — Model gives final answer</div>
-        <div class="seq-desc">Now the model synthesizes the tool result into a natural language response. The <code style="color:var(--amber)">stop_reason</code> is now <code style="color:var(--amber)">"end_turn"</code>. The agent loop is complete (for this turn).</div>
-        <div class="seq-code">stop_reason: "end_turn"<br>content: "Tokyo is currently 18°C and cloudy!"</div>
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-content">
+          <h4>2. Forward Pass Through All Layers</h4>
+          <p>The embedding sequence flows through N Transformer layers. Each layer applies self-attention + FFN, updating each token's representation with context from all other tokens.</p>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-content">
+          <h4>3. LM Head → Logits</h4>
+          <p>The final hidden state of the last token position is projected to vocabulary size (e.g., 100K). Raw scores called logits. Higher logit = higher probability for that token.</p>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-content">
+          <h4>4. Softmax + Sampling</h4>
+          <p>Logits are converted to probabilities via softmax (scaled by temperature). A token is sampled. Temperature 0 = argmax (greedy); Temperature 1 = raw distribution; Temperature > 1 = more random.</p>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot" style="background:var(--teal);box-shadow:0 0 0 2px var(--teal),0 0 12px rgba(13,148,136,0.5)"></div>
+        <div class="timeline-content">
+          <h4>5. Append & Repeat</h4>
+          <p>The sampled token is appended to the sequence and the whole process repeats — autoregressive decoding. This continues until an EOS token or max_tokens is reached.</p>
+        </div>
       </div>
     </div>
 
-    <div class="seq-controls">
-      <button class="btn btn-secondary" onclick="seqPrev()">← Prev</button>
-      <button class="btn btn-primary" onclick="seqNext()">Next →</button>
-      <span class="seq-progress" id="seq-progress">Step 1 / 5</span>
-      <button class="btn btn-secondary" onclick="seqReset()">↺ Reset</button>
-    </div>
-  </div>
-</section>
-
-<!-- ============================================================ -->
-<!-- SECTION 6: Code -->
-<!-- ============================================================ -->
-<section class="fade-in">
-  <div class="section-header">
-    <div class="section-num">6</div>
-    <div>
-      <h2>Code Reference</h2>
-      <p>All the patterns you need — basic completion, conversation, tool use loop.</p>
-    </div>
-  </div>
-
-  <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('basic')">Basic Completion</button>
-    <button class="tab-btn" onclick="switchTab('conv')">Conversation</button>
-    <button class="tab-btn" onclick="switchTab('tools')">Tool Use Loop</button>
-  </div>
-
-  <div id="tab-basic" class="tab-panel active">
-    <div class="code-block">
-      <div class="code-header">
-        <span class="code-title">01_basic_completion.py</span>
-        <span class="code-lang">python</span>
+    <div class="callout warn reveal">
+      <span class="callout-icon">⚠️</span>
+      <div class="callout-body">
+        <h4>Common Pitfall: Treating LLMs as Databases</h4>
+        <p>Engineers often query LLMs like they would a database: "What is the current stock price of AAPL?" The model has no live data access, no memory between calls, and its knowledge has a training cutoff. Always design for retrieval augmentation (Day 4) when you need factual accuracy.</p>
       </div>
-      <div class="code-content"><span class="kw">import</span> <span class="fn">anthropic</span>
+    </div>
+  </section>
 
-<span class="var">client</span> = <span class="fn">anthropic</span>.<span class="fn">Anthropic</span>()  <span class="cm"># reads ANTHROPIC_API_KEY from env</span>
+  <!-- ── SECTION 2: TOKENIZATION ────────────────────── -->
+  <section class="section">
+    <div class="section-header reveal">
+      <div class="section-num">Section 02</div>
+      <h2>Tokenization: The Unit of LLM Currency</h2>
+      <p>Tokens are the atomic unit of everything — input cost, output cost, context limits, and generation speed. Understanding tokenization is non-negotiable for production LLM work.</p>
+    </div>
 
-<span class="var">response</span> = <span class="var">client</span>.<span class="var">messages</span>.<span class="fn">create</span>(
-    <span class="key">model</span>=<span class="str">"claude-haiku-4-5-20251001"</span>,   <span class="cm"># fastest, cheapest</span>
-    <span class="key">max_tokens</span>=<span class="num">1024</span>,                    <span class="cm"># cap output tokens</span>
-    <span class="key">system</span>=<span class="str">"You are a Python expert."</span>,  <span class="cm"># optional system prompt</span>
-    <span class="key">messages</span>=[
-        {<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: <span class="str">"What is a generator?"</span>}
+    <p class="reveal" style="color:var(--muted);font-size:15px;line-height:1.8;margin-bottom:20px;">
+      Tokenization converts raw text into integer IDs using a learned vocabulary. Modern models use Byte-Pair Encoding (BPE): common words become single tokens, rare words split into subwords, and bytes handle anything outside the vocabulary. The rough rule of thumb: <strong style="color:var(--text)">1 token ≈ 4 English characters ≈ 0.75 words</strong>. But this varies dramatically with language and content type.
+    </p>
+
+    <div class="anatomy reveal reveal-delay-1">
+      <div class="anatomy-row">
+        <div class="anatomy-label">Text</div>
+        <div class="anatomy-block" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'JetBrains Mono',monospace;">Hello, my name is Claude and I'm an AI assistant built by Anthropic.</div>
+      </div>
+      <div class="anatomy-row">
+        <div class="anatomy-label">Tokens</div>
+        <div class="anatomy-block ab-system" style="display:flex;flex-wrap:wrap;gap:4px;">
+          <span style="background:rgba(124,58,237,0.2);padding:2px 6px;border-radius:4px;">Hello</span>
+          <span style="background:rgba(13,148,136,0.2);padding:2px 6px;border-radius:4px;">,</span>
+          <span style="background:rgba(124,58,237,0.2);padding:2px 6px;border-radius:4px;">my</span>
+          <span style="background:rgba(13,148,136,0.2);padding:2px 6px;border-radius:4px;">name</span>
+          <span style="background:rgba(124,58,237,0.2);padding:2px 6px;border-radius:4px;">is</span>
+          <span style="background:rgba(13,148,136,0.2);padding:2px 6px;border-radius:4px;">Claude</span>
+          <span style="background:rgba(124,58,237,0.2);padding:2px 6px;border-radius:4px;">and</span>
+          <span style="background:rgba(13,148,136,0.2);padding:2px 6px;border-radius:4px;">I'm</span>
+          <span style="background:rgba(124,58,237,0.2);padding:2px 6px;border-radius:4px;">an</span>
+          <span style="background:rgba(13,148,136,0.2);padding:2px 6px;border-radius:4px;">AI</span>
+          <span style="background:rgba(124,58,237,0.2);padding:2px 6px;border-radius:4px;">assistant</span>
+          <span style="background:rgba(13,148,136,0.2);padding:2px 6px;border-radius:4px;">built</span>
+          <span style="background:rgba(124,58,237,0.2);padding:2px 6px;border-radius:4px;">by</span>
+          <span style="background:rgba(13,148,136,0.2);padding:2px 6px;border-radius:4px;">Anthropic</span>
+          <span style="background:rgba(59,130,246,0.2);padding:2px 6px;border-radius:4px;">.</span>
+        </div>
+      </div>
+      <div class="anatomy-row">
+        <div class="anatomy-label">Token IDs</div>
+        <div class="anatomy-block ab-token" style="font-size:12px;">9906, 11, 856, 836, 374, 24585, 323, 358, 2846, 459, 15592, 18328, 5918, 555, 8543, 13</div>
+      </div>
+    </div>
+
+    <table class="compare-table reveal reveal-delay-2">
+      <thead>
+        <tr>
+          <th>Content Type</th><th>Tokens per 1000 chars</th><th>Chars per Token</th><th>Example</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>English Prose</td><td>~250</td><td>~4</td><td>This document, articles</td></tr>
+        <tr><td>Python Code</td><td>~320</td><td>~3.1</td><td>Lots of short tokens: (, ), :, =</td></tr>
+        <tr><td>JSON Data</td><td>~350</td><td>~2.9</td><td>Lots of punctuation</td></tr>
+        <tr><td>Chinese/Japanese</td><td>~500</td><td>~2</td><td>Multi-byte chars = more tokens</td></tr>
+        <tr><td>UUID strings</td><td>~450</td><td>~2.2</td><td>Random chars tokenize inefficiently</td></tr>
+      </tbody>
+    </table>
+
+    <!-- WIDGET 1: Token Counter -->
+    <div class="widget reveal">
+      <div class="widget-title"><span class="w-icon">🔢</span> Live Token Counter & Cost Estimator</div>
+      <div class="widget-sub">Paste any text to see token count and cost across different Claude models in real time.</div>
+
+      <div class="model-tabs">
+        <button class="model-tab active" data-model="claude-3-5-sonnet" data-in="3" data-out="15" onclick="selectModel(this)">Claude 3.5 Sonnet</button>
+        <button class="model-tab" data-model="claude-3-5-haiku" data-in="0.8" data-out="4" onclick="selectModel(this)">Claude 3.5 Haiku</button>
+        <button class="model-tab" data-model="claude-3-opus" data-in="15" data-out="75" onclick="selectModel(this)">Claude 3 Opus</button>
+        <button class="model-tab" data-model="claude-sonnet-4" data-in="3" data-out="15" onclick="selectModel(this)">Claude Sonnet 4</button>
+      </div>
+
+      <div class="widget-label">Your Text</div>
+      <textarea id="token-input" placeholder="Paste or type text here to count tokens...&#10;&#10;Try pasting a block of Python code, some JSON, or this entire page's text to see how different content types tokenize differently." oninput="updateTokenCount()">The Transformer architecture revolutionized natural language processing by introducing self-attention mechanisms that allow models to weigh the relevance of different parts of the input when producing each part of the output. Unlike recurrent neural networks, Transformers process all tokens simultaneously, making them highly parallelizable and efficient for training on modern GPU clusters.</textarea>
+
+      <div class="token-results" id="token-results">
+        <div class="token-stat"><div class="t-val" id="t-chars">0</div><div class="t-label">Characters</div></div>
+        <div class="token-stat"><div class="t-val" id="t-tokens">0</div><div class="t-label">Est. Tokens</div></div>
+        <div class="token-stat"><div class="t-val" id="t-cost-in">$0.000</div><div class="t-label">Input Cost</div></div>
+        <div class="token-stat"><div class="t-val" id="t-cost-out">$0.000</div><div class="t-label">Output Cost (1K)</div></div>
+      </div>
+      <div class="token-bar"><div class="token-bar-fill" id="token-bar" style="width:5%"></div></div>
+      <p style="font-size:12px;color:var(--muted);margin-top:8px;">Token estimation: ~4 chars/token for English. Prices per million tokens (MTok).</p>
+    </div>
+  </section>
+
+  <!-- ── SECTION 3: THE API ─────────────────────────── -->
+  <section class="section">
+    <div class="section-header reveal">
+      <div class="section-num">Section 03</div>
+      <h2>Your First API Call with the Anthropic SDK</h2>
+      <p>The Anthropic Python SDK provides a clean, typed interface to Claude. Let's go from installation to a streaming multi-turn conversation in minutes.</p>
+    </div>
+
+    <div class="code-window reveal">
+      <div class="code-chrome"><div class="dot-r"></div><div class="dot-y"></div><div class="dot-g"></div><div class="code-label">terminal</div></div>
+      <pre><span class="c-cmt"># Install the SDK — supports Python 3.8+</span>
+pip install anthropic
+
+<span class="c-cmt"># Set your API key (get it from console.anthropic.com)</span>
+<span class="c-kw">export</span> ANTHROPIC_API_KEY=<span class="c-str">"sk-ant-..."</span></pre>
+    </div>
+
+    <div class="code-window reveal reveal-delay-1">
+      <div class="code-chrome"><div class="dot-r"></div><div class="dot-y"></div><div class="dot-g"></div><div class="code-label">basic_call.py</div></div>
+      <pre><span class="c-kw">import</span> anthropic
+
+<span class="c-cmt"># Initialize client — auto-reads ANTHROPIC_API_KEY from env</span>
+client = anthropic.<span class="c-cls">Anthropic</span>()
+
+<span class="c-cmt"># Simplest possible call</span>
+message = client.messages.<span class="c-fn">create</span>(
+    model=<span class="c-str">"claude-sonnet-4-5"</span>,
+    max_tokens=<span class="c-num">1024</span>,
+    messages=[
+        {<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: <span class="c-str">"Explain attention mechanisms in 3 sentences."</span>}
     ]
 )
 
-<span class="cm"># response.content is a list of content blocks</span>
-<span class="var">text</span> = <span class="var">response</span>.<span class="var">content</span>[<span class="num">0</span>].<span class="var">text</span>
-<span class="fn">print</span>(<span class="var">text</span>)
-
-<span class="cm"># Always check token usage</span>
-<span class="fn">print</span>(<span class="var">response</span>.<span class="var">usage</span>)  <span class="cm"># InputTokens=X, OutputTokens=Y</span></div>
+<span class="c-fn">print</span>(message.content[<span class="c-num">0</span>].text)
+<span class="c-fn">print</span>(<span class="c-str">f"Input tokens:  {message.usage.input_tokens}"</span>)
+<span class="c-fn">print</span>(<span class="c-str">f"Output tokens: {message.usage.output_tokens}"</span>)</pre>
     </div>
-  </div>
 
-  <div id="tab-conv" class="tab-panel">
-    <div class="code-block">
-      <div class="code-header">
-        <span class="code-title">02_conversation_memory.py</span>
-        <span class="code-lang">python</span>
-      </div>
-      <div class="code-content"><span class="var">messages</span> = []  <span class="cm"># your conversation history</span>
+    <p class="reveal" style="color:var(--muted);font-size:15px;line-height:1.8;margin:20px 0;">
+      The API follows a messages format — a list of alternating user/assistant turns. The <code style="color:var(--purple-light);background:var(--surface2);padding:2px 6px;border-radius:4px;">system</code> parameter (separate from messages) sets persistent instructions. This separation matters: system prompts are cached more efficiently and apply throughout the conversation.
+    </p>
 
-<span class="kw">def</span> <span class="fn">chat</span>(<span class="var">user_input</span>: <span class="fn">str</span>) -> <span class="fn">str</span>:
-    <span class="cm"># 1. Append user turn</span>
-    <span class="var">messages</span>.<span class="fn">append</span>({<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: <span class="var">user_input</span>})
+    <div class="code-window reveal reveal-delay-1">
+      <div class="code-chrome"><div class="dot-r"></div><div class="dot-y"></div><div class="dot-g"></div><div class="code-label">system_prompt.py</div></div>
+      <pre><span class="c-kw">import</span> anthropic
 
-    <span class="cm"># 2. Send full history every time (API is stateless!)</span>
-    <span class="var">response</span> = <span class="var">client</span>.<span class="var">messages</span>.<span class="fn">create</span>(
-        <span class="key">model</span>=<span class="str">"claude-haiku-4-5-20251001"</span>,
-        <span class="key">max_tokens</span>=<span class="num">1024</span>,
-        <span class="key">messages</span>=<span class="var">messages</span>,  <span class="cm"># ALL previous turns included</span>
-    )
+client = anthropic.<span class="c-cls">Anthropic</span>()
 
-    <span class="cm"># 3. Extract text and append assistant turn</span>
-    <span class="var">reply</span> = <span class="var">response</span>.<span class="var">content</span>[<span class="num">0</span>].<span class="var">text</span>
-    <span class="var">messages</span>.<span class="fn">append</span>({<span class="str">"role"</span>: <span class="str">"assistant"</span>, <span class="str">"content"</span>: <span class="var">reply</span>})
-    <span class="kw">return</span> <span class="var">reply</span>
-
-<span class="cm"># Multi-turn conversation</span>
-<span class="fn">chat</span>(<span class="str">"My name is Sharjeel"</span>)
-<span class="fn">print</span>(<span class="fn">chat</span>(<span class="str">"What's my name?"</span>))  <span class="cm"># ✓ remembers</span></div>
+<span class="c-cmt"># System prompt sets the assistant's persona/constraints</span>
+response = client.messages.<span class="c-fn">create</span>(
+    model=<span class="c-str">"claude-sonnet-4-5"</span>,
+    max_tokens=<span class="c-num">2048</span>,
+    system=<span class="c-str">"""You are a senior Python engineer specializing in ML systems.
+You always:
+- Provide production-ready code with error handling
+- Include type hints and docstrings
+- Mention performance implications
+- Flag any security concerns"""</span>,
+    messages=[
+        {<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: <span class="c-str">"Write a rate limiter for API calls"</span>},
+        {<span class="c-str">"role"</span>: <span class="c-str">"assistant"</span>, <span class="c-str">"content"</span>: <span class="c-str">"Here's a token bucket rate limiter..."</span>},
+        {<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: <span class="c-str">"Add Redis backend support to make it distributed"</span>}
+    ]
+)
+<span class="c-fn">print</span>(response.content[<span class="c-num">0</span>].text)</pre>
     </div>
-  </div>
 
-  <div id="tab-tools" class="tab-panel">
-    <div class="code-block">
-      <div class="code-header">
-        <span class="code-title">05_tool_use_loop.py — the full ReAct pattern</span>
-        <span class="code-lang">python</span>
+    <div class="code-window reveal reveal-delay-2">
+      <div class="code-chrome"><div class="dot-r"></div><div class="dot-y"></div><div class="dot-g"></div><div class="code-label">streaming.py</div></div>
+      <pre><span class="c-kw">import</span> anthropic
+
+client = anthropic.<span class="c-cls">Anthropic</span>()
+
+<span class="c-cmt"># Streaming: receive tokens as they're generated (better UX)</span>
+<span class="c-kw">with</span> client.messages.<span class="c-fn">stream</span>(
+    model=<span class="c-str">"claude-sonnet-4-5"</span>,
+    max_tokens=<span class="c-num">1024</span>,
+    messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: <span class="c-str">"Write a haiku about neural networks"</span>}],
+) <span class="c-kw">as</span> stream:
+    <span class="c-kw">for</span> text <span class="c-kw">in</span> stream.<span class="c-fn">text_stream</span>:
+        <span class="c-fn">print</span>(text, end=<span class="c-str">""</span>, flush=<span class="c-cls">True</span>)
+
+<span class="c-cmt"># Access final message with usage stats</span>
+final = stream.<span class="c-fn">get_final_message</span>()
+<span class="c-fn">print</span>(<span class="c-str">f"\n\nStop reason: {final.stop_reason}"</span>)
+<span class="c-fn">print</span>(<span class="c-str">f"Total tokens: {final.usage.input_tokens + final.usage.output_tokens}"</span>)</pre>
+    </div>
+
+    <!-- Anatomy of an API response -->
+    <h3 class="reveal" style="font-size:18px;font-weight:700;margin:32px 0 16px;">Anatomy of the API Response Object</h3>
+    <div class="anatomy reveal reveal-delay-1">
+      <div class="anatomy-row">
+        <div class="anatomy-label" style="font-family:'JetBrains Mono',monospace;font-size:11px;">message.id</div>
+        <div class="anatomy-block ab-system">msg_01XFDUDYJgAACzvnptvVoYEL — unique identifier for this message</div>
       </div>
-      <div class="code-content"><span class="kw">def</span> <span class="fn">get_weather</span>(<span class="var">city</span>: <span class="fn">str</span>) -> <span class="fn">str</span>:
-    <span class="kw">return</span> <span class="str">f"</span>{<span class="var">city</span>}<span class="str">: 18°C, Cloudy"</span>  <span class="cm"># real impl calls weather API</span>
+      <div class="anatomy-row">
+        <div class="anatomy-label" style="font-family:'JetBrains Mono',monospace;font-size:11px;">.model</div>
+        <div class="anatomy-block ab-user">claude-sonnet-4-5-20251022 — exact model version used</div>
+      </div>
+      <div class="anatomy-row">
+        <div class="anatomy-label" style="font-family:'JetBrains Mono',monospace;font-size:11px;">.content</div>
+        <div class="anatomy-block ab-assistant">[TextBlock(text="...", type="text")] — list of content blocks (text, tool_use)</div>
+      </div>
+      <div class="anatomy-row">
+        <div class="anatomy-label" style="font-family:'JetBrains Mono',monospace;font-size:11px;">.stop_reason</div>
+        <div class="anatomy-block ab-token">"end_turn" | "max_tokens" | "stop_sequence" | "tool_use"</div>
+      </div>
+      <div class="anatomy-row">
+        <div class="anatomy-label" style="font-family:'JetBrains Mono',monospace;font-size:11px;">.usage</div>
+        <div class="anatomy-block ab-system">Usage(input_tokens=48, output_tokens=312, cache_read=0, cache_creation=0)</div>
+      </div>
+    </div>
 
-<span class="var">tools</span> = [{
-    <span class="str">"name"</span>: <span class="str">"get_weather"</span>,
-    <span class="str">"description"</span>: <span class="str">"Get current weather for a city"</span>,
-    <span class="str">"input_schema"</span>: {
-        <span class="str">"type"</span>: <span class="str">"object"</span>,
-        <span class="str">"properties"</span>: {
-            <span class="str">"city"</span>: {<span class="str">"type"</span>: <span class="str">"string"</span>, <span class="str">"description"</span>: <span class="str">"City name"</span>}
-        },
-        <span class="str">"required"</span>: [<span class="str">"city"</span>]
-    }
-}]
+    <div class="callout info reveal">
+      <span class="callout-icon">📌</span>
+      <div class="callout-body">
+        <h4>stop_reason is Your Production Signal</h4>
+        <p>Always check <code style="color:inherit;background:rgba(255,255,255,0.1);padding:1px 5px;border-radius:4px;">stop_reason</code> in production code. If it's "max_tokens", the response was truncated — your answer is incomplete. If it's "tool_use", the model wants to call a function. Only "end_turn" means the model finished naturally.</p>
+      </div>
+    </div>
+  </section>
 
-<span class="kw">def</span> <span class="fn">agent</span>(<span class="var">user_msg</span>: <span class="fn">str</span>) -> <span class="fn">str</span>:
-    <span class="var">messages</span> = [{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: <span class="var">user_msg</span>}]
+  <!-- ── SECTION 4: TEMPERATURE & SAMPLING ─────────── -->
+  <section class="section">
+    <div class="section-header reveal">
+      <div class="section-num">Section 04</div>
+      <h2>Temperature, Top-P, and Sampling Strategies</h2>
+      <p>These parameters directly control the probability distribution from which tokens are sampled. Getting them right is the difference between a creative writing assistant and a reliable code generator.</p>
+    </div>
 
-    <span class="kw">while</span> <span class="var">True</span>:  <span class="cm"># the agent loop</span>
-        <span class="var">response</span> = <span class="var">client</span>.<span class="var">messages</span>.<span class="fn">create</span>(
-            <span class="key">model</span>=<span class="str">"claude-haiku-4-5-20251001"</span>,
-            <span class="key">max_tokens</span>=<span class="num">1024</span>,
-            <span class="key">tools</span>=<span class="var">tools</span>,
-            <span class="key">messages</span>=<span class="var">messages</span>
+    <p class="reveal" style="color:var(--muted);font-size:15px;line-height:1.8;margin-bottom:20px;">
+      After the model computes logits, temperature divides each logit before softmax: <code style="color:var(--purple-light);background:var(--surface2);padding:2px 6px;border-radius:4px;">p(token) = softmax(logits / temperature)</code>. Low temperature (→ 0) concentrates probability on the top token, making outputs more deterministic. High temperature (→ 2) flattens the distribution, making rare tokens more likely to be sampled — more creative but less reliable.
+    </p>
+
+    <!-- WIDGET 2: Temperature Slider -->
+    <div class="widget reveal">
+      <div class="widget-title"><span class="w-icon">🌡️</span> Temperature Explorer</div>
+      <div class="widget-sub">Drag the slider to see how temperature affects LLM output style. Lower = precise and deterministic. Higher = creative and varied.</div>
+
+      <div class="temp-layout">
+        <div class="temp-left">
+          <div class="slider-wrap">
+            <div class="slider-label-row">
+              <span style="font-size:12px;font-weight:600;color:var(--muted);">TEMPERATURE</span>
+              <span id="temp-value" style="font-size:12px;font-weight:700;color:var(--purple-light);font-family:'JetBrains Mono',monospace;">0.7</span>
+            </div>
+            <input type="range" id="temp-slider" min="0" max="2" step="0.05" value="0.7" oninput="updateTemp()" style="accent-color:var(--purple-light);">
+            <div class="slider-label-row">
+              <span style="font-size:11px;color:var(--blue);">0 · Deterministic</span>
+              <span style="font-size:11px;color:var(--amber);">1 · Balanced</span>
+              <span style="font-size:11px;color:var(--red);">2 · Chaotic</span>
+            </div>
+          </div>
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;">
+            <div class="widget-label">Probability Distribution (Top 5 tokens)</div>
+            <div id="prob-bars" style="margin-top:10px;display:flex;flex-direction:column;gap:8px;"></div>
+          </div>
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;">
+            <div class="widget-label">Recommended Use Cases</div>
+            <div id="use-case" style="margin-top:8px;font-size:13px;color:var(--text);line-height:1.6;"></div>
+          </div>
+        </div>
+        <div>
+          <div class="widget-label">Simulated Output</div>
+          <div class="temp-output" id="temp-output">
+            <div class="temp-tag cold" id="temp-tag">FOCUSED</div>
+            <div id="temp-text" style="margin-top:4px;"></div>
+          </div>
+          <div style="margin-top:12px;">
+            <button onclick="resample()" style="padding:8px 16px;background:var(--purple);border:none;border-radius:8px;color:white;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:background 0.2s;" onmouseover="this.style.background='var(--purple-light)'" onmouseout="this.style.background='var(--purple)'">↻ Resample</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <table class="compare-table reveal reveal-delay-2">
+      <thead><tr><th>Parameter</th><th>Range</th><th>Effect</th><th>Best For</th></tr></thead>
+      <tbody>
+        <tr><td><code style="color:var(--purple-light)">temperature</code></td><td>0.0 – 2.0</td><td>Scales logits before softmax</td><td>Creative tasks: 0.7-1.2; Code/facts: 0.0-0.3</td></tr>
+        <tr><td><code style="color:var(--purple-light)">top_p</code></td><td>0.0 – 1.0</td><td>Nucleus sampling: sample from top P% probability mass</td><td>0.9 is a good default; don't combine with temp</td></tr>
+        <tr><td><code style="color:var(--purple-light)">top_k</code></td><td>1 – vocab_size</td><td>Sample from top K tokens only</td><td>40-100 for creative tasks; 1 = greedy</td></tr>
+        <tr><td><code style="color:var(--purple-light)">max_tokens</code></td><td>1 – 8192</td><td>Hard stop on output length</td><td>Set conservatively; check stop_reason</td></tr>
+        <tr><td><code style="color:var(--purple-light)">stop_sequences</code></td><td>list of strings</td><td>Stop generation when pattern hit</td><td>Structured outputs: ["```", "---", "\n\n"]</td></tr>
+      </tbody>
+    </table>
+
+    <div class="code-window reveal">
+      <div class="code-chrome"><div class="dot-r"></div><div class="dot-y"></div><div class="dot-g"></div><div class="code-label">sampling_params.py</div></div>
+      <pre><span class="c-kw">import</span> anthropic
+
+client = anthropic.<span class="c-cls">Anthropic</span>()
+
+<span class="c-cmt"># Configuration for code generation (high precision)</span>
+code_response = client.messages.<span class="c-fn">create</span>(
+    model=<span class="c-str">"claude-sonnet-4-5"</span>,
+    max_tokens=<span class="c-num">2048</span>,
+    temperature=<span class="c-num">0.1</span>,  <span class="c-cmt"># Very low — we want deterministic code</span>
+    top_p=<span class="c-num">0.95</span>,
+    stop_sequences=[<span class="c-str">"```\n\n"</span>],  <span class="c-cmt"># Stop after code block</span>
+    messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: <span class="c-str">"Write a binary search in Python"</span>}]
+)
+
+<span class="c-cmt"># Configuration for creative writing (high creativity)</span>
+story_response = client.messages.<span class="c-fn">create</span>(
+    model=<span class="c-str">"claude-sonnet-4-5"</span>,
+    max_tokens=<span class="c-num">1024</span>,
+    temperature=<span class="c-num">1.1</span>,  <span class="c-cmt"># Higher — more varied and creative</span>
+    top_p=<span class="c-num">0.95</span>,
+    messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: <span class="c-str">"Write an opening paragraph for a sci-fi novel"</span>}]
+)
+
+<span class="c-cmt"># Configuration for extraction (deterministic, stop at JSON boundary)</span>
+extract_response = client.messages.<span class="c-fn">create</span>(
+    model=<span class="c-str">"claude-sonnet-4-5"</span>,
+    max_tokens=<span class="c-num">512</span>,
+    temperature=<span class="c-num">0.0</span>,  <span class="c-cmt"># Greedy — same output every time</span>
+    system=<span class="c-str">"Output only valid JSON. No markdown. No explanation."</span>,
+    messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: <span class="c-str">"Extract name and email from: John Doe jdoe@example.com"</span>}]
+)</pre>
+    </div>
+
+    <div class="callout warn reveal">
+      <span class="callout-icon">⚠️</span>
+      <div class="callout-body">
+        <h4>Common Pitfall: Setting Temperature Too High for Structured Tasks</h4>
+        <p>Many engineers set temperature=1.0 as a default for everything. For tasks requiring structured output (JSON extraction, code, classification), this leads to hallucinations and malformed responses. Always use temperature≤0.2 when you need the model to follow a format precisely. Use 0.0 for testing to get reproducible results.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SECTION 5: CONTEXT WINDOWS ────────────────── -->
+  <section class="section">
+    <div class="section-header reveal">
+      <div class="section-num">Section 05</div>
+      <h2>Context Windows & Practical Limits</h2>
+      <p>The context window is arguably the most important practical constraint in LLM application design. Understanding it prevents expensive bugs and architectural mistakes.</p>
+    </div>
+
+    <p class="reveal" style="color:var(--muted);font-size:15px;line-height:1.8;margin-bottom:24px;">
+      The context window is the total number of tokens the model can "see" at once — both input and output combined. Claude's models support up to 200K tokens (about 150K words or 500 pages). But "supports" doesn't mean "works perfectly" at that limit — there are important nuances engineers need to understand for production systems.
+    </p>
+
+    <div class="card-grid reveal">
+      <div class="card">
+        <div class="card-icon">📏</div>
+        <h3>Context = Working Memory</h3>
+        <p>Everything the model can act on must be in the context: the system prompt, conversation history, retrieved documents, tool outputs. There's no "long-term memory" without you explicitly putting information in the prompt.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🎯</div>
+        <h3>The Lost-in-the-Middle Problem</h3>
+        <p>Research shows LLMs perform better on information at the beginning and end of context than in the middle. For retrieval, always put the most relevant chunks first or last — not buried in the middle of a 100K context.</p>
+      </div>
+    </div>
+
+    <div class="code-window reveal reveal-delay-1">
+      <div class="code-chrome"><div class="dot-r"></div><div class="dot-y"></div><div class="dot-g"></div><div class="code-label">context_management.py</div></div>
+      <pre><span class="c-kw">from</span> anthropic <span class="c-kw">import</span> Anthropic
+
+<span class="c-kw">class</span> <span class="c-cls">ConversationManager</span>:
+    <span class="c-str">"""Manages context window with a sliding window strategy."""</span>
+
+    <span class="c-kw">def</span> <span class="c-fn">__init__</span>(self, max_tokens: <span class="c-cls">int</span> = <span class="c-num">150_000</span>):
+        self.client = <span class="c-cls">Anthropic</span>()
+        self.messages: <span class="c-cls">list</span>[<span class="c-cls">dict</span>] = []
+        self.max_tokens = max_tokens
+        self.system = <span class="c-str">"You are a helpful assistant."</span>
+
+    <span class="c-kw">def</span> <span class="c-fn">_estimate_tokens</span>(self, messages: <span class="c-cls">list</span>) -> <span class="c-cls">int</span>:
+        <span class="c-str">"""Rough token estimation: ~4 chars per token."""</span>
+        total_chars = <span class="c-fn">sum</span>(<span class="c-fn">len</span>(m[<span class="c-str">'content'</span>]) <span class="c-kw">for</span> m <span class="c-kw">in</span> messages)
+        <span class="c-kw">return</span> total_chars // <span class="c-num">4</span>
+
+    <span class="c-kw">def</span> <span class="c-fn">_prune_context</span>(self):
+        <span class="c-str">"""Remove oldest messages to stay within context limit."""</span>
+        <span class="c-kw">while</span> (<span class="c-fn">self</span>._estimate_tokens(self.messages) > self.max_tokens
+               <span class="c-kw">and</span> <span class="c-fn">len</span>(self.messages) > <span class="c-num">2</span>):
+            <span class="c-cmt"># Always keep system prompt; remove oldest user+assistant pair</span>
+            self.messages.pop(<span class="c-num">0</span>)
+            <span class="c-kw">if</span> self.messages:
+                self.messages.pop(<span class="c-num">0</span>)
+
+    <span class="c-kw">def</span> <span class="c-fn">chat</span>(self, user_message: <span class="c-cls">str</span>) -> <span class="c-cls">str</span>:
+        self.messages.<span class="c-fn">append</span>({<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: user_message})
+        self.<span class="c-fn">_prune_context</span>()
+
+        response = self.client.messages.<span class="c-fn">create</span>(
+            model=<span class="c-str">"claude-sonnet-4-5"</span>,
+            max_tokens=<span class="c-num">2048</span>,
+            system=self.system,
+            messages=self.messages
         )
 
-        <span class="cm"># Append the assistant's response (may contain tool_use blocks)</span>
-        <span class="var">messages</span>.<span class="fn">append</span>({<span class="str">"role"</span>: <span class="str">"assistant"</span>, <span class="str">"content"</span>: <span class="var">response</span>.<span class="var">content</span>})
+        assistant_reply = response.content[<span class="c-num">0</span>].text
+        self.messages.<span class="c-fn">append</span>({<span class="c-str">"role"</span>: <span class="c-str">"assistant"</span>, <span class="c-str">"content"</span>: assistant_reply})
+        <span class="c-kw">return</span> assistant_reply
 
-        <span class="kw">if</span> <span class="var">response</span>.<span class="var">stop_reason</span> == <span class="str">"end_turn"</span>:
-            <span class="kw">return</span> <span class="var">response</span>.<span class="var">content</span>[<span class="num">0</span>].<span class="var">text</span>  <span class="cm"># done!</span>
-
-        <span class="cm"># Handle tool calls</span>
-        <span class="var">tool_results</span> = []
-        <span class="kw">for</span> <span class="var">block</span> <span class="kw">in</span> <span class="var">response</span>.<span class="var">content</span>:
-            <span class="kw">if</span> <span class="var">block</span>.<span class="var">type</span> == <span class="str">"tool_use"</span>:
-                <span class="var">result</span> = <span class="fn">get_weather</span>(**<span class="var">block</span>.<span class="var">input</span>)  <span class="cm"># dispatch</span>
-                <span class="var">tool_results</span>.<span class="fn">append</span>({
-                    <span class="str">"type"</span>: <span class="str">"tool_result"</span>,
-                    <span class="str">"tool_use_id"</span>: <span class="var">block</span>.<span class="var">id</span>,
-                    <span class="str">"content"</span>: <span class="var">result</span>
-                })
-
-        <span class="cm"># Send results back, loop again</span>
-        <span class="var">messages</span>.<span class="fn">append</span>({<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: <span class="var">tool_results</span>})</div>
-    </div>
-  </div>
-</section>
-
-<!-- ============================================================ -->
-<!-- SECTION 7: Exercises -->
-<!-- ============================================================ -->
-<section class="fade-in">
-  <div class="section-header">
-    <div class="section-num">7</div>
-    <div>
-      <h2>Day 1 Exercises</h2>
-      <p>Four coding challenges in <code style="color:var(--teal-light)">day1/activities/</code>. Click to mark complete.</p>
-    </div>
-  </div>
-
-  <a href="../exercises/day1_exercises.html" style="display:inline-flex;align-items:center;gap:0.5rem;margin-bottom:1.5rem;padding:0.6rem 1.25rem;background:linear-gradient(135deg,var(--purple),var(--teal));color:white;font-weight:700;font-size:0.9rem;border-radius:8px;text-decoration:none;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">⚡ Open Interactive Exercises →</a>
-
-  <div class="exercises-grid">
-    <div class="exercise-card" id="ex-1" onclick="toggleExercise('ex-1')">
-      <div class="ex-check" id="ex-1-check">✓</div>
-      <div class="ex-num">Exercise 1</div>
-      <div class="ex-title">Token Usage Tracker</div>
-      <div class="ex-desc">Build a chat class that tracks cumulative input/output tokens across turns and calculates running cost. Print a per-turn summary.</div>
-    </div>
-    <div class="exercise-card" id="ex-2" onclick="toggleExercise('ex-2')">
-      <div class="ex-check" id="ex-2-check">✓</div>
-      <div class="ex-num">Exercise 2</div>
-      <div class="ex-title">System Prompt Engineer</div>
-      <div class="ex-desc">Test 3 different system prompts on the same questions. Measure how tone and instruction style affect output quality and length.</div>
-    </div>
-    <div class="exercise-card" id="ex-3" onclick="toggleExercise('ex-3')">
-      <div class="ex-check" id="ex-3-check">✓</div>
-      <div class="ex-num">Exercise 3</div>
-      <div class="ex-title">CV Data Extractor</div>
-      <div class="ex-desc">Use structured output (response_format or tool use) to extract name, skills, experience, and education from unstructured CV text.</div>
-    </div>
-    <div class="exercise-card" id="ex-4" onclick="toggleExercise('ex-4')">
-      <div class="ex-check" id="ex-4-check">✓</div>
-      <div class="ex-num">Exercise 4</div>
-      <div class="ex-title">Multi-Tool Agent</div>
-      <div class="ex-desc">Build an agent with 3 tools: get_weather, calculate, search_web. Implement the full tool loop. Test with complex multi-step queries.</div>
-    </div>
-  </div>
-
-  <div style="margin-top:2rem;background:var(--surface2);border-radius:var(--radius);padding:1.5rem;border:1px solid var(--border);">
-    <div style="font-weight:600;margin-bottom:0.75rem;color:var(--text)">📁 File locations</div>
-    <div style="font-family:'JetBrains Mono',monospace;font-size:0.82rem;color:var(--text-muted);display:flex;flex-direction:column;gap:0.4rem;">
-      <span><span style="color:var(--text-dim)">day1/activities/</span><span style="color:var(--teal-light)">activity1_token_tracker.py</span></span>
-      <span><span style="color:var(--text-dim)">day1/activities/</span><span style="color:var(--teal-light)">activity2_system_prompt_engineer.py</span></span>
-      <span><span style="color:var(--text-dim)">day1/activities/</span><span style="color:var(--teal-light)">activity3_cv_extractor.py</span></span>
-      <span><span style="color:var(--text-dim)">day1/activities/</span><span style="color:var(--teal-light)">activity4_multi_tool_agent.py</span></span>
-    </div>
-  </div>
-</section>
-
-</div><!-- /container -->
-
-<footer>
-  <p>
-    <a href="../index.html">← Back to Curriculum</a>
-    &nbsp;·&nbsp;
-    Day 1 of 30
-    &nbsp;·&nbsp;
-    <a href="day2.html">Day 2: Tool Use & ReAct →</a>
-  </p>
-  <p style="margin-top:0.5rem">Sharjeel Sohail's GenAI Learning Journey · April 2026</p>
-</footer>
-
-<script>
-// ============================================================
-// Progress bar
-// ============================================================
-window.addEventListener('scroll', () => {
-  const total = document.documentElement.scrollHeight - window.innerHeight;
-  const pct = (window.scrollY / total) * 100;
-  document.getElementById('progress-bar').style.width = pct + '%';
-});
-
-// ============================================================
-// Scroll fade-in
-// ============================================================
-const observer = new IntersectionObserver((entries) => {
-  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
-}, { threshold: 0.1 });
-document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
-
-// ============================================================
-// Token Visualizer
-// ============================================================
-const TOKEN_COLORS = [
-  ['rgba(124,58,237,0.25)','#a855f7'],
-  ['rgba(13,148,136,0.25)','#2dd4bf'],
-  ['rgba(59,130,246,0.25)','#60a5fa'],
-  ['rgba(245,158,11,0.25)','#fbbf24'],
-  ['rgba(239,68,68,0.25)', '#f87171'],
-  ['rgba(16,185,129,0.25)','#34d399'],
-];
-
-function simpleTokenize(text) {
-  // Simple approximation: split on spaces and punctuation
-  const tokens = [];
-  const re = /(\s+|[,\.!?;:'"()\[\]{}<>\/\\|@#$%^&*+=`~\-]|\w+)/g;
-  let m;
-  while ((m = re.exec(text)) !== null) {
-    if (m[0].trim().length > 0) tokens.push(m[0]);
-    else if (m[0].length > 0) tokens.push(m[0]); // keep spaces as tokens
-  }
-  return tokens.filter(t => t.length > 0);
-}
-
-function estimateTokens(text) {
-  // GPT-style rough estimate: ~4 chars per token
-  return Math.max(1, Math.ceil(text.length / 4));
-}
-
-function renderTokens(text) {
-  const display = document.getElementById('token-display');
-  const tokens = simpleTokenize(text);
-  const estTokens = estimateTokens(text);
-
-  display.innerHTML = '';
-  tokens.forEach((token, i) => {
-    const [bg, color] = TOKEN_COLORS[i % TOKEN_COLORS.length];
-    const box = document.createElement('span');
-    box.className = 'token-box';
-    box.style.cssText = `background:${bg};color:${color};border:1px solid ${color}40;animation-delay:${i*30}ms`;
-    box.textContent = token === ' ' ? '·' : token;
-    box.dataset.index = `token #${i+1}`;
-    box.title = `Token ${i+1}: "${token}"`;
-    display.appendChild(box);
-  });
-
-  document.getElementById('token-count').textContent = estTokens;
-  document.getElementById('char-count').textContent = text.length;
-  const cost = (estTokens / 1000) * 0.00025;
-  document.getElementById('token-cost').textContent = '$' + cost.toFixed(6);
-}
-
-const tokenInput = document.getElementById('token-input');
-tokenInput.addEventListener('input', () => renderTokens(tokenInput.value));
-renderTokens(tokenInput.value); // initial render
-
-// ============================================================
-// Transformer hover tooltips
-// ============================================================
-const tooltip = document.getElementById('arch-tooltip');
-document.querySelectorAll('.arch-node').forEach(node => {
-  node.style.cursor = 'pointer';
-  node.addEventListener('mouseenter', (e) => {
-    tooltip.innerHTML = `<strong>${node.dataset.name}</strong>${node.dataset.desc}`;
-    tooltip.classList.add('visible');
-  });
-  node.addEventListener('mousemove', (e) => {
-    tooltip.style.left = (e.clientX + 15) + 'px';
-    tooltip.style.top = (e.clientY - 10) + 'px';
-  });
-  node.addEventListener('mouseleave', () => tooltip.classList.remove('visible'));
-});
-
-// ============================================================
-// Autoregressive Generation
-// ============================================================
-const genWords = [
-  'revolutionized', 'natural', 'language', 'processing', 'by', 'introducing',
-  'self-attention', 'mechanisms', 'that', 'allow', 'models', 'to', 'weigh',
-  'the', 'relevance', 'of', 'different', 'words', 'when', 'generating', 'output.'
-];
-
-let genIdx = 0;
-let genInterval = null;
-let genRunning = false;
-let genBuilt = '';
-
-function toggleGeneration() {
-  const btn = document.getElementById('gen-btn');
-  if (genRunning) {
-    clearInterval(genInterval);
-    genRunning = false;
-    btn.textContent = '▶ Resume';
-    document.getElementById('gen-status').textContent = 'Paused';
-  } else {
-    if (genIdx >= genWords.length) resetGeneration();
-    genRunning = true;
-    btn.textContent = '⏸ Pause';
-    document.getElementById('gen-status').textContent = 'Generating...';
-    genInterval = setInterval(generateNextToken, 300);
-  }
-}
-
-function generateNextToken() {
-  if (genIdx >= genWords.length) {
-    clearInterval(genInterval);
-    genRunning = false;
-    document.getElementById('gen-btn').textContent = '▶ Generate';
-    document.getElementById('gen-status').textContent = 'Complete!';
-    return;
-  }
-  const word = genWords[genIdx];
-  genBuilt += (genIdx > 0 ? ' ' : '') + word;
-
-  const output = document.getElementById('gen-output');
-  output.innerHTML = genBuilt + '<span class="cursor"></span>';
-
-  const tokensDiv = document.getElementById('gen-tokens');
-  const span = document.createElement('span');
-  span.className = 'gen-token new';
-  span.textContent = word;
-  tokensDiv.appendChild(span);
-  setTimeout(() => span.classList.remove('new'), 500);
-
-  genIdx++;
-}
-
-function resetGeneration() {
-  clearInterval(genInterval);
-  genRunning = false;
-  genIdx = 0;
-  genBuilt = '';
-  document.getElementById('gen-output').innerHTML = '<span class="cursor"></span>';
-  document.getElementById('gen-tokens').innerHTML = '';
-  document.getElementById('gen-btn').textContent = '▶ Generate';
-  document.getElementById('gen-status').textContent = 'Ready';
-}
-
-// ============================================================
-// Stateless API Animation
-// ============================================================
-function animateAPIComparison() {
-  ['good-messages','bad-messages'].forEach(id => {
-    const rows = document.querySelectorAll(`#${id} .msg-row`);
-    rows.forEach(r => r.classList.remove('visible'));
-    rows.forEach(r => {
-      const delay = parseInt(r.dataset.delay || 0);
-      setTimeout(() => r.classList.add('visible'), delay + 200);
-    });
-  });
-}
-// Auto-animate on load after short delay
-setTimeout(animateAPIComparison, 1000);
-
-// ============================================================
-// Sequence Diagram
-// ============================================================
-let seqStep = 0;
-const seqTotal = 5;
-
-function updateSeq() {
-  for (let i = 0; i < seqTotal; i++) {
-    const el = document.getElementById('seq-' + i);
-    if (i <= seqStep) el.classList.add('active');
-    else el.classList.remove('active');
-  }
-  document.getElementById('seq-progress').textContent = `Step ${seqStep + 1} / ${seqTotal}`;
-}
-
-function seqNext() {
-  if (seqStep < seqTotal - 1) { seqStep++; updateSeq(); }
-}
-function seqPrev() {
-  if (seqStep > 0) { seqStep--; updateSeq(); }
-}
-function seqReset() {
-  seqStep = 0;
-  document.querySelectorAll('.seq-step').forEach(el => el.classList.remove('active'));
-  document.getElementById('seq-0').classList.add('active');
-  document.getElementById('seq-progress').textContent = 'Step 1 / 5';
-}
-
-// ============================================================
-// Tab Switcher
-// ============================================================
-function switchTab(name) {
-  document.querySelectorAll('.tab-btn').forEach((b,i) => {
-    const names = ['basic','conv','tools'];
-    b.classList.toggle('active', names[i] === name);
-  });
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('tab-' + name).classList.add('active');
-}
-
-// ============================================================
-// Exercises with localStorage
-// ============================================================
-function toggleExercise(id) {
-  const card = document.getElementById(id);
-  const done = card.classList.toggle('done');
-  localStorage.setItem('day1_' + id, done ? '1' : '0');
-}
-
-// Load saved state
-['ex-1','ex-2','ex-3','ex-4'].forEach(id => {
-  if (localStorage.getItem('day1_' + id) === '1') {
-    document.getElementById(id).classList.add('done');
-  }
-});
-</script>
-
-<!-- ============================================================
-     NEW SECTION A — Temperature & Sampling Visualizer
-     ============================================================ -->
-<section class="enhance-section">
-  <span class="section-tag">Interactive Concept</span>
-  <h2>Temperature: Randomness Control</h2>
-
-  <div class="temp-slider-wrap">
-    <div class="temp-slider-header">
-      <div>
-        <div style="font-size:0.85rem;color:var(--text-dim);margin-bottom:4px;">Drag to change temperature</div>
-        <div style="font-size:0.78rem;color:var(--text-dim);">0.0 = deterministic &nbsp;·&nbsp; 2.0 = chaotic</div>
-      </div>
-      <div class="temp-value-badge temp-badge-bal" id="tempBadge">0.7</div>
-    </div>
-    <input type="range" class="temp-range" id="tempSlider" min="0" max="20" step="1" value="7">
-    <div class="temp-label-row">
-      <span style="color:#10b981">0.0 Deterministic</span>
-      <span style="color:#3b82f6">0.7 Balanced</span>
-      <span style="color:#f59e0b">1.2 Creative</span>
-      <span style="color:#ef4444">2.0 Chaotic</span>
+<span class="c-cmt"># Usage</span>
+manager = <span class="c-cls">ConversationManager</span>(max_tokens=<span class="c-num">100_000</span>)
+<span class="c-fn">print</span>(manager.<span class="c-fn">chat</span>(<span class="c-str">"What is gradient descent?"</span>))
+<span class="c-fn">print</span>(manager.<span class="c-fn">chat</span>(<span class="c-str">"How does it relate to backpropagation?"</span>))</pre>
     </div>
 
-    <div class="temp-output-box" id="tempOutput">
-      Paris, the magnificent capital of France, sits along the Seine.
-    </div>
-    <div class="temp-mode-label" id="tempModeLabel" style="color:#3b82f6;">&#9679; Balanced — good for most tasks</div>
-
-    <!-- Probability bar chart -->
-    <div style="margin-top:1.25rem;">
-      <div style="font-size:0.78rem;color:var(--text-dim);margin-bottom:0.5rem;">Top-5 token probabilities at this temperature:</div>
-      <div class="prob-chart" id="probChart">
-        <div class="prob-bar-wrap">
-          <div class="prob-bar" id="pbar0" style="height:72%;background:#7c3aed;"></div>
-          <div class="prob-bar-label">Paris</div>
-        </div>
-        <div class="prob-bar-wrap">
-          <div class="prob-bar" id="pbar1" style="height:14%;background:#0d9488;"></div>
-          <div class="prob-bar-label">Lyon</div>
-        </div>
-        <div class="prob-bar-wrap">
-          <div class="prob-bar" id="pbar2" style="height:7%;background:#f59e0b;"></div>
-          <div class="prob-bar-label">Marseille</div>
-        </div>
-        <div class="prob-bar-wrap">
-          <div class="prob-bar" id="pbar3" style="height:4%;background:#10b981;"></div>
-          <div class="prob-bar-label">Nice</div>
-        </div>
-        <div class="prob-bar-wrap">
-          <div class="prob-bar" id="pbar4" style="height:3%;background:#ef4444;"></div>
-          <div class="prob-bar-label">Bordeaux</div>
-        </div>
-      </div>
-      <div style="font-size:0.72rem;color:var(--text-dim);margin-top:0.5rem;text-align:center;">
-        As temperature rises, bars equalize — more randomness, more surprise tokens.
-      </div>
-    </div>
-  </div>
-
-  <div class="temp-agent-tip">
-    <strong>For agents:</strong> Use 0–0.3 for tool calls and structured output. Use 0.7–1.0 for creative writing.
-    Never use &gt;1.2 in production agents — you will get hallucinations and malformed JSON.
-  </div>
-</section>
-
-<!-- ============================================================
-     NEW SECTION B — Model Comparison Cards
-     ============================================================ -->
-<section class="enhance-section">
-  <span class="section-tag">Reference Guide</span>
-  <h2>Choosing the Right Model</h2>
-
-  <div class="model-cards-grid">
-    <!-- Haiku -->
-    <div class="model-card haiku">
-      <div class="model-card-name">&#9889; Claude Haiku</div>
-      <div class="model-stat"><span class="model-stat-key">Speed</span><span class="model-stat-val">&#9889;&#9889;&#9889; Fastest</span></div>
-      <div class="model-stat"><span class="model-stat-key">Intelligence</span><span class="model-stat-val">&#9733;&#9733;&#9734;&#9734;&#9734;</span></div>
-      <div class="model-stat"><span class="model-stat-key">Input price</span><span class="model-stat-val">$0.25 / 1M tok</span></div>
-      <div class="model-stat"><span class="model-stat-key">Output price</span><span class="model-stat-val">$1.25 / 1M tok</span></div>
-      <div class="model-stat"><span class="model-stat-key">Context</span><span class="model-stat-val">200k tokens</span></div>
-      <div class="model-use-title">Best for</div>
-      <ul class="model-use-list">
-        <li>Classification &amp; simple Q&amp;A</li>
-        <li>Tool routing decisions</li>
-        <li>Structured extraction (clear text)</li>
-      </ul>
-      <div class="model-use-title">Use when</div>
-      <ul class="model-use-list">
-        <li>Latency &lt; 500ms required</li>
-        <li>Cost is primary concern</li>
-        <li>Task is clearly simple</li>
-      </ul>
-    </div>
-
-    <!-- Sonnet -->
-    <div class="model-card sonnet">
-      <div class="model-card-name">&#9889;&#9889; Claude Sonnet</div>
-      <div class="model-stat"><span class="model-stat-key">Speed</span><span class="model-stat-val">&#9889;&#9889;&#9734; Balanced</span></div>
-      <div class="model-stat"><span class="model-stat-key">Intelligence</span><span class="model-stat-val">&#9733;&#9733;&#9733;&#9733;&#9734;</span></div>
-      <div class="model-stat"><span class="model-stat-key">Input price</span><span class="model-stat-val">$3.00 / 1M tok</span></div>
-      <div class="model-stat"><span class="model-stat-key">Output price</span><span class="model-stat-val">$15.00 / 1M tok</span></div>
-      <div class="model-stat"><span class="model-stat-key">Context</span><span class="model-stat-val">200k tokens</span></div>
-      <div class="model-use-title">Best for</div>
-      <ul class="model-use-list">
-        <li>Complex reasoning &amp; agents</li>
-        <li>Code generation &amp; review</li>
-        <li>RAG &amp; most production tasks</li>
-      </ul>
-      <div class="model-use-title">Use when</div>
-      <ul class="model-use-list">
-        <li>Default choice for AI features</li>
-        <li>Multi-step agentic workflows</li>
-        <li>When Haiku isn't smart enough</li>
-      </ul>
-    </div>
-
-    <!-- Opus -->
-    <div class="model-card opus">
-      <div class="model-card-name">&#9733; Claude Opus</div>
-      <div class="model-stat"><span class="model-stat-key">Speed</span><span class="model-stat-val">&#9889;&#9734;&#9734; Slowest</span></div>
-      <div class="model-stat"><span class="model-stat-key">Intelligence</span><span class="model-stat-val">&#9733;&#9733;&#9733;&#9733;&#9733;</span></div>
-      <div class="model-stat"><span class="model-stat-key">Input price</span><span class="model-stat-val">$15.00 / 1M tok</span></div>
-      <div class="model-stat"><span class="model-stat-key">Output price</span><span class="model-stat-val">$75.00 / 1M tok</span></div>
-      <div class="model-stat"><span class="model-stat-key">Context</span><span class="model-stat-val">200k tokens</span></div>
-      <div class="model-use-title">Best for</div>
-      <ul class="model-use-list">
-        <li>Complex planning &amp; research</li>
-        <li>Highest-accuracy tasks</li>
-        <li>Low-volume, high-stakes calls</li>
-      </ul>
-      <div class="model-use-title">Use when</div>
-      <ul class="model-use-list">
-        <li>Stakes are high</li>
-        <li>Sonnet fails or hallucinates</li>
-        <li>Cost is secondary</li>
-      </ul>
-    </div>
-  </div>
-
-  <div class="model-decision-box">
-    <strong>Quick Decision Rule:</strong> Default to Sonnet &rarr; try Haiku for cost savings &rarr;
-    escalate to Opus only when Sonnet fails. <strong>Never use Opus for high-volume tasks</strong>
-    — it will cost 60× more than Haiku.
-  </div>
-</section>
-
-<!-- ============================================================
-     NEW SECTION C — Context Window Visualizer
-     ============================================================ -->
-<section class="enhance-section">
-  <span class="section-tag">Interactive Visualizer</span>
-  <h2>Context Window: Your Working Memory</h2>
-
-  <div class="ctx-scenario-btns">
-    <button class="ctx-btn active" onclick="setCtxScenario(0,this)">Fresh Start</button>
-    <button class="ctx-btn" onclick="setCtxScenario(1,this)">Mid Conversation</button>
-    <button class="ctx-btn" onclick="setCtxScenario(2,this)">With RAG</button>
-    <button class="ctx-btn" onclick="setCtxScenario(3,this)">Long Agent Run</button>
-    <button class="ctx-btn" onclick="setCtxScenario(4,this)">Near Limit &#9888;</button>
-  </div>
-
-  <div style="font-size:0.8rem;color:var(--text-dim);margin-bottom:0.3rem;">
-    Token usage — 200,000 token context window:
-  </div>
-  <div class="ctx-memory-bar-outer">
-    <div class="ctx-memory-bar-inner" id="ctxBar" style="width:0.25%;background:linear-gradient(90deg,#7c3aed,#0d9488);">
-      &nbsp;
-    </div>
-  </div>
-  <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:var(--text-dim);margin-bottom:0.75rem;">
-    <span>0</span><span>50k</span><span>100k</span><span>150k</span><span>200k</span>
-  </div>
-
-  <div class="ctx-stats-grid">
-    <div class="ctx-stat-card">
-      <div class="ctx-stat-num" id="ctxUsed">500</div>
-      <div class="ctx-stat-label">Tokens Used</div>
-    </div>
-    <div class="ctx-stat-card">
-      <div class="ctx-stat-num" id="ctxPct">0.25%</div>
-      <div class="ctx-stat-label">% Used</div>
-    </div>
-    <div class="ctx-stat-card">
-      <div class="ctx-stat-num" id="ctxCost">$0.0015</div>
-      <div class="ctx-stat-label">Input Cost (Sonnet)</div>
-    </div>
-    <div class="ctx-stat-card">
-      <div class="ctx-stat-num" id="ctxFull" style="font-size:0.75rem;color:#10b981;">Safe</div>
-      <div class="ctx-stat-label">When Full</div>
-    </div>
-  </div>
-
-  <div id="ctxSegmentLegend" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:0.5rem;font-size:0.78rem;color:var(--text-dim);">
-    <span style="color:#7c3aed;">&#9632; System prompt (500 tok)</span>
-  </div>
-
-  <div class="ctx-insight-box">
-    <strong>When context is full:</strong> oldest messages get truncated. The model loses memory of the early
-    conversation. <strong>Mitigation:</strong> summarize and compress history periodically — store long-term
-    memory in a vector database, not the context window.
-  </div>
-</section>
-
-<!-- ============================================================
-     NEW SECTION D — KV Cache
-     ============================================================ -->
-<section class="enhance-section">
-  <span class="section-tag">Inference Internals</span>
-  <h2>KV Cache: Why Inference is Fast (And What It Costs)</h2>
-
-  <p style="color:var(--text-muted);margin-bottom:1.5rem;">
-    Every token the model generates requires an attention computation over <em>all previous tokens</em>. Without caching, generating 1,000 tokens means 1,000 × full-context attention passes — O(n²) work. The KV cache fixes this.
-  </p>
-
-  <!-- Visual: KV Cache animation -->
-  <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin-bottom:1.5rem;">
-    <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1rem;">
-      <span style="font-weight:700;font-size:0.95rem;">How Attention Works per Token</span>
-    </div>
-
-    <!-- Diagram rows -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
-      <!-- Without cache -->
-      <div style="background:#1e1e2e;border:1px solid #ef4444;border-radius:8px;padding:1rem;">
-        <div style="color:#ef4444;font-size:0.75rem;font-weight:700;text-transform:uppercase;margin-bottom:0.75rem;">Without KV Cache (O(n²))</div>
-        <div id="kv-no-cache" style="display:flex;flex-direction:column;gap:3px;"></div>
-        <div style="margin-top:0.75rem;font-size:0.75rem;color:var(--text-dim)">Every new token recomputes attention over ALL previous tokens.</div>
-      </div>
-      <!-- With cache -->
-      <div style="background:#1e1e2e;border:1px solid #10b981;border-radius:8px;padding:1rem;">
-        <div style="color:#10b981;font-size:0.75rem;font-weight:700;text-transform:uppercase;margin-bottom:0.75rem;">With KV Cache (O(n) per token)</div>
-        <div id="kv-with-cache" style="display:flex;flex-direction:column;gap:3px;"></div>
-        <div style="margin-top:0.75rem;font-size:0.75rem;color:var(--text-dim)">K/V matrices are computed once, stored, reused for every new token.</div>
+    <div class="callout tip reveal">
+      <span class="callout-icon">💡</span>
+      <div class="callout-body">
+        <h4>Prompt Caching = Free Money</h4>
+        <p>Anthropic's prompt caching feature lets you cache static prefixes (system prompts, documents) at a 90% cost reduction for cache hits. A 10K-token system prompt costs the full rate on the first call, then 10x less on every subsequent call within the 5-minute TTL. For high-volume production apps, this is a must-use feature.</p>
       </div>
     </div>
 
-    <button class="btn btn-primary" onclick="animateKVCache()" style="font-size:0.85rem;padding:0.4rem 1rem;">▶ Animate</button>
-    <button class="btn btn-secondary" onclick="resetKVCache()" style="font-size:0.85rem;padding:0.4rem 1rem;">↺ Reset</button>
-  </div>
+    <div class="code-window reveal">
+      <div class="code-chrome"><div class="dot-r"></div><div class="dot-y"></div><div class="dot-g"></div><div class="code-label">prompt_caching.py</div></div>
+      <pre><span class="c-kw">import</span> anthropic
 
-  <!-- Prompt caching callout -->
-  <div class="ctx-insight-box" style="border-left-color:#a78bfa;">
-    <strong>Prompt Caching (Anthropic API)</strong> — You can cache static parts of your prompt (system prompt, tool schemas, RAG context) so the server reuses the KV state across requests. Result: <strong style="color:#10b981;">90% cost reduction</strong> on repeated prefixes and up to <strong style="color:#10b981;">5× faster</strong> time-to-first-token.
-    <div class="code-block" style="margin-top:0.75rem;">
-      <div class="code-header"><span class="code-title">prompt_caching.py — mark a block as cacheable</span><span class="code-lang">python</span></div>
-      <div class="code-content"><span class="var">client</span>.<span class="var">messages</span>.<span class="fn">create</span>(
-    <span class="key">model</span>=<span class="str">"claude-haiku-4-5-20251001"</span>,
-    <span class="key">system</span>=[{
-        <span class="str">"type"</span>: <span class="str">"text"</span>,
-        <span class="str">"text"</span>: <span class="var">LONG_SYSTEM_PROMPT</span>,   <span class="cm"># e.g. 10,000 tokens of docs</span>
-        <span class="str">"cache_control"</span>: {<span class="str">"type"</span>: <span class="str">"ephemeral"</span>}  <span class="cm"># ← cache this prefix</span>
-    }],
-    <span class="key">messages</span>=<span class="var">user_messages</span>,
-    <span class="key">max_tokens</span>=<span class="num">1024</span>,
-)
-<span class="cm"># First request: full cost, KV computed and stored (5 min TTL)</span>
-<span class="cm"># Subsequent requests: cache_read_input_tokens billed at 10% of normal price</span></div>
-    </div>
-  </div>
-</section>
+client = anthropic.<span class="c-cls">Anthropic</span>()
 
-<script>
-// KV Cache animation
-(function(){
-  const tokens = ['The', 'cat', 'sat', 'on', 'the', 'mat', '.', 'It'];
-  const maxT = tokens.length;
-
-  function buildRow(container, tokenIdx, computedUpTo, isCached) {
-    const row = document.createElement('div');
-    row.style.cssText = 'display:flex;align-items:center;gap:3px;';
-    for (let j = 0; j <= tokenIdx; j++) {
-      const cell = document.createElement('div');
-      cell.style.cssText = `width:32px;height:20px;border-radius:3px;font-size:9px;display:flex;align-items:center;justify-content:center;font-weight:600;`;
-      if (isCached && j < tokenIdx) {
-        cell.style.background = '#064e3b';
-        cell.style.color = '#6ee7b7';
-        cell.textContent = '✓';
-        cell.title = `${tokens[j]} — cached`;
-      } else if (j === tokenIdx) {
-        cell.style.background = isCached ? '#065f46' : '#7f1d1d';
-        cell.style.color = isCached ? '#10b981' : '#ef4444';
-        cell.style.border = `1px solid ${isCached ? '#10b981' : '#ef4444'}`;
-        cell.textContent = tokens[j];
-      } else {
-        cell.style.background = '#7f1d1d';
-        cell.style.color = '#fca5a5';
-        cell.textContent = tokens[j];
-      }
-      row.appendChild(cell);
-    }
-    const label = document.createElement('span');
-    label.style.cssText = 'font-size:0.7rem;color:var(--text-dim);margin-left:4px;';
-    label.textContent = isCached
-      ? `compute 1 token`
-      : `compute ${tokenIdx + 1} tokens`;
-    row.appendChild(label);
-    container.appendChild(row);
-  }
-
-  let animTimer = null;
-  window.animateKVCache = function() {
-    const nc = document.getElementById('kv-no-cache');
-    const wc = document.getElementById('kv-with-cache');
-    nc.innerHTML = ''; wc.innerHTML = '';
-    let i = 0;
-    animTimer = setInterval(() => {
-      if (i >= maxT) { clearInterval(animTimer); return; }
-      buildRow(nc, i, i, false);
-      buildRow(wc, i, i, true);
-      i++;
-    }, 400);
-  };
-  window.resetKVCache = function() {
-    if (animTimer) clearInterval(animTimer);
-    document.getElementById('kv-no-cache').innerHTML = '';
-    document.getElementById('kv-with-cache').innerHTML = '';
-  };
-})();
-</script>
-
-<script>
-// ============================================================
-// Temperature Visualizer
-// ============================================================
-(function() {
-  const outputs = {
-    0:  '"The capital of France is Paris."',
-    3:  '"The capital of France is Paris, a beautiful city."',
-    7:  '"Paris, the magnificent capital of France, sits along the Seine."',
-    10: '"Ah, France! Paris reigns as its storied capital, full of light."',
-    15: '"France! Capital? Paris — glorious, yes, luminous Paris calls out..."',
-    20: '"Fragment france. PARIS capital... oui?? Seine river sparkle wonder—"'
-  };
-  const barHeights = {
-    //           Paris  Lyon  Marseille  Nice  Bordeaux
-    0:  [97,    1,    1,       0.5,  0.5],
-    3:  [88,    6,    3,       2,    1],
-    7:  [72,   14,    7,       4,    3],
-    10: [54,   20,   13,       8,    5],
-    15: [36,   25,   18,      12,    9],
-    20: [24,   22,   20,      18,   16]
-  };
-  const modes = {
-    0:  { label: '● Deterministic — exact same answer every time', color: '#10b981', badge: 'temp-badge-det' },
-    3:  { label: '● Deterministic — exact same answer every time', color: '#10b981', badge: 'temp-badge-det' },
-    7:  { label: '● Balanced — good for most tasks',              color: '#3b82f6', badge: 'temp-badge-bal' },
-    10: { label: '● Creative — varied responses',                 color: '#f59e0b', badge: 'temp-badge-cre' },
-    15: { label: '⚠ Chaotic — expect hallucinations',            color: '#ef4444', badge: 'temp-badge-cha' },
-    20: { label: '⚠ Chaotic — expect hallucinations',            color: '#ef4444', badge: 'temp-badge-cha' }
-  };
-
-  function closestKey(v, obj) {
-    const keys = Object.keys(obj).map(Number).sort((a,b)=>a-b);
-    return keys.reduce((prev, curr) => Math.abs(curr-v) < Math.abs(prev-v) ? curr : prev);
-  }
-
-  const slider = document.getElementById('tempSlider');
-  const badge  = document.getElementById('tempBadge');
-  const output = document.getElementById('tempOutput');
-  const modeEl = document.getElementById('tempModeLabel');
-  const pBars  = [0,1,2,3,4].map(i => document.getElementById('pbar'+i));
-
-  function updateTemp(val) {
-    const display = (val/10).toFixed(1);
-    badge.textContent = display;
-
-    const key = closestKey(val, outputs);
-    output.textContent = outputs[key];
-
-    const m = modes[closestKey(val, modes)];
-    modeEl.textContent = m.label;
-    modeEl.style.color = m.color;
-
-    badge.className = 'temp-value-badge ' + m.badge;
-
-    const heights = barHeights[closestKey(val, barHeights)];
-    pBars.forEach((bar, i) => { bar.style.height = heights[i] + '%'; });
-  }
-
-  slider.addEventListener('input', () => updateTemp(+slider.value));
-  updateTemp(7);
-})();
-
-// ============================================================
-// Context Window Visualizer
-// ============================================================
-const ctxScenarios = [
-  {
-    label: 'Fresh Start',
-    used: 500,
-    legend: '<span style="color:#7c3aed;">&#9632; System prompt (500 tok)</span>',
-    fullMsg: 'Safe',
-    fullColor: '#10b981'
-  },
-  {
-    label: 'Mid Conversation',
-    used: 3500,
-    legend: '<span style="color:#7c3aed;">&#9632; System (500)</span> <span style="color:#0d9488;">&#9632; 10 conversation turns (3,000)</span>',
-    fullMsg: 'Safe',
-    fullColor: '#10b981'
-  },
-  {
-    label: 'With RAG',
-    used: 8000,
-    legend: '<span style="color:#7c3aed;">&#9632; System (500)</span> <span style="color:#0d9488;">&#9632; Conversation (3,000)</span> <span style="color:#f59e0b;">&#9632; Retrieved docs (4,500)</span>',
-    fullMsg: 'Safe',
-    fullColor: '#10b981'
-  },
-  {
-    label: 'Long Agent Run',
-    used: 45000,
-    legend: '<span style="color:#7c3aed;">&#9632; System (500)</span> <span style="color:#0d9488;">&#9632; Conversation (3,000)</span> <span style="color:#f59e0b;">&#9632; Retrieved docs (4,500)</span> <span style="color:#a855f7;">&#9632; 50 tool calls (37,000)</span>',
-    fullMsg: 'Watch out',
-    fullColor: '#f59e0b'
-  },
-  {
-    label: 'Near Limit',
-    used: 180000,
-    legend: '<span style="color:#7c3aed;">&#9632; All context</span> <span style="color:#ef4444;">&#9632; 90% full — truncation imminent</span>',
-    fullMsg: 'Truncation!',
-    fullColor: '#ef4444'
-  }
-];
-
-function setCtxScenario(idx, btn) {
-  document.querySelectorAll('.ctx-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-
-  const s = ctxScenarios[idx];
-  const total = 200000;
-  const pct = (s.used / total * 100).toFixed(2);
-  const cost = (s.used / 1000000 * 3.00).toFixed(4);
-
-  const bar = document.getElementById('ctxBar');
-  let bg = 'linear-gradient(90deg,#7c3aed,#0d9488)';
-  if (idx === 4) bg = 'linear-gradient(90deg,#f59e0b,#ef4444)';
-  else if (idx === 3) bg = 'linear-gradient(90deg,#7c3aed,#f59e0b)';
-  bar.style.width = Math.max(pct, 0.25) + '%';
-  bar.style.background = bg;
-
-  document.getElementById('ctxUsed').textContent = s.used.toLocaleString();
-  document.getElementById('ctxPct').textContent  = pct + '%';
-  document.getElementById('ctxCost').textContent = '$' + cost;
-  document.getElementById('ctxFull').textContent = s.fullMsg;
-  document.getElementById('ctxFull').style.color = s.fullColor;
-  document.getElementById('ctxSegmentLegend').innerHTML = s.legend;
-}
-</script>
-
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- PROMPT ENGINEERING SECTION                                 -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<style>
-  /* Prompt Engineering section styles */
-  .pe-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
-  @media (max-width: 640px) { .pe-grid { grid-template-columns: 1fr; } }
-  .pe-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 1.25rem;
-  }
-  .pe-card-label {
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    margin-bottom: 0.75rem;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-  }
-  .pe-card-label.bad  { color: #f87171; }
-  .pe-card-label.good { color: var(--teal-light); }
-  .pe-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.85rem;
-    margin-bottom: 1.5rem;
-  }
-  .pe-table th {
-    text-align: left;
-    padding: 0.55rem 0.85rem;
-    background: var(--surface2);
-    color: var(--text-muted);
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    border-bottom: 1px solid var(--border);
-  }
-  .pe-table td {
-    padding: 0.6rem 0.85rem;
-    border-bottom: 1px solid var(--border);
-    vertical-align: top;
-    line-height: 1.5;
-  }
-  .pe-table tr:last-child td { border-bottom: none; }
-  .pe-table tr:hover td { background: var(--surface); }
-  .pe-table .pattern-name { color: var(--purple-light); font-weight: 600; }
-  .pe-table .pattern-example { color: var(--text-muted); font-size: 0.78rem; font-style: italic; }
-  .system-anatomy {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.75rem;
-    margin-bottom: 1.5rem;
-  }
-  @media (max-width: 640px) { .system-anatomy { grid-template-columns: 1fr 1fr; } }
-  .anatomy-part {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 1rem 0.85rem;
-    text-align: center;
-  }
-  .anatomy-part .part-num {
-    font-size: 1.4rem;
-    font-weight: 800;
-    margin-bottom: 0.3rem;
-  }
-  .anatomy-part .part-title { font-size: 0.8rem; font-weight: 700; margin-bottom: 0.25rem; }
-  .anatomy-part .part-desc { font-size: 0.72rem; color: var(--text-muted); line-height: 1.4; }
-  /* Prompt Grader */
-  .grader-wrap {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 1.5rem;
-  }
-  .grader-presets {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-    margin-bottom: 1rem;
-  }
-  .grader-btn {
-    padding: 0.4rem 0.9rem;
-    border-radius: 6px;
-    border: 1px solid var(--border);
-    background: transparent;
-    color: var(--text-muted);
-    font-size: 0.82rem;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-  .grader-btn:hover, .grader-btn.active { border-color: var(--purple-light); color: var(--purple-light); background: rgba(168,85,247,0.08); }
-  .grader-display {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 1rem 1.1rem;
-    font-family: monospace;
-    font-size: 0.82rem;
-    line-height: 1.6;
-    color: #cdd6f4;
-    min-height: 5rem;
-    white-space: pre-wrap;
-    margin-bottom: 1rem;
-  }
-  .grader-result {
-    border-radius: 8px;
-    padding: 0.85rem 1rem;
-    font-size: 0.85rem;
-    line-height: 1.6;
-    display: none;
-  }
-  .grader-result.show { display: block; }
-  .grader-result.bad  { background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.3); }
-  .grader-result.ok   { background: rgba(245,158,11,0.08);  border: 1px solid rgba(245,158,11,0.3); }
-  .grader-result.good { background: rgba(45,212,191,0.08);  border: 1px solid rgba(45,212,191,0.3); }
-  .score-badge {
-    font-size: 1.5rem;
-    font-weight: 800;
-    margin-bottom: 0.4rem;
-  }
-  .score-badge.bad  { color: #f87171; }
-  .score-badge.ok   { color: var(--amber); }
-  .score-badge.good { color: var(--teal-light); }
-  .grader-issues { list-style: none; padding: 0; margin: 0.5rem 0 0; }
-  .grader-issues li { font-size: 0.8rem; color: var(--text-muted); padding: 0.15rem 0; }
-  .grader-issues li::before { content: "• "; color: inherit; }
-  .grader-issues li.pass { color: var(--teal-light); }
-  .grader-issues li.pass::before { content: "✓ "; }
-</style>
-
-<section class="enhance-section" id="prompt-engineering">
-  <span class="section-tag">Prompt Engineering</span>
-  <h2>Anthropic Prompt Engineering Best Practices</h2>
-  <p style="color:var(--text-muted);margin-bottom:2rem;line-height:1.7;">
-    Claude responds best when prompts are well-structured. These patterns come directly from Anthropic's
-    prompting guides and reflect how Claude was trained to process instructions.
-  </p>
-
-  <!-- 1. XML Tags -->
-  <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:0.75rem;color:var(--text);">1 — XML Tag Structure</h3>
-  <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1rem;line-height:1.6;">
-    Wrapping prompt sections in XML tags eliminates ambiguity. Claude was trained on XML-delimited documents
-    and parses tagged sections with high fidelity — especially useful for multi-part prompts.
-  </p>
-  <div class="pe-grid">
-    <div class="pe-card">
-      <div class="pe-card-label bad">✗ Without structure</div>
-      <div class="code-block">
-        <div class="code-header"><span>prompt (ambiguous)</span></div>
-        <div class="code-content" style="font-size:0.78rem;">You are a helpful assistant.
-Summarise the text below.
-Keep it under 50 words.
-Use bullet points.
-The user said: hello can you
-summarise this article: [ARTICLE]
-Be concise. Also translate to French.</div>
-      </div>
-    </div>
-    <div class="pe-card">
-      <div class="pe-card-label good">✓ XML-tagged structure</div>
-      <div class="code-block">
-        <div class="code-header"><span>prompt (clear)</span></div>
-        <div class="code-content" style="font-size:0.78rem;"><span class="kw">&lt;context&gt;</span>
-  You are a concise summariser.
-<span class="kw">&lt;/context&gt;</span>
-<span class="kw">&lt;instructions&gt;</span>
-  Summarise the article in ≤50 words
-  using bullet points, then translate
-  the summary to French.
-<span class="kw">&lt;/instructions&gt;</span>
-<span class="kw">&lt;article&gt;</span>
-  {{ARTICLE_TEXT}}
-<span class="kw">&lt;/article&gt;</span>
-<span class="kw">&lt;output_format&gt;</span>
-  EN bullets, then FR bullets.
-<span class="kw">&lt;/output_format&gt;</span></div>
-      </div>
-    </div>
-  </div>
-  <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:2rem;">
-    Common tags: <code style="color:var(--amber);background:var(--surface2);padding:1px 5px;border-radius:4px;">&lt;context&gt;</code>
-    <code style="color:var(--amber);background:var(--surface2);padding:1px 5px;border-radius:4px;">&lt;instructions&gt;</code>
-    <code style="color:var(--amber);background:var(--surface2);padding:1px 5px;border-radius:4px;">&lt;examples&gt;</code>
-    <code style="color:var(--amber);background:var(--surface2);padding:1px 5px;border-radius:4px;">&lt;output_format&gt;</code>
-    <code style="color:var(--amber);background:var(--surface2);padding:1px 5px;border-radius:4px;">&lt;constraints&gt;</code>
-    <code style="color:var(--amber);background:var(--surface2);padding:1px 5px;border-radius:4px;">&lt;thinking&gt;</code>
-  </p>
-
-  <!-- 2. Few-shot examples -->
-  <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:0.75rem;color:var(--text);">2 — Few-Shot Examples</h3>
-  <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1rem;line-height:1.6;">
-    2–5 examples is the sweet spot. Order matters — the last example is weighted most heavily.
-    Put the hardest or most representative case last.
-  </p>
-  <div class="code-block" style="margin-bottom:0.75rem;">
-    <div class="code-header"><span>Python</span><span>few_shot_messages pattern</span></div>
-    <div class="code-content"><span class="cm"># Build a reusable few-shot prefix then append the real task</span>
-<span class="var">few_shot_messages</span> = [
-    {<span class="key">"role"</span>: <span class="str">"user"</span>,      <span class="key">"content"</span>: <span class="str">"Classify: 'Great product!' "</span>},
-    {<span class="key">"role"</span>: <span class="str">"assistant"</span>, <span class="key">"content"</span>: <span class="str">"POSITIVE"</span>},
-    {<span class="key">"role"</span>: <span class="str">"user"</span>,      <span class="key">"content"</span>: <span class="str">"Classify: 'Broke after a week.'"</span>},
-    {<span class="key">"role"</span>: <span class="str">"assistant"</span>, <span class="key">"content"</span>: <span class="str">"NEGATIVE"</span>},
-    {<span class="key">"role"</span>: <span class="str">"user"</span>,      <span class="key">"content"</span>: <span class="str">"Classify: 'It is what it is.'"</span>},
-    {<span class="key">"role"</span>: <span class="str">"assistant"</span>, <span class="key">"content"</span>: <span class="str">"NEUTRAL"</span>},
-    <span class="cm"># ↑ last example = most influential; make it the canonical hard case</span>
-]
-
-<span class="var">response</span> = <span class="var">client</span>.<span class="fn">messages</span>.<span class="fn">create</span>(
-    <span class="key">model</span>=<span class="str">"claude-sonnet-4-5"</span>,
-    <span class="key">system</span>=<span class="str">"Classify reviews as POSITIVE / NEGATIVE / NEUTRAL only."</span>,
-    <span class="key">messages</span>=<span class="var">few_shot_messages</span> + [
-        {<span class="key">"role"</span>: <span class="str">"user"</span>, <span class="key">"content"</span>: <span class="str">f"Classify: '{user_review}'"</span>}
+<span class="c-cmt"># Mark content for caching with cache_control</span>
+<span class="c-cmt"># The static system prompt will be cached after first call</span>
+response = client.messages.<span class="c-fn">create</span>(
+    model=<span class="c-str">"claude-sonnet-4-5"</span>,
+    max_tokens=<span class="c-num">1024</span>,
+    system=[
+        {
+            <span class="c-str">"type"</span>: <span class="c-str">"text"</span>,
+            <span class="c-str">"text"</span>: <span class="c-str">"""You are an expert Python code reviewer...[long system prompt]"""</span>,
+            <span class="c-str">"cache_control"</span>: {<span class="c-str">"type"</span>: <span class="c-str">"ephemeral"</span>}  <span class="c-cmt"># Cache this!</span>
+        }
     ],
-)</div>
-  </div>
-  <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:2rem;">
-    Tip: never use <code style="color:var(--amber);background:var(--surface2);padding:1px 5px;border-radius:4px;">assistant</code>
-    prefill as the last message unless you intend to steer the opening token — it can constrain reasoning.
-  </p>
+    messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: <span class="c-str">"Review this function..."</span>}]
+)
 
-  <!-- 3. System prompt anatomy -->
-  <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:0.75rem;color:var(--text);">3 — System Prompt Anatomy</h3>
-  <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1rem;line-height:1.6;">
-    A well-formed system prompt has four distinct parts. Keep them in this order — Claude processes
-    the system turn top-to-bottom before reading the first user message.
-  </p>
-  <div class="system-anatomy">
-    <div class="anatomy-part">
-      <div class="part-num" style="color:var(--purple-light);">①</div>
-      <div class="part-title">Role</div>
-      <div class="part-desc">Who Claude is.<br><em>"You are a senior DevOps engineer…"</em></div>
+<span class="c-cmt"># Check if cache was used</span>
+usage = response.usage
+<span class="c-fn">print</span>(<span class="c-str">f"Cache creation tokens: {usage.cache_creation_input_tokens}"</span>)
+<span class="c-fn">print</span>(<span class="c-str">f"Cache read tokens:     {usage.cache_read_input_tokens}"</span>)
+<span class="c-fn">print</span>(<span class="c-str">f"Regular input tokens:  {usage.input_tokens}"</span>)</pre>
     </div>
-    <div class="anatomy-part">
-      <div class="part-num" style="color:var(--teal-light);">②</div>
-      <div class="part-title">Context</div>
-      <div class="part-desc">Situation &amp; background the model needs to ground its answers.</div>
-    </div>
-    <div class="anatomy-part">
-      <div class="part-num" style="color:var(--amber);">③</div>
-      <div class="part-title">Constraints</div>
-      <div class="part-desc">What to never do, tone, language, length limits, refusal rules.</div>
-    </div>
-    <div class="anatomy-part">
-      <div class="part-num" style="color:#f87171;">④</div>
-      <div class="part-title">Output Format</div>
-      <div class="part-desc">Exact schema, Markdown rules, JSON shape, or example structure.</div>
-    </div>
-  </div>
+  </section>
 
-  <!-- 4. Patterns table -->
-  <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:0.75rem;color:var(--text);">4 — Prompt Pattern Reference</h3>
-  <table class="pe-table">
-    <thead>
-      <tr>
-        <th>Pattern</th>
-        <th>When to use</th>
-        <th>Example trigger</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="pattern-name">Zero-shot</span></td>
-        <td>Simple, well-defined tasks where Claude needs no demonstrations.</td>
-        <td><span class="pattern-example">"Translate to Spanish: …"</span></td>
-      </tr>
-      <tr>
-        <td><span class="pattern-name">One-shot</span></td>
-        <td>Format is non-obvious; one example sets the output shape precisely.</td>
-        <td><span class="pattern-example">"Like this: Q:… A:… Now do: …"</span></td>
-      </tr>
-      <tr>
-        <td><span class="pattern-name">Few-shot</span></td>
-        <td>Classification, extraction, or generation with a strict schema (2-5 examples).</td>
-        <td><span class="pattern-example">Sentiment labelling, NER tagging</span></td>
-      </tr>
-      <tr>
-        <td><span class="pattern-name">Chain-of-Thought</span></td>
-        <td>Multi-step reasoning, maths, logic. Ask Claude to think before answering.</td>
-        <td><span class="pattern-example">"Think step-by-step before giving your final answer."</span></td>
-      </tr>
-      <tr>
-        <td><span class="pattern-name">Role Prompting</span></td>
-        <td>Shifts tone, vocabulary, or domain depth. Works best in system turn.</td>
-        <td><span class="pattern-example">"You are a terse Socratic tutor who never gives answers directly."</span></td>
-      </tr>
-      <tr>
-        <td><span class="pattern-name">Step-back Prompting</span></td>
-        <td>Ask Claude to derive the general principle first, then apply it to the specific case.</td>
-        <td><span class="pattern-example">"What general principle governs X? Now apply that to …"</span></td>
-      </tr>
-    </tbody>
-  </table>
-
-  <!-- 5. Interactive Prompt Grader -->
-  <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:0.75rem;color:var(--text);">5 — Prompt Grader</h3>
-  <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1rem;">
-    Pick a preset and click <strong>Grade it</strong> to see what's missing.
-  </p>
-  <div class="grader-wrap">
-    <div class="grader-presets">
-      <button class="grader-btn active" onclick="pgSelect(0,this)">Bad prompt</button>
-      <button class="grader-btn"        onclick="pgSelect(1,this)">OK prompt</button>
-      <button class="grader-btn"        onclick="pgSelect(2,this)">Good prompt</button>
+  <!-- ── SECTION 6: STRUCTURED OUTPUTS ─────────────── -->
+  <section class="section">
+    <div class="section-header reveal">
+      <div class="section-num">Section 06</div>
+      <h2>Structured Outputs & Response Parsing</h2>
+      <p>Raw text responses are rarely what production systems need. Here's how to reliably extract structured data from Claude's responses.</p>
     </div>
-    <div class="grader-display" id="pgDisplay"></div>
-    <button onclick="pgGrade()"
-      style="padding:0.5rem 1.2rem;background:var(--purple);color:#fff;border:none;border-radius:8px;font-size:0.85rem;cursor:pointer;font-weight:600;margin-bottom:1rem;">
-      Grade it
-    </button>
-    <div class="grader-result" id="pgResult">
-      <div class="score-badge" id="pgScore"></div>
-      <div id="pgVerdict" style="font-weight:600;margin-bottom:0.4rem;"></div>
-      <ul class="grader-issues" id="pgIssues"></ul>
+
+    <div class="card-grid-3 reveal">
+      <div class="card">
+        <div class="card-icon">📋</div>
+        <h3>Prompt Engineering</h3>
+        <p>Tell the model to output JSON. Works ~90% of the time with well-designed prompts. Fragile at scale. Use as a starting point.</p>
+      </div>
+      <div class="card" style="border-color:rgba(13,148,136,0.4);">
+        <div class="card-icon">🔧</div>
+        <h3>Tool Use (Recommended)</h3>
+        <p>Define a JSON schema as a "tool" and instruct the model to "call" it with the extracted data. Model guaranteed to output valid schema. Best approach.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🎯</div>
+        <h3>Prefilling</h3>
+        <p>Pre-fill the assistant's response with <code>{"</code> to force JSON output. Simple trick that works well for extraction tasks.</p>
+      </div>
+    </div>
+
+    <div class="code-window reveal reveal-delay-1">
+      <div class="code-chrome"><div class="dot-r"></div><div class="dot-y"></div><div class="dot-g"></div><div class="code-label">structured_output.py</div></div>
+      <pre><span class="c-kw">import</span> anthropic
+<span class="c-kw">import</span> json
+<span class="c-kw">from</span> pydantic <span class="c-kw">import</span> <span class="c-cls">BaseModel</span>
+
+<span class="c-kw">class</span> <span class="c-cls">EntityExtraction</span>(<span class="c-cls">BaseModel</span>):
+    name: <span class="c-cls">str</span>
+    email: <span class="c-cls">str</span>
+    company: <span class="c-cls">str</span> | <span class="c-kw">None</span>
+    role: <span class="c-cls">str</span> | <span class="c-kw">None</span>
+
+client = anthropic.<span class="c-cls">Anthropic</span>()
+
+<span class="c-cmt"># Use tool_choice="any" to force the model to use your schema</span>
+response = client.messages.<span class="c-fn">create</span>(
+    model=<span class="c-str">"claude-sonnet-4-5"</span>,
+    max_tokens=<span class="c-num">512</span>,
+    tools=[{
+        <span class="c-str">"name"</span>: <span class="c-str">"extract_entity"</span>,
+        <span class="c-str">"description"</span>: <span class="c-str">"Extract contact info from text"</span>,
+        <span class="c-str">"input_schema"</span>: <span class="c-cls">EntityExtraction</span>.model_json_schema()
+    }],
+    tool_choice={<span class="c-str">"type"</span>: <span class="c-str">"tool"</span>, <span class="c-str">"name"</span>: <span class="c-str">"extract_entity"</span>},
+    messages=[{
+        <span class="c-str">"role"</span>: <span class="c-str">"user"</span>,
+        <span class="c-str">"content"</span>: <span class="c-str">"Sarah Chen, CTO at NeuralDB - sarah@neuraldb.ai"</span>
+    }]
+)
+
+<span class="c-cmt"># Parse the guaranteed-valid JSON from tool call</span>
+tool_input = response.content[<span class="c-num">0</span>].input
+entity = <span class="c-cls">EntityExtraction</span>(**tool_input)
+<span class="c-fn">print</span>(<span class="c-str">f"Name: {entity.name}, Email: {entity.email}"</span>)
+<span class="c-cmt"># Name: Sarah Chen, Email: sarah@neuraldb.ai</span></pre>
+    </div>
+
+    <div class="callout why reveal">
+      <span class="callout-icon">💡</span>
+      <div class="callout-body">
+        <h4>Why Tool Use for Structured Output?</h4>
+        <p>When you define a tool with a JSON schema and set tool_choice to force its use, the model's output is guaranteed to be valid JSON matching your schema — the API enforces this at the infrastructure level. This is fundamentally more reliable than asking the model to "output JSON" in a prompt, where it might add markdown fences, commentary, or malformed syntax.</p>
+      </div>
+    </div>
+
+    <div class="callout warn reveal">
+      <span class="callout-icon">⚠️</span>
+      <div class="callout-body">
+        <h4>Common Pitfall: Not Handling Partial Tool Calls</h4>
+        <p>In streaming mode, tool call inputs arrive incrementally. If you try to parse <code style="color:inherit;background:rgba(255,255,255,0.1);padding:1px 5px;border-radius:4px;">response.content[0].input</code> from a stream before it's complete, you'll get an empty or partial dict. Always wait for the stream to complete or use the <code>with stream as...</code> pattern and call get_final_message().</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FOOTER NAV ─────────────────────────────────── -->
+  <div class="footer">
+    <p style="color:var(--muted);margin-bottom:16px;">You've completed Day 1 — the foundation everything else builds on.</p>
+    <div class="nav-row">
+      <a href="../index.html" class="nav-btn">← Curriculum</a>
+      <button class="nav-btn complete" onclick="markComplete()" style="cursor:pointer;">✓ Mark Day 1 Complete</button>
+      <a href="day2.html" class="nav-btn next">Day 2: Prompt Engineering →</a>
     </div>
   </div>
-</section>
+</div>
 
-<script>
-(function(){
-  const PRESETS = [
-    {
-      text: "write me some code",
-      tier: "bad",
-      score: "2 / 10",
-      verdict: "Too vague to be useful.",
-      issues: [
-        { pass: false, text: "No language or framework specified" },
-        { pass: false, text: "No task description or goal" },
-        { pass: false, text: "No output format or length guidance" },
-        { pass: false, text: "No role or context given" },
-        { pass: true,  text: "Short (low token cost)" },
-      ]
-    },
-    {
-      text: "You are a Python expert.\nWrite a function that reads a CSV and returns a list of dicts.\nHandle errors.",
-      tier: "ok",
-      score: "6 / 10",
-      verdict: "Decent, but missing examples and output constraints.",
-      issues: [
-        { pass: true,  text: "Role specified (Python expert)" },
-        { pass: true,  text: "Task is clear (CSV → list of dicts)" },
-        { pass: false, text: "No example input/output provided" },
-        { pass: false, text: "Error-handling is underspecified" },
-        { pass: false, text: "No output format (docstring? type hints?)" },
-      ]
-    },
-    {
-      text: "<context>\n  You are a senior Python engineer writing production-grade code.\n</context>\n<instructions>\n  Write a function `load_csv(path: str) -> list[dict]` that:\n  - Reads a UTF-8 CSV with a header row\n  - Returns each row as a dict keyed by column name\n  - Raises FileNotFoundError or ValueError with a clear message\n</instructions>\n<output_format>\n  Python code block only. Include type hints and a one-line docstring.\n</output_format>",
-      tier: "good",
-      score: "9 / 10",
-      verdict: "Well-structured. Covers role, task, constraints, and format.",
-      issues: [
-        { pass: true, text: "XML tags separate role / task / format" },
-        { pass: true, text: "Precise function signature provided" },
-        { pass: true, text: "Error cases explicitly listed" },
-        { pass: true, text: "Output format is unambiguous" },
-        { pass: false, text: "Could add a 1-2 shot example for edge cases" },
-      ]
-    }
-  ];
-
-  let current = 0;
-
-  function pgSelect(idx, btn) {
-    current = idx;
-    document.getElementById('pgDisplay').textContent = PRESETS[idx].text;
-    document.getElementById('pgResult').className = 'grader-result';
-    document.querySelectorAll('.grader-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-  }
-
-  function pgGrade() {
-    const p = PRESETS[current];
-    const el = document.getElementById('pgResult');
-    el.className = 'grader-result show ' + p.tier;
-    document.getElementById('pgScore').className = 'score-badge ' + p.tier;
-    document.getElementById('pgScore').textContent = p.score;
-    document.getElementById('pgVerdict').textContent = p.verdict;
-    const ul = document.getElementById('pgIssues');
-    ul.innerHTML = p.issues.map(i =>
-      `<li class="${i.pass ? 'pass' : ''}">${i.text}</li>`
-    ).join('');
-  }
-
-  // expose to inline onclick
-  window.pgSelect = pgSelect;
-  window.pgGrade  = pgGrade;
-
-  // init display
-  document.getElementById('pgDisplay').textContent = PRESETS[0].text;
-})();
-</script>
 <script src="../bg-animation.js"></script>
+<script>
+// ── PROGRESS BAR ──────────────────────────────────────
+window.addEventListener('scroll', () => {
+  const bar = document.getElementById('progress-bar');
+  const btn = document.getElementById('back-to-top');
+  const scrolled = window.scrollY;
+  const total = document.documentElement.scrollHeight - window.innerHeight;
+  const pct = total > 0 ? (scrolled / total) * 100 : 0;
+  bar.style.width = pct + '%';
+  btn.classList.toggle('visible', scrolled > 300);
+});
+
+// ── INTERSECTION OBSERVER ANIMATIONS ─────────────────
+const revealObs = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); revealObs.unobserve(e.target); } });
+}, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+document.querySelectorAll('.reveal, .reveal-left, .reveal-right').forEach(el => revealObs.observe(el));
+
+// ── ANIMATED NUMBER COUNTERS ──────────────────────────
+const counterObs = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (!e.isIntersecting) return;
+    const el = e.target;
+    const target = parseInt(el.dataset.target);
+    let start = 0;
+    const dur = 1200;
+    const step = Math.ceil(target / (dur / 16));
+    const timer = setInterval(() => {
+      start = Math.min(start + step, target);
+      el.textContent = start;
+      if (start >= target) clearInterval(timer);
+    }, 16);
+    counterObs.unobserve(el);
+  });
+}, { threshold: 0.5 });
+document.querySelectorAll('[data-target]').forEach(el => counterObs.observe(el));
+
+// ── MARK COMPLETE ─────────────────────────────────────
+function markComplete() {
+  const prog = JSON.parse(localStorage.getItem('aai_progress') || '{}');
+  prog.day1 = { completed: true, date: new Date().toISOString() };
+  localStorage.setItem('aai_progress', JSON.stringify(prog));
+  const btn = document.querySelector('.nav-btn.complete');
+  if (btn) { btn.textContent = '✓ Day 1 Complete!'; btn.style.background = 'var(--green)'; btn.style.color = '#0a0a0f'; btn.style.borderColor = 'var(--green)'; }
+}
+
+// Load complete state
+const savedProg = JSON.parse(localStorage.getItem('aai_progress') || '{}');
+if (savedProg.day1?.completed) {
+  document.querySelectorAll('.nav-btn.complete').forEach(btn => { btn.textContent = '✓ Day 1 Complete!'; btn.style.background = 'var(--green)'; btn.style.color = '#0a0a0f'; btn.style.borderColor = 'var(--green)'; });
+}
+
+// ── TOKEN COUNTER WIDGET ──────────────────────────────
+let activeModel = { in: 3, out: 15 };
+
+function selectModel(btn) {
+  document.querySelectorAll('.model-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  activeModel = { in: parseFloat(btn.dataset.in), out: parseFloat(btn.dataset.out) };
+  updateTokenCount();
+}
+
+function updateTokenCount() {
+  const text = document.getElementById('token-input').value;
+  const chars = text.length;
+  const tokens = Math.ceil(chars / 4);
+  const costIn = (tokens / 1_000_000) * activeModel.in;
+  const costOut = (1000 / 1_000_000) * activeModel.out;
+  document.getElementById('t-chars').textContent = chars.toLocaleString();
+  document.getElementById('t-tokens').textContent = tokens.toLocaleString();
+  document.getElementById('t-cost-in').textContent = '$' + costIn.toFixed(5);
+  document.getElementById('t-cost-out').textContent = '$' + costOut.toFixed(5);
+  const barPct = Math.min((tokens / 200000) * 100, 100);
+  document.getElementById('token-bar').style.width = Math.max(barPct, 1) + '%';
+  // Update slider gradient
+  const slider = document.querySelector('input[type=range]');
+  if (slider) {
+    const val = ((slider.value - slider.min) / (slider.max - slider.min)) * 100;
+    slider.style.background = `linear-gradient(90deg, var(--purple-light) ${val}%, var(--border) ${val}%)`;
+  }
+}
+
+// ── TEMPERATURE WIDGET ────────────────────────────────
+const tempOutputs = {
+  cold: [
+    "The mitochondria is the powerhouse of the cell, responsible for producing ATP through oxidative phosphorylation.",
+    "Python's GIL prevents true parallel execution of CPU-bound threads. Use multiprocessing instead.",
+    "The Transformer model's self-attention mechanism has O(n²) complexity with respect to sequence length.",
+    "Binary search operates in O(log n) time, making it significantly faster than linear search for sorted arrays."
+  ],
+  warm: [
+    "Interestingly, cells have their own tiny power plants called mitochondria — and they have a fascinating evolutionary story tied to ancient bacteria.",
+    "Python's threading is a bit deceptive for CPU-heavy tasks; the GIL plays referee, but for I/O operations? Threads shine beautifully.",
+    "Transformers have this elegant but computationally hungry habit of letting every word look at every other word simultaneously — imagine a conversation where everyone can hear everyone else at once.",
+    "Binary search is like looking up a name in a phone book — you always open the middle, then decide which half to check next."
+  ],
+  hot: [
+    "Oh, the mighty mitochondria! These ancient bacterial rebels somehow got absorbed into cells and now run the whole energy economy — billions of tiny reactors humming inside every living thing.",
+    "Python threads? They're like a group of chefs who can only chop when one magic knife is free — the GIL is that knife, and it's quite jealous. Multiprocessing gives everyone their own kitchen!",
+    "Transformers do something almost philosophically strange: they let every single word have a conversation with every other word simultaneously, creating this rich tapestry of contextual understanding that somehow emerges from pure math.",
+    "Binary search is basically that friend who, when you're playing 20 questions about a number between 1 and a million, immediately says 'is it above 500,000?' — devastatingly efficient genius."
+  ]
+};
+
+const useCases = {
+  cold: '⚙️ Code generation · Data extraction · Classification · Fact retrieval · SQL generation · Structured output',
+  warm: '✍️ Customer support · Summarization · Q&A · Document analysis · Translation · Explanation',
+  hot: '🎨 Creative writing · Brainstorming · Poetry · Story generation · Marketing copy · Ideation'
+};
+
+function getTemperatureCategory(temp) {
+  if (temp <= 0.4) return 'cold';
+  if (temp <= 1.0) return 'warm';
+  return 'hot';
+}
+
+function updateTemp() {
+  const temp = parseFloat(document.getElementById('temp-slider').value);
+  document.getElementById('temp-value').textContent = temp.toFixed(2);
+  const cat = getTemperatureCategory(temp);
+
+  const tag = document.getElementById('temp-tag');
+  tag.className = 'temp-tag ' + cat;
+  tag.textContent = cat === 'cold' ? 'PRECISE' : cat === 'warm' ? 'BALANCED' : 'CREATIVE';
+
+  document.getElementById('use-case').textContent = useCases[cat];
+  resample(cat);
+
+  // Update probability bars
+  updateProbBars(temp);
+
+  // Update slider gradient
+  const slider = document.getElementById('temp-slider');
+  const val = ((temp - 0) / 2) * 100;
+  slider.style.background = `linear-gradient(90deg, var(--purple-light) ${val}%, var(--border) ${val}%)`;
+}
+
+function resample(cat) {
+  if (!cat) {
+    const temp = parseFloat(document.getElementById('temp-slider').value);
+    cat = getTemperatureCategory(temp);
+  }
+  const outputs = tempOutputs[cat];
+  const text = outputs[Math.floor(Math.random() * outputs.length)];
+  const el = document.getElementById('temp-output');
+  el.classList.add('updating');
+  setTimeout(() => {
+    document.getElementById('temp-text').textContent = text;
+    el.classList.remove('updating');
+  }, 300);
+}
+
+function updateProbBars(temp) {
+  const baseProbs = [0.45, 0.25, 0.15, 0.09, 0.06];
+  const words = ['the', 'a', 'this', 'our', 'some'];
+  const adjusted = baseProbs.map(p => {
+    const logit = Math.log(p / (1 - p));
+    const scaled = logit / Math.max(temp, 0.01);
+    return Math.exp(scaled) / (1 + Math.exp(scaled));
+  });
+  const sum = adjusted.reduce((a, b) => a + b, 0);
+  const normalized = adjusted.map(p => p / sum);
+
+  const container = document.getElementById('prob-bars');
+  container.innerHTML = normalized.map((p, i) => `
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="width:28px;font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;">${words[i]}</span>
+      <div style="flex:1;height:6px;background:var(--border);border-radius:99px;overflow:hidden;">
+        <div style="height:100%;width:${(p*100).toFixed(1)}%;background:linear-gradient(90deg,var(--purple),var(--teal));border-radius:99px;transition:width 0.4s ease;"></div>
+      </div>
+      <span style="width:36px;font-size:11px;color:var(--purple-light);text-align:right;font-family:'JetBrains Mono',monospace;">${(p*100).toFixed(1)}%</span>
+    </div>
+  `).join('');
+}
+
+// Initialize widgets
+updateTokenCount();
+updateTemp();
+</script>
 </body>
 </html>

@@ -24,6 +24,56 @@ body::before {
 }
 .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
 
+/* ── PROGRESS BAR ── */
+#reading-progress {
+  position: fixed; top: 0; left: 0; width: 0%; height: 3px; z-index: 200;
+  background: linear-gradient(90deg, var(--purple), var(--teal));
+  transition: width 0.1s linear;
+  box-shadow: 0 0 8px rgba(124,58,237,0.6);
+}
+
+/* ── KEYFRAMES ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(124,58,237,0.4); }
+  50%       { box-shadow: 0 0 0 8px rgba(124,58,237,0); }
+}
+@keyframes borderGlow {
+  0%, 100% { border-color: var(--border); }
+  50%       { border-color: var(--purple); box-shadow: 0 0 16px rgba(124,58,237,0.25); }
+}
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position: 600px 0; }
+}
+@keyframes gradientShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes traceIn {
+  from { opacity: 0; transform: scaleX(0); transform-origin: left; }
+  to   { opacity: 1; transform: scaleX(1); }
+}
+
+/* ── SCROLL ANIMATION CLASSES ── */
+.anim-init { opacity: 0; transform: translateY(28px); transition: opacity 0.6s ease, transform 0.6s ease; }
+.anim-init.anim-visible { opacity: 1; transform: translateY(0); }
+.anim-slide { opacity: 0; transform: translateX(-24px); transition: opacity 0.6s ease, transform 0.6s ease; }
+.anim-slide.anim-visible { opacity: 1; transform: translateX(0); }
+
+/* ── NAV ── */
 nav {
   position: sticky; top: 0; z-index: 100;
   border-bottom: 1px solid var(--border);
@@ -45,61 +95,115 @@ nav {
   font-family: inherit; cursor: pointer;
 }
 .nav-btn:hover { border-color: var(--purple); color: var(--text); }
-.nav-btn.next {
-  border-color: rgba(124,58,237,0.5);
-  color: var(--purple-light);
-}
-.nav-btn.next:hover {
-  background: var(--purple); color: white; border-color: var(--purple);
-}
-.nav-btn.complete {
-  border-color: rgba(245,158,11,0.5);
-  color: var(--yellow);
-}
-.nav-btn.complete:hover {
-  background: var(--yellow); color: #0a0a0f; border-color: var(--yellow);
-}
-.nav-btn.complete.done {
-  background: var(--yellow); color: #0a0a0f; border-color: var(--yellow);
-}
-.nav-brand {
-  font-size: 14px; font-weight: 700; color: var(--muted);
-  text-decoration: none; letter-spacing: -0.2px;
-  transition: color 0.2s;
-}
+.nav-btn.next { border-color: rgba(124,58,237,0.5); color: var(--purple-light); }
+.nav-btn.next:hover { background: var(--purple); color: white; border-color: var(--purple); }
+.nav-btn.complete { border-color: rgba(245,158,11,0.5); color: var(--yellow); }
+.nav-btn.complete:hover { background: var(--yellow); color: #0a0a0f; border-color: var(--yellow); }
+.nav-btn.complete.done { background: var(--yellow); color: #0a0a0f; border-color: var(--yellow); }
+.nav-brand { font-size: 14px; font-weight: 700; color: var(--muted); text-decoration: none; letter-spacing: -0.2px; transition: color 0.2s; }
 .nav-brand:hover { color: var(--text); }
 
-.day-hero { padding: 56px 0 40px; }
-.day-num { font-size: 12px; font-weight: 700; color: var(--purple-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
-.day-hero h1 { font-size: clamp(32px, 5vw, 56px); font-weight: 900; letter-spacing: -2px; margin-bottom: 16px; }
-.day-hero p { font-size: 17px; color: var(--muted); max-width: 600px; line-height: 1.6; margin-bottom: 28px; }
-.topic-pills { display: flex; flex-wrap: wrap; gap: 8px; }
-.topic-pill { padding: 5px 12px; border-radius: 20px; background: var(--surface2); border: 1px solid var(--border); font-size: 12px; color: var(--muted); font-weight: 500; }
+/* ── HERO ── */
+.day-hero { padding: 72px 0 48px; }
+.day-num { font-size: 12px; font-weight: 700; color: var(--purple-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; animation: fadeUp 0.6s ease both; }
+.day-hero h1 {
+  font-size: clamp(36px, 5vw, 60px); font-weight: 900; letter-spacing: -2px; margin-bottom: 16px;
+  background: linear-gradient(135deg, #a855f7, #0d9488, #7c3aed, #a855f7);
+  background-size: 300% 300%;
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  animation: gradientShift 5s ease infinite, fadeUp 0.6s ease 0.1s both;
+}
+.day-hero p { font-size: 17px; color: var(--muted); max-width: 600px; line-height: 1.7; margin-bottom: 28px; animation: fadeUp 0.6s ease 0.2s both; }
+.topic-pills { display: flex; flex-wrap: wrap; gap: 8px; animation: fadeUp 0.6s ease 0.3s both; }
+.topic-pill {
+  padding: 5px 12px; border-radius: 20px; background: var(--surface2);
+  border: 1px solid var(--border); font-size: 12px; color: var(--muted); font-weight: 500;
+  transition: all 0.2s;
+}
+.topic-pill:hover { border-color: var(--purple); color: var(--purple-light); }
 
-.section { padding: 56px 0; border-top: 1px solid var(--border); }
+/* ── STATS ROW ── */
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 32px 0; }
+.stat-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px;
+  text-align: center; transition: all 0.3s;
+}
+.stat-card:hover { border-color: var(--purple); transform: translateY(-3px); box-shadow: 0 8px 24px rgba(124,58,237,0.15); }
+.stat-num { font-size: 32px; font-weight: 900; color: var(--purple-light); letter-spacing: -1px; }
+.stat-label { font-size: 11px; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* ── SECTIONS ── */
+.section { padding: 64px 0; border-top: 1px solid var(--border); }
+.section-divider { height: 2px; background: linear-gradient(90deg, transparent, var(--purple), var(--teal), transparent); margin: 0; border: none; opacity: 0.4; }
 .section-header { margin-bottom: 32px; }
 .section-num { font-size: 11px; font-weight: 700; color: var(--purple-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
-.section-header h2 { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 10px; }
-.section-header p { color: var(--muted); font-size: 15px; line-height: 1.6; max-width: 640px; }
+.section-header h2 { font-size: 30px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 10px; }
+.section-header p { color: var(--muted); font-size: 15px; line-height: 1.7; max-width: 700px; }
+.section-body-text { font-size: 15px; color: var(--muted); line-height: 1.8; margin: 16px 0; max-width: 800px; }
 
-/* CODE BLOCKS — white-space: pre is REQUIRED */
-.code-block {
+/* ── CODE BLOCKS ── */
+.code-window {
   background: #0d1117; border: 1px solid #30363d; border-radius: 12px;
+  overflow: hidden; margin-top: 20px;
+}
+.code-window-bar {
+  background: #161b22; border-bottom: 1px solid #30363d;
+  padding: 10px 16px; display: flex; align-items: center; gap: 8px;
+}
+.code-dot { width: 12px; height: 12px; border-radius: 50%; }
+.code-dot.red { background: #ff5f57; }
+.code-dot.yellow { background: #febc2e; }
+.code-dot.green { background: #28c840; }
+.code-filename { margin-left: 8px; font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.code-block {
   padding: 24px; font-family: var(--mono); font-size: 12.5px; line-height: 1.8;
-  overflow-x: auto; white-space: pre;
+  overflow-x: auto; white-space: pre; background: #0d1117;
 }
 .code-wrap { position: relative; margin-top: 16px; }
 .code-label { position: absolute; top: -10px; left: 16px; background: var(--purple); color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.5px; }
 .c-cmt { color: #8b949e; }
-.c-kw { color: #ff7b72; }
-.c-fn { color: #d2a8ff; }
-.c-str { color: #a5d6ff; }
+.c-kw  { color: #7c3aed; }
+.c-fn  { color: #0d9488; }
+.c-str { color: #10b981; }
 .c-type { color: #ffa657; }
-.c-num { color: #f2cc60; }
-.c-bi { color: #79c0ff; }
-.c-dec { color: #ffa657; }
+.c-num  { color: #f2cc60; }
+.c-bi   { color: #79c0ff; }
+.c-dec  { color: #ffa657; }
 
-/* COMPARISON TABLE */
+/* ── CALLOUTS ── */
+.callout { background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.25); border-radius: 12px; padding: 16px 20px; display: flex; gap: 12px; align-items: flex-start; margin: 20px 0; }
+.callout-icon { font-size: 18px; flex-shrink: 0; }
+.callout-text { font-size: 13px; color: var(--text); line-height: 1.6; }
+.callout-text strong { color: var(--yellow); }
+.callout.info { background: rgba(124,58,237,0.07); border-color: rgba(124,58,237,0.25); }
+.callout.info .callout-text strong { color: var(--purple-light); }
+.callout.green { background: rgba(16,185,129,0.07); border-color: rgba(16,185,129,0.25); }
+.callout.green .callout-text strong { color: var(--green); }
+.callout.danger { background: rgba(239,68,68,0.07); border-color: rgba(239,68,68,0.25); }
+.callout.danger .callout-text strong { color: var(--red); }
+
+/* ── CARDS ── */
+.card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px;
+  transition: all 0.3s;
+}
+.card:hover { border-color: rgba(124,58,237,0.5); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(124,58,237,0.12); }
+.card-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.card-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+@media(max-width:700px) { .card-grid-2, .card-grid-3 { grid-template-columns: 1fr; } }
+
+/* ── CONCEPT GRID ── */
+.concept-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; margin-top: 20px; }
+.concept-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px;
+  transition: all 0.3s; cursor: default;
+}
+.concept-card:hover { border-color: var(--purple); transform: translateY(-3px); box-shadow: 0 8px 24px rgba(124,58,237,0.15); animation: pulse 1.5s ease-in-out; }
+.concept-icon { font-size: 26px; margin-bottom: 10px; }
+.concept-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+.concept-desc { font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+/* ── TABLE ── */
 .comp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .comp-table th { background: var(--surface2); padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); border-bottom: 1px solid var(--border); }
 .comp-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
@@ -109,45 +213,37 @@ nav {
 .cross { color: var(--red); font-weight: 700; }
 .partial { color: var(--yellow); font-weight: 700; }
 
-/* CALLOUT */
-.callout { background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.25); border-radius: 12px; padding: 16px 20px; display: flex; gap: 12px; align-items: flex-start; margin: 20px 0; }
-.callout-icon { font-size: 18px; flex-shrink: 0; }
-.callout-text { font-size: 13px; color: var(--text); line-height: 1.6; }
-.callout-text strong { color: var(--yellow); }
-.callout.info { background: rgba(124,58,237,0.07); border-color: rgba(124,58,237,0.25); }
-.callout.info .callout-text strong { color: var(--purple-light); }
-.callout.green { background: rgba(16,185,129,0.07); border-color: rgba(16,185,129,0.25); }
-.callout.green .callout-text strong { color: var(--green); }
-
-/* CONTENT CARDS */
-.card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
-.card-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-@media(max-width:700px) { .card-grid-2 { grid-template-columns: 1fr; } }
-
-/* RUNNABLE LIST */
+/* ── RUNNABLE LIST ── */
 .runnable-list { display: flex; flex-direction: column; gap: 10px; }
-.runnable-item { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; display: flex; align-items: flex-start; gap: 14px; }
+.runnable-item {
+  background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px;
+  display: flex; align-items: flex-start; gap: 14px; transition: all 0.2s;
+}
+.runnable-item:hover { border-color: rgba(124,58,237,0.4); background: rgba(124,58,237,0.04); }
 .runnable-badge { padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; white-space: nowrap; flex-shrink: 0; font-family: var(--mono); }
 .rb-purple { background: rgba(124,58,237,0.15); color: var(--purple-light); border: 1px solid rgba(124,58,237,0.3); }
-.rb-teal { background: rgba(13,148,136,0.15); color: #34d399; border: 1px solid rgba(13,148,136,0.3); }
-.rb-yellow { background: rgba(245,158,11,0.15); color: var(--yellow); border: 1px solid rgba(245,158,11,0.3); }
+.rb-teal   { background: rgba(13,148,136,0.15);  color: #34d399; border: 1px solid rgba(13,148,136,0.3); }
+.rb-yellow { background: rgba(245,158,11,0.15);  color: var(--yellow); border: 1px solid rgba(245,158,11,0.3); }
 .runnable-desc { font-size: 13px; color: var(--muted); line-height: 1.5; }
 .runnable-desc strong { color: var(--text); }
 
-/* METHODS STRIP */
-.methods-strip { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
-.method-chip { font-family: var(--mono); font-size: 12px; padding: 5px 12px; border-radius: 6px; background: rgba(124,58,237,0.12); border: 1px solid rgba(124,58,237,0.3); color: var(--purple-light); }
-
-/* PIPE VISUAL */
+/* ── PIPE VISUAL ── */
 .pipe-visual { display: flex; align-items: center; gap: 0; flex-wrap: wrap; margin: 20px 0; }
-.pipe-box { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 18px; text-align: center; }
+.pipe-box {
+  background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 18px;
+  text-align: center; transition: all 0.2s;
+}
+.pipe-box:hover { border-color: var(--purple); transform: translateY(-2px); }
 .pipe-box.highlight { border-color: var(--purple); background: rgba(124,58,237,0.1); }
 .pipe-box .pb-title { font-size: 13px; font-weight: 700; }
 .pipe-box .pb-sub { font-size: 10px; color: var(--muted); margin-top: 2px; }
 .pipe-op { font-size: 22px; color: var(--purple-light); font-weight: 800; padding: 0 10px; }
 
-/* WIDGET */
-.widget { background: var(--card); border: 1px solid rgba(124,58,237,0.3); border-radius: 16px; padding: 28px; }
+/* ── WIDGETS ── */
+.widget {
+  background: var(--card); border: 1px solid rgba(124,58,237,0.3); border-radius: 16px; padding: 28px;
+  animation: borderGlow 3s ease-in-out infinite;
+}
 .widget-title { font-size: 16px; font-weight: 800; margin-bottom: 6px; }
 .widget-sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
 .component-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
@@ -157,27 +253,62 @@ nav {
   cursor: pointer; transition: all 0.2s; font-family: var(--mono); user-select: none;
 }
 .comp-pill.active { background: rgba(124,58,237,0.15); border-color: var(--purple); color: var(--purple-light); }
-.comp-pill:hover { border-color: var(--purple); color: var(--text); }
-.chain-output { background: #0d1117; border: 1px solid #30363d; border-radius: 10px; padding: 18px; font-family: var(--mono); font-size: 13px; line-height: 1.9; margin-top: 4px; }
+.comp-pill:hover { border-color: var(--purple); color: var(--text); transform: translateY(-1px); }
+.chain-output {
+  background: #0d1117; border: 1px solid #30363d; border-radius: 10px; padding: 18px;
+  font-family: var(--mono); font-size: 13px; line-height: 1.9; margin-top: 4px;
+}
 .chain-output .chain-line { color: #8b949e; }
 .chain-output .chain-code { color: #a5d6ff; }
-.chain-output .chain-methods { color: #34d399; }
 .chain-methods-list { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
 .cml-item { font-family: var(--mono); font-size: 11px; padding: 3px 10px; border-radius: 5px; background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.25); color: #34d399; }
+
+/* ── TRACE VISUALIZER ── */
+.trace-tree { background: #0d1117; border: 1px solid #30363d; border-radius: 12px; padding: 20px; font-family: var(--mono); font-size: 12px; }
+.trace-node {
+  display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px;
+  margin-bottom: 6px; background: var(--surface2); border: 1px solid var(--border);
+  cursor: pointer; transition: all 0.2s; opacity: 0;
+  animation: fadeUp 0.4s ease forwards;
+}
+.trace-node:hover { border-color: var(--purple); background: rgba(124,58,237,0.08); }
+.trace-node.root { border-color: var(--purple); background: rgba(124,58,237,0.1); }
+.trace-indent { padding-left: 24px; border-left: 2px solid rgba(124,58,237,0.3); margin-left: 16px; }
+.trace-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+.tb-chain  { background: rgba(124,58,237,0.2); color: var(--purple-light); }
+.tb-llm    { background: rgba(13,148,136,0.2);  color: #34d399; }
+.tb-ret    { background: rgba(245,158,11,0.2);  color: var(--yellow); }
+.tb-parser { background: rgba(16,185,129,0.2);  color: var(--green); }
+.trace-ms  { margin-left: auto; color: var(--muted); font-size: 11px; }
+.trace-tok { color: var(--teal); font-size: 11px; margin-left: 8px; }
+
+/* ── BACK TO TOP ── */
+#back-to-top {
+  position: fixed; bottom: 32px; right: 32px; z-index: 150;
+  width: 44px; height: 44px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--purple), var(--teal));
+  border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-size: 18px; color: white; opacity: 0; transform: translateY(16px);
+  transition: opacity 0.3s, transform 0.3s;
+  box-shadow: 0 4px 16px rgba(124,58,237,0.4);
+}
+#back-to-top.visible { opacity: 1; transform: translateY(0); }
+#back-to-top:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(124,58,237,0.5); }
 
 footer { padding: 40px 0; border-top: 1px solid var(--border); }
 .footer-inner { display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; color: var(--muted); font-size: 13px; }
 .footer-nav { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
-
-@media(max-width:700px) { .card-grid-2 { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body data-animation-density="high">
 
+<div id="reading-progress"></div>
+<button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Back to top">↑</button>
+
 <nav>
   <div class="nav-inner">
     <a href="day7.html" class="nav-btn">← Day 7: Capstone</a>
-    <a href="../index.html" class="nav-brand">🤖 Agentic AI</a>
+    <a href="../index.html" class="nav-brand">Agentic AI</a>
     <div style="display:flex;gap:8px;align-items:center;">
       <button class="nav-btn complete" id="nav-complete-btn" onclick="markComplete()">Mark Complete</button>
       <a href="day9.html" class="nav-btn next">Day 9: Providers →</a>
@@ -190,7 +321,7 @@ footer { padding: 40px 0; border-top: 1px solid var(--border); }
   <div class="day-hero">
     <div class="day-num">Day 8 — LangChain</div>
     <h1>LangChain Deep-Dive:<br>LCEL, Chains &amp; LangSmith</h1>
-    <p>Master LangChain Expression Language — the composable, streaming-first way to build LLM pipelines. From simple chains to parallel RAG pipelines with full observability via LangSmith.</p>
+    <p>Master LangChain Expression Language — the composable, streaming-first way to build LLM pipelines. From simple chains to parallel RAG pipelines with full observability via LangSmith. This is the framework that turns raw API calls into production-ready, observable, swappable AI systems.</p>
     <div class="topic-pills">
       <span class="topic-pill">LCEL Pipe Operator</span>
       <span class="topic-pill">RunnableParallel</span>
@@ -198,24 +329,52 @@ footer { padding: 40px 0; border-top: 1px solid var(--border); }
       <span class="topic-pill">LangSmith Tracing</span>
       <span class="topic-pill">Callbacks</span>
       <span class="topic-pill">Streaming</span>
+      <span class="topic-pill">Fallbacks</span>
+      <span class="topic-pill">Output Parsers</span>
     </div>
   </div>
 
+  <!-- STATS -->
+  <div class="stats-row anim-init">
+    <div class="stat-card">
+      <div class="stat-num" data-target="5">0</div>
+      <div class="stat-label">Runnable Variants</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" data-target="40">0</div>
+      <div class="stat-label">Built-in Parsers</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" data-target="100">0</div>
+      <div class="stat-label">Integrations</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" data-target="0">0</div>
+      <div class="stat-label">Extra Code for Streaming</div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+
   <!-- SECTION 1 -->
-  <div class="section">
+  <div class="section anim-init">
     <div class="section-header">
       <div class="section-num">01 — Overview</div>
       <h2>What is LangChain?</h2>
       <p>LangChain is a composability framework for LLM applications. It standardises the interface for models, prompts, retrievers, and tools so you can wire them together with minimal boilerplate — and swap providers without rewriting your logic.</p>
     </div>
 
+    <p class="section-body-text">Before LangChain, building a RAG pipeline meant writing hundreds of lines of glue code: manual HTTP calls, ad-hoc prompt formatting, custom streaming loops, and zero observability. LangChain abstracts all of that into a unified Runnable protocol. Every component — prompts, models, retrievers, parsers, tools — speaks the same interface: <code style="font-family:var(--mono);background:rgba(255,255,255,0.06);padding:2px 6px;border-radius:4px;">.invoke()</code>, <code style="font-family:var(--mono);background:rgba(255,255,255,0.06);padding:2px 6px;border-radius:4px;">.stream()</code>, <code style="font-family:var(--mono);background:rgba(255,255,255,0.06);padding:2px 6px;border-radius:4px;">.batch()</code>, and async variants of all three.</p>
+
+    <p class="section-body-text">The key philosophical shift is that chains are <em>composable values</em>, not imperative procedures. You define a pipeline declaratively using the pipe operator, and LangChain handles concurrency, error propagation, streaming, and tracing automatically. This means your business logic stays clean while infrastructure concerns are handled by the framework.</p>
+
     <div class="callout info">
       <span class="callout-icon">💡</span>
-      <div class="callout-text"><strong>LangChain vs LangGraph:</strong> Use LangChain for stateless pipelines where data flows in one direction (RAG, summarisation, extraction). Use LangGraph when you need cycles, conditional branching, or persistent agent state between steps.</div>
+      <div class="callout-text"><strong>LangChain vs LangGraph:</strong> Use LangChain for stateless pipelines where data flows in one direction (RAG, summarisation, extraction). Use LangGraph when you need cycles, conditional branching, or persistent agent state between steps. Day 8 is LangChain; Day 15 covers LangGraph.</div>
     </div>
 
     <div class="card-grid-2" style="margin-top:24px;">
-      <div class="card">
+      <div class="card anim-slide">
         <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--purple-light);">Core Runnable Interface</div>
         <div class="runnable-list">
           <div class="runnable-item">
@@ -236,7 +395,7 @@ footer { padding: 40px 0; border-top: 1px solid var(--border); }
           </div>
         </div>
       </div>
-      <div class="card">
+      <div class="card anim-slide">
         <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--teal);">Framework Landscape</div>
         <table class="comp-table">
           <thead><tr><th>Concern</th><th>Raw API</th><th>LangChain</th></tr></thead>
@@ -245,27 +404,35 @@ footer { padding: 40px 0; border-top: 1px solid var(--border); }
             <tr><td>Streaming</td><td class="partial">Manual</td><td class="tick">Built-in</td></tr>
             <tr><td>Observability</td><td class="cross">None</td><td class="tick">LangSmith</td></tr>
             <tr><td>RAG patterns</td><td class="cross">Custom</td><td class="tick">Composable</td></tr>
+            <tr><td>Fallback chains</td><td class="cross">Manual</td><td class="tick">Built-in</td></tr>
             <tr><td>Control</td><td class="tick">Full</td><td class="partial">Abstracts</td></tr>
           </tbody>
         </table>
       </div>
     </div>
 
-    <div style="margin-top:20px;">
-      <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Installation: install provider packages alongside langchain-core.</p>
-      <div class="code-wrap">
-        <span class="code-label">BASH</span>
-        <div class="code-block"><span class="c-cmt"># Core + providers</span>
+    <div class="callout danger" style="margin-top:20px;">
+      <span class="callout-icon">⚠️</span>
+      <div class="callout-text"><strong>Common Pitfall — Over-abstraction:</strong> LangChain's abstractions hide raw API parameters. If you need <code style="font-family:var(--mono);">logprobs</code>, <code style="font-family:var(--mono);">seed</code>, or response format JSON mode, pass them via <code style="font-family:var(--mono);">model_kwargs</code> or drop to the raw provider client for that specific call.</div>
+    </div>
+
+    <div class="code-window anim-init">
+      <div class="code-window-bar">
+        <div class="code-dot red"></div><div class="code-dot yellow"></div><div class="code-dot green"></div>
+        <span class="code-filename">install.sh</span>
+      </div>
+      <div class="code-block"><span class="c-cmt"># Core + providers</span>
 pip install langchain-core langchain-community
 pip install langchain-anthropic langchain-openai
 pip install langchain-chroma  <span class="c-cmt"># vector store integration</span></div>
-      </div>
     </div>
 
-    <div style="margin-top:20px;">
-      <div class="code-wrap">
-        <span class="code-label">PYTHON</span>
-        <div class="code-block"><span class="c-kw">from</span> langchain_anthropic <span class="c-kw">import</span> <span class="c-type">ChatAnthropic</span>
+    <div class="code-window anim-init">
+      <div class="code-window-bar">
+        <div class="code-dot red"></div><div class="code-dot yellow"></div><div class="code-dot green"></div>
+        <span class="code-filename">first_call.py</span>
+      </div>
+      <div class="code-block"><span class="c-kw">from</span> langchain_anthropic <span class="c-kw">import</span> <span class="c-type">ChatAnthropic</span>
 <span class="c-kw">from</span> langchain_core.messages <span class="c-kw">import</span> <span class="c-type">HumanMessage</span>, <span class="c-type">SystemMessage</span>
 
 llm = <span class="c-type">ChatAnthropic</span>(model=<span class="c-str">"claude-3-5-sonnet-20241022"</span>)
@@ -273,18 +440,24 @@ response = llm.<span class="c-fn">invoke</span>([
     <span class="c-type">SystemMessage</span>(content=<span class="c-str">"You are a helpful AI assistant."</span>),
     <span class="c-type">HumanMessage</span>(content=<span class="c-str">"Explain tokenization in 2 sentences."</span>)
 ])
-<span class="c-fn">print</span>(response.content)</div>
-      </div>
+<span class="c-fn">print</span>(response.content)
+<span class="c-cmt"># response.usage_metadata → {'input_tokens': 26, 'output_tokens': 48}</span></div>
     </div>
   </div>
 
+  <hr class="section-divider">
+
   <!-- SECTION 2 -->
-  <div class="section">
+  <div class="section anim-init">
     <div class="section-header">
       <div class="section-num">02 — LCEL</div>
       <h2>LangChain Expression Language</h2>
       <p>LCEL uses the pipe operator <code style="background:rgba(255,255,255,0.06);padding:2px 6px;border-radius:4px;font-family:var(--mono);">|</code> to compose Runnables into a <code style="background:rgba(255,255,255,0.06);padding:2px 6px;border-radius:4px;font-family:var(--mono);">RunnableSequence</code>. Every chain built with LCEL automatically gains invoke, stream, batch, and async variants — no extra code.</p>
     </div>
+
+    <p class="section-body-text">The pipe operator is syntactic sugar over <code style="font-family:var(--mono);background:rgba(255,255,255,0.06);padding:2px 6px;border-radius:4px;">RunnableSequence</code>. Python calls <code style="font-family:var(--mono);background:rgba(255,255,255,0.06);padding:2px 6px;border-radius:4px;">__or__</code> on the left operand with the right operand. LangChain's Runnable base class intercepts this and builds a sequence node. The entire chain is then a single Runnable that can itself be piped into further chains — composability all the way down.</p>
+
+    <p class="section-body-text">This declarative style has a profound practical consequence: your chain definition is data, not code. You can serialize it, inspect it programmatically, and instrument it at runtime without touching business logic. LangSmith exploits this by auto-tracing every node in the graph.</p>
 
     <div class="pipe-visual">
       <div class="pipe-box highlight">
@@ -316,12 +489,18 @@ response = llm.<span class="c-fn">invoke</span>([
         <span class="runnable-badge rb-yellow">RunnableParallel</span>
         <div class="runnable-desc"><strong>Run multiple chains simultaneously</strong> — results merged into a dict. Both chains share the same input.</div>
       </div>
+      <div class="runnable-item">
+        <span class="runnable-badge rb-purple">RunnableBranch</span>
+        <div class="runnable-desc"><strong>Conditional routing</strong> — evaluate a predicate, select which downstream chain to run. Enables if/else logic in pipelines.</div>
+      </div>
     </div>
 
-    <div style="margin-top:24px;">
-      <div class="code-wrap">
-        <span class="code-label">PYTHON — LCEL Basics</span>
-        <div class="code-block"><span class="c-kw">from</span> langchain_core.prompts <span class="c-kw">import</span> <span class="c-type">ChatPromptTemplate</span>
+    <div class="code-window anim-init">
+      <div class="code-window-bar">
+        <div class="code-dot red"></div><div class="code-dot yellow"></div><div class="code-dot green"></div>
+        <span class="code-filename">lcel_basics.py</span>
+      </div>
+      <div class="code-block"><span class="c-kw">from</span> langchain_core.prompts <span class="c-kw">import</span> <span class="c-type">ChatPromptTemplate</span>
 <span class="c-kw">from</span> langchain_openai <span class="c-kw">import</span> <span class="c-type">ChatOpenAI</span>
 <span class="c-kw">from</span> langchain_core.output_parsers <span class="c-kw">import</span> <span class="c-type">StrOutputParser</span>
 
@@ -334,79 +513,83 @@ parser = <span class="c-type">StrOutputParser</span>()
 <span class="c-cmt"># LCEL chain — same interface for invoke/stream/batch/async</span>
 chain = prompt | model | parser
 
-<span class="c-cmt"># Invoke</span>
-result = chain.<span class="c-fn">invoke</span>({<span class="c-str">"text"</span>: <span class="c-str">"LangChain is a framework..."</span>})
+<span class="c-cmt"># Invoke — synchronous, returns string</span>
+result = chain.<span class="c-fn">invoke</span>({<span class="c-str">"text"</span>: <span class="c-str">"LangChain is a framework for LLM applications..."</span>})
 
-<span class="c-cmt"># Stream</span>
+<span class="c-cmt"># Stream — yields string chunks as they arrive</span>
 <span class="c-kw">for</span> chunk <span class="c-kw">in</span> chain.<span class="c-fn">stream</span>({<span class="c-str">"text"</span>: <span class="c-str">"LangChain is a framework..."</span>}):
     <span class="c-fn">print</span>(chunk, end=<span class="c-str">""</span>, flush=<span class="c-bi">True</span>)
 
-<span class="c-cmt"># Batch (parallel execution)</span>
-results = chain.<span class="c-fn">batch</span>([{<span class="c-str">"text"</span>: <span class="c-str">"Doc 1..."</span>}, {<span class="c-str">"text"</span>: <span class="c-str">"Doc 2..."</span>}])</div>
-      </div>
+<span class="c-cmt"># Batch — runs 2 inputs in parallel with thread pool</span>
+results = chain.<span class="c-fn">batch</span>([{<span class="c-str">"text"</span>: <span class="c-str">"Doc 1..."</span>}, {<span class="c-str">"text"</span>: <span class="c-str">"Doc 2..."</span>}])
+
+<span class="c-cmt"># Async — non-blocking, use in FastAPI endpoints</span>
+result = <span class="c-kw">await</span> chain.<span class="c-fn">ainvoke</span>({<span class="c-str">"text"</span>: <span class="c-str">"..."</span>})</div>
     </div>
 
-    <div style="margin-top:20px;">
-      <div class="code-wrap">
-        <span class="code-label">PYTHON — RunnableParallel</span>
-        <div class="code-block"><span class="c-kw">from</span> langchain_core.runnables <span class="c-kw">import</span> <span class="c-type">RunnableParallel</span>, <span class="c-type">RunnablePassthrough</span>
+    <div class="code-window anim-init">
+      <div class="code-window-bar">
+        <div class="code-dot red"></div><div class="code-dot yellow"></div><div class="code-dot green"></div>
+        <span class="code-filename">parallel_chain.py</span>
+      </div>
+      <div class="code-block"><span class="c-kw">from</span> langchain_core.runnables <span class="c-kw">import</span> <span class="c-type">RunnableParallel</span>, <span class="c-type">RunnablePassthrough</span>
 
-<span class="c-cmt"># Parallel execution — run multiple chains simultaneously</span>
+<span class="c-cmt"># RunnableParallel runs both branches with the same input simultaneously</span>
 parallel_chain = <span class="c-type">RunnableParallel</span>({
     <span class="c-str">"summary"</span>: prompt | model | parser,
     <span class="c-str">"original"</span>: <span class="c-type">RunnablePassthrough</span>()
 })
-output = parallel_chain.<span class="c-fn">invoke</span>({<span class="c-str">"text"</span>: <span class="c-str">"Long document..."</span>})
-<span class="c-cmt"># output = {"summary": "...", "original": {"text": "Long document..."}}</span></div>
-      </div>
+
+output = parallel_chain.<span class="c-fn">invoke</span>({<span class="c-str">"text"</span>: <span class="c-str">"Long document about AI..."</span>})
+<span class="c-cmt"># output = {"summary": "AI is...", "original": {"text": "Long document..."}}</span>
+
+<span class="c-cmt"># Fallback — if primary fails, use backup (different provider)</span>
+primary = <span class="c-type">ChatOpenAI</span>(model=<span class="c-str">"gpt-4o"</span>)
+backup  = <span class="c-type">ChatAnthropic</span>(model=<span class="c-str">"claude-3-5-haiku-20241022"</span>)
+robust_model = primary.<span class="c-fn">with_fallbacks</span>([backup])
+chain_with_fallback = prompt | robust_model | parser</div>
     </div>
 
     <div class="callout" style="margin-top:20px;">
       <span class="callout-icon">⚠️</span>
-      <div class="callout-text"><strong>Fallbacks:</strong> Use <code style="font-family:var(--mono);">chain.with_fallbacks([backup_chain])</code> to automatically retry on exceptions. Pairs perfectly with multi-provider strategies — primary Claude, fallback GPT-4o.</div>
+      <div class="callout-text"><strong>Fallbacks:</strong> Use <code style="font-family:var(--mono);">chain.with_fallbacks([backup_chain])</code> to automatically retry on exceptions. Pairs perfectly with multi-provider strategies — primary Claude, fallback GPT-4o. Always test that the fallback actually triggers — it only fires on exceptions, not on empty/bad outputs.</div>
     </div>
   </div>
 
+  <hr class="section-divider">
+
   <!-- SECTION 3 -->
-  <div class="section">
+  <div class="section anim-init">
     <div class="section-header">
       <div class="section-num">03 — RAG</div>
       <h2>Building a RAG Chain with LCEL</h2>
       <p>A retriever is itself a Runnable — it accepts a string query and returns a list of Documents. LCEL makes it trivial to compose retrieval, formatting, and generation into a single streamable pipeline.</p>
     </div>
 
+    <p class="section-body-text">The RAG chain is where LCEL's composability truly shines. The dict syntax <code style="font-family:var(--mono);background:rgba(255,255,255,0.06);padding:2px 6px;border-radius:4px;">{"context": retriever | format, "question": passthrough}</code> creates an implicit <code style="font-family:var(--mono);background:rgba(255,255,255,0.06);padding:2px 6px;border-radius:4px;">RunnableParallel</code> — the retriever runs concurrently with the passthrough, and both results are merged before hitting the prompt template.</p>
+
+    <p class="section-body-text">This pattern scales elegantly. Add hybrid search by running a vector retriever and a keyword retriever in parallel inside the context branch, then merge their results with Reciprocal Rank Fusion before formatting. The pipeline stays readable and composable throughout.</p>
+
     <div class="pipe-visual" style="margin-bottom:16px;">
-      <div class="pipe-box">
-        <div class="pb-title">Query</div>
-        <div class="pb-sub">string input</div>
-      </div>
+      <div class="pipe-box"><div class="pb-title">Query String</div><div class="pb-sub">user question</div></div>
       <div class="pipe-op">→</div>
-      <div class="pipe-box highlight">
-        <div class="pb-title">Retriever</div>
-        <div class="pb-sub">4 docs</div>
-      </div>
+      <div class="pipe-box highlight"><div class="pb-title">Retriever</div><div class="pb-sub">4 docs</div></div>
       <div class="pipe-op">|</div>
-      <div class="pipe-box highlight">
-        <div class="pb-title">format_docs</div>
-        <div class="pb-sub">RunnableLambda</div>
-      </div>
+      <div class="pipe-box highlight"><div class="pb-title">format_docs</div><div class="pb-sub">RunnableLambda</div></div>
       <div class="pipe-op">+</div>
-      <div class="pipe-box highlight">
-        <div class="pb-title">RAG Prompt</div>
-        <div class="pb-sub">context + question</div>
-      </div>
+      <div class="pipe-box highlight"><div class="pb-title">RAG Prompt</div><div class="pb-sub">context + question</div></div>
       <div class="pipe-op">|</div>
-      <div class="pipe-box highlight">
-        <div class="pb-title">LLM</div>
-        <div class="pb-sub">generates answer</div>
-      </div>
+      <div class="pipe-box highlight"><div class="pb-title">LLM</div><div class="pb-sub">generates answer</div></div>
     </div>
 
-    <div class="code-wrap">
-      <span class="code-label">PYTHON — Full RAG Pipeline</span>
+    <div class="code-window anim-init">
+      <div class="code-window-bar">
+        <div class="code-dot red"></div><div class="code-dot yellow"></div><div class="code-dot green"></div>
+        <span class="code-filename">rag_chain.py</span>
+      </div>
       <div class="code-block"><span class="c-kw">from</span> langchain_community.vectorstores <span class="c-kw">import</span> <span class="c-type">Chroma</span>
 <span class="c-kw">from</span> langchain_openai <span class="c-kw">import</span> <span class="c-type">OpenAIEmbeddings</span>
-<span class="c-kw">from</span> langchain_core.runnables <span class="c-kw">import</span> <span class="c-type">RunnableLambda</span>
+<span class="c-kw">from</span> langchain_core.runnables <span class="c-kw">import</span> <span class="c-type">RunnableLambda</span>, <span class="c-type">RunnablePassthrough</span>
 
 vectorstore = <span class="c-type">Chroma</span>(embedding_function=<span class="c-type">OpenAIEmbeddings</span>())
 retriever = vectorstore.<span class="c-fn">as_retriever</span>(search_kwargs={<span class="c-str">"k"</span>: <span class="c-num">4</span>})
@@ -415,12 +598,15 @@ retriever = vectorstore.<span class="c-fn">as_retriever</span>(search_kwargs={<s
     <span class="c-kw">return</span> <span class="c-str">"\n\n"</span>.<span class="c-fn">join</span>(doc.page_content <span class="c-kw">for</span> doc <span class="c-kw">in</span> docs)
 
 rag_prompt = <span class="c-type">ChatPromptTemplate</span>.<span class="c-fn">from_template</span>(<span class="c-str">"""
-Answer using only the context below:
+Answer based only on the context below. Say "I don't know" if not found.
+
+Context:
 {context}
 
 Question: {question}
 """</span>)
 
+<span class="c-cmt"># The dict creates an implicit RunnableParallel</span>
 rag_chain = (
     {<span class="c-str">"context"</span>: retriever | <span class="c-type">RunnableLambda</span>(format_docs),
      <span class="c-str">"question"</span>: <span class="c-type">RunnablePassthrough</span>()}
@@ -429,25 +615,53 @@ rag_chain = (
     | parser
 )
 
-answer = rag_chain.<span class="c-fn">invoke</span>(<span class="c-str">"What is LCEL?"</span>)</div>
+answer = rag_chain.<span class="c-fn">invoke</span>(<span class="c-str">"What is LCEL?"</span>)
+
+<span class="c-cmt"># Streaming answer from RAG pipeline</span>
+<span class="c-kw">async for</span> chunk <span class="c-kw">in</span> rag_chain.<span class="c-fn">astream</span>(<span class="c-str">"Explain LangSmith"</span>):
+    <span class="c-kw">yield</span> chunk</div>
     </div>
 
     <div class="callout info" style="margin-top:20px;">
       <span class="callout-icon">💡</span>
-      <div class="callout-text"><strong>Context injection pattern:</strong> The dict <code style="font-family:var(--mono);">{"context": ..., "question": ...}</code> creates a <code style="font-family:var(--mono);">RunnableParallel</code> implicitly. The retriever runs with the full input string; <code style="font-family:var(--mono);">RunnablePassthrough()</code> passes the same string through as the question.</div>
+      <div class="callout-text"><strong>Why This Matters:</strong> The streaming RAG chain is production-ready immediately. Wrap it in a FastAPI SSE endpoint and users get token-by-token streaming without any extra buffering logic. LangChain handles back-pressure automatically.</div>
+    </div>
+
+    <div class="card-grid-3" style="margin-top:24px;">
+      <div class="concept-card anim-init">
+        <div class="concept-icon">📄</div>
+        <div class="concept-title">Document Loaders</div>
+        <div class="concept-desc">85+ built-in loaders: PDF, HTML, Notion, Confluence, GitHub, S3. All return <code style="font-family:var(--mono);">Document</code> objects with <code style="font-family:var(--mono);">page_content</code> and <code style="font-family:var(--mono);">metadata</code>.</div>
+      </div>
+      <div class="concept-card anim-init">
+        <div class="concept-icon">✂️</div>
+        <div class="concept-title">Text Splitters</div>
+        <div class="concept-desc">RecursiveCharacterTextSplitter, TokenTextSplitter, SemanticChunker. The semantic splitter uses embedding distance to find natural break points.</div>
+      </div>
+      <div class="concept-card anim-init">
+        <div class="concept-icon">🔢</div>
+        <div class="concept-title">Output Parsers</div>
+        <div class="concept-desc">StrOutputParser, JsonOutputParser, PydanticOutputParser, CommaSeparatedListOutputParser. Pydantic parser auto-generates the format instructions prompt.</div>
+      </div>
     </div>
   </div>
 
+  <hr class="section-divider">
+
   <!-- SECTION 4 -->
-  <div class="section">
+  <div class="section anim-init">
     <div class="section-header">
       <div class="section-num">04 — Observability</div>
       <h2>LangSmith — Tracing &amp; Observability</h2>
-      <p>LangSmith is Anthropic/LangChain's observability platform. Every Runnable call is automatically traced: you see the full span tree, token counts, latency per step, inputs/outputs, and error messages — without changing any application code.</p>
+      <p>LangSmith is the observability platform for LangChain. Every Runnable call is automatically traced: you see the full span tree, token counts, latency per step, inputs/outputs, and error messages — without changing any application code.</p>
     </div>
 
+    <p class="section-body-text">LangSmith works by monkey-patching the LangChain Runnable base class at import time when <code style="font-family:var(--mono);background:rgba(255,255,255,0.06);padding:2px 6px;border-radius:4px;">LANGCHAIN_TRACING_V2=true</code> is set. Every call is assigned a Run ID, and parent/child relationships are tracked through Python's contextvars — so even concurrent async chains produce correctly nested trace trees without any manual instrumentation.</p>
+
+    <p class="section-body-text">Beyond tracing, LangSmith enables dataset-driven evaluation. You upload (input, expected output) pairs, run your chain over the entire dataset, and score with LLM-as-judge or regex evaluators. This closes the feedback loop: you can A/B test prompt changes with statistical confidence before deploying.</p>
+
     <div class="card-grid-2">
-      <div class="card">
+      <div class="card anim-slide">
         <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--purple-light);">What Gets Traced</div>
         <ul style="list-style:none;display:flex;flex-direction:column;gap:8px;">
           <li style="font-size:13px;color:var(--muted);display:flex;gap:8px;"><span style="color:var(--green);">→</span> Every Runnable (prompt, model, retriever, parser)</li>
@@ -455,52 +669,69 @@ answer = rag_chain.<span class="c-fn">invoke</span>(<span class="c-str">"What is
           <li style="font-size:13px;color:var(--muted);display:flex;gap:8px;"><span style="color:var(--green);">→</span> Wall-clock latency per span</li>
           <li style="font-size:13px;color:var(--muted);display:flex;gap:8px;"><span style="color:var(--green);">→</span> Full input/output at each step</li>
           <li style="font-size:13px;color:var(--muted);display:flex;gap:8px;"><span style="color:var(--green);">→</span> Errors with full traceback</li>
+          <li style="font-size:13px;color:var(--muted);display:flex;gap:8px;"><span style="color:var(--green);">→</span> Cost estimate per run</li>
         </ul>
       </div>
-      <div class="card">
+      <div class="card anim-slide">
         <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--teal);">Evaluation Runs</div>
         <ul style="list-style:none;display:flex;flex-direction:column;gap:8px;">
-          <li style="font-size:13px;color:var(--muted);display:flex;gap:8px;"><span style="color:var(--teal);">→</span> Upload a dataset of (input, expected) pairs</li>
-          <li style="font-size:13px;color:var(--muted);display:flex;gap:8px;"><span style="color:var(--teal);">→</span> Run the chain over the dataset automatically</li>
-          <li style="font-size:13px;color:var(--muted);display:flex;gap:8px;"><span style="color:var(--teal);">→</span> Score outputs with LLM-as-judge or custom evaluators</li>
-          <li style="font-size:13px;color:var(--muted);display:flex;gap:8px;"><span style="color:var(--teal);">→</span> A/B compare two prompt versions side-by-side</li>
-          <li style="font-size:13px;color:var(--muted);display:flex;gap:8px;"><span style="color:var(--teal);">→</span> Track regression across deployments</li>
+          <li style="font-size:13px;color:var(--muted);display:flex;gap:8px;"><span style="color:var(--teal);">→</span> Upload dataset of (input, expected) pairs</li>
+          <li style="font-size:13px;color:var(--muted);display:flex;gap:8px;"><span style="color:var(--teal);">→</span> Run chain over dataset automatically</li>
+          <li style="font-size:13px;color:var(--muted);display:flex;gap:8px;"><span style="color:var(--teal);">→</span> Score with LLM-as-judge or custom evaluators</li>
+          <li style="font-size:13px;color:var(--muted);display:flex;gap:8px;"><span style="color:var(--teal);">→</span> A/B compare two prompt versions</li>
+          <li style="font-size:13px;color:var(--muted);display:flex;gap:8px;"><span style="color:var(--teal);">→</span> Track regressions across deployments</li>
+          <li style="font-size:13px;color:var(--muted);display:flex;gap:8px;"><span style="color:var(--teal);">→</span> Monitor production traces in real-time</li>
         </ul>
       </div>
     </div>
 
-    <div style="margin-top:20px;">
-      <div class="code-wrap">
-        <span class="code-label">PYTHON — LangSmith Setup</span>
-        <div class="code-block"><span class="c-kw">import</span> os
+    <div class="code-window anim-init">
+      <div class="code-window-bar">
+        <div class="code-dot red"></div><div class="code-dot yellow"></div><div class="code-dot green"></div>
+        <span class="code-filename">langsmith_setup.py</span>
+      </div>
+      <div class="code-block"><span class="c-kw">import</span> os
 os.environ[<span class="c-str">"LANGCHAIN_TRACING_V2"</span>] = <span class="c-str">"true"</span>
-os.environ[<span class="c-str">"LANGCHAIN_API_KEY"</span>] = <span class="c-str">"ls__..."</span>
-os.environ[<span class="c-str">"LANGCHAIN_PROJECT"</span>] = <span class="c-str">"rag-pipeline-v2"</span>
+os.environ[<span class="c-str">"LANGCHAIN_API_KEY"</span>]    = <span class="c-str">"ls__..."</span>
+os.environ[<span class="c-str">"LANGCHAIN_PROJECT"</span>]    = <span class="c-str">"rag-pipeline-v2"</span>
 
 <span class="c-cmt"># All subsequent chain calls are automatically traced</span>
-<span class="c-cmt"># View at: https://smith.langchain.com</span>
 result = rag_chain.<span class="c-fn">invoke</span>(<span class="c-str">"What is PagedAttention?"</span>)
-<span class="c-cmt"># Trace visible in LangSmith: retriever (4 docs, 12ms), LLM (523 tokens, 1.2s)</span></div>
-      </div>
+<span class="c-cmt"># Trace visible at https://smith.langchain.com</span>
+<span class="c-cmt"># Span tree: RunnableParallel(234ms) → Retriever(18ms), Passthrough(0ms)</span>
+<span class="c-cmt">#            → ChatPromptTemplate(1ms) → ChatOpenAI(312ms, 523 tokens)</span>
+<span class="c-cmt">#            → StrOutputParser(0ms)</span>
+
+<span class="c-cmt"># Manual trace — wrap non-LangChain code</span>
+<span class="c-kw">from</span> langsmith <span class="c-kw">import</span> traceable
+
+<span class="c-dec">@traceable</span>(run_type=<span class="c-str">"chain"</span>, name=<span class="c-str">"custom_processing"</span>)
+<span class="c-kw">def</span> <span class="c-fn">process_results</span>(results: <span class="c-type">list</span>) -> <span class="c-type">str</span>:
+    <span class="c-cmt"># This will appear as a span in LangSmith</span>
+    <span class="c-kw">return</span> <span class="c-str">"\n"</span>.<span class="c-fn">join</span>(r[<span class="c-str">"answer"</span>] <span class="c-kw">for</span> r <span class="c-kw">in</span> results)</div>
     </div>
   </div>
 
+  <hr class="section-divider">
+
   <!-- SECTION 5 -->
-  <div class="section">
+  <div class="section anim-init">
     <div class="section-header">
       <div class="section-num">05 — Callbacks</div>
       <h2>Callbacks &amp; Custom Logging</h2>
-      <p>Callbacks let you hook into lifecycle events of every Runnable without modifying chain logic. They are the low-level alternative to LangSmith — useful for custom logging, streaming UI updates, and per-run cost tracking in production.</p>
+      <p>Callbacks let you hook into lifecycle events of every Runnable without modifying chain logic. Use them for custom logging, streaming UI updates, and per-run cost tracking in production.</p>
     </div>
+
+    <p class="section-body-text">The callback system fires synchronous or async hooks at every lifecycle event. Handlers inherit from <code style="font-family:var(--mono);background:rgba(255,255,255,0.06);padding:2px 6px;border-radius:4px;">BaseCallbackHandler</code> and override only the events they care about. Because all methods have no-op defaults, you only implement what you need. Handlers can be attached globally (every chain), per-chain, or per-run using <code style="font-family:var(--mono);background:rgba(255,255,255,0.06);padding:2px 6px;border-radius:4px;">.with_config(callbacks=[...])</code>.</p>
 
     <div class="runnable-list" style="margin-bottom:20px;">
       <div class="runnable-item">
         <span class="runnable-badge rb-purple">on_llm_start</span>
-        <div class="runnable-desc">Fired before each LLM call — receives prompts and model kwargs.</div>
+        <div class="runnable-desc">Fired before each LLM call — receives prompts and model kwargs. Use to log request payloads.</div>
       </div>
       <div class="runnable-item">
         <span class="runnable-badge rb-teal">on_llm_end</span>
-        <div class="runnable-desc">Fired after LLM responds — receives full <code style="font-family:var(--mono);font-size:11px;">LLMResult</code> including token usage metadata.</div>
+        <div class="runnable-desc">Fired after LLM responds — receives full <code style="font-family:var(--mono);font-size:11px;">LLMResult</code> including token usage. Perfect for cost tracking.</div>
       </div>
       <div class="runnable-item">
         <span class="runnable-badge rb-yellow">on_chain_start/end</span>
@@ -508,75 +739,234 @@ result = rag_chain.<span class="c-fn">invoke</span>(<span class="c-str">"What is
       </div>
       <div class="runnable-item">
         <span class="runnable-badge rb-purple">on_tool_start/end</span>
-        <div class="runnable-desc">Fired around tool/retriever invocations — critical for logging which tools agents called.</div>
+        <div class="runnable-desc">Fired around tool/retriever invocations — critical for logging which tools agents called and what they returned.</div>
       </div>
     </div>
 
-    <div class="code-wrap">
-      <span class="code-label">PYTHON — Custom Token Logger</span>
+    <div class="code-window anim-init">
+      <div class="code-window-bar">
+        <div class="code-dot red"></div><div class="code-dot yellow"></div><div class="code-dot green"></div>
+        <span class="code-filename">custom_callback.py</span>
+      </div>
       <div class="code-block"><span class="c-kw">from</span> langchain_core.callbacks <span class="c-kw">import</span> <span class="c-type">BaseCallbackHandler</span>
+<span class="c-kw">import</span> time
 
-<span class="c-kw">class</span> <span class="c-type">TokenLogger</span>(<span class="c-type">BaseCallbackHandler</span>):
+<span class="c-kw">class</span> <span class="c-type">CostAndLatencyTracker</span>(<span class="c-type">BaseCallbackHandler</span>):
+    <span class="c-kw">def</span> <span class="c-fn">__init__</span>(<span class="c-bi">self</span>):
+        <span class="c-bi">self</span>.total_tokens = <span class="c-num">0</span>
+        <span class="c-bi">self</span>.start_time = <span class="c-bi">None</span>
+
+    <span class="c-kw">def</span> <span class="c-fn">on_llm_start</span>(<span class="c-bi">self</span>, serialized, prompts, **kwargs):
+        <span class="c-bi">self</span>.start_time = time.<span class="c-fn">time</span>()
+
     <span class="c-kw">def</span> <span class="c-fn">on_llm_end</span>(<span class="c-bi">self</span>, response, **kwargs):
         usage = response.llm_output.<span class="c-fn">get</span>(<span class="c-str">"token_usage"</span>, {})
-        <span class="c-fn">print</span>(<span class="c-fn">f</span><span class="c-str">"Tokens: {usage.get('total_tokens', 0)}"</span>)
+        tokens = usage.<span class="c-fn">get</span>(<span class="c-str">"total_tokens"</span>, <span class="c-num">0</span>)
+        latency = time.<span class="c-fn">time</span>() - <span class="c-bi">self</span>.start_time
+        <span class="c-bi">self</span>.total_tokens += tokens
+        <span class="c-fn">print</span>(<span class="c-fn">f</span><span class="c-str">"[LLM] {tokens} tokens in {latency:.2f}s"</span>)
 
-chain_with_logging = chain.<span class="c-fn">with_config</span>(
-    callbacks=[<span class="c-type">TokenLogger</span>()]
-)
-result = chain_with_logging.<span class="c-fn">invoke</span>({<span class="c-str">"text"</span>: <span class="c-str">"..."</span>})</div>
+tracker = <span class="c-type">CostAndLatencyTracker</span>()
+chain_tracked = chain.<span class="c-fn">with_config</span>(callbacks=[tracker])
+result = chain_tracked.<span class="c-fn">invoke</span>({<span class="c-str">"text"</span>: <span class="c-str">"Explain transformers"</span>})
+<span class="c-fn">print</span>(<span class="c-fn">f</span><span class="c-str">"Session total tokens: {tracker.total_tokens}"</span>)</div>
+    </div>
+
+    <div class="callout danger">
+      <span class="callout-icon">⚠️</span>
+      <div class="callout-text"><strong>Common Pitfall — Callback Thread Safety:</strong> Callbacks are invoked in the same thread as the chain (or in async tasks for async chains). If your handler writes to shared state (e.g., a counter), use a lock or asyncio-safe primitives. Never do blocking I/O in a synchronous callback on an async chain — it will block the event loop.</div>
     </div>
   </div>
 
-  <!-- INTERACTIVE WIDGET -->
-  <div class="section">
+  <hr class="section-divider">
+
+  <!-- SECTION 6 — WIDGET 1: LCEL Chain Builder -->
+  <div class="section anim-init">
     <div class="section-header">
-      <div class="section-num">06 — Interactive</div>
+      <div class="section-num">06 — Interactive Widget</div>
       <h2>LCEL Chain Builder</h2>
       <p>Click components to add or remove them from the chain. See the resulting LCEL Python code update in real time.</p>
     </div>
 
     <div class="widget">
-      <div class="widget-title">Build Your Chain</div>
-      <div class="widget-sub">Click components to toggle them in the pipeline. Order is preserved.</div>
+      <div class="widget-title">Build Your LCEL Pipeline</div>
+      <div class="widget-sub">Click component pills to toggle them in the pipeline. Pipe order is fixed: retriever → lambda → prompt → model → parser. Mix and match to see valid LCEL patterns.</div>
 
       <div class="component-pills">
         <div class="comp-pill" data-name="retriever" onclick="toggleComponent(this)">Retriever</div>
+        <div class="comp-pill" data-name="lambda" onclick="toggleComponent(this)">RunnableLambda</div>
         <div class="comp-pill active" data-name="prompt" onclick="toggleComponent(this)">Prompt</div>
         <div class="comp-pill active" data-name="model" onclick="toggleComponent(this)">Model</div>
-        <div class="comp-pill" data-name="lambda" onclick="toggleComponent(this)">Lambda</div>
         <div class="comp-pill active" data-name="parser" onclick="toggleComponent(this)">Parser</div>
+        <div class="comp-pill" data-name="parallel" onclick="toggleComponent(this)">Parallel</div>
       </div>
 
       <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Generated LCEL Code</div>
       <div class="chain-output" id="chain-output">
-        <div class="chain-line"># LCEL chain</div>
-        <div id="chain-code-line" class="chain-code">chain = prompt | model | parser</div>
-        <div style="margin-top:10px;font-size:11px;color:var(--muted);">Supported methods:</div>
+        <div class="chain-line" id="chain-import-line"># Auto-imports will appear here</div>
+        <div style="margin-top:6px;" id="chain-code-line" class="chain-code">chain = prompt | model | parser</div>
+        <div style="margin-top:12px;font-size:11px;color:var(--muted);">Available methods on this chain:</div>
         <div class="chain-methods-list" id="chain-methods">
-          <span class="cml-item">.invoke()</span>
-          <span class="cml-item">.stream()</span>
-          <span class="cml-item">.batch()</span>
-          <span class="cml-item">.ainvoke()</span>
-          <span class="cml-item">.astream()</span>
-          <span class="cml-item">.abatch()</span>
+          <span class="cml-item">.invoke()</span><span class="cml-item">.stream()</span>
+          <span class="cml-item">.batch()</span><span class="cml-item">.ainvoke()</span>
+          <span class="cml-item">.astream()</span><span class="cml-item">.abatch()</span>
         </div>
       </div>
 
-      <div id="chain-warning" style="display:none;" class="callout" style="margin-top:12px;">
+      <div id="chain-warning" style="display:none;margin-top:12px;" class="callout">
         <span class="callout-icon">⚠️</span>
         <div class="callout-text">Select at least one component to build a chain.</div>
       </div>
     </div>
   </div>
 
-  <!-- FOOTER -->
-  <div class="section">
+  <hr class="section-divider">
+
+  <!-- SECTION 7 — WIDGET 2: LangSmith Trace Visualizer -->
+  <div class="section anim-init">
     <div class="section-header">
-      <div class="section-num">07 — Practice</div>
-      <h2>Exercises</h2>
+      <div class="section-num">07 — Interactive Widget</div>
+      <h2>LangSmith Trace Visualizer</h2>
+      <p>Simulate a LangSmith trace by clicking "Run Chain". Watch the animated span tree build in real time, showing latency and token counts per node.</p>
     </div>
-    <a href="../exercises/day8_exercises.html" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.6rem 1.25rem;background:linear-gradient(135deg,#7c3aed,#0d9488);color:white;font-weight:700;font-size:0.9rem;border-radius:8px;text-decoration:none;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">Open Interactive Exercises →</a>
+
+    <div class="widget">
+      <div class="widget-title">RAG Chain Trace</div>
+      <div class="widget-sub">Select a chain type and click Run to simulate the trace. Each node shows span type, duration, and token usage.</div>
+
+      <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+        <select id="trace-chain-select" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 14px;color:var(--text);font-family:var(--mono);font-size:13px;cursor:pointer;">
+          <option value="rag">RAG Chain</option>
+          <option value="simple">Simple Chain (prompt|model|parser)</option>
+          <option value="parallel">Parallel Chain</option>
+        </select>
+        <button onclick="runTrace()" style="background:linear-gradient(135deg,var(--purple),var(--teal));border:none;border-radius:8px;padding:8px 20px;color:white;font-weight:700;font-size:13px;cursor:pointer;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+          ▶ Run Chain
+        </button>
+        <button onclick="clearTrace()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 16px;color:var(--muted);font-size:13px;cursor:pointer;">Clear</button>
+      </div>
+
+      <div class="trace-tree" id="trace-tree">
+        <div style="color:var(--muted);font-size:12px;">Click "Run Chain" to see the trace...</div>
+      </div>
+
+      <div id="trace-summary" style="margin-top:16px;display:none;">
+        <div style="display:flex;gap:20px;flex-wrap:wrap;">
+          <div style="background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.3);border-radius:8px;padding:12px 20px;text-align:center;">
+            <div style="font-size:20px;font-weight:800;color:var(--purple-light);" id="trace-total-ms">0ms</div>
+            <div style="font-size:11px;color:var(--muted);">Total Latency</div>
+          </div>
+          <div style="background:rgba(13,148,136,0.1);border:1px solid rgba(13,148,136,0.3);border-radius:8px;padding:12px 20px;text-align:center;">
+            <div style="font-size:20px;font-weight:800;color:var(--teal);" id="trace-total-tok">0</div>
+            <div style="font-size:11px;color:var(--muted);">Total Tokens</div>
+          </div>
+          <div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:12px 20px;text-align:center;">
+            <div style="font-size:20px;font-weight:800;color:var(--yellow);" id="trace-spans">0</div>
+            <div style="font-size:11px;color:var(--muted);">Spans</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- SECTION 8 — Advanced Patterns -->
+  <div class="section anim-init">
+    <div class="section-header">
+      <div class="section-num">08 — Advanced</div>
+      <h2>Advanced LCEL Patterns</h2>
+      <p>Beyond basic chains: structured output, retry logic, and multi-step reasoning pipelines.</p>
+    </div>
+
+    <div class="concept-grid">
+      <div class="concept-card anim-init">
+        <div class="concept-icon">🔁</div>
+        <div class="concept-title">Retry with Backoff</div>
+        <div class="concept-desc">Use <code style="font-family:var(--mono);">.with_retry(stop_after_attempt=3)</code> to handle transient rate limits. Combine with fallbacks for true resilience.</div>
+      </div>
+      <div class="concept-card anim-init">
+        <div class="concept-icon">📐</div>
+        <div class="concept-title">Structured Output</div>
+        <div class="concept-desc">Use <code style="font-family:var(--mono);">model.with_structured_output(MySchema)</code> to force JSON matching a Pydantic model. Zero parser errors.</div>
+      </div>
+      <div class="concept-card anim-init">
+        <div class="concept-icon">🧵</div>
+        <div class="concept-title">Conversation Memory</div>
+        <div class="concept-desc"><code style="font-family:var(--mono);">RunnableWithMessageHistory</code> wraps any chain with conversation state stored in any backend (Redis, DynamoDB, in-memory).</div>
+      </div>
+      <div class="concept-card anim-init">
+        <div class="concept-icon">🌿</div>
+        <div class="concept-title">RunnableBranch</div>
+        <div class="concept-desc">Route to different chains based on predicates. Pattern: <code style="font-family:var(--mono);">(condition_fn, chain_A), default_chain_B</code>. Enables intent-based routing.</div>
+      </div>
+    </div>
+
+    <div class="code-window anim-init">
+      <div class="code-window-bar">
+        <div class="code-dot red"></div><div class="code-dot yellow"></div><div class="code-dot green"></div>
+        <span class="code-filename">structured_output.py</span>
+      </div>
+      <div class="code-block"><span class="c-kw">from</span> pydantic <span class="c-kw">import</span> <span class="c-type">BaseModel</span>, <span class="c-type">Field</span>
+
+<span class="c-kw">class</span> <span class="c-type">ExtractedInfo</span>(<span class="c-type">BaseModel</span>):
+    name:    <span class="c-type">str</span>   = <span class="c-type">Field</span>(description=<span class="c-str">"Person's full name"</span>)
+    age:     <span class="c-type">int</span>   = <span class="c-type">Field</span>(description=<span class="c-str">"Age in years"</span>)
+    summary: <span class="c-type">str</span>   = <span class="c-type">Field</span>(description=<span class="c-str">"One-sentence bio"</span>)
+
+<span class="c-cmt"># with_structured_output uses tool-calling or JSON mode under the hood</span>
+structured_model = model.<span class="c-fn">with_structured_output</span>(<span class="c-type">ExtractedInfo</span>)
+extract_chain = prompt | structured_model
+
+result = extract_chain.<span class="c-fn">invoke</span>({<span class="c-str">"text"</span>: <span class="c-str">"Alice, 34, software engineer..."</span>})
+<span class="c-fn">print</span>(result.name)     <span class="c-cmt"># "Alice"  ← typed Python object, not raw JSON</span>
+<span class="c-fn">print</span>(result.age)      <span class="c-cmt"># 34</span>
+
+<span class="c-cmt"># RunnableBranch — route by topic</span>
+<span class="c-kw">from</span> langchain_core.runnables <span class="c-kw">import</span> <span class="c-type">RunnableBranch</span>
+
+classifier_chain = (
+    <span class="c-type">RunnableBranch</span>(
+        (<span class="c-kw">lambda</span> x: <span class="c-str">"code"</span> <span class="c-kw">in</span> x[<span class="c-str">"topic"</span>],  code_chain),
+        (<span class="c-kw">lambda</span> x: <span class="c-str">"math"</span> <span class="c-kw">in</span> x[<span class="c-str">"topic"</span>],  math_chain),
+        general_chain   <span class="c-cmt"># default</span>
+    )
+)</div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- SECTION 9 — Practice -->
+  <div class="section anim-init">
+    <div class="section-header">
+      <div class="section-num">09 — Practice</div>
+      <h2>Exercises &amp; Key Takeaways</h2>
+    </div>
+
+    <div class="card-grid-2" style="margin-bottom:24px;">
+      <div class="card">
+        <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--purple-light);">Key Takeaways</div>
+        <ul style="list-style:none;display:flex;flex-direction:column;gap:8px;">
+          <li style="font-size:13px;color:var(--muted);display:flex;gap:8px;"><span style="color:var(--purple-light);">1.</span> LCEL chains are composable values — pipe anything that implements Runnable.</li>
+          <li style="font-size:13px;color:var(--muted);display:flex;gap:8px;"><span style="color:var(--purple-light);">2.</span> Dict syntax creates implicit RunnableParallel — retriever and passthrough run concurrently.</li>
+          <li style="font-size:13px;color:var(--muted);display:flex;gap:8px;"><span style="color:var(--purple-light);">3.</span> Set 2 env vars and every chain call appears in LangSmith — zero instrumentation code.</li>
+          <li style="font-size:13px;color:var(--muted);display:flex;gap:8px;"><span style="color:var(--purple-light);">4.</span> with_structured_output enforces schema — prefer over manual JSON parsing.</li>
+          <li style="font-size:13px;color:var(--muted);display:flex;gap:8px;"><span style="color:var(--purple-light);">5.</span> Use with_fallbacks for multi-provider resilience; use with_retry for transient errors.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--teal);">Today's Challenges</div>
+        <ul style="list-style:none;display:flex;flex-direction:column;gap:8px;">
+          <li style="font-size:13px;color:var(--muted);display:flex;gap:8px;"><span style="color:var(--teal);">A.</span> Build a chain that extracts structured JSON from unstructured text using a Pydantic schema.</li>
+          <li style="font-size:13px;color:var(--muted);display:flex;gap:8px;"><span style="color:var(--teal);">B.</span> Add LangSmith tracing and compare latency of GPT-4o-mini vs Claude Haiku on 10 inputs.</li>
+          <li style="font-size:13px;color:var(--muted);display:flex;gap:8px;"><span style="color:var(--teal);">C.</span> Build a full RAG pipeline with Chroma and stream the answer to stdout token by token.</li>
+          <li style="font-size:13px;color:var(--muted);display:flex;gap:8px;"><span style="color:var(--teal);">D.</span> Implement a RunnableBranch that routes "code" vs "general" questions to different prompts.</li>
+        </ul>
+      </div>
+    </div>
+
+    <a href="../exercises/day8_exercises.html" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.75rem 1.5rem;background:linear-gradient(135deg,#7c3aed,#0d9488);color:white;font-weight:700;font-size:0.95rem;border-radius:10px;text-decoration:none;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">Open Interactive Exercises →</a>
   </div>
 
 </div><!-- /container -->
@@ -589,14 +979,55 @@ result = chain_with_logging.<span class="c-fn">invoke</span>({<span class="c-str
         <button class="nav-btn complete" id="footer-complete-btn" onclick="markComplete()">Mark Complete</button>
         <a href="day9.html" class="nav-btn next">Day 9: Providers →</a>
       </div>
-      <div style="color:var(--muted);font-size:13px;">Day 8 of 10+ · Agentic AI Mastery</div>
+      <div style="color:var(--muted);font-size:13px;">Day 8 of 30 · Agentic AI Mastery</div>
     </div>
   </div>
 </footer>
 
 <script src="../bg-animation.js"></script>
 <script>
-// ── Mark Complete (aai_progress) ────────────────────────────────
+// ── Reading Progress Bar ──────────────────────────────────────────
+window.addEventListener('scroll', () => {
+  const scrollTop = window.scrollY;
+  const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+  const pct = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+  document.getElementById('reading-progress').style.width = pct + '%';
+
+  const btn = document.getElementById('back-to-top');
+  btn.classList.toggle('visible', scrollTop > 400);
+});
+
+// ── IntersectionObserver for scroll animations ────────────────────
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('anim-visible'); observer.unobserve(e.target); }
+  });
+}, { threshold: 0.08 });
+
+document.querySelectorAll('.anim-init, .anim-slide').forEach(el => observer.observe(el));
+
+// ── Stat counter animation ────────────────────────────────────────
+const statObserver = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (!e.isIntersecting) return;
+    const el = e.target.querySelector('.stat-num');
+    if (!el) return;
+    const target = parseInt(el.dataset.target);
+    if (isNaN(target)) return;
+    let current = 0;
+    const step = Math.ceil(target / 40);
+    const interval = setInterval(() => {
+      current = Math.min(current + step, target);
+      el.textContent = current;
+      if (current >= target) clearInterval(interval);
+    }, 30);
+    statObserver.unobserve(e.target);
+  });
+}, { threshold: 0.5 });
+
+document.querySelectorAll('.stats-row').forEach(el => statObserver.observe(el));
+
+// ── Mark Complete ─────────────────────────────────────────────────
 function markComplete() {
   try {
     const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
@@ -614,10 +1045,7 @@ function updateCompleteButtons() {
     const label = done ? 'Completed ✓' : 'Mark Complete';
     ['nav-complete-btn', 'footer-complete-btn'].forEach(id => {
       const btn = document.getElementById(id);
-      if (btn) {
-        btn.textContent = label;
-        btn.classList.toggle('done', done);
-      }
+      if (btn) { btn.textContent = label; btn.classList.toggle('done', done); }
     });
   } catch(e) {}
 }
@@ -630,14 +1058,23 @@ document.addEventListener('DOMContentLoaded', () => {
   updateCompleteButtons();
 });
 
-// ── LCEL Chain Builder Widget ───────────────────────────────────
-const COMPONENT_ORDER = ['retriever', 'lambda', 'prompt', 'model', 'parser'];
+// ── LCEL Chain Builder Widget ─────────────────────────────────────
+const COMPONENT_ORDER = ['retriever', 'lambda', 'prompt', 'model', 'parser', 'parallel'];
 const COMPONENT_NAMES = {
   retriever: 'retriever',
   lambda: 'RunnableLambda(format_docs)',
   prompt: 'prompt',
   model: 'model',
-  parser: 'parser'
+  parser: 'parser',
+  parallel: 'RunnableParallel({...})'
+};
+const COMPONENT_IMPORTS = {
+  retriever: 'vectorstore.as_retriever()',
+  lambda: 'from langchain_core.runnables import RunnableLambda',
+  prompt: 'from langchain_core.prompts import ChatPromptTemplate',
+  model: 'from langchain_openai import ChatOpenAI',
+  parser: 'from langchain_core.output_parsers import StrOutputParser',
+  parallel: 'from langchain_core.runnables import RunnableParallel'
 };
 
 function toggleComponent(el) {
@@ -648,20 +1085,113 @@ function toggleComponent(el) {
 function updateChainOutput() {
   const activePills = document.querySelectorAll('.comp-pill.active');
   const activeNames = new Set([...activePills].map(p => p.dataset.name));
-
   const ordered = COMPONENT_ORDER.filter(n => activeNames.has(n));
   const warning = document.getElementById('chain-warning');
   const codeLine = document.getElementById('chain-code-line');
+  const importLine = document.getElementById('chain-import-line');
 
   if (ordered.length === 0) {
     codeLine.textContent = '# No components selected';
+    importLine.textContent = '';
     warning && (warning.style.display = 'flex');
     return;
   }
   warning && (warning.style.display = 'none');
 
+  const imports = [...activeNames].map(n => COMPONENT_IMPORTS[n]).filter(Boolean);
+  importLine.textContent = imports.slice(0, 2).join('\n');
   const parts = ordered.map(n => COMPONENT_NAMES[n]);
   codeLine.textContent = 'chain = ' + parts.join(' | ');
+}
+
+// ── LangSmith Trace Visualizer ────────────────────────────────────
+const TRACES = {
+  rag: [
+    { label: 'RunnableSequence', badge: 'tb-chain', ms: 612, tok: '', indent: 0 },
+    { label: 'RunnableParallel',  badge: 'tb-chain', ms: 234, tok: '', indent: 1 },
+    { label: 'VectorStoreRetriever', badge: 'tb-ret', ms: 18, tok: '4 docs', indent: 2 },
+    { label: 'RunnablePassthrough', badge: 'tb-chain', ms: 0, tok: '', indent: 2 },
+    { label: 'ChatPromptTemplate', badge: 'tb-chain', ms: 1, tok: '', indent: 1 },
+    { label: 'ChatOpenAI',        badge: 'tb-llm',   ms: 374, tok: '523 tok', indent: 1 },
+    { label: 'StrOutputParser',   badge: 'tb-parser', ms: 0, tok: '', indent: 1 },
+  ],
+  simple: [
+    { label: 'RunnableSequence', badge: 'tb-chain', ms: 392, tok: '', indent: 0 },
+    { label: 'ChatPromptTemplate', badge: 'tb-chain', ms: 1, tok: '', indent: 1 },
+    { label: 'ChatOpenAI',       badge: 'tb-llm',   ms: 389, tok: '210 tok', indent: 1 },
+    { label: 'StrOutputParser',  badge: 'tb-parser', ms: 0, tok: '', indent: 1 },
+  ],
+  parallel: [
+    { label: 'RunnableSequence', badge: 'tb-chain', ms: 520, tok: '', indent: 0 },
+    { label: 'RunnableParallel',  badge: 'tb-chain', ms: 498, tok: '', indent: 1 },
+    { label: 'Branch A — ChatOpenAI', badge: 'tb-llm', ms: 492, tok: '310 tok', indent: 2 },
+    { label: 'Branch B — ChatAnthropic', badge: 'tb-llm', ms: 481, tok: '290 tok', indent: 2 },
+    { label: 'StrOutputParser', badge: 'tb-parser', ms: 0, tok: '', indent: 1 },
+  ]
+};
+
+function runTrace() {
+  const type = document.getElementById('trace-chain-select').value;
+  const spans = TRACES[type];
+  const tree = document.getElementById('trace-tree');
+  const summary = document.getElementById('trace-summary');
+  tree.innerHTML = '';
+  summary.style.display = 'none';
+
+  let delay = 0;
+  let totalMs = 0, totalTok = 0;
+  spans.forEach((span, i) => {
+    const tokStr = span.tok ? parseInt(span.tok) : 0;
+    if (span.badge === 'tb-llm') { totalTok += tokStr || 0; }
+    if (i === 0) totalMs = span.ms;
+
+    setTimeout(() => {
+      const wrapper = document.createElement('div');
+      if (span.indent > 0) {
+        const indent = document.createElement('div');
+        indent.className = 'trace-indent';
+        const node = buildTraceNode(span, i === 0);
+        indent.appendChild(node);
+        // nested indentation for indent=2
+        if (span.indent > 1) {
+          const wrapper2 = document.createElement('div');
+          wrapper2.className = 'trace-indent';
+          wrapper2.appendChild(indent);
+          tree.appendChild(wrapper2);
+        } else {
+          tree.appendChild(indent);
+        }
+      } else {
+        tree.appendChild(buildTraceNode(span, true));
+      }
+
+      if (i === spans.length - 1) {
+        setTimeout(() => {
+          summary.style.display = 'block';
+          document.getElementById('trace-total-ms').textContent = totalMs + 'ms';
+          document.getElementById('trace-total-tok').textContent = totalTok || '—';
+          document.getElementById('trace-spans').textContent = spans.length;
+        }, 200);
+      }
+    }, delay);
+    delay += 220;
+  });
+}
+
+function buildTraceNode(span, isRoot) {
+  const node = document.createElement('div');
+  node.className = 'trace-node' + (isRoot ? ' root' : '');
+  node.style.animationDelay = '0s';
+  node.innerHTML = `<span class="trace-badge ${span.badge}">${span.badge.replace('tb-','').toUpperCase()}</span>
+    <span style="color:var(--text);font-size:12px;">${span.label}</span>
+    ${span.tok ? `<span class="trace-tok">${span.tok}</span>` : ''}
+    <span class="trace-ms">${span.ms}ms</span>`;
+  return node;
+}
+
+function clearTrace() {
+  document.getElementById('trace-tree').innerHTML = '<div style="color:var(--muted);font-size:12px;">Click "Run Chain" to see the trace...</div>';
+  document.getElementById('trace-summary').style.display = 'none';
 }
 </script>
 </body>

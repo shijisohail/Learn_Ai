@@ -3,619 +3,409 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Day 26: Cloud AI Services — AWS Bedrock, Vertex AI & Azure AI Studio</title>
+<title>Day 26: Cloud AI Services — AWS Bedrock, Vertex AI &amp; Azure AI Studio</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --bg: #0a0a0f; --card: #141420; --surface2: #1a1a2e; --border: #2a2a45;
-  --purple: #7c3aed; --purple-light: #a855f7; --teal: #0d9488; --green: #10b981;
-  --red: #ef4444; --yellow: #f59e0b; --text: #e2e8f0; --muted: #64748b;
-  --font: 'Inter', sans-serif; --mono: 'JetBrains Mono', monospace;
-}
-html { scroll-behavior: smooth; }
-body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; overflow-x: hidden; }
-body::before {
-  content: ''; position: fixed; inset: 0;
-  background:
-    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(124,58,237,0.08) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 40% at 90% 80%, rgba(13,148,136,0.05) 0%, transparent 60%);
-  pointer-events: none; z-index: 0;
-}
-.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
-
-nav { border-bottom: 1px solid var(--border); padding: 14px 0; background: rgba(10,10,15,0.85); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; }
-.nav-inner { max-width: 1100px; margin: 0 auto; padding: 0 24px; height: 52px; display: flex; align-items: center; justify-content: space-between; }
-.nav-btn { padding: 7px 18px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 13px; font-weight: 600; text-decoration: none; transition: all 0.2s; font-family: inherit; cursor: pointer; }
-.nav-btn:hover { border-color: var(--purple); color: var(--text); }
-.nav-btn.next { border-color: rgba(124,58,237,0.5); color: var(--purple-light); }
-.nav-btn.next:hover { background: var(--purple); color: white; border-color: var(--purple); }
-.nav-btn.complete { border-color: rgba(245,158,11,0.5); color: var(--yellow); }
-.nav-btn.complete:hover { background: var(--yellow); color: #0a0a0f; border-color: var(--yellow); }
-.nav-btn.done { background: rgba(16,185,129,0.15); border-color: var(--green); color: var(--green); }
-.nav-brand { font-size: 14px; font-weight: 700; color: var(--muted); text-decoration: none; letter-spacing: -0.2px; transition: color 0.2s; }
-.nav-brand:hover { color: var(--text); }
-
-.day-hero { padding: 56px 0 40px; }
-.day-num { font-size: 12px; font-weight: 700; color: var(--yellow); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
-.day-hero h1 { font-size: clamp(32px, 5vw, 56px); font-weight: 900; letter-spacing: -2px; margin-bottom: 16px; }
-.day-hero h1 span { background: linear-gradient(135deg, #a855f7, #34d399); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-.day-hero p { font-size: 17px; color: var(--muted); max-width: 600px; line-height: 1.6; margin-bottom: 28px; }
-.topic-pills { display: flex; flex-wrap: wrap; gap: 8px; }
-.topic-pill { padding: 5px 12px; border-radius: 20px; background: var(--surface2); border: 1px solid var(--border); font-size: 12px; color: var(--muted); font-weight: 500; }
-
-.section { padding: 56px 0; border-top: 1px solid var(--border); }
-.section-header { margin-bottom: 32px; }
-.section-num { font-size: 11px; font-weight: 700; color: var(--purple-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
-.section-header h2 { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 10px; }
-.section-header p { color: var(--muted); font-size: 15px; line-height: 1.6; max-width: 640px; }
-
-.code-block { background: #0d1117; border: 1px solid #30363d; border-radius: 12px; padding: 24px; font-family: var(--mono); font-size: 12.5px; line-height: 1.8; overflow-x: auto; white-space: pre; }
-.code-wrap { position: relative; margin-top: 16px; }
-.code-label { position: absolute; top: -10px; left: 16px; background: var(--purple); color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.5px; }
-.c-cmt { color: #8b949e; }
-.c-kw { color: #ff7b72; }
-.c-fn { color: #d2a8ff; }
-.c-str { color: #a5d6ff; }
-.c-type { color: #ffa657; }
-.c-num { color: #f2cc60; }
-.c-bi { color: #79c0ff; }
-.c-dec { color: #ffa657; }
-
-.info-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-top: 20px; }
-.info-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
-.info-card.highlight-purple { border-color: rgba(124,58,237,0.4); }
-.info-card.highlight-teal { border-color: rgba(13,148,136,0.4); }
-.info-card.highlight-green { border-color: rgba(16,185,129,0.4); }
-.info-card.highlight-yellow { border-color: rgba(245,158,11,0.4); }
-.info-icon { font-size: 28px; margin-bottom: 10px; }
-.info-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
-.info-desc { font-size: 12px; color: var(--muted); line-height: 1.6; }
-
-.callout { background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.25); border-radius: 12px; padding: 16px 20px; display: flex; gap: 12px; align-items: flex-start; margin: 20px 0; }
-.callout-icon { font-size: 18px; flex-shrink: 0; }
-.callout-text { font-size: 13px; color: var(--text); line-height: 1.6; }
-.callout-text strong { color: var(--yellow); }
-.callout.info { background: rgba(124,58,237,0.07); border-color: rgba(124,58,237,0.25); }
-.callout.info .callout-text strong { color: var(--purple-light); }
-.callout.green { background: rgba(16,185,129,0.07); border-color: rgba(16,185,129,0.25); }
-.callout.green .callout-text strong { color: var(--green); }
-
-.comp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.comp-table th { background: var(--surface2); padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); border-bottom: 1px solid var(--border); }
-.comp-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
-.comp-table tr:last-child td { border-bottom: none; }
-.comp-table tr:hover td { background: rgba(255,255,255,0.02); }
-.tick { color: var(--green); font-weight: 700; }
-.cross { color: var(--red); font-weight: 700; }
-.partial { color: var(--yellow); font-weight: 700; }
-
-.bullet-list { list-style: none; display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
-.bullet-list li { font-size: 14px; color: var(--text); display: flex; align-items: flex-start; gap: 10px; line-height: 1.6; }
-.bullet-list li::before { content: '▸'; color: var(--purple-light); flex-shrink: 0; margin-top: 1px; }
-.bullet-list.green li::before { color: var(--green); }
-.bullet-list.teal li::before { color: var(--teal); }
-.bullet-list.yellow li::before { color: var(--yellow); }
-
-/* Interactive Widget */
-.widget-box { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-top: 24px; }
-.widget-title { font-size: 16px; font-weight: 800; margin-bottom: 6px; }
-.widget-desc { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
-.check-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-.check-item { display: flex; align-items: center; gap: 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; cursor: pointer; transition: border-color 0.2s; }
-.check-item:hover { border-color: var(--purple); }
-.check-item input[type=checkbox] { accent-color: var(--purple); width: 16px; height: 16px; cursor: pointer; }
-.check-item label { font-size: 13px; font-weight: 500; cursor: pointer; }
-.provider-results { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-.provider-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; transition: all 0.3s; }
-.provider-card.winner { border-color: var(--green); background: rgba(16,185,129,0.08); box-shadow: 0 0 20px rgba(16,185,129,0.15); }
-.provider-card.runner { border-color: var(--teal); }
-.provider-name { font-size: 14px; font-weight: 800; margin-bottom: 4px; }
-.provider-score { font-size: 24px; font-weight: 900; color: var(--purple-light); margin-bottom: 6px; }
-.provider-card.winner .provider-score { color: var(--green); }
-.provider-reason { font-size: 11px; color: var(--muted); line-height: 1.5; }
-.run-btn { padding: 10px 24px; border-radius: 8px; background: linear-gradient(135deg, var(--purple), var(--teal)); border: none; color: white; font-size: 14px; font-weight: 700; font-family: var(--font); cursor: pointer; transition: opacity 0.2s; margin-bottom: 20px; }
-.run-btn:hover { opacity: 0.85; }
-
-footer { padding: 40px 0; border-top: 1px solid var(--border); text-align: center; color: var(--muted); font-size: 13px; }
-
-@media(max-width:700px) {
-  .info-grid { grid-template-columns: 1fr; }
-  .check-grid { grid-template-columns: 1fr; }
-  .provider-results { grid-template-columns: 1fr; }
-}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{--bg:#0a0a0f;--card:#141420;--surface2:#1a1a2e;--border:#2a2a45;--purple:#7c3aed;--purple-light:#a855f7;--teal:#0d9488;--green:#10b981;--red:#ef4444;--yellow:#f59e0b;--text:#e2e8f0;--muted:#64748b;--font:'Inter',sans-serif;--mono:'JetBrains Mono',monospace;--aws:#f59e0b;--gcp:#0d9488;--azure:#7c3aed;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 50% 0%,rgba(245,158,11,0.05) 0%,transparent 60%),radial-gradient(ellipse 50% 40% at 90% 80%,rgba(13,148,136,0.05) 0%,transparent 60%);pointer-events:none;z-index:0;}
+.container{max-width:1100px;margin:0 auto;padding:0 24px;position:relative;z-index:1;}
+#progress-bar{position:fixed;top:0;left:0;height:3px;width:0%;background:linear-gradient(90deg,var(--aws),var(--gcp),var(--azure));z-index:9999;transition:width 0.1s linear;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(32px);}to{opacity:1;transform:translateY(0);}}
+@keyframes slideIn{from{opacity:0;transform:translateX(-24px);}to{opacity:1;transform:translateX(0);}}
+@keyframes glow{0%,100%{box-shadow:0 0 12px rgba(245,158,11,0.2);}50%{box-shadow:0 0 28px rgba(245,158,11,0.4);}}
+@keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.04);}}
+@keyframes shimmer{0%{background-position:-200% center;}100%{background-position:200% center;}}
+@keyframes gradientShift{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
+@keyframes barGrow{from{width:0;}to{width:var(--target-width);}}
+.reveal{opacity:0;transform:translateY(28px);transition:opacity 0.6s ease,transform 0.6s ease;}
+.reveal.visible{opacity:1;transform:translateY(0);}
+nav{position:sticky;top:0;z-index:100;border-bottom:1px solid var(--border);background:rgba(10,10,15,0.92);backdrop-filter:blur(16px);}
+.nav-inner{max-width:1100px;margin:0 auto;padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between;}
+.nav-btn{padding:7px 18px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:13px;font-weight:600;text-decoration:none;transition:all 0.2s;font-family:inherit;cursor:pointer;}
+.nav-btn:hover{border-color:var(--purple);color:var(--text);}
+.nav-btn.next{border-color:rgba(124,58,237,0.5);color:var(--purple-light);}
+.nav-btn.next:hover{background:var(--purple);color:white;}
+.nav-btn.complete{border-color:rgba(245,158,11,0.5);color:var(--yellow);}
+.nav-btn.complete:hover{background:var(--yellow);color:#0a0a0f;}
+.nav-btn.complete.done{background:var(--yellow);color:#0a0a0f;}
+.nav-brand{font-size:14px;font-weight:700;color:var(--muted);text-decoration:none;transition:color 0.2s;}
+.nav-brand:hover{color:var(--text);}
+.day-hero{padding:72px 0 48px;}
+.day-num{font-size:12px;font-weight:700;color:var(--aws);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;animation:slideIn 0.6s ease both;}
+.day-hero h1{font-size:clamp(36px,5.5vw,62px);font-weight:900;letter-spacing:-2px;margin-bottom:18px;background:linear-gradient(135deg,#fff 0%,var(--aws) 33%,var(--gcp) 66%,var(--azure) 100%);background-size:200% 200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:gradientShift 4s ease infinite,fadeUp 0.7s ease both 0.1s;}
+.day-hero p{font-size:17px;color:var(--muted);max-width:620px;line-height:1.7;margin-bottom:28px;animation:fadeUp 0.7s ease both 0.2s;}
+.topic-pills{display:flex;flex-wrap:wrap;gap:8px;animation:fadeUp 0.7s ease both 0.3s;}
+.topic-pill{padding:5px 12px;border-radius:20px;background:var(--surface2);border:1px solid var(--border);font-size:12px;color:var(--muted);font-weight:500;transition:all 0.2s;}
+.topic-pill:hover{border-color:var(--aws);color:var(--aws);}
+.section{padding:64px 0;border-top:1px solid var(--border);}
+.section-header{margin-bottom:36px;}
+.section-num{font-size:11px;font-weight:700;color:var(--purple-light);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.section-header h2{font-size:30px;font-weight:800;letter-spacing:-0.5px;margin-bottom:12px;}
+.section-header p{color:var(--muted);font-size:15px;line-height:1.7;max-width:680px;}
+.code-block{background:#0d1117;border:1px solid #30363d;border-radius:12px;padding:24px;font-family:var(--mono);font-size:12.5px;line-height:1.8;overflow-x:auto;white-space:pre;}
+.code-wrap{position:relative;margin-top:20px;}
+.win-chrome{background:#1c1c28;border:1px solid #30363d;border-radius:12px 12px 0 0;padding:10px 16px;display:flex;gap:6px;align-items:center;}
+.win-dot{width:12px;height:12px;border-radius:50%;}
+.win-dot.r{background:#ef4444;}.win-dot.y{background:#f59e0b;}.win-dot.g{background:#10b981;}
+.win-chrome+.code-block{border-radius:0 0 12px 12px;border-top:none;}
+.c-cmt{color:#8b949e;}.c-kw{color:#ff7b72;}.c-fn{color:#d2a8ff;}
+.c-str{color:#a5d6ff;}.c-type{color:#ffa657;}.c-num{color:#f2cc60;}
+.c-bi{color:#79c0ff;}.c-dec{color:#ffa657;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;transition:transform 0.3s ease,border-color 0.3s ease,box-shadow 0.3s ease;}
+.card:hover{transform:translateY(-6px);}
+.card.aws:hover{border-color:var(--aws);box-shadow:0 0 24px rgba(245,158,11,0.2);}
+.card.gcp:hover{border-color:var(--gcp);box-shadow:0 0 24px rgba(13,148,136,0.2);}
+.card.azure:hover{border-color:var(--azure);box-shadow:0 0 24px rgba(124,58,237,0.2);}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;}
+.callout{background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.3);border-radius:12px;padding:18px 22px;display:flex;gap:14px;align-items:flex-start;margin:24px 0;}
+.callout.teal{background:rgba(13,148,136,0.07);border-color:rgba(13,148,136,0.3);}
+.callout.red{background:rgba(239,68,68,0.07);border-color:rgba(239,68,68,0.3);}
+.callout.info{background:rgba(124,58,237,0.07);border-color:rgba(124,58,237,0.3);}
+.callout-icon{font-size:20px;flex-shrink:0;}
+.callout-body{font-size:14px;color:var(--text);line-height:1.7;}
+.callout-body strong{color:var(--teal);}
+.callout.red .callout-body strong{color:#fca5a5;}
+.callout.info .callout-body strong{color:var(--purple-light);}
+.widget{background:var(--card);border:1px solid rgba(245,158,11,0.3);border-radius:18px;padding:30px;margin-top:20px;animation:glow 4s ease-in-out infinite;}
+.widget-title{font-size:17px;font-weight:800;margin-bottom:6px;}
+.widget-sub{font-size:13px;color:var(--muted);margin-bottom:22px;line-height:1.6;}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 24px;border-radius:10px;background:linear-gradient(135deg,var(--aws),var(--gcp));border:none;color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font);transition:opacity 0.2s,transform 0.2s;}
+.btn:hover{opacity:0.88;transform:translateY(-1px);}
+.btn-sm{padding:7px 16px;font-size:12px;border-radius:8px;}
+.btn-outline{background:var(--surface2);border:1px solid var(--border);color:var(--muted);}
+.btn-outline:hover{border-color:var(--aws);color:var(--aws);}
+/* CLOUD SELECTOR */
+.req-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:20px;}
+.req-check{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;transition:all 0.2s;}
+.req-check:hover{border-color:var(--aws);}
+.req-check input{accent-color:var(--aws);width:16px;height:16px;}
+.provider-scores{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px;}
+.provider-score{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;transition:all 0.3s;}
+.provider-score.winner{border-color:var(--green);background:rgba(16,185,129,0.07);}
+.provider-name{font-size:13px;font-weight:700;margin-bottom:6px;}
+.provider-name.aws{color:var(--aws);}.provider-name.gcp{color:var(--gcp);}.provider-name.azure{color:var(--azure);}
+.score-num{font-size:28px;font-weight:900;margin-bottom:4px;}
+.score-bar-track{background:var(--border);height:6px;border-radius:99px;overflow:hidden;margin-top:8px;}
+.score-bar-fill{height:100%;border-radius:99px;transition:width 0.8s ease;}
+.score-bar-fill.aws{background:var(--aws);}.score-bar-fill.gcp{background:var(--gcp);}.score-bar-fill.azure{background:var(--azure);}
+/* COST CHART */
+.cost-chart{background:#0d1117;border:1px solid #30363d;border-radius:12px;padding:24px;overflow-x:auto;}
+.cost-svg{display:block;margin:0 auto;}
+.comp-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:16px;}
+.comp-table th{background:var(--surface2);padding:12px 14px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);border-bottom:1px solid var(--border);}
+.comp-table td{padding:13px 14px;border-bottom:1px solid var(--border);vertical-align:top;line-height:1.5;font-size:13px;}
+.comp-table tr:last-child td{border-bottom:none;}
+.comp-table tr:hover td{background:rgba(255,255,255,0.025);}
+.tick{color:var(--green);font-weight:700;}.cross{color:var(--red);font-weight:700;}.partial{color:var(--yellow);font-weight:700;}
+.ex-list{display:flex;flex-direction:column;gap:14px;}
+.ex-item{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;display:flex;gap:16px;transition:border-color 0.2s;}
+.ex-item:hover{border-color:var(--aws);}
+.ex-num{width:34px;height:34px;border-radius:50%;background:rgba(245,158,11,0.12);border:2px solid var(--aws);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--aws);flex-shrink:0;}
+.ex-body{flex:1;}
+.ex-title{font-size:15px;font-weight:700;margin-bottom:5px;}
+.ex-desc{font-size:13px;color:var(--muted);line-height:1.7;}
+.diff{display:inline-block;margin-top:8px;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;}
+.diff-easy{background:rgba(16,185,129,0.15);color:var(--green);}
+.diff-med{background:rgba(245,158,11,0.15);color:var(--yellow);}
+.diff-hard{background:rgba(239,68,68,0.15);color:var(--red);}
+.prereq-grid{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;}
+.prereq-chip{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px;}
+.prereq-day{background:var(--aws);color:#0a0a0f;font-size:10px;font-weight:800;padding:2px 6px;border-radius:4px;}
+footer{padding:48px 0;border-top:1px solid var(--border);}
+.footer-inner{display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center;color:var(--muted);font-size:13px;}
+.footer-nav{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;}
+@media(max-width:700px){.req-grid{grid-template-columns:1fr;}.provider-scores{grid-template-columns:1fr;}.card-grid{grid-template-columns:1fr;}}
 </style>
 </head>
 <body data-animation-density="high">
-
+<div id="progress-bar"></div>
 <nav>
   <div class="nav-inner">
     <a href="day25.html" class="nav-btn">← Day 25</a>
-    <a href="../index.html" class="nav-brand">Agentic AI Mastery</a>
+    <a href="../index.html" class="nav-brand">🤖 Agentic AI</a>
     <div style="display:flex;gap:8px;align-items:center;">
+      <button class="nav-btn complete" id="nav-complete-btn" onclick="markComplete()">Mark Complete</button>
       <a href="day27.html" class="nav-btn next">Day 27 →</a>
-      <button class="nav-btn complete" id="complete-btn" onclick="markComplete()">Mark Complete</button>
     </div>
   </div>
 </nav>
-
 <div class="container">
   <div class="day-hero">
     <div class="day-num">Day 26 — Cloud AI Services</div>
-    <h1>AWS Bedrock, Vertex AI<br><span>&amp; Azure AI Studio</span></h1>
-    <p>Stop managing GPU infrastructure — let the clouds handle it. Learn when managed AI services beat self-hosted, how to integrate Bedrock, Vertex, and Azure OpenAI into production systems, and how to choose the right provider for your compliance requirements.</p>
+    <h1>Bedrock, Vertex AI<br>&amp; Azure AI Studio</h1>
+    <p>Navigate the big-three cloud AI platforms. Learn when to use managed cloud AI vs self-hosted models, how to compare costs, and how to architect production AI systems that aren't locked into a single vendor.</p>
     <div class="topic-pills">
       <span class="topic-pill">AWS Bedrock</span>
       <span class="topic-pill">Vertex AI</span>
       <span class="topic-pill">Azure OpenAI</span>
-      <span class="topic-pill">HIPAA / SOC2</span>
-      <span class="topic-pill">Cross-Region Inference</span>
       <span class="topic-pill">Cost Optimization</span>
+      <span class="topic-pill">Vendor Lock-in</span>
+      <span class="topic-pill">LiteLLM</span>
     </div>
   </div>
-</div>
 
-<!-- SECTION 1 -->
-<div class="container">
   <div class="section">
-    <div class="section-header">
-      <div class="section-num">01 — Strategy</div>
-      <h2>When to Use Managed AI Services</h2>
-      <p>Self-hosted vs managed is not a technical decision — it's an economics and risk decision. The answer depends on your volume, compliance burden, and team size.</p>
+    <div class="section-header reveal">
+      <div class="section-num">Section 01</div>
+      <h2>The Three Cloud AI Platforms</h2>
+      <p>Each cloud provider has distinct strengths, pricing models, compliance postures, and model selections. Your choice should be driven by existing cloud footprint, compliance requirements, and the specific models you need.</p>
+    </div>
+    <p style="color:var(--muted);font-size:14px;line-height:1.7;margin-bottom:16px;" class="reveal">
+      AWS Bedrock is a managed model API that offers Claude, Llama, Titan, and Mistral models through a unified API with IAM authentication and VPC integration. It's the natural choice if you're already AWS-native, need SOC2/HIPAA compliance, or want Claude with AWS billing consolidation. Bedrock also offers Knowledge Bases (managed RAG) and Agents (managed agent loops) for rapid prototyping.
+    </p>
+    <p style="color:var(--muted);font-size:14px;line-height:1.7;margin-bottom:24px;" class="reveal">
+      Vertex AI (Google Cloud) uniquely integrates with BigQuery, Dataflow, and Vertex Pipelines, making it the superior choice for ML teams with existing GCP data infrastructure. Its Gemini family offers multimodal capabilities (image, video, audio) that Bedrock lacks natively. Azure OpenAI gives you GPT-4o with Azure's enterprise security posture, Active Directory integration, and is often required for Microsoft-shop enterprises with EA contracts.
+    </p>
+    <div class="card-grid reveal">
+      <div class="card aws">
+        <div style="font-size:24px;margin-bottom:10px;">☁️</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:8px;color:var(--aws);">AWS Bedrock</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:12px;">Best for: AWS-native stacks, Claude + Llama access, IAM-based auth, cross-account deployment, Bedrock Agents + Knowledge Bases</div>
+        <div style="font-size:11px;font-family:var(--mono);color:var(--muted);">Models: Claude 3.5, Llama 3.1, Mistral, Titan</div>
+      </div>
+      <div class="card gcp">
+        <div style="font-size:24px;margin-bottom:10px;">🔵</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:8px;color:var(--gcp);">Vertex AI</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:12px;">Best for: GCP data stack, multimodal (video/audio), BigQuery ML integration, custom model fine-tuning, TPU access</div>
+        <div style="font-size:11px;font-family:var(--mono);color:var(--muted);">Models: Gemini 1.5 Pro, Claude via partner, PaLM 2</div>
+      </div>
+      <div class="card azure">
+        <div style="font-size:24px;margin-bottom:10px;">🟦</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:8px;color:var(--azure);">Azure OpenAI</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:12px;">Best for: Microsoft shops, Azure AD auth, GPT-4o/o1, Content Safety API, Azure AI Search integration</div>
+        <div style="font-size:11px;font-family:var(--mono);color:var(--muted);">Models: GPT-4o, GPT-4o mini, o1-preview, DALL-E 3</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header reveal">
+      <div class="section-num">Section 02</div>
+      <h2>Cloud Provider Selector</h2>
+      <p>Select your project requirements and watch the scoring algorithm recommend the optimal cloud AI provider. Scoring is based on feature coverage, compliance, cost efficiency, and ecosystem fit.</p>
+    </div>
+    <div class="widget reveal">
+      <div class="widget-title">Cloud AI Provider Selector</div>
+      <div class="widget-sub">Check all requirements that apply to your project. The selector scores each provider against your needs and recommends a winner.</div>
+      <div class="req-grid">
+        <label class="req-check"><input type="checkbox" id="req-claude" onchange="scoreProviders()"> Need Claude models</label>
+        <label class="req-check"><input type="checkbox" id="req-aws" onchange="scoreProviders()"> Already on AWS</label>
+        <label class="req-check"><input type="checkbox" id="req-gcp" onchange="scoreProviders()"> Already on GCP</label>
+        <label class="req-check"><input type="checkbox" id="req-azure" onchange="scoreProviders()"> Already on Azure</label>
+        <label class="req-check"><input type="checkbox" id="req-hipaa" onchange="scoreProviders()"> HIPAA compliance required</label>
+        <label class="req-check"><input type="checkbox" id="req-multimodal" onchange="scoreProviders()"> Multimodal (video/audio)</label>
+        <label class="req-check"><input type="checkbox" id="req-gpt4" onchange="scoreProviders()"> Need GPT-4o specifically</label>
+        <label class="req-check"><input type="checkbox" id="req-bigquery" onchange="scoreProviders()"> BigQuery integration</label>
+        <label class="req-check"><input type="checkbox" id="req-lowest-cost" onchange="scoreProviders()"> Lowest cost priority</label>
+        <label class="req-check"><input type="checkbox" id="req-fine-tune" onchange="scoreProviders()"> Custom fine-tuning needed</label>
+      </div>
+      <div class="provider-scores" id="provider-scores">
+        <div class="provider-score" id="ps-aws"><div class="provider-name aws">AWS Bedrock</div><div class="score-num" id="score-aws">0</div><div style="font-size:11px;color:var(--muted)">/ 10 pts</div><div class="score-bar-track"><div class="score-bar-fill aws" id="bar-aws" style="width:0%"></div></div></div>
+        <div class="provider-score" id="ps-gcp"><div class="provider-name gcp">Vertex AI</div><div class="score-num" id="score-gcp">0</div><div style="font-size:11px;color:var(--muted)">/ 10 pts</div><div class="score-bar-track"><div class="score-bar-fill gcp" id="bar-gcp" style="width:0%"></div></div></div>
+        <div class="provider-score" id="ps-azure"><div class="provider-name azure">Azure OpenAI</div><div class="score-num" id="score-azure">0</div><div style="font-size:11px;color:var(--muted)">/ 10 pts</div><div class="score-bar-track"><div class="score-bar-fill azure" id="bar-azure" style="width:0%"></div></div></div>
+      </div>
+      <div id="provider-winner" style="margin-top:16px;display:none;"></div>
     </div>
 
-    <div class="callout info">
+    <div class="callout teal reveal" style="margin-top:24px;">
       <span class="callout-icon">💡</span>
-      <div class="callout-text"><strong>Rule of thumb:</strong> Below ~100M tokens/month, managed services almost always win on TCO. Above that threshold, compare carefully — GPU amortization can flip the math.</div>
-    </div>
-
-    <div class="info-grid">
-      <div class="info-card highlight-purple">
-        <div class="info-icon">🖥️</div>
-        <div class="info-title">Self-Hosted (vLLM / Ollama)</div>
-        <div class="info-desc">Maximum control over model weights and data. Cost-efficient at massive scale (&gt;100M tokens/month). Required for custom fine-tuned models. Full data sovereignty — nothing leaves your infra.</div>
-      </div>
-      <div class="info-card highlight-teal">
-        <div class="info-icon">☁️</div>
-        <div class="info-title">Managed (Bedrock / Vertex / Azure)</div>
-        <div class="info-desc">Zero infrastructure management. Pay-per-token with no upfront GPU cost. Enterprise compliance built-in (HIPAA, SOC2, FedRAMP). Scales instantly to handle variable workloads.</div>
-      </div>
-      <div class="info-card highlight-yellow">
-        <div class="info-icon">⚖️</div>
-        <div class="info-title">Decision Matrix</div>
-        <div class="info-desc">Cost vs compliance vs control vs time-to-market. Small team + compliance requirements → managed wins. Large team + predictable high volume + custom models → self-hosted wins.</div>
-      </div>
-      <div class="info-card highlight-green">
-        <div class="info-icon">🔀</div>
-        <div class="info-title">Hybrid Approach</div>
-        <div class="info-desc">Use Bedrock/Vertex for proprietary frontier models (Claude, GPT-4o). Use vLLM self-hosted for high-volume open models (Llama, Mistral). Route by cost, latency, and sensitivity.</div>
-      </div>
-    </div>
-
-    <div style="margin-top:28px;background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;">
-      <table class="comp-table">
-        <thead>
-          <tr>
-            <th>Factor</th>
-            <th>Self-Hosted</th>
-            <th>Managed (Cloud)</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td>GPU Management</td><td class="cross">✗ You manage it</td><td class="tick">✓ Zero ops</td></tr>
-          <tr><td>Compliance Certs</td><td class="partial">~ You audit</td><td class="tick">✓ Provider certified</td></tr>
-          <tr><td>Custom Models</td><td class="tick">✓ Full control</td><td class="partial">~ Limited (fine-tune APIs)</td></tr>
-          <tr><td>Cost at Scale</td><td class="tick">✓ Cheap &gt;100M/mo</td><td class="cross">✗ Expensive at scale</td></tr>
-          <tr><td>Time to First Token</td><td class="partial">~ Days to set up</td><td class="tick">✓ Minutes</td></tr>
-          <tr><td>Data Residency</td><td class="tick">✓ Full control</td><td class="tick">✓ Region-locked options</td></tr>
-        </tbody>
-      </table>
+      <div class="callout-body"><strong>Why this matters:</strong> Cloud AI lock-in is real. Model pricing, availability, and fine-tuning capabilities differ significantly. Architecture with LiteLLM as a provider-agnostic abstraction layer means you can switch providers with a single environment variable change — critical for negotiating pricing and maintaining resilience.</div>
     </div>
   </div>
-</div>
 
-<!-- SECTION 2 -->
-<div class="container">
   <div class="section">
-    <div class="section-header">
-      <div class="section-num">02 — AWS Bedrock</div>
-      <h2>AWS Bedrock</h2>
-      <p>Amazon's managed AI service gives you access to frontier models through your existing AWS infrastructure — IAM, VPCs, CloudTrail, and all the compliance you already have.</p>
+    <div class="section-header reveal">
+      <div class="section-num">Section 03</div>
+      <h2>Cost Comparison Chart</h2>
+      <p>Real-world cost benchmarks for equivalent model quality across the three platforms. Per-million-token pricing as of early 2025 for production workloads.</p>
+    </div>
+    <div class="cost-chart reveal">
+      <svg class="cost-svg" viewBox="0 0 680 300" width="680" height="300">
+        <!-- Y axis -->
+        <line x1="80" y1="20" x2="80" y2="250" stroke="#2a2a45" stroke-width="1"/>
+        <!-- Grid lines -->
+        <line x1="80" y1="62" x2="660" y2="62" stroke="#2a2a45" stroke-width="0.5" stroke-dasharray="4"/>
+        <line x1="80" y1="104" x2="660" y2="104" stroke="#2a2a45" stroke-width="0.5" stroke-dasharray="4"/>
+        <line x1="80" y1="146" x2="660" y2="146" stroke="#2a2a45" stroke-width="0.5" stroke-dasharray="4"/>
+        <line x1="80" y1="188" x2="660" y2="188" stroke="#2a2a45" stroke-width="0.5" stroke-dasharray="4"/>
+        <line x1="80" y1="250" x2="660" y2="250" stroke="#2a2a45" stroke-width="1"/>
+        <!-- Y labels -->
+        <text x="70" y="254" text-anchor="end" font-size="10" fill="#64748b" font-family="Inter,sans-serif">$0</text>
+        <text x="70" y="192" text-anchor="end" font-size="10" fill="#64748b" font-family="Inter,sans-serif">$5</text>
+        <text x="70" y="150" text-anchor="end" font-size="10" fill="#64748b" font-family="Inter,sans-serif">$10</text>
+        <text x="70" y="108" text-anchor="end" font-size="10" fill="#64748b" font-family="Inter,sans-serif">$15</text>
+        <text x="70" y="66" text-anchor="end" font-size="10" fill="#64748b" font-family="Inter,sans-serif">$20</text>
+        <!-- Y axis label -->
+        <text x="18" y="145" text-anchor="middle" font-size="10" fill="#64748b" font-family="Inter,sans-serif" transform="rotate(-90,18,145)">$ per 1M input tokens</text>
+
+        <!-- Group 1: Input tokens -->
+        <text x="180" y="270" text-anchor="middle" font-size="10" fill="#64748b" font-family="Inter,sans-serif">Input Tokens</text>
+        <!-- AWS Bedrock Claude 3.5 Sonnet: $3/M -->
+        <rect id="b1-aws" x="110" y="220" width="40" height="30" fill="#f59e0b" rx="3" opacity="0.9"/>
+        <text x="130" y="215" text-anchor="middle" font-size="9" fill="#f59e0b" font-family="Inter,sans-serif">$3</text>
+        <!-- Vertex Gemini 1.5 Pro: $3.5/M -->
+        <rect id="b1-gcp" x="160" y="215" width="40" height="35" fill="#0d9488" rx="3" opacity="0.9"/>
+        <text x="180" y="210" text-anchor="middle" font-size="9" fill="#0d9488" font-family="Inter,sans-serif">$3.5</text>
+        <!-- Azure GPT-4o: $5/M -->
+        <rect id="b1-azure" x="210" y="200" width="40" height="50" fill="#7c3aed" rx="3" opacity="0.9"/>
+        <text x="230" y="195" text-anchor="middle" font-size="9" fill="#a855f7" font-family="Inter,sans-serif">$5</text>
+
+        <!-- Group 2: Output tokens -->
+        <text x="370" y="270" text-anchor="middle" font-size="10" fill="#64748b" font-family="Inter,sans-serif">Output Tokens</text>
+        <rect id="b2-aws" x="300" y="130" width="40" height="120" fill="#f59e0b" rx="3" opacity="0.9"/>
+        <text x="320" y="125" text-anchor="middle" font-size="9" fill="#f59e0b" font-family="Inter,sans-serif">$15</text>
+        <rect id="b2-gcp" x="350" y="150" width="40" height="100" fill="#0d9488" rx="3" opacity="0.9"/>
+        <text x="370" y="145" text-anchor="middle" font-size="9" fill="#0d9488" font-family="Inter,sans-serif">$12.5</text>
+        <rect id="b2-azure" x="400" y="90" width="40" height="160" fill="#7c3aed" rx="3" opacity="0.9"/>
+        <text x="420" y="85" text-anchor="middle" font-size="9" fill="#a855f7" font-family="Inter,sans-serif">$20</text>
+
+        <!-- Group 3: Fine-tuning -->
+        <text x="560" y="270" text-anchor="middle" font-size="10" fill="#64748b" font-family="Inter,sans-serif">Fine-Tuning</text>
+        <rect id="b3-aws" x="490" y="104" width="40" height="146" fill="#f59e0b" rx="3" opacity="0.9"/>
+        <text x="510" y="99" text-anchor="middle" font-size="9" fill="#f59e0b" font-family="Inter,sans-serif">$18</text>
+        <rect id="b3-gcp" x="540" y="62" width="40" height="188" fill="#0d9488" rx="3" opacity="0.9"/>
+        <text x="560" y="57" text-anchor="middle" font-size="9" fill="#0d9488" font-family="Inter,sans-serif">$23</text>
+        <rect id="b3-azure" x="590" y="82" width="40" height="168" fill="#7c3aed" rx="3" opacity="0.9"/>
+        <text x="610" y="77" text-anchor="middle" font-size="9" fill="#a855f7" font-family="Inter,sans-serif">$21</text>
+
+        <!-- Legend -->
+        <rect x="90" y="24" width="12" height="12" fill="#f59e0b" rx="2"/><text x="108" y="34" font-size="10" fill="#e2e8f0" font-family="Inter,sans-serif">AWS Bedrock</text>
+        <rect x="200" y="24" width="12" height="12" fill="#0d9488" rx="2"/><text x="218" y="34" font-size="10" fill="#e2e8f0" font-family="Inter,sans-serif">Vertex AI</text>
+        <rect x="290" y="24" width="12" height="12" fill="#7c3aed" rx="2"/><text x="308" y="34" font-size="10" fill="#e2e8f0" font-family="Inter,sans-serif">Azure OpenAI</text>
+      </svg>
     </div>
 
-    <ul class="bullet-list">
-      <li><strong>Supported models:</strong> Claude (Anthropic), Nova/Titan (Amazon), Llama (Meta), Mistral, Stable Diffusion — 30+ models via one API</li>
-      <li><strong>Cross-region inference:</strong> Route requests to regions with available capacity — prevents throttling during peak load</li>
-      <li><strong>Bedrock Agents:</strong> Managed agent orchestration with memory, knowledge bases, and action groups — Bedrock's alternative to LangGraph</li>
-      <li><strong>Compliance:</strong> HIPAA, SOC 2 Type II, FedRAMP High, ISO 27001 — data never leaves your AWS account, encrypted at rest and in transit</li>
-    </ul>
+    <div class="code-wrap reveal" style="margin-top:28px;">
+      <div class="win-chrome"><span class="win-dot r"></span><span class="win-dot y"></span><span class="win-dot g"></span><span style="font-size:11px;color:var(--muted);margin-left:8px;font-family:var(--mono)">litellm_gateway.py</span></div>
+      <div class="code-block"><span class="c-kw">import</span> litellm
+<span class="c-kw">from</span> litellm <span class="c-kw">import</span> <span class="c-fn">completion</span>
 
-    <div class="callout">
-      <span class="callout-icon">🔐</span>
-      <div class="callout-text"><strong>Security note:</strong> Bedrock uses AWS IAM for auth — no API keys in code. Attach an IAM role to your EC2/Lambda/ECS and use boto3 with instance credentials. Your requests are not used for model training.</div>
-    </div>
+<span class="c-cmt"># LiteLLM: provider-agnostic abstraction — switch with env var</span>
+<span class="c-cmt"># LITELLM_MODEL=bedrock/claude-3-5-sonnet-20241022</span>
+<span class="c-cmt"># LITELLM_MODEL=vertex_ai/gemini-1.5-pro</span>
+<span class="c-cmt"># LITELLM_MODEL=azure/gpt-4o</span>
 
-    <div class="code-wrap">
-      <span class="code-label">PYTHON — AWS Bedrock (Claude)</span>
-      <div class="code-block"><span class="c-kw">import</span> boto3
-<span class="c-kw">import</span> json
+<span class="c-kw">import</span> os
+MODEL = os.<span class="c-fn">getenv</span>(<span class="c-str">"LITELLM_MODEL"</span>, <span class="c-str">"bedrock/claude-3-5-sonnet-20241022"</span>)
 
-bedrock = boto3.<span class="c-fn">client</span>(<span class="c-str">"bedrock-runtime"</span>, region_name=<span class="c-str">"us-east-1"</span>)
+<span class="c-kw">def</span> <span class="c-fn">generate</span>(prompt: <span class="c-bi">str</span>) -> <span class="c-bi">str</span>:
+    response = <span class="c-fn">completion</span>(
+        model=MODEL,
+        messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: prompt}],
+        max_tokens=<span class="c-num">1024</span>,
+    )
+    <span class="c-kw">return</span> response.choices[<span class="c-num">0</span>].message.content
 
-<span class="c-cmt"># Invoke Claude via Bedrock</span>
-response = bedrock.<span class="c-fn">invoke_model</span>(
-    modelId=<span class="c-str">"anthropic.claude-3-5-sonnet-20241022-v2:0"</span>,
-    contentType=<span class="c-str">"application/json"</span>,
-    accept=<span class="c-str">"application/json"</span>,
-    body=json.<span class="c-fn">dumps</span>({
+<span class="c-cmt"># AWS Bedrock with IAM — no API key needed if role is configured</span>
+<span class="c-kw">def</span> <span class="c-fn">bedrock_call</span>(prompt: <span class="c-bi">str</span>) -> <span class="c-bi">str</span>:
+    <span class="c-kw">import</span> boto3
+    bedrock = boto3.<span class="c-fn">client</span>(<span class="c-str">"bedrock-runtime"</span>, region_name=<span class="c-str">"us-east-1"</span>)
+    body = {
         <span class="c-str">"anthropic_version"</span>: <span class="c-str">"bedrock-2023-05-31"</span>,
         <span class="c-str">"max_tokens"</span>: <span class="c-num">1024</span>,
-        <span class="c-str">"messages"</span>: [
-            {<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: <span class="c-str">"Explain LoRA fine-tuning"</span>}
-        ]
-    })
-)
-result = json.<span class="c-fn">loads</span>(response[<span class="c-str">"body"</span>].<span class="c-fn">read</span>())
-<span class="c-fn">print</span>(result[<span class="c-str">"content"</span>][<span class="c-num">0</span>][<span class="c-str">"text"</span>])
-
-<span class="c-cmt"># Streaming response</span>
-response_stream = bedrock.<span class="c-fn">invoke_model_with_response_stream</span>(
-    modelId=<span class="c-str">"anthropic.claude-3-5-sonnet-20241022-v2:0"</span>,
-    body=json.<span class="c-fn">dumps</span>({
-        <span class="c-str">"anthropic_version"</span>: <span class="c-str">"bedrock-2023-05-31"</span>,
-        <span class="c-str">"max_tokens"</span>: <span class="c-num">512</span>,
-        <span class="c-str">"messages"</span>: [{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: <span class="c-str">"Explain attention"</span>}]
-    })
-)
-<span class="c-kw">for</span> event <span class="c-kw">in</span> response_stream[<span class="c-str">"body"</span>]:
-    chunk = json.<span class="c-fn">loads</span>(event[<span class="c-str">"chunk"</span>][<span class="c-str">"bytes"</span>])
-    <span class="c-kw">if</span> chunk.<span class="c-fn">get</span>(<span class="c-str">"type"</span>) == <span class="c-str">"content_block_delta"</span>:
-        <span class="c-fn">print</span>(chunk[<span class="c-str">"delta"</span>][<span class="c-str">"text"</span>], end=<span class="c-str">""</span>, flush=<span class="c-bi">True</span>)</div>
+        <span class="c-str">"messages"</span>: [{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: prompt}]
+    }
+    resp = bedrock.<span class="c-fn">invoke_model</span>(
+        modelId=<span class="c-str">"anthropic.claude-3-5-sonnet-20241022-v2:0"</span>,
+        body=__import__(<span class="c-str">'json'</span>).<span class="c-fn">dumps</span>(body)
+    )
+    <span class="c-kw">return</span> __import__(<span class="c-str">'json'</span>).<span class="c-fn">loads</span>(resp[<span class="c-str">"body"</span>].<span class="c-fn">read</span>())[<span class="c-str">"content"</span>][<span class="c-num">0</span>][<span class="c-str">"text"</span>]</div>
     </div>
   </div>
-</div>
 
-<!-- SECTION 3 -->
-<div class="container">
   <div class="section">
-    <div class="section-header">
-      <div class="section-num">03 — Google Vertex AI</div>
-      <h2>Google Vertex AI</h2>
-      <p>Vertex gives you Gemini on a private enterprise endpoint with GCP's IAM, VPC, and data residency controls. Plus Model Garden for fine-tuning open models on managed infrastructure.</p>
+    <div class="section-header reveal">
+      <div class="section-num">Section 04</div>
+      <h2>Provider Comparison Matrix</h2>
     </div>
-
-    <ul class="bullet-list teal">
-      <li><strong>Gemini on Vertex:</strong> Private endpoint with VPC Service Controls, IAM auth (no API keys exposed), and audit logging in Cloud Audit Logs</li>
-      <li><strong>Model Garden:</strong> Fine-tune Gemma, Llama 3, and Mistral on Vertex-managed TPUs/GPUs — no cluster to manage</li>
-      <li><strong>Vertex AI Agent Builder:</strong> Managed RAG, enterprise search, and conversational agents with grounding in Google Search or your own data</li>
-      <li><strong>Vertex AI Pipelines:</strong> Kubeflow-compatible managed ML pipelines for training, eval, and deployment — integrates with MLflow</li>
-    </ul>
-
-    <div class="code-wrap">
-      <span class="code-label">PYTHON — Vertex AI (Gemini)</span>
-      <div class="code-block"><span class="c-kw">import</span> vertexai
-<span class="c-kw">from</span> vertexai.generative_models <span class="c-kw">import</span> GenerativeModel, Part, SafetySetting
-
-vertexai.<span class="c-fn">init</span>(project=<span class="c-str">"my-gcp-project"</span>, location=<span class="c-str">"us-central1"</span>)
-
-model = <span class="c-fn">GenerativeModel</span>(
-    <span class="c-str">"gemini-1.5-pro-002"</span>,
-    system_instruction=<span class="c-str">"You are an expert AI engineer."</span>,
-    safety_settings=[
-        <span class="c-fn">SafetySetting</span>(
-            category=SafetySetting.HarmCategory.<span class="c-bi">HARM_CATEGORY_HATE_SPEECH</span>,
-            threshold=SafetySetting.HarmBlockThreshold.<span class="c-bi">BLOCK_LOW_AND_ABOVE</span>
-        )
-    ]
-)
-
-<span class="c-cmt"># Multi-modal: text + image/video</span>
-response = model.<span class="c-fn">generate_content</span>([
-    Part.<span class="c-fn">from_uri</span>(<span class="c-str">"gs://bucket/video.mp4"</span>, mime_type=<span class="c-str">"video/mp4"</span>),
-    <span class="c-str">"Summarize the key points in this video"</span>
-])
-
-<span class="c-cmt"># Streaming</span>
-<span class="c-kw">for</span> chunk <span class="c-kw">in</span> model.<span class="c-fn">generate_content</span>(<span class="c-str">"Explain LoRA"</span>, stream=<span class="c-bi">True</span>):
-    <span class="c-fn">print</span>(chunk.text, end=<span class="c-str">""</span>, flush=<span class="c-bi">True</span>)
-
-<span class="c-cmt"># LangChain integration</span>
-<span class="c-kw">from</span> langchain_google_vertexai <span class="c-kw">import</span> ChatVertexAI
-llm = <span class="c-fn">ChatVertexAI</span>(model=<span class="c-str">"gemini-1.5-pro"</span>, location=<span class="c-str">"us-central1"</span>)</div>
-    </div>
+    <table class="comp-table reveal">
+      <thead><tr><th>Feature</th><th style="color:var(--aws)">AWS Bedrock</th><th style="color:var(--gcp)">Vertex AI</th><th style="color:var(--azure)">Azure OpenAI</th></tr></thead>
+      <tbody>
+        <tr><td>Claude 3.5 Access</td><td><span class="tick">✓</span> Native</td><td><span class="partial">~</span> Via partner</td><td><span class="cross">✗</span> Not available</td></tr>
+        <tr><td>GPT-4o Access</td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td><td><span class="tick">✓</span> Native</td></tr>
+        <tr><td>Gemini 1.5 Pro</td><td><span class="cross">✗</span></td><td><span class="tick">✓</span> Native</td><td><span class="cross">✗</span></td></tr>
+        <tr><td>HIPAA BAA</td><td><span class="tick">✓</span></td><td><span class="tick">✓</span></td><td><span class="tick">✓</span></td></tr>
+        <tr><td>Managed RAG</td><td><span class="tick">✓</span> Knowledge Bases</td><td><span class="tick">✓</span> RAG Engine</td><td><span class="tick">✓</span> AI Search</td></tr>
+        <tr><td>Custom Fine-tuning</td><td><span class="partial">~</span> Titan only</td><td><span class="tick">✓</span> Full support</td><td><span class="tick">✓</span> GPT-3.5+</td></tr>
+        <tr><td>Multimodal (video)</td><td><span class="cross">✗</span></td><td><span class="tick">✓</span> Gemini</td><td><span class="partial">~</span> GPT-4V</td></tr>
+        <tr><td>VPC Private Link</td><td><span class="tick">✓</span></td><td><span class="tick">✓</span></td><td><span class="tick">✓</span></td></tr>
+      </tbody>
+    </table>
   </div>
-</div>
 
-<!-- SECTION 4 -->
-<div class="container">
   <div class="section">
-    <div class="section-header">
-      <div class="section-num">04 — Azure OpenAI</div>
-      <h2>Azure OpenAI Service</h2>
-      <p>Microsoft hosts OpenAI's models in your Azure tenant. Same OpenAI API surface, but with Azure AD auth, private endpoints, CMEK, and enterprise SLAs — making it the choice for regulated industries already on Azure.</p>
-    </div>
-
-    <ul class="bullet-list yellow">
-      <li><strong>Azure-hosted OpenAI models:</strong> GPT-4o, o1, o3-mini, DALL-E 3, Whisper, text-embedding-3-large — same models, Azure compliance wrapper</li>
-      <li><strong>Enterprise features:</strong> Private endpoints, Customer-Managed Encryption Keys (CMEK), Azure AD/Entra auth, configurable content filters</li>
-      <li><strong>Azure AI Content Safety:</strong> Configurable content filters with custom categories — layer on top of model output for regulated content</li>
-      <li><strong>Azure AI Foundry (formerly AI Studio):</strong> Central hub for all Azure AI services — manage deployments, fine-tuning, and evals from one place</li>
-    </ul>
-
-    <div class="callout green">
-      <span class="callout-icon">✅</span>
-      <div class="callout-text"><strong>Production best practice:</strong> Never use API keys in Azure production. Use <code style="background:var(--surface2);padding:1px 5px;border-radius:3px;font-family:var(--mono);">DefaultAzureCredential()</code> with a Managed Identity — zero secrets to rotate, full audit trail in Azure Monitor.</div>
-    </div>
-
-    <div class="code-wrap">
-      <span class="code-label">PYTHON — Azure OpenAI (with Managed Identity)</span>
-      <div class="code-block"><span class="c-kw">from</span> openai <span class="c-kw">import</span> AzureOpenAI
-
-<span class="c-cmt"># Dev: API key (never in production)</span>
-client = <span class="c-fn">AzureOpenAI</span>(
-    azure_endpoint=<span class="c-str">"https://my-company.openai.azure.com/"</span>,
-    api_key=<span class="c-str">"..."</span>,
-    api_version=<span class="c-str">"2024-10-01-preview"</span>
-)
-
-<span class="c-cmt"># Same OpenAI API, different endpoint</span>
-response = client.chat.completions.<span class="c-fn">create</span>(
-    model=<span class="c-str">"gpt-4o"</span>,  <span class="c-cmt"># deployment name in Azure</span>
-    messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: <span class="c-str">"Explain LoRA"</span>}],
-    max_tokens=<span class="c-num">500</span>
-)
-
-<span class="c-cmt"># Production: Managed Identity (no API keys)</span>
-<span class="c-kw">from</span> azure.identity <span class="c-kw">import</span> DefaultAzureCredential, get_bearer_token_provider
-<span class="c-kw">from</span> openai <span class="c-kw">import</span> AzureOpenAI
-
-credential = <span class="c-fn">DefaultAzureCredential</span>()
-token_provider = <span class="c-fn">get_bearer_token_provider</span>(
-    credential, <span class="c-str">"https://cognitiveservices.azure.com/.default"</span>
-)
-
-client = <span class="c-fn">AzureOpenAI</span>(
-    azure_endpoint=<span class="c-str">"https://my-company.openai.azure.com/"</span>,
-    azure_ad_token_provider=token_provider,
-    api_version=<span class="c-str">"2024-10-01-preview"</span>
-)</div>
+    <div class="section-header reveal"><div class="section-num">Section 05</div><h2>Exercises</h2></div>
+    <div class="ex-list reveal">
+      <div class="ex-item"><div class="ex-num">1</div><div class="ex-body"><div class="ex-title">LiteLLM Multi-Provider Wrapper</div><div class="ex-desc">Build a provider-agnostic wrapper using LiteLLM. Implement automatic fallback: primary → Bedrock, fallback → Vertex AI, last resort → Azure. Add latency tracking and cost estimation per provider.</div><span class="diff diff-med">Medium</span></div></div>
+      <div class="ex-item"><div class="ex-num">2</div><div class="ex-body"><div class="ex-title">Cost Calculator for Production Workload</div><div class="ex-desc">Given: 10,000 daily queries, avg 500 input tokens, 300 output tokens. Calculate monthly cost for Claude 3.5 on Bedrock vs GPT-4o on Azure vs Gemini on Vertex. Include API call overhead, caching savings, and fine-tuning amortization.</div><span class="diff diff-easy">Easy</span></div></div>
+      <div class="ex-item"><div class="ex-num">3</div><div class="ex-body"><div class="ex-title">Bedrock Agent with Knowledge Base</div><div class="ex-desc">Create an AWS Bedrock Agent connected to a Knowledge Base (S3-backed document store). Configure IAM roles with least-privilege. Build a FastAPI proxy that authenticates via JWT and forwards to Bedrock, adding tenant-based S3 prefix filtering.</div><span class="diff diff-hard">Hard</span></div></div>
     </div>
   </div>
-</div>
 
-<!-- SECTION 5 -->
-<div class="container">
   <div class="section">
-    <div class="section-header">
-      <div class="section-num">05 — Cost &amp; Selection</div>
-      <h2>Cost Comparison &amp; Provider Selection</h2>
-      <p>Pricing as of early 2025. Always verify current pricing on provider consoles — this changes frequently. All prices per 1M tokens unless noted.</p>
-    </div>
-
-    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:auto;">
-      <table class="comp-table">
-        <thead>
-          <tr>
-            <th>Provider / Model</th>
-            <th>Input ($/1M tokens)</th>
-            <th>Output ($/1M tokens)</th>
-            <th>HIPAA</th>
-            <th>SOC2</th>
-            <th>FedRAMP</th>
-            <th>Max Context</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><strong>Bedrock</strong> — Claude 3.5 Sonnet</td>
-            <td>$3.00</td><td>$15.00</td>
-            <td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓ High</td>
-            <td>200K</td>
-          </tr>
-          <tr>
-            <td><strong>Bedrock</strong> — Llama 3.3 70B</td>
-            <td>$0.72</td><td>$0.72</td>
-            <td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓ High</td>
-            <td>128K</td>
-          </tr>
-          <tr>
-            <td><strong>Vertex AI</strong> — Gemini 1.5 Pro</td>
-            <td>$1.25</td><td>$5.00</td>
-            <td class="tick">✓</td><td class="tick">✓</td><td class="partial">~ Moderate</td>
-            <td>2M</td>
-          </tr>
-          <tr>
-            <td><strong>Vertex AI</strong> — Gemini Flash 1.5</td>
-            <td>$0.075</td><td>$0.30</td>
-            <td class="tick">✓</td><td class="tick">✓</td><td class="partial">~ Moderate</td>
-            <td>1M</td>
-          </tr>
-          <tr>
-            <td><strong>Azure OpenAI</strong> — GPT-4o</td>
-            <td>$2.50</td><td>$10.00</td>
-            <td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓ High</td>
-            <td>128K</td>
-          </tr>
-          <tr>
-            <td><strong>Azure OpenAI</strong> — GPT-4o mini</td>
-            <td>$0.15</td><td>$0.60</td>
-            <td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓ High</td>
-            <td>128K</td>
-          </tr>
-          <tr>
-            <td><strong>Direct API</strong> — Claude 3.5 Sonnet</td>
-            <td>$3.00</td><td>$15.00</td>
-            <td class="partial">~ BAA available</td><td class="tick">✓</td><td class="cross">✗</td>
-            <td>200K</td>
-          </tr>
-          <tr>
-            <td><strong>Self-hosted</strong> — Llama 3.3 70B (A100)</td>
-            <td>~$0.10</td><td>~$0.10</td>
-            <td class="tick">✓ Full</td><td class="partial">~ Your audit</td><td class="tick">✓ Possible</td>
-            <td>128K</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Interactive Widget -->
-    <div class="widget-box">
-      <div class="widget-title">Cloud AI Provider Selector</div>
-      <div class="widget-desc">Check your requirements — get a scored recommendation across providers.</div>
-      <div class="check-grid">
-        <label class="check-item"><input type="checkbox" id="req-hipaa"> <span>HIPAA / healthcare compliance required</span></label>
-        <label class="check-item"><input type="checkbox" id="req-fedramp"> <span>FedRAMP High (government/federal)</span></label>
-        <label class="check-item"><input type="checkbox" id="req-selfhosted"> <span>Need to run open-source / custom models</span></label>
-        <label class="check-item"><input type="checkbox" id="req-eu"> <span>EU data residency required (GDPR)</span></label>
-        <label class="check-item"><input type="checkbox" id="req-cost"> <span>Lowest possible cost is top priority</span></label>
-        <label class="check-item"><input type="checkbox" id="req-context"> <span>Need maximum context window (&gt;200K)</span></label>
-        <label class="check-item"><input type="checkbox" id="req-aws"> <span>Already on AWS (existing IAM/VPC)</span></label>
-        <label class="check-item"><input type="checkbox" id="req-azure"> <span>Already on Azure (existing AD/Entra)</span></label>
-      </div>
-      <button class="run-btn" onclick="scoreProviders()">Find Best Provider</button>
-      <div class="provider-results" id="provider-results" style="display:none;">
-        <div class="provider-card" id="card-bedrock">
-          <div class="provider-name">AWS Bedrock</div>
-          <div class="provider-score" id="score-bedrock">0/8</div>
-          <div class="provider-reason" id="reason-bedrock"></div>
-        </div>
-        <div class="provider-card" id="card-vertex">
-          <div class="provider-name">Vertex AI</div>
-          <div class="provider-score" id="score-vertex">0/8</div>
-          <div class="provider-reason" id="reason-vertex"></div>
-        </div>
-        <div class="provider-card" id="card-azure">
-          <div class="provider-name">Azure OpenAI</div>
-          <div class="provider-score" id="score-azure">0/8</div>
-          <div class="provider-reason" id="reason-azure"></div>
-        </div>
-      </div>
+    <div class="section-header reveal"><div class="section-num">Prerequisites</div><h2>What You Should Know</h2></div>
+    <div class="prereq-grid reveal">
+      <div class="prereq-chip"><span class="prereq-day">Day 12</span> RAG Architecture</div>
+      <div class="prereq-chip"><span class="prereq-day">Day 20</span> Production Agents</div>
+      <div class="prereq-chip"><span class="prereq-day">Day 25</span> Auth &amp; Tenancy</div>
     </div>
   </div>
 </div>
-
-<section style="max-width:1100px;margin:2rem auto;padding:0 24px 3rem;">
-  <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;">
-    <div style="font-size:0.75rem;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:1px;">Practice</div>
-    <h2 style="margin:0;font-size:1.4rem;font-weight:700;color:white;">Exercises</h2>
-  </div>
-  <p style="color:#9ca3af;margin-bottom:1.5rem;">Hands-on labs: integrate Bedrock into a FastAPI service, configure Vertex private endpoints, and set up Azure Managed Identity auth.</p>
-  <a href="../exercises/day26_exercises.html" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.6rem 1.25rem;background:linear-gradient(135deg,#7c3aed,#0d9488);color:white;font-weight:700;font-size:0.9rem;border-radius:8px;text-decoration:none;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">Open Interactive Exercises →</a>
-</section>
-
 <footer>
   <div class="container">
-    <p>Agentic AI Mastery &mdash; Day 26: Cloud AI Services &mdash; Built for Sharjeel Sohail</p>
-    <div style="margin-top:16px;display:flex;justify-content:center;gap:16px;">
-      <a href="day25.html" style="color:var(--muted);text-decoration:none;font-size:13px;">← Day 25</a>
-      <a href="../index.html" style="color:var(--muted);text-decoration:none;font-size:13px;">Dashboard</a>
-      <a href="day27.html" style="color:var(--muted);text-decoration:none;font-size:13px;">Day 27 →</a>
+    <div class="footer-inner">
+      <div class="footer-nav">
+        <a href="day25.html" class="nav-btn">← Day 25</a>
+        <a href="../index.html" class="nav-btn">Dashboard</a>
+        <a href="day27.html" class="nav-btn next">Day 27 →</a>
+      </div>
+      <div>Day 26 of 30 — Agentic AI Mastery</div>
     </div>
   </div>
 </footer>
-
 <script src="../bg-animation.js"></script>
 <script>
-// ── Mark Complete ─────────────────────────────────────────────────────────────
-function markComplete() {
-  try {
-    const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
-    p[26] = 'done';
-    localStorage.setItem('aai_progress', JSON.stringify(p));
-    const btn = document.getElementById('complete-btn');
-    btn.textContent = 'Completed!';
-    btn.classList.remove('complete');
-    btn.classList.add('done');
-  } catch(e) {}
-}
+window.addEventListener('scroll',()=>{const d=document.documentElement;document.getElementById('progress-bar').style.width=(d.scrollTop/(d.scrollHeight-d.clientHeight)*100)+'%';});
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');io.unobserve(e.target);}}),{threshold:0.1,rootMargin:'0px 0px -40px 0px'});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+function markComplete(){const key='day26_complete',btn=document.getElementById('nav-complete-btn');if(localStorage.getItem(key)){localStorage.removeItem(key);btn.classList.remove('done');btn.textContent='Mark Complete';}else{localStorage.setItem(key,'1');btn.classList.add('done');btn.textContent='✓ Complete';}}
+if(localStorage.getItem('day26_complete')){const b=document.getElementById('nav-complete-btn');b.classList.add('done');b.textContent='✓ Complete';}
 
-document.addEventListener('DOMContentLoaded', () => {
-  try {
-    const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
-    if (!p[26] || p[26] === 'locked') {
-      p[26] = 'active';
-      localStorage.setItem('aai_progress', JSON.stringify(p));
-    }
-    if (p[26] === 'done') {
-      const btn = document.getElementById('complete-btn');
-      btn.textContent = 'Completed!';
-      btn.classList.remove('complete');
-      btn.classList.add('done');
-    }
-  } catch(e) {}
-});
-
-// ── Provider Scorer ───────────────────────────────────────────────────────────
+// CLOUD PROVIDER SELECTOR
+const SCORES_MAP = {
+  'req-claude':    {aws:2, gcp:0, azure:0},
+  'req-aws':       {aws:3, gcp:0, azure:0},
+  'req-gcp':       {aws:0, gcp:3, azure:0},
+  'req-azure':     {aws:0, gcp:0, azure:3},
+  'req-hipaa':     {aws:2, gcp:2, azure:2},
+  'req-multimodal':{aws:0, gcp:2, azure:1},
+  'req-gpt4':      {aws:0, gcp:0, azure:3},
+  'req-bigquery':  {aws:0, gcp:3, azure:0},
+  'req-lowest-cost':{aws:2, gcp:1, azure:0},
+  'req-fine-tune': {aws:0, gcp:2, azure:2},
+};
 function scoreProviders() {
-  const hipaa = document.getElementById('req-hipaa').checked;
-  const fedramp = document.getElementById('req-fedramp').checked;
-  const selfhosted = document.getElementById('req-selfhosted').checked;
-  const eu = document.getElementById('req-eu').checked;
-  const cost = document.getElementById('req-cost').checked;
-  const context = document.getElementById('req-context').checked;
-  const aws = document.getElementById('req-aws').checked;
-  const azure = document.getElementById('req-azure').checked;
-
-  const bedrock = { score: 0, reasons: [] };
-  const vertex = { score: 0, reasons: [] };
-  const azureOAI = { score: 0, reasons: [] };
-
-  if (hipaa) {
-    bedrock.score++; bedrock.reasons.push('HIPAA-eligible');
-    vertex.score++; vertex.reasons.push('HIPAA-eligible');
-    azureOAI.score++; azureOAI.reasons.push('HIPAA-eligible');
-  }
-  if (fedramp) {
-    bedrock.score++; bedrock.reasons.push('FedRAMP High');
-    azureOAI.score++; azureOAI.reasons.push('FedRAMP High');
-    // vertex gets partial — skip
-  }
-  if (selfhosted) {
-    bedrock.score++; bedrock.reasons.push('Llama/Mistral via Bedrock');
-    vertex.score++; vertex.reasons.push('Model Garden open models');
-    // azure only OpenAI models
-  }
-  if (eu) {
-    vertex.score++; vertex.reasons.push('EU regions with GDPR controls');
-    azureOAI.score++; azureOAI.reasons.push('Azure EU regions + data residency');
-    bedrock.score++; bedrock.reasons.push('EU regions available');
-  }
-  if (cost) {
-    bedrock.score++; bedrock.reasons.push('Llama 70B at $0.72/1M');
-    vertex.score++; vertex.reasons.push('Gemini Flash at $0.075/1M');
-    azureOAI.score++; azureOAI.reasons.push('GPT-4o-mini at $0.15/1M');
-  }
-  if (context) {
-    vertex.score += 2; vertex.reasons.push('Gemini: up to 2M context window');
-    bedrock.score++; bedrock.reasons.push('Claude: 200K context');
-  }
-  if (aws) {
-    bedrock.score += 2; bedrock.reasons.push('Native AWS IAM + VPC integration');
-  }
-  if (azure) {
-    azureOAI.score += 2; azureOAI.reasons.push('Native Azure AD + existing infra');
-  }
-
-  const total = 8;
-  document.getElementById('score-bedrock').textContent = `${bedrock.score}/${total}`;
-  document.getElementById('score-vertex').textContent = `${vertex.score}/${total}`;
-  document.getElementById('score-azure').textContent = `${azureOAI.score}/${total}`;
-
-  document.getElementById('reason-bedrock').textContent = bedrock.reasons.length ? 'Matches: ' + bedrock.reasons.join(', ') : 'No specific requirements matched.';
-  document.getElementById('reason-vertex').textContent = vertex.reasons.length ? 'Matches: ' + vertex.reasons.join(', ') : 'No specific requirements matched.';
-  document.getElementById('reason-azure').textContent = azureOAI.reasons.length ? 'Matches: ' + azureOAI.reasons.join(', ') : 'No specific requirements matched.';
-
-  const scores = [bedrock.score, vertex.score, azureOAI.score];
-  const maxScore = Math.max(...scores);
-  const cards = ['card-bedrock', 'card-vertex', 'card-azure'];
-  cards.forEach((id, i) => {
-    const card = document.getElementById(id);
-    card.classList.remove('winner', 'runner');
-    if (scores[i] === maxScore) card.classList.add('winner');
-    else if (scores[i] === Math.max(...scores.filter(s => s !== maxScore))) card.classList.add('runner');
+  let scores = {aws:0, gcp:0, azure:0};
+  Object.entries(SCORES_MAP).forEach(([id, pts]) => {
+    if (document.getElementById(id).checked) {
+      scores.aws += pts.aws; scores.gcp += pts.gcp; scores.azure += pts.azure;
+    }
   });
-
-  document.getElementById('provider-results').style.display = 'grid';
+  const max = Math.max(scores.aws, scores.gcp, scores.azure, 1);
+  ['aws','gcp','azure'].forEach(p => {
+    document.getElementById(`score-${p}`).textContent = scores[p];
+    document.getElementById(`bar-${p}`).style.width = (scores[p]/max*100)+'%';
+    document.getElementById(`ps-${p}`).className = 'provider-score' + (scores[p]===max&&scores[p]>0?' winner':'');
+  });
+  const winner = document.getElementById('provider-winner');
+  if (max > 0) {
+    const best = scores.aws>=scores.gcp&&scores.aws>=scores.azure?'AWS Bedrock':scores.gcp>=scores.azure?'Vertex AI':'Azure OpenAI';
+    winner.style.display='block';
+    winner.innerHTML=`<div style="background:rgba(16,185,129,0.08);border:1px solid var(--green);border-radius:10px;padding:12px 16px;font-size:13px">🏆 <strong style="color:var(--green)">Recommended: ${best}</strong> — best match for your selected requirements. Score: ${max} points.</div>`;
+  } else { winner.style.display='none'; }
 }
 </script>
 </body>

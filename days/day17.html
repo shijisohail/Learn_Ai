@@ -1,753 +1,659 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-animation-density="high">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Day 17: Fine-Tuning with LoRA/PEFT</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --bg: #0a0a0f; --card: #141420; --surface2: #1a1a2e; --border: #2a2a45;
-  --purple: #7c3aed; --purple-light: #a855f7; --teal: #0d9488; --green: #10b981;
-  --red: #ef4444; --yellow: #f59e0b; --text: #e2e8f0; --muted: #64748b;
-  --font: 'Inter', sans-serif; --mono: 'JetBrains Mono', monospace;
-}
-html { scroll-behavior: smooth; }
-body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; overflow-x: hidden; }
-body::before {
-  content: ''; position: fixed; inset: 0;
-  background:
-    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(124,58,237,0.08) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 40% at 90% 80%, rgba(13,148,136,0.05) 0%, transparent 60%);
-  pointer-events: none; z-index: 0;
-}
-.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
-
-nav {
-  position: sticky; top: 0; z-index: 100;
-  border-bottom: 1px solid var(--border);
-  background: rgba(10,10,15,0.9);
-  backdrop-filter: blur(12px);
-  padding: 0;
-}
-.nav-inner {
-  max-width: 1100px; margin: 0 auto; padding: 0 24px;
-  height: 52px;
-  display: flex; align-items: center; justify-content: space-between;
-}
-.nav-btn {
-  padding: 7px 18px; border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--surface2); color: var(--muted);
-  font-size: 13px; font-weight: 600;
-  text-decoration: none; transition: all 0.2s;
-  font-family: inherit; cursor: pointer;
-}
-.nav-btn:hover { border-color: var(--purple); color: var(--text); }
-.nav-btn.next {
-  border-color: rgba(124,58,237,0.5);
-  color: var(--purple-light);
-}
-.nav-btn.next:hover {
-  background: var(--purple); color: white; border-color: var(--purple);
-}
-.nav-btn.complete {
-  border-color: rgba(245,158,11,0.5);
-  color: var(--yellow);
-}
-.nav-btn.complete:hover {
-  background: var(--yellow); color: #0a0a0f; border-color: var(--yellow);
-}
-.nav-btn.complete.done {
-  background: var(--yellow); color: #0a0a0f; border-color: var(--yellow);
-}
-.nav-brand {
-  font-size: 14px; font-weight: 700; color: var(--muted);
-  text-decoration: none; letter-spacing: -0.2px;
-  transition: color 0.2s;
-}
-.nav-brand:hover { color: var(--text); }
-
-.day-hero { padding: 56px 0 40px; }
-.day-num { font-size: 12px; font-weight: 700; color: var(--purple-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
-.day-hero h1 { font-size: clamp(32px, 5vw, 56px); font-weight: 900; letter-spacing: -2px; margin-bottom: 16px; }
-.day-hero p { font-size: 17px; color: var(--muted); max-width: 600px; line-height: 1.6; margin-bottom: 28px; }
-.topic-pills { display: flex; flex-wrap: wrap; gap: 8px; }
-.topic-pill { padding: 5px 12px; border-radius: 20px; background: var(--surface2); border: 1px solid var(--border); font-size: 12px; color: var(--muted); font-weight: 500; }
-
-.section { padding: 56px 0; border-top: 1px solid var(--border); }
-.section-header { margin-bottom: 32px; }
-.section-num { font-size: 11px; font-weight: 700; color: var(--purple-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
-.section-header h2 { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 10px; }
-.section-header p { color: var(--muted); font-size: 15px; line-height: 1.6; max-width: 640px; }
-
-/* CODE BLOCKS — white-space: pre is REQUIRED */
-.code-block {
-  background: #0d1117; border: 1px solid #30363d; border-radius: 12px;
-  padding: 24px; font-family: var(--mono); font-size: 12.5px; line-height: 1.8;
-  overflow-x: auto; white-space: pre;
-}
-.code-wrap { position: relative; margin-top: 16px; }
-.code-label { position: absolute; top: -10px; left: 16px; background: var(--purple); color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.5px; }
-.c-cmt { color: #8b949e; }
-.c-kw { color: #ff7b72; }
-.c-fn { color: #d2a8ff; }
-.c-str { color: #a5d6ff; }
-.c-type { color: #ffa657; }
-.c-num { color: #f2cc60; }
-.c-bi { color: #79c0ff; }
-.c-dec { color: #ffa657; }
-
-/* DECISION TRIANGLE */
-.triangle-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 20px; }
-.tri-card {
-  background: var(--card); border: 1px solid var(--border); border-radius: 14px;
-  padding: 20px; text-align: center; position: relative; overflow: hidden;
-  transition: all 0.2s;
-}
-.tri-card:hover { transform: translateY(-3px); }
-.tri-card.active-prompting { border-color: rgba(16,185,129,0.5); }
-.tri-card.active-rag { border-color: rgba(13,148,136,0.5); }
-.tri-card.active-finetune { border-color: rgba(168,85,247,0.5); }
-.tri-icon { font-size: 32px; margin-bottom: 10px; }
-.tri-title { font-size: 15px; font-weight: 800; margin-bottom: 8px; }
-.tri-when { font-size: 11px; color: var(--muted); line-height: 1.5; margin-bottom: 10px; }
-.tri-cost { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 20px; }
-.cost-low { background: rgba(16,185,129,0.15); color: var(--green); }
-.cost-mid { background: rgba(13,148,136,0.15); color: var(--teal); }
-.cost-high { background: rgba(168,85,247,0.15); color: var(--purple-light); }
-
-/* FLOW DIAGRAM */
-.flow-diagram { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; overflow-x: auto; }
-.flow-row { display: flex; align-items: center; gap: 0; justify-content: center; flex-wrap: wrap; gap: 4px; }
-.flow-box {
-  background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
-  padding: 12px 16px; text-align: center; min-width: 120px;
-}
-.flow-box.highlight { border-color: var(--purple); background: rgba(124,58,237,0.1); }
-.flow-box.result { border-color: var(--green); background: rgba(16,185,129,0.08); }
-.flow-box-title { font-size: 12px; font-weight: 700; margin-bottom: 3px; }
-.flow-box-sub { font-size: 10px; color: var(--muted); }
-.flow-arrow { color: var(--muted); font-size: 18px; padding: 0 6px; }
-.flow-plus { color: var(--yellow); font-size: 20px; font-weight: 800; padding: 0 8px; }
-
-/* LORA VISUAL */
-.lora-visual { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-.lora-panel { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 22px; }
-.lora-panel h3 { font-size: 14px; font-weight: 800; margin-bottom: 12px; }
-.param-bar { margin-bottom: 12px; }
-.param-label { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 12px; }
-.param-label span { color: var(--muted); }
-.bar-track { background: var(--surface2); border-radius: 99px; height: 8px; overflow: hidden; }
-.bar-fill { height: 100%; border-radius: 99px; transition: width 1s ease; }
-.bar-full { background: linear-gradient(90deg, var(--red), var(--yellow)); }
-.bar-lora { background: linear-gradient(90deg, var(--green), var(--teal)); }
-.lora-eq { text-align: center; padding: 16px; background: var(--surface2); border-radius: 10px; margin-top: 12px; font-family: var(--mono); font-size: 13px; color: var(--purple-light); }
-
-/* COMPARISON TABLE */
-.comp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.comp-table th { background: var(--surface2); padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); border-bottom: 1px solid var(--border); }
-.comp-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
-.comp-table tr:last-child td { border-bottom: none; }
-.comp-table tr:hover td { background: rgba(255,255,255,0.02); }
-.tick { color: var(--green); font-weight: 700; }
-.cross { color: var(--red); font-weight: 700; }
-.partial { color: var(--yellow); font-weight: 700; }
-
-/* USE CASES */
-.use-case-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.use-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
-.use-card.good { border-color: rgba(16,185,129,0.3); }
-.use-card.bad { border-color: rgba(239,68,68,0.3); }
-.use-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-.use-icon { font-size: 18px; }
-.use-title { font-size: 13px; font-weight: 700; }
-.use-items { list-style: none; display: flex; flex-direction: column; gap: 6px; }
-.use-items li { font-size: 12px; color: var(--muted); display: flex; align-items: flex-start; gap: 8px; }
-.use-items li::before { content: '•'; color: var(--green); flex-shrink: 0; }
-.use-card.bad .use-items li::before { color: var(--red); }
-
-/* PREREQS */
-.prereq-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
-.prereq-chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
-.prereq-day { background: var(--purple); color: white; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; }
-
-/* EXERCISES */
-.ex-list { display: flex; flex-direction: column; gap: 12px; counter-reset: ex; }
-.ex-item { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; display: flex; gap: 14px; counter-increment: ex; }
-.ex-num { width: 32px; height: 32px; border-radius: 50%; background: rgba(124,58,237,0.15); border: 2px solid var(--purple); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: var(--purple-light); flex-shrink: 0; }
-.ex-body { flex: 1; }
-.ex-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
-.ex-desc { font-size: 12px; color: var(--muted); line-height: 1.6; }
-.ex-difficulty { display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; }
-.diff-easy { background: rgba(16,185,129,0.15); color: var(--green); }
-.diff-med { background: rgba(245,158,11,0.15); color: var(--yellow); }
-.diff-hard { background: rgba(239,68,68,0.15); color: var(--red); }
-
-/* CALLOUT */
-.callout { background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.25); border-radius: 12px; padding: 16px 20px; display: flex; gap: 12px; align-items: flex-start; margin: 20px 0; }
-.callout-icon { font-size: 18px; flex-shrink: 0; }
-.callout-text { font-size: 13px; color: var(--text); line-height: 1.6; }
-.callout-text strong { color: var(--yellow); }
-.callout.info { background: rgba(124,58,237,0.07); border-color: rgba(124,58,237,0.25); }
-.callout.info .callout-text strong { color: var(--purple-light); }
-.callout.green { background: rgba(16,185,129,0.07); border-color: rgba(16,185,129,0.25); }
-.callout.green .callout-text strong { color: var(--green); }
-
-/* WIDGET */
-.widget { background: var(--card); border: 1px solid rgba(124,58,237,0.3); border-radius: 16px; padding: 28px; }
-.widget-title { font-size: 16px; font-weight: 800; margin-bottom: 6px; }
-.widget-sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
-
-/* BULLET LIST */
-.bullet-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
-.bullet-list li { list-style: none; font-size: 14px; color: var(--muted); display: flex; align-items: flex-start; gap: 10px; line-height: 1.6; }
-.bullet-list li::before { content: '→'; color: var(--purple-light); flex-shrink: 0; font-weight: 700; }
-
-/* LORA WIDGET */
-.lora-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
-.lora-control-group { display: flex; flex-direction: column; gap: 12px; }
-.lora-control-label { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
-.lora-control-sub { font-size: 11px; color: var(--muted); }
-.lora-slider-row { display: flex; align-items: center; gap: 10px; }
-.lora-slider-row input[type=range] { flex: 1; accent-color: var(--purple); }
-.lora-slider-val { font-size: 13px; font-weight: 700; color: var(--purple-light); min-width: 60px; text-align: right; }
-.lora-radio-group { display: flex; flex-wrap: wrap; gap: 8px; }
-.lora-radio-btn {
-  padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border);
-  background: var(--surface2); color: var(--muted); font-size: 12px; font-weight: 600;
-  cursor: pointer; transition: all 0.15s; font-family: var(--mono); user-select: none;
-}
-.lora-radio-btn.active { background: rgba(124,58,237,0.15); border-color: var(--purple); color: var(--purple-light); }
-.lora-formula { text-align: center; padding: 14px 20px; background: var(--surface2); border-radius: 10px; font-family: var(--mono); font-size: 13px; color: var(--purple-light); margin-bottom: 16px; letter-spacing: 0.3px; }
-.lora-results { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-.lora-result-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
-.lora-result-label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
-.lora-result-val { font-size: 20px; font-weight: 900; color: var(--purple-light); }
-.lora-result-val.green { color: var(--green); }
-.lora-result-val.yellow { color: var(--yellow); }
-
-/* FOOTER */
-footer { padding: 40px 0; border-top: 1px solid var(--border); }
-.footer-inner { display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; color: var(--muted); font-size: 13px; }
-.footer-nav { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
-
-@media(max-width:700px) {
-  .triangle-container { grid-template-columns: 1fr; }
-  .lora-visual { grid-template-columns: 1fr; }
-  .use-case-grid { grid-template-columns: 1fr; }
-  .lora-controls { grid-template-columns: 1fr; }
-  .lora-results { grid-template-columns: 1fr 1fr; }
-}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{--bg:#0a0a0f;--card:#141420;--surface2:#1a1a2e;--border:#2a2a45;--purple:#7c3aed;--purple-light:#a855f7;--teal:#0d9488;--green:#10b981;--red:#ef4444;--yellow:#f59e0b;--text:#e2e8f0;--muted:#64748b;--font:'Inter',sans-serif;--mono:'JetBrains Mono',monospace;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 50% 0%,rgba(124,58,237,0.08) 0%,transparent 60%),radial-gradient(ellipse 50% 40% at 90% 80%,rgba(13,148,136,0.05) 0%,transparent 60%);pointer-events:none;z-index:0;}
+#progress-bar{position:fixed;top:0;left:0;height:3px;z-index:9999;background:linear-gradient(90deg,var(--purple),var(--teal));width:0%;transition:width 0.1s linear;box-shadow:0 0 8px rgba(124,58,237,0.6);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(32px);}to{opacity:1;transform:translateY(0);}}
+@keyframes slideIn{from{opacity:0;transform:translateX(-24px);}to{opacity:1;transform:translateX(0);}}
+@keyframes glow{0%,100%{box-shadow:0 0 8px rgba(124,58,237,0.3);}50%{box-shadow:0 0 24px rgba(124,58,237,0.7),0 0 48px rgba(124,58,237,0.2);}}
+@keyframes shimmer{0%{background-position:-200% center;}100%{background-position:200% center;}}
+@keyframes gradientMove{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
+@keyframes counterUp{from{opacity:0;transform:translateY(12px) scale(0.8);}to{opacity:1;transform:translateY(0) scale(1);}}
+@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
+@keyframes lossAnim{0%{stroke-dashoffset:600;}100%{stroke-dashoffset:0;}}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
+.animate-on-scroll{opacity:0;transform:translateY(28px);transition:opacity 0.65s ease,transform 0.65s ease;}
+.animate-on-scroll.visible{opacity:1;transform:translateY(0);}
+.container{max-width:1100px;margin:0 auto;padding:0 24px;position:relative;z-index:1;}
+nav{position:sticky;top:0;z-index:100;border-bottom:1px solid var(--border);background:rgba(10,10,15,0.9);backdrop-filter:blur(12px);}
+.nav-inner{max-width:1100px;margin:0 auto;padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between;}
+.nav-btn{padding:7px 18px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:13px;font-weight:600;text-decoration:none;transition:all 0.2s;font-family:inherit;cursor:pointer;}
+.nav-btn:hover{border-color:var(--purple);color:var(--text);}
+.nav-btn.next{border-color:rgba(124,58,237,0.5);color:var(--purple-light);}
+.nav-btn.next:hover{background:var(--purple);color:white;border-color:var(--purple);}
+.nav-btn.complete{border-color:rgba(245,158,11,0.5);color:var(--yellow);}
+.nav-btn.complete:hover{background:var(--yellow);color:#0a0a0f;border-color:var(--yellow);}
+.nav-btn.complete.done{background:var(--yellow);color:#0a0a0f;}
+.nav-brand{font-size:14px;font-weight:700;color:var(--muted);text-decoration:none;transition:color 0.2s;}
+.nav-brand:hover{color:var(--text);}
+.day-hero{padding:72px 0 48px;}
+.day-num{font-size:12px;font-weight:700;color:var(--purple-light);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;}
+.day-hero h1{font-size:clamp(36px,5.5vw,64px);font-weight:900;letter-spacing:-2.5px;margin-bottom:20px;background:linear-gradient(135deg,#fff 0%,var(--purple-light) 40%,var(--teal) 100%);background-size:200% 200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:gradientMove 5s ease infinite;}
+.day-hero p{font-size:18px;color:var(--muted);max-width:640px;line-height:1.7;margin-bottom:32px;}
+.topic-pills{display:flex;flex-wrap:wrap;gap:8px;}
+.topic-pill{padding:5px 14px;border-radius:20px;background:var(--surface2);border:1px solid var(--border);font-size:12px;color:var(--muted);font-weight:500;transition:all 0.2s;}
+.topic-pill:hover{border-color:var(--purple);color:var(--text);}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:40px 0;}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;text-align:center;transition:all 0.3s;}
+.stat-card:hover{transform:translateY(-4px);border-color:var(--purple);animation:glow 2s ease infinite;}
+.stat-num{font-size:36px;font-weight:900;letter-spacing:-1px;color:var(--purple-light);}
+.stat-label{font-size:12px;color:var(--muted);margin-top:4px;font-weight:500;}
+.section{padding:64px 0;border-top:1px solid var(--border);}
+.section-header{margin-bottom:36px;}
+.section-num{font-size:11px;font-weight:700;color:var(--purple-light);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.section-header h2{font-size:30px;font-weight:800;letter-spacing:-0.5px;margin-bottom:12px;}
+.section-header p{color:var(--muted);font-size:16px;line-height:1.7;max-width:680px;}
+.section-body p{color:var(--muted);font-size:15px;line-height:1.8;margin-bottom:16px;}
+.code-window{background:#0d1117;border:1px solid #30363d;border-radius:14px;overflow:hidden;margin-top:20px;box-shadow:0 8px 32px rgba(0,0,0,0.4);}
+.code-title-bar{background:#161b22;border-bottom:1px solid #30363d;padding:10px 16px;display:flex;align-items:center;gap:8px;}
+.dot{width:12px;height:12px;border-radius:50%;}
+.dot-red{background:#ff5f57;}.dot-yellow{background:#ffbd2e;}.dot-green{background:#28ca41;}
+.code-file{font-size:11px;color:#8b949e;margin-left:8px;font-family:var(--mono);}
+.code-block{background:#0d1117;padding:24px;font-family:var(--mono);font-size:12.5px;line-height:1.8;overflow-x:auto;white-space:pre;}
+.c-cmt{color:#8b949e;}.c-kw{color:#ff7b72;}.c-fn{color:#d2a8ff;}.c-str{color:#a5d6ff;}.c-type{color:#ffa657;}.c-num{color:#f2cc60;}.c-bi{color:#79c0ff;}.c-dec{color:#ffa657;}
+.callout{border-radius:12px;padding:20px 24px;margin:24px 0;border-left:4px solid;}
+.callout-teal{background:rgba(13,148,136,0.08);border-color:var(--teal);}
+.callout-red{background:rgba(239,68,68,0.08);border-color:var(--red);}
+.callout-yellow{background:rgba(245,158,11,0.08);border-color:var(--yellow);}
+.callout-title{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;}
+.callout-teal .callout-title{color:var(--teal);}
+.callout-red .callout-title{color:var(--red);}
+.callout-yellow .callout-title{color:var(--yellow);}
+.callout p{font-size:14px;line-height:1.7;color:var(--muted);}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px;margin-top:24px;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;transition:all 0.3s;}
+.card:hover{transform:translateY(-6px);border-color:var(--purple);box-shadow:0 0 0 1px rgba(124,58,237,0.3),0 16px 40px rgba(0,0,0,0.4);}
+.card-icon{font-size:28px;margin-bottom:14px;}
+.card h3{font-size:16px;font-weight:700;margin-bottom:8px;}
+.card p{font-size:13px;color:var(--muted);line-height:1.6;}
+.data-table{width:100%;border-collapse:collapse;margin-top:20px;}
+.data-table th{background:var(--surface2);padding:12px 16px;text-align:left;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);border-bottom:1px solid var(--border);}
+.data-table td{padding:14px 16px;font-size:13px;border-bottom:1px solid rgba(42,42,69,0.5);vertical-align:top;}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr:hover td{background:rgba(124,58,237,0.04);}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;}
+.badge-green{background:rgba(16,185,129,0.15);color:var(--green);}
+.badge-yellow{background:rgba(245,158,11,0.15);color:var(--yellow);}
+.badge-red{background:rgba(239,68,68,0.15);color:var(--red);}
+.badge-purple{background:rgba(124,58,237,0.15);color:var(--purple-light);}
+.widget{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:32px;margin-top:24px;}
+.widget-title{font-size:18px;font-weight:800;margin-bottom:6px;}
+.widget-sub{font-size:13px;color:var(--muted);margin-bottom:24px;}
+input[type=range]{flex:1;-webkit-appearance:none;height:6px;border-radius:4px;background:var(--border);outline:none;cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--purple);cursor:pointer;box-shadow:0 0 8px rgba(124,58,237,0.5);}
+.slider-row{display:flex;align-items:center;gap:16px;margin-bottom:20px;}
+.slider-label{font-size:13px;font-weight:600;min-width:140px;}
+.slider-val{font-size:13px;font-weight:700;color:var(--purple-light);min-width:80px;text-align:right;font-family:var(--mono);}
+.result-panel{background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:24px;margin-top:16px;}
+.result-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.result-item{text-align:center;}
+.result-num{font-size:28px;font-weight:900;color:var(--teal);font-family:var(--mono);}
+.result-label{font-size:11px;color:var(--muted);margin-top:4px;}
+.savings-bar{height:12px;border-radius:6px;background:linear-gradient(90deg,var(--purple),var(--teal));margin-top:6px;transition:width 0.5s ease;}
+/* LOSS CHART */
+.loss-chart{background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:24px;margin-top:20px;}
+.chart-title{font-size:14px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:12px;}
+.chart-legend{display:flex;gap:16px;font-size:12px;color:var(--muted);}
+.legend-dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:4px;}
+svg.loss-svg{width:100%;height:220px;}
+.btn{padding:10px 20px;border-radius:10px;border:none;cursor:pointer;font-family:var(--font);font-size:13px;font-weight:700;transition:all 0.2s;}
+.btn-purple{background:var(--purple);color:white;}
+.btn-purple:hover{background:var(--purple-light);transform:translateY(-1px);box-shadow:0 4px 16px rgba(124,58,237,0.4);}
+#back-to-top{position:fixed;bottom:32px;right:32px;z-index:500;width:48px;height:48px;border-radius:50%;background:var(--purple);color:white;border:none;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(124,58,237,0.5);transition:all 0.3s;opacity:0;pointer-events:none;animation:float 3s ease-in-out infinite;}
+#back-to-top.visible{opacity:1;pointer-events:all;}
+#back-to-top:hover{transform:translateY(-4px) scale(1.1);}
+@media(max-width:768px){.stats-row{grid-template-columns:repeat(2,1fr);}.card-grid{grid-template-columns:1fr;}.result-grid{grid-template-columns:repeat(2,1fr);}}
 </style>
 </head>
-<body data-animation-density="high">
+<body>
+<div id="progress-bar"></div>
 
 <nav>
   <div class="nav-inner">
-    <a href="day16.html" class="nav-btn">← Day 16: HuggingFace</a>
-    <a href="../index.html" class="nav-brand">🤖 Agentic AI</a>
+    <a href="day16.html" class="nav-btn">← Day 16</a>
+    <a href="../index.html" class="nav-brand">30-Day AI Mastery</a>
     <div style="display:flex;gap:8px;align-items:center;">
-      <button class="nav-btn complete" id="nav-complete-btn" onclick="markComplete()">Mark Complete</button>
+      <button class="nav-btn complete" id="markComplete" onclick="toggleComplete()">Mark Complete</button>
       <a href="day18.html" class="nav-btn next">Day 18 →</a>
     </div>
   </div>
 </nav>
 
 <div class="container">
-
-  <div class="day-hero">
-    <div class="day-num">Day 17 — Fine-Tuning</div>
-    <h1>Fine-Tuning with<br>LoRA / PEFT</h1>
-    <p>QLoRA, SFTTrainer &amp; adapter merging. Make a model yours without spending a fortune on GPUs — LoRA turns a 14GB fine-tune into a 4GB one.</p>
+  <div class="day-hero animate-on-scroll">
+    <div class="day-num">Day 17 — Week 3</div>
+    <h1>Fine-Tuning with LoRA & PEFT</h1>
+    <p>Master Low-Rank Adaptation — the technique that makes fine-tuning 7B parameter models possible on a single consumer GPU. Understand the math, configure the hyperparameters, and run production-quality fine-tuning jobs.</p>
     <div class="topic-pills">
-      <span class="topic-pill">LoRA</span>
-      <span class="topic-pill">QLoRA</span>
-      <span class="topic-pill">PEFT</span>
-      <span class="topic-pill">SFTTrainer</span>
-      <span class="topic-pill">BitsAndBytes</span>
-      <span class="topic-pill">merge_and_unload</span>
+      <span class="topic-pill">LoRA Mathematics</span>
+      <span class="topic-pill">QLoRA (4-bit)</span>
+      <span class="topic-pill">PEFT Library</span>
+      <span class="topic-pill">TRL & SFTTrainer</span>
+      <span class="topic-pill">Rank & Alpha Tuning</span>
+      <span class="topic-pill">Merging Adapters</span>
     </div>
   </div>
 
-  <!-- SECTION 1 -->
-  <div class="section">
+  <div class="stats-row animate-on-scroll">
+    <div class="stat-card"><div class="stat-num" data-target="99">0</div><div class="stat-label" style="position:relative">% params frozen in LoRA<span class="badge badge-green" style="position:absolute;right:0;top:-2px;display:none">0.3-3% trained</span></div></div>
+    <div class="stat-card"><div class="stat-num" data-target="16">0</div><div class="stat-label">Typical LoRA rank (r=8 to 64)</div></div>
+    <div class="stat-card"><div class="stat-num" data-target="8">0</div><div class="stat-label">GB VRAM: fine-tune 7B with QLoRA</div></div>
+    <div class="stat-card"><div class="stat-num" data-target="3">0</div><div class="stat-label">Hours to fine-tune 7B on 1x A100</div></div>
+  </div>
+
+  <!-- SECTION 1: LoRA Math -->
+  <section class="section animate-on-scroll">
     <div class="section-header">
       <div class="section-num">Section 01</div>
-      <h2>When to Fine-Tune</h2>
-      <p>The decision tree: prompt engineering first, then RAG, then fine-tuning. Fine-tuning is the right tool for changing HOW a model responds — not for adding new knowledge.</p>
+      <h2>LoRA: The Mathematics of Low-Rank Adaptation</h2>
+      <p>LoRA decomposes weight updates into the product of two small matrices, dramatically reducing the number of trainable parameters without sacrificing model quality.</p>
+    </div>
+    <div class="section-body">
+      <p>The key insight behind LoRA (Hu et al., 2021) is that weight updates during fine-tuning have low intrinsic rank — the update matrix ΔW can be approximated by a product of two much smaller matrices: <strong>ΔW ≈ BA</strong>, where B ∈ R^(d×r) and A ∈ R^(r×k), with r ≪ min(d, k). Instead of training the full d×k weight matrix (millions of parameters), you only train the r×(d+k) parameters in A and B — typically 100-1000x fewer parameters.</p>
+      <p>During the forward pass, the output is: <strong>h = Wx + BAx</strong>, where W is the frozen pretrained weight, B is initialized to zero (so the initial output is identical to the base model), and A is initialized with a normal distribution. The scaling factor α/r controls the effective learning rate of the adapter — larger α means the adapter contributes more to the output. At inference time, you can merge W + BA into a single weight matrix with zero overhead.</p>
+      <p>The rank parameter r controls the expressivity of the adapter: r=4 captures basic task adaptation (style, format), r=8-16 handles most instruction-tuning tasks, r=32-64 is used for domain adaptation requiring new knowledge. Increasing rank beyond 64 rarely helps and wastes compute — the updates are already full-rank by then, and you're better off increasing training data.</p>
     </div>
 
-    <div class="callout">
-      <span class="callout-icon">⚠️</span>
-      <div class="callout-text"><strong>Golden Rule:</strong> Prompt engineering → RAG → Fine-tuning. Each step is 10–100x more expensive. Fine-tuning does not reliably add new factual knowledge — use RAG for that.</div>
+    <div class="callout callout-teal">
+      <div class="callout-title">Why This Matters</div>
+      <p>LoRA's impact on the field cannot be overstated. Before it, fine-tuning a 7B model required 4x A100 80GB GPUs (~$50K hardware). With QLoRA (LoRA + 4-bit quantization), the same fine-tune runs on a single RTX 4090 (24GB) or even a single A10G (24GB) on Lambda Labs for ~$1/hour. This democratized model customization and spawned the entire open-source fine-tuned model ecosystem.</p>
     </div>
 
-    <div class="triangle-container">
-      <div class="tri-card active-prompting">
-        <div class="tri-icon">✏️</div>
-        <div class="tri-title">Prompt Engineering</div>
-        <div class="tri-when">Use when: you need different behavior for a task. System prompts, few-shot examples, chain-of-thought. Solves 80% of problems.</div>
-        <span class="tri-cost cost-low">Cost: Near Zero</span>
+    <div class="code-window animate-on-scroll">
+      <div class="code-title-bar">
+        <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+        <span class="code-file">lora_math.py</span>
       </div>
-      <div class="tri-card active-rag">
-        <div class="tri-icon">📚</div>
-        <div class="tri-title">RAG</div>
-        <div class="tri-when">Use when: the model lacks knowledge — your documents, code repos, recent data. Knowledge is updateable without retraining.</div>
-        <span class="tri-cost cost-mid">Cost: Low–Medium</span>
-      </div>
-      <div class="tri-card active-finetune">
-        <div class="tri-icon">🎛️</div>
-        <div class="tri-title">Fine-Tuning</div>
-        <div class="tri-when">Use when: you need to change style, tone, output format, or domain-specific terminology. QLoRA on 7B + 1000 examples ≈ $10–50 on Lambda Labs.</div>
-        <span class="tri-cost cost-high">Cost: $10–$500+</span>
-      </div>
+      <div class="code-block"><span class="c-kw">import</span> torch
+<span class="c-kw">import</span> torch.nn <span class="c-kw">as</span> nn
+<span class="c-kw">import</span> math
+
+<span class="c-kw">class</span> <span class="c-type">LoRALayer</span>(nn.Module):
+    <span class="c-str">"""Implements LoRA from scratch — shows exactly what PEFT does internally."""</span>
+    <span class="c-kw">def</span> <span class="c-fn">__init__</span>(self, in_dim: <span class="c-type">int</span>, out_dim: <span class="c-type">int</span>, rank: <span class="c-type">int</span>, alpha: <span class="c-type">float</span>):
+        <span class="c-bi">super</span>().__init__()
+        self.rank <span class="c-kw">=</span> rank
+        self.scaling <span class="c-kw">=</span> alpha <span class="c-kw">/</span> rank      <span class="c-cmt"># α/r — scale the update</span>
+
+        <span class="c-cmt"># Frozen pretrained weight (would be loaded from checkpoint)</span>
+        self.weight <span class="c-kw">=</span> nn.<span class="c-fn">Parameter</span>(torch.<span class="c-fn">randn</span>(out_dim, in_dim), requires_grad<span class="c-kw">=False</span>)
+
+        <span class="c-cmt"># Trainable LoRA matrices — A is Gaussian init, B is zero init</span>
+        self.lora_A <span class="c-kw">=</span> nn.<span class="c-fn">Parameter</span>(torch.<span class="c-fn">empty</span>(rank, in_dim))
+        self.lora_B <span class="c-kw">=</span> nn.<span class="c-fn">Parameter</span>(torch.<span class="c-fn">zeros</span>(out_dim, rank))
+
+        <span class="c-cmt"># Kaiming uniform init for A (like default nn.Linear)</span>
+        nn.init.<span class="c-fn">kaiming_uniform_</span>(self.lora_A, a<span class="c-kw">=</span>math.<span class="c-fn">sqrt</span>(<span class="c-num">5</span>))
+
+    <span class="c-kw">def</span> <span class="c-fn">forward</span>(self, x: torch.Tensor) <span class="c-kw">-></span> torch.Tensor:
+        <span class="c-cmt"># Base model output (no grad — frozen)</span>
+        base_out <span class="c-kw">=</span> x @ self.weight.T
+        <span class="c-cmt"># LoRA update: x @ A^T @ B^T * (α/r)</span>
+        lora_out <span class="c-kw">=</span> (x @ self.lora_A.T @ self.lora_B.T) <span class="c-kw">*</span> self.scaling
+        <span class="c-kw">return</span> base_out <span class="c-kw">+</span> lora_out   <span class="c-cmt"># h = Wx + BAx</span>
+
+    <span class="c-kw">def</span> <span class="c-fn">merge_weights</span>(self) <span class="c-kw">-></span> torch.Tensor:
+        <span class="c-str">"""Merge LoRA into base weight — zero inference overhead."""</span>
+        delta_W <span class="c-kw">=</span> (self.lora_B @ self.lora_A) <span class="c-kw">*</span> self.scaling
+        <span class="c-kw">return</span> self.weight <span class="c-kw">+</span> delta_W   <span class="c-cmt"># merged weight = W + BA</span>
+
+<span class="c-cmt"># Parameter count comparison</span>
+d, k, r <span class="c-kw">=</span> <span class="c-num">4096</span>, <span class="c-num">4096</span>, <span class="c-num">16</span>
+full_params <span class="c-kw">=</span> d <span class="c-kw">*</span> k                  <span class="c-cmt"># 16,777,216 ≈ 16.7M</span>
+lora_params <span class="c-kw">=</span> r <span class="c-kw">*</span> (d <span class="c-kw">+</span> k)           <span class="c-cmt"># 131,072 ≈ 131K</span>
+reduction   <span class="c-kw">=</span> full_params <span class="c-kw">/</span> lora_params   <span class="c-cmt"># 128x fewer parameters!</span>
+<span class="c-bi">print</span>(<span class="c-str">f"Full: </span>{full_params:,}<span class="c-str"> | LoRA r=</span>{r}<span class="c-str">: </span>{lora_params:,}<span class="c-str"> | </span>{reduction:.0f}<span class="c-str">x reduction"</span>)</div>
     </div>
 
-    <div style="margin-top:24px;">
-      <div class="use-case-grid">
-        <div class="use-card good">
-          <div class="use-header">
-            <span class="use-icon">✅</span>
-            <span class="use-title">Valid fine-tuning use cases</span>
+    <!-- WIDGET 1: LoRA Param Explorer -->
+    <div class="widget animate-on-scroll">
+      <div class="widget-title">LoRA Parameter Explorer</div>
+      <div class="widget-sub">Adjust rank and alpha sliders to see the trainable parameter count and memory savings in real time.</div>
+      <div class="slider-row">
+        <span class="slider-label">Model Size (B params)</span>
+        <input type="range" id="loraModel" min="1" max="70" step="1" value="7" oninput="calcLora()">
+        <span class="slider-val" id="loraModelVal">7B</span>
+      </div>
+      <div class="slider-row">
+        <span class="slider-label">LoRA Rank (r)</span>
+        <input type="range" id="loraRank" min="1" max="128" step="1" value="16" oninput="calcLora()">
+        <span class="slider-val" id="loraRankVal">r=16</span>
+      </div>
+      <div class="slider-row">
+        <span class="slider-label">Alpha (α)</span>
+        <input type="range" id="loraAlpha" min="1" max="256" step="1" value="32" oninput="calcLora()">
+        <span class="slider-val" id="loraAlphaVal">α=32</span>
+      </div>
+      <div class="slider-row">
+        <span class="slider-label">Target Modules</span>
+        <select id="loraModules" onchange="calcLora()" style="flex:1;padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;">
+          <option value="0.02">q_proj + v_proj only (~2% attn params)</option>
+          <option value="0.04" selected>All attention (q,k,v,o) (~4%)</option>
+          <option value="0.08">Attn + MLP gates (~8%)</option>
+          <option value="0.15">All linear layers (~15%)</option>
+        </select>
+        <span class="slider-val" id="loraModulesVal"></span>
+      </div>
+      <div class="result-panel">
+        <div class="result-grid">
+          <div class="result-item">
+            <div class="result-num" id="loraTrainable">—</div>
+            <div class="result-label">Trainable Params (M)</div>
           </div>
-          <ul class="use-items">
-            <li>Consistent brand voice / writing style</li>
-            <li>Structured output format (always return JSON with specific keys)</li>
-            <li>Domain-specific terminology and abbreviations</li>
-            <li>Shorter, more direct responses for your use case</li>
-            <li>Instruction-following patterns specific to your workflow</li>
-          </ul>
-        </div>
-        <div class="use-card bad">
-          <div class="use-header">
-            <span class="use-icon">❌</span>
-            <span class="use-title">Invalid fine-tuning use cases</span>
+          <div class="result-item">
+            <div class="result-num" id="loraSavings">—</div>
+            <div class="result-label">% of Total Frozen</div>
           </div>
-          <ul class="use-items">
-            <li>Adding new factual knowledge (use RAG instead)</li>
-            <li>Keeping up with recent events (model's knowledge is frozen)</li>
-            <li>Fixing hallucinations about specific entities</li>
-            <li>Injecting private data that must stay updateable</li>
-            <li>Tasks solvable with a better system prompt</li>
-          </ul>
+          <div class="result-item">
+            <div class="result-num" id="loraVRAM">—</div>
+            <div class="result-label">Est. Training VRAM (GB)</div>
+          </div>
         </div>
+        <div style="margin-top:20px;">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Memory savings vs. full fine-tuning:</div>
+          <div style="height:12px;background:var(--border);border-radius:6px;overflow:hidden;">
+            <div class="savings-bar" id="savingsBar" style="width:97%;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:4px;">
+            <span>Full Fine-Tune (baseline)</span><span id="savingsLabel">97% less memory</span>
+          </div>
+        </div>
+        <div style="margin-top:16px;background:#0d1117;border:1px solid #30363d;border-radius:10px;padding:14px;font-family:var(--mono);font-size:12px;color:#a5d6ff;" id="loraConfig">LoRAConfig(r=16, lora_alpha=32, target_modules=["q_proj","k_proj","v_proj","o_proj"])</div>
       </div>
     </div>
-  </div>
+  </section>
 
-  <!-- SECTION 2 -->
-  <div class="section">
+  <!-- SECTION 2: QLoRA -->
+  <section class="section animate-on-scroll">
     <div class="section-header">
       <div class="section-num">Section 02</div>
-      <h2>LoRA Mathematics</h2>
-      <p>Instead of updating all W, LoRA decomposes the weight delta into two small matrices. The result: &lt;1% of parameters are trainable, but the model learns new behaviors effectively.</p>
+      <h2>QLoRA: 4-bit Quantization + LoRA</h2>
+      <p>QLoRA (Dettmers et al., 2023) combines NF4 quantization of the base model with LoRA adapters in BF16, enabling 65B model fine-tuning on a single A100 80GB GPU.</p>
+    </div>
+    <div class="section-body">
+      <p>The three innovations in QLoRA are: <strong>(1) NF4 quantization</strong> — NormalFloat4, a data type that is information-theoretically optimal for normally distributed weights (which pretrained LLM weights approximate). NF4 achieves better perplexity than INT4 at the same bit-width. <strong>(2) Double quantization</strong> — quantizing the quantization constants themselves, saving an additional ~0.37 bits per parameter. <strong>(3) Paged optimizers</strong> — using NVIDIA's unified memory to page optimizer states between GPU and CPU when GPU runs out of memory, similar to virtual memory in operating systems.</p>
+      <p>The key trick: the base model weights are quantized to 4-bit and frozen — they never get updated. Only the LoRA adapter weights (in BF16) are trained. During the forward pass, the 4-bit weights are dequantized to BF16 for the computation, then immediately discarded — they're never stored at full precision simultaneously. This is what achieves the memory savings.</p>
+      <p>QLoRA's quality versus full fine-tuning: on standard benchmarks (MMLU, HellaSwag), QLoRA-tuned models achieve within 1-2% of models fine-tuned at full precision. For most production use cases, this gap is negligible — the practical training cost reduction (10-20x) vastly outweighs the marginal quality difference.</p>
     </div>
 
-    <div class="lora-visual">
-      <div class="lora-panel">
-        <h3>How LoRA works</h3>
-        <div class="param-bar">
-          <div class="param-label">Full fine-tune <span>100% params trainable</span></div>
-          <div class="bar-track"><div class="bar-fill bar-full" style="width:100%"></div></div>
-        </div>
-        <div class="param-bar">
-          <div class="param-label">LoRA r=16 <span>~0.3% params trainable</span></div>
-          <div class="bar-track"><div class="bar-fill bar-lora" style="width:0.5%"></div></div>
-        </div>
-        <div class="lora-eq">W' = W + (alpha/r) × B × A</div>
+    <div class="code-window animate-on-scroll">
+      <div class="code-title-bar">
+        <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+        <span class="code-file">qlora_training.py</span>
       </div>
-      <div class="lora-panel">
-        <h3>Key hyperparameters</h3>
-        <ul class="bullet-list" style="margin-top:0;">
-          <li><strong>Rank r</strong> — expressiveness. r=8: minimal changes. r=64: expressive changes. Default: r=16.</li>
-          <li><strong>lora_alpha</strong> — scaling. effective_delta = (alpha/r) × BA. Set alpha = 2×r as a starting point.</li>
-          <li><strong>target_modules</strong> — which projections to adapt. Minimum: q_proj + v_proj. Maximum: all linear layers.</li>
-          <li><strong>Adapter size on disk</strong> — much smaller than the full model. A r=16 adapter for 7B ≈ 50MB.</li>
-        </ul>
-      </div>
-    </div>
+      <div class="code-block"><span class="c-kw">from</span> transformers <span class="c-kw">import</span> AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+<span class="c-kw">from</span> peft <span class="c-kw">import</span> LoraConfig, get_peft_model, TaskType, prepare_model_for_kbit_training
+<span class="c-kw">from</span> trl <span class="c-kw">import</span> SFTTrainer, SFTConfig
+<span class="c-kw">from</span> datasets <span class="c-kw">import</span> load_dataset
+<span class="c-kw">import</span> torch
 
-    <div class="code-wrap" style="margin-top:28px;">
-      <span class="code-label">PYTHON</span>
-      <div class="code-block"><span class="c-kw">from</span> <span class="c-bi">peft</span> <span class="c-kw">import</span> <span class="c-type">LoraConfig</span>, <span class="c-fn">get_peft_model</span>, <span class="c-type">TaskType</span>
-<span class="c-kw">from</span> <span class="c-bi">transformers</span> <span class="c-kw">import</span> <span class="c-type">AutoModelForCausalLM</span>
-<span class="c-kw">import</span> <span class="c-bi">torch</span>
+MODEL_ID <span class="c-kw">=</span> <span class="c-str">"mistralai/Mistral-7B-Instruct-v0.3"</span>
 
-model = <span class="c-type">AutoModelForCausalLM</span>.<span class="c-fn">from_pretrained</span>(
-    <span class="c-str">"meta-llama/Llama-3.2-3B"</span>,
-    torch_dtype=<span class="c-bi">torch</span>.<span class="c-type">bfloat16</span>,
-    device_map=<span class="c-str">"auto"</span>
+<span class="c-cmt"># ── Step 1: Load base model in 4-bit ─────────────────────────────</span>
+bnb_cfg <span class="c-kw">=</span> <span class="c-fn">BitsAndBytesConfig</span>(
+    load_in_4bit<span class="c-kw">=True</span>,
+    bnb_4bit_quant_type<span class="c-kw">=</span><span class="c-str">"nf4"</span>,           <span class="c-cmt"># NormalFloat4 — better than INT4</span>
+    bnb_4bit_use_double_quant<span class="c-kw">=True</span>,     <span class="c-cmt"># compress quantization constants too</span>
+    bnb_4bit_compute_dtype<span class="c-kw">=</span>torch.bfloat16,
 )
+model <span class="c-kw">=</span> AutoModelForCausalLM.<span class="c-fn">from_pretrained</span>(
+    MODEL_ID, quantization_config<span class="c-kw">=</span>bnb_cfg, device_map<span class="c-kw">=</span><span class="c-str">"auto"</span>
+)
+<span class="c-cmt"># Prepares the 4-bit model for LoRA (casts norms to fp32, etc.)</span>
+model <span class="c-kw">=</span> <span class="c-fn">prepare_model_for_kbit_training</span>(model)
 
-lora_config = <span class="c-type">LoraConfig</span>(
-    r=<span class="c-num">16</span>,                    <span class="c-cmt"># rank — expressiveness of adapters</span>
-    lora_alpha=<span class="c-num">32</span>,           <span class="c-cmt"># scaling: effective_delta = (32/16) * BA = 2 * BA</span>
-    target_modules=[         <span class="c-cmt"># which weight matrices to adapt</span>
+<span class="c-cmt"># ── Step 2: Attach LoRA adapters ──────────────────────────────────</span>
+lora_cfg <span class="c-kw">=</span> <span class="c-fn">LoraConfig</span>(
+    r<span class="c-kw">=</span><span class="c-num">16</span>,                           <span class="c-cmt"># rank — higher = more expressive but more params</span>
+    lora_alpha<span class="c-kw">=</span><span class="c-num">32</span>,                  <span class="c-cmt"># scaling factor; effective LR = alpha/r * lr</span>
+    target_modules<span class="c-kw">=</span>[               <span class="c-cmt"># which Linear layers get adapters</span>
         <span class="c-str">"q_proj"</span>, <span class="c-str">"k_proj"</span>, <span class="c-str">"v_proj"</span>, <span class="c-str">"o_proj"</span>,
-        <span class="c-str">"gate_proj"</span>, <span class="c-str">"up_proj"</span>, <span class="c-str">"down_proj"</span>
+        <span class="c-str">"gate_proj"</span>, <span class="c-str">"up_proj"</span>, <span class="c-str">"down_proj"</span>,
     ],
-    lora_dropout=<span class="c-num">0.05</span>,
-    bias=<span class="c-str">"none"</span>,
-    task_type=<span class="c-type">TaskType</span>.<span class="c-bi">CAUSAL_LM</span>
+    lora_dropout<span class="c-kw">=</span><span class="c-num">0.05</span>,             <span class="c-cmt"># dropout on adapter outputs</span>
+    bias<span class="c-kw">=</span><span class="c-str">"none"</span>,                  <span class="c-cmt"># don't train bias terms</span>
+    task_type<span class="c-kw">=</span>TaskType.CAUSAL_LM,
 )
+model <span class="c-kw">=</span> <span class="c-fn">get_peft_model</span>(model, lora_cfg)
+model.<span class="c-fn">print_trainable_parameters</span>()
+<span class="c-cmt"># Output: trainable params: 41,943,040 || all params: 7,283,519,488 || 0.58%</span>
 
-peft_model = <span class="c-fn">get_peft_model</span>(model, lora_config)
-peft_model.<span class="c-fn">print_trainable_parameters</span>()
-<span class="c-cmt"># trainable params: 9,437,184 || all params: 3,212,857,344 || trainable%: 0.29%</span></div>
+<span class="c-cmt"># ── Step 3: Train with TRL SFTTrainer ────────────────────────────</span>
+dataset <span class="c-kw">=</span> <span class="c-fn">load_dataset</span>(<span class="c-str">"HuggingFaceH4/ultrachat_200k"</span>, split<span class="c-kw">=</span><span class="c-str">"train_sft[:5%]"</span>)
+tokenizer <span class="c-kw">=</span> AutoTokenizer.<span class="c-fn">from_pretrained</span>(MODEL_ID)
+tokenizer.pad_token <span class="c-kw">=</span> tokenizer.eos_token
+
+trainer <span class="c-kw">=</span> <span class="c-fn">SFTTrainer</span>(
+    model<span class="c-kw">=</span>model,
+    train_dataset<span class="c-kw">=</span>dataset,
+    args<span class="c-kw">=</span><span class="c-fn">SFTConfig</span>(
+        output_dir<span class="c-kw">=</span><span class="c-str">"./mistral-ft"</span>,
+        num_train_epochs<span class="c-kw">=</span><span class="c-num">2</span>,
+        per_device_train_batch_size<span class="c-kw">=</span><span class="c-num">4</span>,
+        gradient_accumulation_steps<span class="c-kw">=</span><span class="c-num">4</span>,   <span class="c-cmt"># effective batch = 16</span>
+        learning_rate<span class="c-kw">=</span><span class="c-num">2e-4</span>,
+        lr_scheduler_type<span class="c-kw">=</span><span class="c-str">"cosine"</span>,
+        warmup_ratio<span class="c-kw">=</span><span class="c-num">0.03</span>,
+        bf16<span class="c-kw">=True</span>,
+        max_seq_length<span class="c-kw">=</span><span class="c-num">2048</span>,
+        packing<span class="c-kw">=True</span>,               <span class="c-cmt"># pack multiple short examples together</span>
+        logging_steps<span class="c-kw">=</span><span class="c-num">10</span>,
+        save_strategy<span class="c-kw">=</span><span class="c-str">"epoch"</span>,
+    ),
+)
+trainer.<span class="c-fn">train</span>()</div>
     </div>
-  </div>
 
-  <!-- SECTION 3 -->
-  <div class="section">
+    <!-- WIDGET 2: Training Loss Curve -->
+    <div class="widget animate-on-scroll">
+      <div class="widget-title">Training Loss Curve Simulator</div>
+      <div class="widget-sub">Simulates what a typical LoRA fine-tuning loss curve looks like. Click "Animate Training" to watch convergence.</div>
+      <div style="display:flex;gap:16px;margin-bottom:20px;flex-wrap:wrap;">
+        <div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Learning Rate</div>
+          <select id="lrSel" style="padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;">
+            <option value="high">2e-3 (too high)</option>
+            <option value="good" selected>2e-4 (optimal)</option>
+            <option value="low">2e-5 (too low)</option>
+          </select>
+        </div>
+        <div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Rank</div>
+          <select id="rankSel" style="padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;">
+            <option value="4">r=4</option>
+            <option value="16" selected>r=16</option>
+            <option value="64">r=64</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:flex-end;">
+          <button class="btn btn-purple" onclick="animateLoss()">Animate Training</button>
+        </div>
+      </div>
+      <div class="loss-chart">
+        <div class="chart-title">
+          Training Loss
+          <div class="chart-legend">
+            <span><span class="legend-dot" style="background:var(--purple);"></span>Training Loss</span>
+            <span><span class="legend-dot" style="background:var(--teal);"></span>Validation Loss</span>
+          </div>
+        </div>
+        <svg class="loss-svg" id="lossSVG" viewBox="0 0 600 200">
+          <defs>
+            <linearGradient id="lossGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#7c3aed" stop-opacity="0.3"/>
+              <stop offset="100%" stop-color="#7c3aed" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <!-- Grid lines -->
+          <line x1="0" y1="40" x2="600" y2="40" stroke="#2a2a45" stroke-width="1"/>
+          <line x1="0" y1="80" x2="600" y2="80" stroke="#2a2a45" stroke-width="1"/>
+          <line x1="0" y1="120" x2="600" y2="120" stroke="#2a2a45" stroke-width="1"/>
+          <line x1="0" y1="160" x2="600" y2="160" stroke="#2a2a45" stroke-width="1"/>
+          <!-- Y axis labels -->
+          <text x="5" y="43" fill="#64748b" font-size="10">3.0</text>
+          <text x="5" y="83" fill="#64748b" font-size="10">2.0</text>
+          <text x="5" y="123" fill="#64748b" font-size="10">1.5</text>
+          <text x="5" y="163" fill="#64748b" font-size="10">1.0</text>
+          <!-- Loss paths — will be animated -->
+          <path id="trainPath" d="M 30 20" fill="none" stroke="#7c3aed" stroke-width="2.5" stroke-linecap="round"/>
+          <path id="valPath" d="M 30 20" fill="none" stroke="#0d9488" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 2"/>
+          <!-- Current step indicator -->
+          <line id="stepLine" x1="30" y1="0" x2="30" y2="200" stroke="#a855f7" stroke-width="1" stroke-dasharray="3 3" opacity="0"/>
+          <text id="lossLabel" x="35" y="20" fill="#a855f7" font-size="10" opacity="0">Step: 0</text>
+        </svg>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:4px;padding:0 30px;">
+          <span>Step 0</span><span>Step 200</span><span>Step 400</span><span>Step 600</span><span>Step 800</span><span>Step 1000</span>
+        </div>
+      </div>
+      <div id="lossStats" style="margin-top:12px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+        <div style="background:var(--surface2);border-radius:10px;padding:14px;text-align:center;"><div style="font-size:22px;font-weight:900;color:var(--purple-light);font-family:var(--mono);" id="lossStatTrain">—</div><div style="font-size:11px;color:var(--muted);">Current Train Loss</div></div>
+        <div style="background:var(--surface2);border-radius:10px;padding:14px;text-align:center;"><div style="font-size:22px;font-weight:900;color:var(--teal);font-family:var(--mono);" id="lossStatVal">—</div><div style="font-size:11px;color:var(--muted);">Validation Loss</div></div>
+        <div style="background:var(--surface2);border-radius:10px;padding:14px;text-align:center;"><div style="font-size:22px;font-weight:900;color:var(--green);font-family:var(--mono);" id="lossStatStep">—</div><div style="font-size:11px;color:var(--muted);">Training Step</div></div>
+      </div>
+    </div>
+
+    <div class="callout callout-red animate-on-scroll">
+      <div class="callout-title">Common Pitfall: Forgetting prepare_model_for_kbit_training()</div>
+      <p>When using 4-bit quantization with bitsandbytes, you MUST call <code style="background:rgba(239,68,68,0.1);padding:1px 4px;border-radius:3px;font-family:var(--mono);">prepare_model_for_kbit_training(model)</code> before attaching LoRA adapters. This function casts the LayerNorm weights to FP32 (they must stay at full precision for numerical stability), disables the embedding layer from being trained, and sets up gradient checkpointing correctly. Skipping this causes NaN losses or silently incorrect gradients.</p>
+    </div>
+  </section>
+
+  <!-- SECTION 3: PEFT Patterns -->
+  <section class="section animate-on-scroll">
     <div class="section-header">
       <div class="section-num">Section 03</div>
-      <h2>QLoRA — 4-bit Quantization + LoRA</h2>
-      <p>QLoRA loads the base model in 4-bit (saving ~75% VRAM) while keeping the LoRA adapters in BF16. Fine-tune a 7B model on a single 16GB GPU.</p>
+      <h2>PEFT Beyond LoRA: IA³, Prefix Tuning & DoRA</h2>
+      <p>The PEFT library supports multiple adapter strategies — each with different trade-offs between parameter efficiency, quality, and training speed.</p>
+    </div>
+    <div class="section-body">
+      <p>LoRA is not the only PEFT method. <strong>IA³</strong> (Infused Adapter by Inhibiting and Amplifying Inner Activations) injects learnable vectors that scale the keys, values, and feedforward activations — only 0.01% of trainable parameters vs. LoRA's 0.3-3%. It's ideal when your fine-tuning budget is extremely limited. However, it requires more training data to converge and achieves slightly lower quality than LoRA.</p>
+      <p><strong>Prefix Tuning</strong> prepends learnable "virtual tokens" to the key and value sequences in every attention layer. The model learns to condition its outputs on these virtual tokens. Unlike LoRA, prefix tuning affects every attention head independently, making it more expressive but harder to merge into the base model. Best suited for sequence-to-sequence tasks like summarization.</p>
+      <p><strong>DoRA</strong> (Weight-Decomposed Low-Rank Adaptation) decomposes the pretrained weight into magnitude and direction components, then applies LoRA only to the directional component. This achieves better quality than LoRA with the same rank, at the cost of slightly higher computational overhead. DoRA is the recommended default for instruction tuning in QLoRA setups.</p>
     </div>
 
-    <ul class="bullet-list">
-      <li><strong>NF4 (Normal Float 4)</strong> — quantization format optimized for normally-distributed weight values. Better than int4 for LLM weights.</li>
-      <li><strong>Double quantization</strong> — quantize the quantization constants too. Saves another ~0.4 bits per parameter.</li>
-      <li><strong>Memory savings</strong> — 7B model in 4-bit ≈ 4 GB VRAM for weights (vs 14 GB in BF16). Enables fine-tuning on a single consumer GPU.</li>
-      <li><strong>Training in BF16</strong> — computation happens in BF16 even though the base weights are stored in INT4. No accuracy sacrifice in the adapter.</li>
-    </ul>
+    <table class="data-table animate-on-scroll">
+      <thead><tr><th>Method</th><th>Trainable %</th><th>Quality vs Full FT</th><th>Merge to Base</th><th>Best For</th></tr></thead>
+      <tbody>
+        <tr><td>Full Fine-Tune</td><td><span class="badge badge-red">100%</span></td><td><span class="badge badge-green">Baseline</span></td><td>N/A</td><td>Maximum quality, large budgets</td></tr>
+        <tr><td>LoRA (r=16)</td><td><span class="badge badge-green">0.3-3%</span></td><td><span class="badge badge-green">~98%</span></td><td>Yes</td><td>General instruction tuning</td></tr>
+        <tr><td>QLoRA (r=16)</td><td><span class="badge badge-green">0.3-3%</span></td><td><span class="badge badge-yellow">~96%</span></td><td>Yes</td><td>Consumer GPU fine-tuning</td></tr>
+        <tr><td>DoRA</td><td><span class="badge badge-green">0.3-3%</span></td><td><span class="badge badge-green">~99%</span></td><td>Yes</td><td>Higher quality than LoRA, same cost</td></tr>
+        <tr><td>IA³</td><td><span class="badge badge-green">0.01%</span></td><td><span class="badge badge-yellow">~94%</span></td><td>Yes</td><td>Ultra-low parameter budgets</td></tr>
+        <tr><td>Prefix Tuning</td><td><span class="badge badge-yellow">0.1%</span></td><td><span class="badge badge-yellow">~95%</span></td><td>No</td><td>Seq2seq tasks (T5, BART)</td></tr>
+      </tbody>
+    </table>
 
-    <div class="code-wrap" style="margin-top:24px;">
-      <span class="code-label">PYTHON</span>
-      <div class="code-block"><span class="c-kw">from</span> <span class="c-bi">transformers</span> <span class="c-kw">import</span> <span class="c-type">BitsAndBytesConfig</span>
-<span class="c-kw">from</span> <span class="c-bi">peft</span> <span class="c-kw">import</span> <span class="c-fn">prepare_model_for_kbit_training</span>
-
-<span class="c-cmt"># QLoRA configuration</span>
-bnb_config = <span class="c-type">BitsAndBytesConfig</span>(
-    load_in_4bit=<span class="c-bi">True</span>,
-    bnb_4bit_quant_type=<span class="c-str">"nf4"</span>,          <span class="c-cmt"># Normal Float 4</span>
-    bnb_4bit_compute_dtype=<span class="c-bi">torch</span>.<span class="c-type">bfloat16</span>,
-    bnb_4bit_use_double_quant=<span class="c-bi">True</span>,     <span class="c-cmt"># double quantization</span>
-)
-
-<span class="c-cmt"># Load model in 4-bit</span>
-model = <span class="c-type">AutoModelForCausalLM</span>.<span class="c-fn">from_pretrained</span>(
-    <span class="c-str">"meta-llama/Llama-3.2-3B"</span>,
-    quantization_config=bnb_config,
-    device_map=<span class="c-str">"auto"</span>
-)
-
-<span class="c-cmt"># Prepare for k-bit training (enables gradient checkpointing)</span>
-model = <span class="c-fn">prepare_model_for_kbit_training</span>(model)
-
-<span class="c-cmt"># Apply LoRA on top of 4-bit model</span>
-peft_model = <span class="c-fn">get_peft_model</span>(model, lora_config)</div>
-    </div>
-  </div>
-
-  <!-- SECTION 4 -->
-  <div class="section">
-    <div class="section-header">
-      <div class="section-num">Section 04</div>
-      <h2>Dataset Preparation &amp; SFTTrainer</h2>
-      <p>SFTTrainer from the trl library handles tokenization, packing, and response masking automatically. It's the fastest path from dataset to trained adapter.</p>
-    </div>
-
-    <ul class="bullet-list">
-      <li><strong>Alpaca format</strong> — instruction + input + output. Good for single-turn tasks without a conversation structure.</li>
-      <li><strong>Chat format</strong> — list of role/content dicts. Required for instruction-following models using apply_chat_template.</li>
-      <li><strong>Response template masking</strong> — train only on the assistant's output, not the user's prompt. Critical to avoid teaching the model to imitate user turns.</li>
-      <li><strong>Packing</strong> — concatenate multiple short examples into one sequence. Maximizes GPU utilization for short training examples.</li>
-    </ul>
-
-    <div class="code-wrap" style="margin-top:24px;">
-      <span class="code-label">PYTHON</span>
-      <div class="code-block"><span class="c-kw">from</span> <span class="c-bi">trl</span> <span class="c-kw">import</span> <span class="c-type">SFTTrainer</span>, <span class="c-type">SFTConfig</span>
-<span class="c-kw">from</span> <span class="c-bi">datasets</span> <span class="c-kw">import</span> <span class="c-fn">load_dataset</span>
-
-<span class="c-cmt"># Load and format dataset</span>
-dataset = <span class="c-fn">load_dataset</span>(<span class="c-str">"json"</span>, data_files=<span class="c-str">"train.jsonl"</span>)[<span class="c-str">"train"</span>]
-
-<span class="c-cmt"># Format: apply chat template</span>
-<span class="c-kw">def</span> <span class="c-fn">format_example</span>(example):
-    messages = [
-        {<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: example[<span class="c-str">"instruction"</span>]},
-        {<span class="c-str">"role"</span>: <span class="c-str">"assistant"</span>, <span class="c-str">"content"</span>: example[<span class="c-str">"output"</span>]}
-    ]
-    <span class="c-kw">return</span> {<span class="c-str">"text"</span>: tokenizer.<span class="c-fn">apply_chat_template</span>(
-        messages, tokenize=<span class="c-bi">False</span>, add_generation_prompt=<span class="c-bi">False</span>
-    )}
-
-dataset = dataset.<span class="c-fn">map</span>(format_example)
-
-<span class="c-cmt"># SFTTrainer — handles tokenization, packing, response masking</span>
-trainer = <span class="c-type">SFTTrainer</span>(
-    model=peft_model,
-    train_dataset=dataset,
-    tokenizer=tokenizer,
-    args=<span class="c-type">SFTConfig</span>(
-        output_dir=<span class="c-str">"./lora-llama3"</span>,
-        num_train_epochs=<span class="c-num">3</span>,
-        per_device_train_batch_size=<span class="c-num">4</span>,
-        gradient_accumulation_steps=<span class="c-num">4</span>,  <span class="c-cmt"># effective batch = 16</span>
-        learning_rate=<span class="c-num">2e-4</span>,
-        warmup_ratio=<span class="c-num">0.1</span>,
-        lr_scheduler_type=<span class="c-str">"cosine"</span>,
-        bf16=<span class="c-bi">True</span>,
-        logging_steps=<span class="c-num">10</span>,
-        save_steps=<span class="c-num">100</span>,
-        max_seq_length=<span class="c-num">2048</span>,
-        packing=<span class="c-bi">True</span>,            <span class="c-cmt"># pack multiple short examples together</span>
-    )
-)
-
-trainer.<span class="c-fn">train</span>()
-trainer.<span class="c-fn">save_model</span>(<span class="c-str">"./lora-adapter"</span>)</div>
-    </div>
-  </div>
-
-  <!-- SECTION 5 -->
-  <div class="section">
-    <div class="section-header">
-      <div class="section-num">Section 05</div>
-      <h2>Adapter Merging &amp; Evaluation</h2>
-      <p>Once trained, merge the LoRA adapter into the base model weights for deployment. Measure perplexity before and after to quantify what the model gained.</p>
-    </div>
-
-    <ul class="bullet-list">
-      <li><strong>merge_and_unload()</strong> — integrates LoRA weights into base model permanently. Result is a standard model, no PEFT dependency at inference time.</li>
-      <li><strong>When to merge</strong> — before deploying to vLLM, TensorRT, or any framework that doesn't support PEFT adapters natively.</li>
-      <li><strong>Perplexity evaluation</strong> — compare base model vs fine-tuned on a held-out eval set. Lower perplexity = better fit to your distribution.</li>
-      <li><strong>GGUF export</strong> — convert the merged model to GGUF with llama.cpp for Ollama deployment on consumer hardware.</li>
-    </ul>
-
-    <div class="code-wrap" style="margin-top:24px;">
-      <span class="code-label">PYTHON</span>
-      <div class="code-block"><span class="c-cmt"># Load trained adapter and merge</span>
-<span class="c-kw">from</span> <span class="c-bi">peft</span> <span class="c-kw">import</span> <span class="c-type">PeftModel</span>
-
-base_model = <span class="c-type">AutoModelForCausalLM</span>.<span class="c-fn">from_pretrained</span>(
-    <span class="c-str">"meta-llama/Llama-3.2-3B"</span>,
-    torch_dtype=<span class="c-bi">torch</span>.<span class="c-type">bfloat16</span>,
-    device_map=<span class="c-str">"auto"</span>
-)
-peft_model = <span class="c-type">PeftModel</span>.<span class="c-fn">from_pretrained</span>(base_model, <span class="c-str">"./lora-adapter"</span>)
-
-<span class="c-cmt"># Merge LoRA weights into base model</span>
-merged_model = peft_model.<span class="c-fn">merge_and_unload</span>()
-merged_model.<span class="c-fn">save_pretrained</span>(<span class="c-str">"./merged-llama3-finetuned"</span>)
-tokenizer.<span class="c-fn">save_pretrained</span>(<span class="c-str">"./merged-llama3-finetuned"</span>)
-
-<span class="c-cmt"># Evaluate: compare perplexity on held-out set</span>
-<span class="c-kw">import</span> <span class="c-bi">math</span>
-<span class="c-kw">def</span> <span class="c-fn">compute_perplexity</span>(model, eval_dataloader):
-    total_loss = <span class="c-num">0</span>
-    <span class="c-kw">for</span> batch <span class="c-kw">in</span> eval_dataloader:
-        <span class="c-kw">with</span> <span class="c-bi">torch</span>.<span class="c-fn">no_grad</span>():
-            outputs = <span class="c-fn">model</span>(**batch)
-            total_loss += outputs.loss.<span class="c-fn">item</span>()
-    <span class="c-kw">return</span> <span class="c-bi">math</span>.<span class="c-fn">exp</span>(total_loss / <span class="c-fn">len</span>(eval_dataloader))
-
-base_ppl = <span class="c-fn">compute_perplexity</span>(base_model, eval_dataloader)
-ft_ppl   = <span class="c-fn">compute_perplexity</span>(merged_model, eval_dataloader)
-<span class="c-fn">print</span>(<span class="c-str">f"Base perplexity: {base_ppl:.2f} | Fine-tuned: {ft_ppl:.2f}"</span>)</div>
-    </div>
-  </div>
-
-  <!-- WIDGET -->
-  <div class="section">
-    <div class="section-header">
-      <div class="section-num">Interactive</div>
-      <h2>LoRA Parameter Explorer</h2>
-      <p>Adjust model size, rank, and target modules to see how they affect trainable parameters, adapter size, and VRAM requirements.</p>
-    </div>
-
-    <div class="widget">
-      <div class="widget-title">LoRA Parameter Explorer</div>
-      <div class="widget-sub">Live calculations update as you adjust the sliders</div>
-
-      <div class="lora-formula" id="lora-formula">
-        &Delta;W = B &times; A &nbsp;&nbsp;|&nbsp;&nbsp; B &isin; &#8477;<sup>d&times;r</sup>, A &isin; &#8477;<sup>r&times;k</sup> &nbsp;&nbsp;|&nbsp;&nbsp; effective_delta = (alpha/r) &times; B &times; A
+    <div class="code-window animate-on-scroll">
+      <div class="code-title-bar">
+        <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+        <span class="code-file">save_and_merge.py</span>
       </div>
+      <div class="code-block"><span class="c-kw">from</span> peft <span class="c-kw">import</span> PeftModel
 
-      <div class="lora-controls">
-        <div class="lora-control-group">
-          <div>
-            <div class="lora-control-label">Model Size</div>
-            <div class="lora-control-sub">Affects hidden dimension (d)</div>
-          </div>
-          <div class="lora-radio-group" id="size-group">
-            <div class="lora-radio-btn active" data-val="3"  onclick="setSize(this)">3B</div>
-            <div class="lora-radio-btn"        data-val="7"  onclick="setSize(this)">7B</div>
-            <div class="lora-radio-btn"        data-val="13" onclick="setSize(this)">13B</div>
-            <div class="lora-radio-btn"        data-val="70" onclick="setSize(this)">70B</div>
-          </div>
-        </div>
-        <div class="lora-control-group">
-          <div>
-            <div class="lora-control-label">Rank r</div>
-            <div class="lora-control-sub">Controls expressiveness of adapters</div>
-          </div>
-          <div class="lora-radio-group" id="rank-group">
-            <div class="lora-radio-btn"       data-val="4"  onclick="setRank(this)">r=4</div>
-            <div class="lora-radio-btn"       data-val="8"  onclick="setRank(this)">r=8</div>
-            <div class="lora-radio-btn active" data-val="16" onclick="setRank(this)">r=16</div>
-            <div class="lora-radio-btn"       data-val="32" onclick="setRank(this)">r=32</div>
-            <div class="lora-radio-btn"       data-val="64" onclick="setRank(this)">r=64</div>
-          </div>
-        </div>
-        <div class="lora-control-group" style="grid-column:1/-1;">
-          <div>
-            <div class="lora-control-label">Target Modules</div>
-            <div class="lora-control-sub">Which weight matrices to adapt</div>
-          </div>
-          <div class="lora-radio-group" id="modules-group">
-            <div class="lora-radio-btn active" data-val="2"  onclick="setModules(this)">q + v only</div>
-            <div class="lora-radio-btn"        data-val="4"  onclick="setModules(this)">q + k + v + o</div>
-            <div class="lora-radio-btn"        data-val="8"  onclick="setModules(this)">all attention</div>
-            <div class="lora-radio-btn"        data-val="14" onclick="setModules(this)">all linear</div>
-          </div>
-        </div>
-      </div>
+<span class="c-cmt"># ── Save LoRA adapter (small checkpoint — ~100MB) ─────────────────</span>
+model.<span class="c-fn">save_pretrained</span>(<span class="c-str">"./lora-adapter"</span>)
+tokenizer.<span class="c-fn">save_pretrained</span>(<span class="c-str">"./lora-adapter"</span>)
 
-      <div class="lora-results">
-        <div class="lora-result-item">
-          <div class="lora-result-label">Trainable Parameters</div>
-          <div class="lora-result-val" id="res-params">—</div>
-        </div>
-        <div class="lora-result-item">
-          <div class="lora-result-label">% of Total</div>
-          <div class="lora-result-val green" id="res-pct">—</div>
-        </div>
-        <div class="lora-result-item">
-          <div class="lora-result-label">Adapter Size on Disk</div>
-          <div class="lora-result-val yellow" id="res-size">—</div>
-        </div>
-        <div class="lora-result-item">
-          <div class="lora-result-label">VRAM (QLoRA training)</div>
-          <div class="lora-result-val" id="res-vram">—</div>
-        </div>
-      </div>
+<span class="c-cmt"># ── Load adapter on top of base model ────────────────────────────</span>
+base <span class="c-kw">=</span> AutoModelForCausalLM.<span class="c-fn">from_pretrained</span>(MODEL_ID, device_map<span class="c-kw">=</span><span class="c-str">"auto"</span>, torch_dtype<span class="c-kw">=</span>torch.bfloat16)
+model_with_adapter <span class="c-kw">=</span> <span class="c-fn">PeftModel</span>.<span class="c-fn">from_pretrained</span>(base, <span class="c-str">"./lora-adapter"</span>)
+
+<span class="c-cmt"># ── Merge weights (optional — zero inference overhead) ────────────</span>
+merged <span class="c-kw">=</span> model_with_adapter.<span class="c-fn">merge_and_unload</span>()
+merged.<span class="c-fn">save_pretrained</span>(<span class="c-str">"./mistral-ft-merged"</span>)  <span class="c-cmt"># full model, no PEFT dependency</span>
+
+<span class="c-cmt"># ── Push to HuggingFace Hub ───────────────────────────────────────</span>
+model_with_adapter.<span class="c-fn">push_to_hub</span>(<span class="c-str">"username/mistral-7b-lora-v1"</span>)
+<span class="c-cmt"># Uploading only adapter (~100MB) vs. full model (~14GB) = 140x smaller!</span>
+
+<span class="c-cmt"># ── DoRA instead of LoRA (just change use_dora=True) ─────────────</span>
+dora_cfg <span class="c-kw">=</span> <span class="c-fn">LoraConfig</span>(
+    r<span class="c-kw">=</span><span class="c-num">16</span>, lora_alpha<span class="c-kw">=</span><span class="c-num">32</span>,
+    target_modules<span class="c-kw">=</span>[<span class="c-str">"q_proj"</span>, <span class="c-str">"v_proj"</span>],
+    use_dora<span class="c-kw">=True</span>,    <span class="c-cmt"># Weight-Decomposed LoRA — better than plain LoRA</span>
+    task_type<span class="c-kw">=</span>TaskType.CAUSAL_LM,
+)</div>
     </div>
-  </div>
 
-</div><!-- /container -->
-
-<footer>
-  <div class="container">
-    <div class="footer-inner">
-      <div class="footer-nav">
-        <a href="day16.html" class="nav-btn">← Day 16: HuggingFace</a>
-        <button class="nav-btn complete" id="footer-complete-btn" onclick="markComplete()">Mark Complete</button>
-        <a href="day18.html" class="nav-btn next">Day 18 →</a>
-      </div>
-      <div>Day 17 of the AI Mastery Curriculum &middot; Built for Sharjeel Sohail</div>
+    <div class="card-grid animate-on-scroll">
+      <div class="card"><div class="card-icon">🎓</div><h3>When to Use LoRA r=4</h3><p>Very small task adaptation — changing output format, style, or language. Minimal data (500-2K examples). Very limited compute. Risk of overfitting with higher rank.</p></div>
+      <div class="card"><div class="card-icon">⚡</div><h3>When to Use LoRA r=16</h3><p>Standard instruction tuning on 5K-50K examples. General-purpose chat adaptation. The sweet spot for most fine-tuning tasks. Default in most production recipes.</p></div>
+      <div class="card"><div class="card-icon">🔬</div><h3>When to Use LoRA r=64</h3><p>Domain-specific knowledge injection (medical, legal, code). Large training datasets (100K+). When you have abundant compute and want to maximize adapter expressivity.</p></div>
     </div>
-  </div>
-</footer>
+  </section>
+</div>
+
+<button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
 
 <script src="../bg-animation.js"></script>
 <script>
-// ── Mark Complete (aai_progress) ────────────────────────────────
-function markComplete() {
-  try {
-    const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
-    const isDone = p[17] === 'complete';
-    p[17] = isDone ? 'active' : 'complete';
-    localStorage.setItem('aai_progress', JSON.stringify(p));
-    updateCompleteButtons();
-  } catch(e) {}
-}
-
-function updateCompleteButtons() {
-  try {
-    const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
-    const done = p[17] === 'complete';
-    const label = done ? 'Completed ✓' : 'Mark Complete';
-    ['nav-complete-btn', 'footer-complete-btn'].forEach(id => {
-      const btn = document.getElementById(id);
-      if (btn) {
-        btn.textContent = label;
-        btn.classList.toggle('done', done);
-      }
-    });
-  } catch(e) {}
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  try {
-    const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
-    if (!p[17] || p[17] === 'locked') { p[17] = 'active'; localStorage.setItem('aai_progress', JSON.stringify(p)); }
-  } catch(e) {}
-  updateCompleteButtons();
-  calcLora();
+const bar = document.getElementById('progress-bar');
+window.addEventListener('scroll', () => {
+  const pct = (window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100;
+  bar.style.width = pct + '%';
+  document.getElementById('back-to-top').classList.toggle('visible', window.scrollY > 400);
 });
 
-// ── LoRA Parameter Explorer Widget ──────────────────────────────
-// Model dimensions (hidden_size, num_layers) — approximate
-const MODEL_DIMS = { 3: [3072, 28], 7: [4096, 32], 13: [5120, 40], 70: [8192, 80] };
-
-let currentSize = 3;
-let currentRank = 16;
-let currentModulesCount = 2;
-
-function setSize(el) {
-  document.querySelectorAll('#size-group .lora-radio-btn').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
-  currentSize = parseInt(el.dataset.val);
-  calcLora();
+const btn = document.getElementById('markComplete');
+if (localStorage.getItem('day17-complete') === 'true') { btn.classList.add('done'); btn.textContent = '✓ Complete'; }
+function toggleComplete() {
+  const done = localStorage.getItem('day17-complete') !== 'true';
+  localStorage.setItem('day17-complete', done);
+  btn.classList.toggle('done', done);
+  btn.textContent = done ? '✓ Complete' : 'Mark Complete';
 }
 
-function setRank(el) {
-  document.querySelectorAll('#rank-group .lora-radio-btn').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
-  currentRank = parseInt(el.dataset.val);
-  calcLora();
-}
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((e, i) => { if (e.isIntersecting) { setTimeout(() => e.target.classList.add('visible'), i * 80); observer.unobserve(e.target); } });
+}, { threshold: 0.08 });
+document.querySelectorAll('.animate-on-scroll').forEach(el => observer.observe(el));
 
-function setModules(el) {
-  document.querySelectorAll('#modules-group .lora-radio-btn').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
-  currentModulesCount = parseInt(el.dataset.val);
-  calcLora();
-}
+const statObs = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (!entry.isIntersecting) return;
+    const el = entry.target.querySelector('.stat-num[data-target]');
+    if (!el) return;
+    const target = parseFloat(el.dataset.target);
+    let start = 0;
+    const step = ts => {
+      if (!start) start = ts;
+      const p = Math.min((ts - start) / 1200, 1);
+      el.textContent = Math.round(target * p);
+      if (p < 1) requestAnimationFrame(step);
+      else el.textContent = target;
+    };
+    requestAnimationFrame(step);
+    statObs.unobserve(entry.target);
+  });
+}, { threshold: 0.5 });
+document.querySelectorAll('.stat-card').forEach(el => statObs.observe(el));
 
-function fmtNum(n) {
-  if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
-  if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
-  if (n >= 1e3) return (n / 1e3).toFixed(0) + 'K';
-  return n.toString();
-}
-
+// LoRA Calculator
 function calcLora() {
-  const [d, numLayers] = MODEL_DIMS[currentSize];
-  const r = currentRank;
-  const numModules = currentModulesCount;
-  const totalParams = currentSize * 1e9;
+  const modelB = parseFloat(document.getElementById('loraModel').value);
+  const rank = parseInt(document.getElementById('loraRank').value);
+  const alpha = parseInt(document.getElementById('loraAlpha').value);
+  const moduleFrac = parseFloat(document.getElementById('loraModules').value);
+  document.getElementById('loraModelVal').textContent = modelB + 'B';
+  document.getElementById('loraRankVal').textContent = 'r=' + rank;
+  document.getElementById('loraAlphaVal').textContent = 'α=' + alpha;
 
-  // Each LoRA adapter = 2 matrices: (d × r) + (r × d) = 2*d*r per module per layer
-  // For MLP modules the dimensions differ slightly; we simplify to d×r + r×d
-  const trainableParams = numLayers * numModules * 2 * d * r;
-  const pct = (trainableParams / totalParams) * 100;
+  const totalParams = modelB * 1e9;
+  // Approximate: typical transformer layer dim scales with params
+  const dim = Math.round(Math.sqrt(totalParams / 24)); // rough heuristic
+  const targetParams = totalParams * moduleFrac;
+  // LoRA: for each target layer (d x k), replace with r*(d+k) which is ~2r/sqrt(d*k) fraction
+  const loraParams = Math.round(targetParams * (2 * rank) / (dim * 1.5));
 
-  // Adapter size on disk: trainable params × 2 bytes (BF16)
-  const adapterBytes = trainableParams * 2;
-  const adapterMB = adapterBytes / (1024 * 1024);
-  const adapterStr = adapterMB < 1000 ? adapterMB.toFixed(0) + ' MB' : (adapterMB / 1024).toFixed(1) + ' GB';
+  const trainableM = (loraParams / 1e6).toFixed(1);
+  const frozenPct = (100 - (loraParams / totalParams * 100)).toFixed(2);
+  // VRAM: 4-bit base + BF16 adapters + optimizer (only adapters) + activations
+  const baseVRAM = (modelB * 1e9 * 0.5) / (1024**3); // 4-bit
+  const adapterVRAM = (loraParams * 2 / (1024**3)) * 3; // BF16 + gradients + optimizer
+  const totalVRAM = (baseVRAM + adapterVRAM + 2).toFixed(1); // +2GB activations
 
-  // QLoRA VRAM: base model in 4-bit + adapters in BF16 + activations/optimizer states
-  const baseWeightsGB = (totalParams * 0.5) / 1e9;  // 4-bit = 0.5 bytes/param
-  const adapterVRAM  = (trainableParams * 2) / 1e9;   // BF16 adapters
-  const optimStates  = adapterVRAM * 8;               // Adam: 8× adapter size
-  const activations  = baseWeightsGB * 0.2;           // rough estimate
-  const totalVRAM    = baseWeightsGB + adapterVRAM + optimStates + activations;
-  const vramStr = totalVRAM.toFixed(1) + ' GB';
+  document.getElementById('loraTrainable').textContent = trainableM;
+  document.getElementById('loraSavings').textContent = frozenPct + '%';
+  document.getElementById('loraVRAM').textContent = totalVRAM;
 
-  document.getElementById('res-params').textContent = fmtNum(trainableParams);
-  document.getElementById('res-pct').textContent    = pct.toFixed(3) + '%';
-  document.getElementById('res-size').textContent   = adapterStr;
-  document.getElementById('res-vram').textContent   = vramStr;
+  const savingsPct = Math.min(97, (1 - loraParams/totalParams) * 100);
+  document.getElementById('savingsBar').style.width = savingsPct + '%';
+  document.getElementById('savingsLabel').textContent = savingsPct.toFixed(0) + '% less memory';
 
-  // Color VRAM
-  const vramEl = document.getElementById('res-vram');
-  vramEl.className = 'lora-result-val' + (totalVRAM > 80 ? ' danger' : totalVRAM > 24 ? ' yellow' : '');
+  const mods = document.getElementById('loraModules');
+  const modStr = mods.options[mods.selectedIndex].value === '0.02' ? '["q_proj","v_proj"]' :
+                 mods.options[mods.selectedIndex].value === '0.04' ? '["q_proj","k_proj","v_proj","o_proj"]' :
+                 mods.options[mods.selectedIndex].value === '0.08' ? '["q_proj","k_proj","v_proj","o_proj","gate_proj","up_proj"]' :
+                 '"all-linear"';
+  document.getElementById('loraConfig').textContent =
+    `LoRAConfig(r=${rank}, lora_alpha=${alpha}, target_modules=${modStr}, lora_dropout=0.05)`;
+}
+calcLora();
+
+// Loss curve animation
+let lossAnimFrame = null;
+function animateLoss() {
+  if (lossAnimFrame) cancelAnimationFrame(lossAnimFrame);
+  const lr = document.getElementById('lrSel').value;
+  const rank = parseInt(document.getElementById('rankSel').value);
+
+  // Generate loss curve data based on settings
+  const steps = 100;
+  const trainLoss = [], valLoss = [];
+
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    let baseLoss, noise;
+    if (lr === 'high') {
+      // Unstable — oscillating
+      baseLoss = 2.8 * Math.exp(-t * 2) + 0.5 + Math.sin(t * 30) * 0.3 * Math.exp(-t);
+      noise = 0.15;
+    } else if (lr === 'good') {
+      // Nice convergence
+      baseLoss = 2.5 * Math.exp(-t * 3.5) + 0.4 + (rank === 4 ? 0.15 : rank === 64 ? 0.02 : 0.05);
+      noise = 0.04;
+    } else {
+      // Slow — barely converging
+      baseLoss = 2.5 * Math.exp(-t * 1) + 0.8;
+      noise = 0.02;
+    }
+    trainLoss.push(baseLoss + (Math.random() - 0.5) * noise);
+    valLoss.push(baseLoss * 1.05 + 0.05 + (Math.random() - 0.5) * noise * 0.5);
+  }
+
+  const svg = document.getElementById('lossSVG');
+  const W = 600, H = 200, padX = 30, padY = 10;
+  const maxLoss = 3.2, minLoss = 0.3;
+
+  function lossToY(l) {
+    return padY + (H - 2*padY) * (1 - (l - minLoss) / (maxLoss - minLoss));
+  }
+  function stepToX(s) {
+    return padX + (W - 2*padX) * (s / steps);
+  }
+
+  let currentStep = 0;
+  const trainPts = [[stepToX(0), lossToY(trainLoss[0])]];
+  const valPts = [[stepToX(0), lossToY(valLoss[0])]];
+
+  const stepLine = document.getElementById('stepLine');
+  const lossLabel = document.getElementById('lossLabel');
+  stepLine.setAttribute('opacity', '1');
+  lossLabel.setAttribute('opacity', '1');
+
+  function frame() {
+    currentStep++;
+    if (currentStep > steps) return;
+    const x = stepToX(currentStep);
+    trainPts.push([x, lossToY(trainLoss[currentStep])]);
+    valPts.push([x, lossToY(valLoss[currentStep])]);
+
+    const trainD = trainPts.map((p,i) => (i===0?'M':'L') + p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+    const valD = valPts.map((p,i) => (i===0?'M':'L') + p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+    document.getElementById('trainPath').setAttribute('d', trainD);
+    document.getElementById('valPath').setAttribute('d', valD);
+
+    stepLine.setAttribute('x1', x);
+    stepLine.setAttribute('x2', x);
+    lossLabel.setAttribute('x', x + 5);
+    lossLabel.textContent = `Step: ${currentStep * 10}`;
+
+    document.getElementById('lossStatTrain').textContent = trainLoss[currentStep].toFixed(3);
+    document.getElementById('lossStatVal').textContent = valLoss[currentStep].toFixed(3);
+    document.getElementById('lossStatStep').textContent = currentStep * 10;
+
+    lossAnimFrame = setTimeout(frame, 40);
+  }
+  frame();
 }
 </script>
 </body>

@@ -6,216 +6,167 @@
 <title>Day 30: 30-Day Final Capstone — Full-Stack AI Copilot</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --bg: #0a0a0f; --card: #141420; --surface2: #1a1a2e; --border: #2a2a45;
-  --purple: #7c3aed; --purple-light: #a855f7; --teal: #0d9488; --green: #10b981;
-  --red: #ef4444; --yellow: #f59e0b; --text: #e2e8f0; --muted: #64748b;
-  --font: 'Inter', sans-serif; --mono: 'JetBrains Mono', monospace;
-}
-html { scroll-behavior: smooth; }
-body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; overflow-x: hidden; }
-body::before {
-  content: ''; position: fixed; inset: 0;
-  background:
-    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(124,58,237,0.08) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 40% at 90% 80%, rgba(13,148,136,0.05) 0%, transparent 60%);
-  pointer-events: none; z-index: 0;
-}
-.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{--bg:#0a0a0f;--card:#141420;--surface2:#1a1a2e;--border:#2a2a45;--purple:#7c3aed;--purple-light:#a855f7;--teal:#0d9488;--green:#10b981;--red:#ef4444;--yellow:#f59e0b;--text:#e2e8f0;--muted:#64748b;--font:'Inter',sans-serif;--mono:'JetBrains Mono',monospace;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 50% 0%,rgba(124,58,237,0.1) 0%,transparent 60%),radial-gradient(ellipse 50% 40% at 90% 80%,rgba(16,185,129,0.07) 0%,transparent 60%);pointer-events:none;z-index:0;}
+.container{max-width:1100px;margin:0 auto;padding:0 24px;position:relative;z-index:1;}
+#progress-bar{position:fixed;top:0;left:0;height:3px;width:0%;background:linear-gradient(90deg,#7c3aed,#10b981,#f59e0b,#ef4444,#0d9488,#a855f7);background-size:300% 100%;animation:progressRainbow 3s linear infinite;z-index:9999;transition:width 0.1s linear;}
+@keyframes progressRainbow{0%{background-position:0% 0%;}100%{background-position:300% 0%;}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(32px);}to{opacity:1;transform:translateY(0);}}
+@keyframes slideIn{from{opacity:0;transform:translateX(-24px);}to{opacity:1;transform:translateX(0);}}
+@keyframes glow{0%,100%{box-shadow:0 0 16px rgba(124,58,237,0.3);}50%{box-shadow:0 0 40px rgba(124,58,237,0.7);}}
+@keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.04);}}
+@keyframes shimmer{0%{background-position:-200% center;}100%{background-position:200% center;}}
+@keyframes gradientShift{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
+@keyframes confetti-fall{0%{transform:translateY(-20px) rotate(0deg) scale(1);opacity:1;}100%{transform:translateY(110vh) rotate(720deg) scale(0.6);opacity:0;}}
+@keyframes celebrationPop{0%{transform:scale(0.5);opacity:0;}60%{transform:scale(1.1);}100%{transform:scale(1);opacity:1;}}
+@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
+@keyframes unlockBounce{0%,100%{transform:scale(1);}30%{transform:scale(1.2);}60%{transform:scale(0.95);}}
+.reveal{opacity:0;transform:translateY(28px);transition:opacity 0.6s ease,transform 0.6s ease;}
+.reveal.visible{opacity:1;transform:translateY(0);}
 
-/* ── NAV ── */
-nav { border-bottom: 1px solid var(--border); padding: 14px 0; background: rgba(10,10,15,0.85); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; }
-.nav-inner { max-width: 1100px; margin: 0 auto; padding: 0 24px; height: 52px; display: flex; align-items: center; justify-content: space-between; }
-.nav-btn { padding: 7px 18px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 13px; font-weight: 600; text-decoration: none; transition: all 0.2s; font-family: inherit; cursor: pointer; }
-.nav-btn:hover { border-color: var(--purple); color: var(--text); }
-.nav-btn.dashboard { border-color: rgba(245,158,11,0.5); color: var(--yellow); }
-.nav-btn.dashboard:hover { background: var(--yellow); color: #0a0a0f; border-color: var(--yellow); }
-.nav-btn.complete { border-color: rgba(245,158,11,0.5); color: var(--yellow); }
-.nav-btn.complete:hover { background: var(--yellow); color: #0a0a0f; border-color: var(--yellow); }
-.nav-btn.done { background: rgba(16,185,129,0.15); border-color: var(--green); color: var(--green); }
-.nav-brand { font-size: 14px; font-weight: 700; color: var(--muted); text-decoration: none; letter-spacing: -0.2px; transition: color 0.2s; }
-.nav-brand:hover { color: var(--text); }
+/* CONFETTI */
+.confetti-container{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9998;overflow:hidden;display:none;}
+.confetti-piece{position:absolute;opacity:0;animation:confetti-fall linear forwards;}
+.confetti-piece:nth-child(odd){border-radius:50%;}
 
-/* ── CONFETTI ── */
-.confetti-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 200; overflow: hidden; display: none; }
-.confetti-piece {
-  position: absolute; width: 10px; height: 10px; opacity: 0;
-  animation: confetti-fall linear forwards;
-}
-.confetti-piece:nth-child(odd) { border-radius: 50%; }
-@keyframes confetti-fall {
-  0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
-  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
-}
+/* CELEBRATION BANNER */
+.celebration-banner{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;background:var(--card);border:2px solid var(--purple);border-radius:24px;padding:40px 56px;text-align:center;max-width:520px;width:90%;box-shadow:0 0 80px rgba(124,58,237,0.6);animation:celebrationPop 0.5s ease both;}
+.celebration-banner h2{font-size:32px;font-weight:900;background:linear-gradient(135deg,#fff,#a855f7,#10b981);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:12px;}
+.celebration-banner p{color:var(--muted);font-size:15px;line-height:1.7;margin-bottom:20px;}
+.stats-row{display:flex;justify-content:center;gap:24px;margin-bottom:24px;flex-wrap:wrap;}
+.stat-cell{text-align:center;}
+.stat-num{font-size:28px;font-weight:900;color:var(--green);}
+.stat-label{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;}
+.banner-close{background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);}
+.banner-close:hover{border-color:var(--purple);color:var(--text);}
 
-/* ── HERO ── */
-.day-hero { padding: 56px 0 40px; }
-.day-num { font-size: 12px; font-weight: 700; color: var(--yellow); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
-.day-hero h1 { font-size: clamp(32px, 5vw, 56px); font-weight: 900; letter-spacing: -2px; margin-bottom: 16px; }
-.day-hero h1 span { background: linear-gradient(135deg, #a855f7, #34d399); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-.day-hero p { font-size: 17px; color: var(--muted); max-width: 600px; line-height: 1.6; margin-bottom: 28px; }
-.topic-pills { display: flex; flex-wrap: wrap; gap: 8px; }
-.topic-pill { padding: 5px 12px; border-radius: 20px; background: var(--surface2); border: 1px solid var(--border); font-size: 12px; color: var(--muted); font-weight: 500; }
+nav{position:sticky;top:0;z-index:100;border-bottom:1px solid var(--border);background:rgba(10,10,15,0.92);backdrop-filter:blur(16px);}
+.nav-inner{max-width:1100px;margin:0 auto;padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between;}
+.nav-btn{padding:7px 18px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:13px;font-weight:600;text-decoration:none;transition:all 0.2s;font-family:inherit;cursor:pointer;}
+.nav-btn:hover{border-color:var(--purple);color:var(--text);}
+.nav-btn.dashboard{border-color:rgba(245,158,11,0.5);color:var(--yellow);}
+.nav-btn.dashboard:hover{background:var(--yellow);color:#0a0a0f;}
+.nav-btn.complete{border-color:rgba(16,185,129,0.5);color:var(--green);}
+.nav-btn.complete:hover{background:var(--green);color:#0a0a0f;}
+.nav-btn.complete.done{background:var(--green);color:#0a0a0f;}
+.nav-brand{font-size:14px;font-weight:700;color:var(--muted);text-decoration:none;transition:color 0.2s;}
+.nav-brand:hover{color:var(--text);}
 
-/* ── SECTIONS ── */
-.section { padding: 56px 0; border-top: 1px solid var(--border); }
-.section-header { margin-bottom: 32px; }
-.section-num { font-size: 11px; font-weight: 700; color: var(--purple-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
-.section-header h2 { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 10px; }
-.section-header p { color: var(--muted); font-size: 15px; line-height: 1.6; max-width: 640px; }
+/* HERO */
+.day-hero{padding:80px 0 56px;text-align:center;}
+.day-num{font-size:13px;font-weight:800;color:var(--yellow);text-transform:uppercase;letter-spacing:2px;margin-bottom:16px;animation:slideIn 0.6s ease both;}
+.day-hero h1{font-size:clamp(40px,6vw,72px);font-weight:900;letter-spacing:-3px;margin-bottom:20px;background:linear-gradient(135deg,#fff 0%,#a855f7 30%,#10b981 60%,#f59e0b 100%);background-size:200% 200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:gradientShift 4s ease infinite,fadeUp 0.7s ease both 0.1s;}
+.day-hero p{font-size:18px;color:var(--muted);max-width:640px;line-height:1.7;margin:0 auto 32px;animation:fadeUp 0.7s ease both 0.2s;}
+.hero-cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;animation:fadeUp 0.7s ease both 0.3s;}
+.topic-pills{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;animation:fadeUp 0.7s ease both 0.4s;margin-top:20px;}
+.topic-pill{padding:5px 12px;border-radius:20px;background:var(--surface2);border:1px solid var(--border);font-size:12px;color:var(--muted);font-weight:500;transition:all 0.2s;}
+.topic-pill:hover{border-color:var(--purple);color:var(--purple-light);}
 
-/* ── CODE ── */
-.code-block { background: #0d1117; border: 1px solid #30363d; border-radius: 12px; padding: 24px; font-family: var(--mono); font-size: 12.5px; line-height: 1.8; overflow-x: auto; white-space: pre; }
-.code-wrap { position: relative; margin-top: 16px; }
-.code-label { position: absolute; top: -10px; left: 16px; background: var(--purple); color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.5px; }
-.c-cmt { color: #8b949e; }
-.c-kw { color: #ff7b72; }
-.c-fn { color: #d2a8ff; }
-.c-str { color: #a5d6ff; }
-.c-type { color: #ffa657; }
-.c-num { color: #f2cc60; }
-.c-bi { color: #79c0ff; }
-.c-dec { color: #ffa657; }
+.section{padding:64px 0;border-top:1px solid var(--border);}
+.section-header{margin-bottom:36px;}
+.section-num{font-size:11px;font-weight:700;color:var(--purple-light);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.section-header h2{font-size:30px;font-weight:800;letter-spacing:-0.5px;margin-bottom:12px;}
+.section-header p{color:var(--muted);font-size:15px;line-height:1.7;max-width:680px;}
+.code-block{background:#0d1117;border:1px solid #30363d;border-radius:12px;padding:24px;font-family:var(--mono);font-size:12.5px;line-height:1.8;overflow-x:auto;white-space:pre;}
+.code-wrap{position:relative;margin-top:20px;}
+.win-chrome{background:#1c1c28;border:1px solid #30363d;border-radius:12px 12px 0 0;padding:10px 16px;display:flex;gap:6px;align-items:center;}
+.win-dot{width:12px;height:12px;border-radius:50%;}
+.win-dot.r{background:#ef4444;}.win-dot.y{background:#f59e0b;}.win-dot.g{background:#10b981;}
+.win-chrome+.code-block{border-radius:0 0 12px 12px;border-top:none;}
+.c-cmt{color:#8b949e;}.c-kw{color:#ff7b72;}.c-fn{color:#d2a8ff;}
+.c-str{color:#a5d6ff;}.c-type{color:#ffa657;}.c-num{color:#f2cc60;}
+.c-bi{color:#79c0ff;}.c-dec{color:#ffa657;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;transition:transform 0.3s ease,border-color 0.3s ease,box-shadow 0.3s ease;}
+.card:hover{transform:translateY(-6px);border-color:var(--purple);box-shadow:0 0 28px rgba(124,58,237,0.25);}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;}
+.callout{background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.3);border-radius:12px;padding:18px 22px;display:flex;gap:14px;align-items:flex-start;margin:24px 0;}
+.callout.teal{background:rgba(13,148,136,0.07);border-color:rgba(13,148,136,0.3);}
+.callout.green{background:rgba(16,185,129,0.07);border-color:rgba(16,185,129,0.3);}
+.callout-icon{font-size:20px;flex-shrink:0;}
+.callout-body{font-size:14px;color:var(--text);line-height:1.7;}
+.callout-body strong{color:var(--teal);}
+.callout.green .callout-body strong{color:var(--green);}
+.widget{background:var(--card);border:1px solid rgba(124,58,237,0.35);border-radius:18px;padding:30px;margin-top:20px;animation:glow 4s ease-in-out infinite;}
+.widget-title{font-size:17px;font-weight:800;margin-bottom:6px;}
+.widget-sub{font-size:13px;color:var(--muted);margin-bottom:22px;line-height:1.6;}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:10px;background:linear-gradient(135deg,var(--purple),var(--teal));border:none;color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font);transition:opacity 0.2s,transform 0.2s;}
+.btn:hover{opacity:0.88;transform:translateY(-2px);}
+.btn-xl{padding:16px 40px;font-size:16px;border-radius:14px;background:linear-gradient(135deg,#a855f7,#10b981,#f59e0b);background-size:200% 200%;animation:gradientShift 3s ease infinite;}
+.btn-sm{padding:7px 16px;font-size:12px;border-radius:8px;}
+.btn-outline{background:var(--surface2);border:1px solid var(--border);color:var(--muted);}
+.btn-outline:hover{border-color:var(--purple);color:var(--purple-light);}
 
-/* ── CALLOUT ── */
-.callout { background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.25); border-radius: 12px; padding: 16px 20px; display: flex; gap: 12px; align-items: flex-start; margin: 20px 0; }
-.callout-icon { font-size: 18px; flex-shrink: 0; }
-.callout-text { font-size: 13px; color: var(--text); line-height: 1.6; }
-.callout-text strong { color: var(--yellow); }
-.callout.info { background: rgba(124,58,237,0.07); border-color: rgba(124,58,237,0.25); }
-.callout.info .callout-text strong { color: var(--purple-light); }
-.callout.green { background: rgba(16,185,129,0.07); border-color: rgba(16,185,129,0.25); }
-.callout.green .callout-text strong { color: var(--green); }
+/* ARCHITECTURE EXPLORER */
+.arch-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px;}
+.arch-node{background:var(--surface2);border:2px solid var(--border);border-radius:12px;padding:12px 8px;text-align:center;cursor:pointer;font-size:11px;font-weight:700;transition:all 0.2s;line-height:1.4;}
+.arch-node:hover{border-color:var(--purple);background:rgba(124,58,237,0.1);transform:translateY(-3px);}
+.arch-node.selected{border-color:var(--purple);background:rgba(124,58,237,0.15);box-shadow:0 0 16px rgba(124,58,237,0.3);animation:pulse 2s ease infinite;}
+.arch-node-icon{font-size:20px;display:block;margin-bottom:4px;}
+.arch-detail{background:#0d1117;border:1px solid #30363d;border-radius:12px;padding:20px;min-height:120px;font-size:13px;line-height:1.7;color:var(--text);}
 
-/* ── BULLET LIST ── */
-.bullet-list { list-style: none; display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
-.bullet-list li { font-size: 14px; color: var(--text); display: flex; align-items: flex-start; gap: 10px; line-height: 1.6; }
-.bullet-list li::before { content: '▸'; color: var(--purple-light); flex-shrink: 0; margin-top: 1px; }
+/* ACHIEVEMENT GALLERY */
+.achievement-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;}
+.achievement-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:center;transition:all 0.3s;opacity:0;transform:scale(0.8);}
+.achievement-card.unlocked{opacity:1;transform:scale(1);border-color:rgba(124,58,237,0.4);animation:unlockBounce 0.5s ease both;}
+.achievement-card.unlocked:hover{transform:translateY(-4px) scale(1.02);box-shadow:0 0 20px rgba(124,58,237,0.25);}
+.ach-icon{font-size:28px;margin-bottom:8px;}
+.ach-name{font-size:11px;font-weight:700;color:var(--text);margin-bottom:4px;line-height:1.3;}
+.ach-day{font-size:10px;color:var(--muted);}
+.ach-badge{display:inline-block;margin-top:6px;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;}
+.ach-badge.gold{background:rgba(245,158,11,0.2);color:var(--yellow);}
+.ach-badge.silver{background:rgba(100,116,139,0.2);color:var(--muted);}
+.ach-badge.platinum{background:rgba(124,58,237,0.2);color:var(--purple-light);}
 
-/* ── ARCHITECTURE DIAGRAM ── */
-.full-arch { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; overflow-x: auto; }
-.arch-layer { margin-bottom: 16px; }
-.arch-layer-label { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
-.arch-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.arch-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: 11px; font-weight: 600; white-space: nowrap; }
-.arch-box.api { border-color: rgba(245,158,11,0.5); color: var(--yellow); }
-.arch-box.orch { border-color: rgba(124,58,237,0.5); color: var(--purple-light); }
-.arch-box.rag { border-color: rgba(13,148,136,0.5); color: var(--teal); }
-.arch-box.llm { border-color: rgba(168,85,247,0.5); color: var(--purple-light); }
-.arch-box.guard { border-color: rgba(239,68,68,0.5); color: var(--red); }
-.arch-box.infra { border-color: rgba(16,185,129,0.5); color: var(--green); }
-.arch-box.obs { border-color: rgba(100,116,139,0.5); color: var(--muted); }
-.arch-arrow { color: var(--muted); font-size: 14px; }
+/* BULLET / TABLE */
+.bullet-list{display:flex;flex-direction:column;gap:10px;margin-top:14px;}
+.bullet-list li{list-style:none;font-size:14px;color:var(--muted);display:flex;align-items:flex-start;gap:10px;line-height:1.7;}
+.bullet-list li::before{content:'→';color:var(--purple-light);flex-shrink:0;font-weight:700;margin-top:1px;}
+.bullet-list li strong{color:var(--text);}
+.comp-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:16px;}
+.comp-table th{background:var(--surface2);padding:12px 14px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);border-bottom:1px solid var(--border);}
+.comp-table td{padding:13px 14px;border-bottom:1px solid var(--border);vertical-align:top;line-height:1.5;font-size:13px;}
+.comp-table tr:last-child td{border-bottom:none;}
+.comp-table tr:hover td{background:rgba(255,255,255,0.025);}
+.tick{color:var(--green);font-weight:700;}.cross{color:var(--red);font-weight:700;}.partial{color:var(--yellow);font-weight:700;}
 
-/* ── TECH STACK GRID ── */
-.stack-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-top: 20px; }
-.stack-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
-.stack-week { font-size: 10px; font-weight: 700; color: var(--purple-light); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-.stack-tech { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
-.stack-desc { font-size: 11px; color: var(--muted); line-height: 1.5; }
+footer{padding:56px 0;border-top:1px solid var(--border);}
+.footer-inner{display:flex;flex-direction:column;align-items:center;gap:20px;text-align:center;color:var(--muted);font-size:13px;}
+.footer-nav{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;}
+.footer-message{font-size:20px;font-weight:800;background:linear-gradient(135deg,#a855f7,#10b981);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
 
-/* ── CHECKLIST ── */
-.prod-checklist { display: flex; flex-direction: column; gap: 6px; }
-.check-item-row { display: flex; align-items: flex-start; gap: 10px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; cursor: pointer; transition: border-color 0.2s; }
-.check-item-row:hover { border-color: var(--purple); }
-.check-item-row.checked { background: rgba(16,185,129,0.06); border-color: rgba(16,185,129,0.3); }
-.check-item-row input[type=checkbox] { accent-color: var(--green); width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px; cursor: pointer; }
-.check-item-row label { font-size: 13px; color: var(--text); cursor: pointer; line-height: 1.5; }
-.check-item-row.checked label { color: var(--muted); text-decoration: line-through; }
-.checklist-progress { margin-bottom: 16px; }
-.progress-bar-track { background: var(--surface2); border-radius: 99px; height: 8px; overflow: hidden; }
-.progress-bar-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--purple), var(--green)); transition: width 0.4s ease; }
-.progress-label { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 12px; }
-.progress-label span { color: var(--muted); }
-.progress-label strong { color: var(--text); }
-
-/* ── INTERACTIVE ARCH EXPLORER ── */
-.arch-explorer { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-top: 24px; }
-.explorer-title { font-size: 16px; font-weight: 800; margin-bottom: 6px; }
-.explorer-desc { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
-.component-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 20px; }
-.comp-node { background: var(--surface2); border: 2px solid var(--border); border-radius: 8px; padding: 10px 8px; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; }
-.comp-node:hover { transform: translateY(-2px); }
-.comp-node.selected { border-color: var(--purple); background: rgba(124,58,237,0.1); }
-.comp-node .comp-icon { font-size: 20px; margin-bottom: 4px; }
-.comp-node .comp-name { font-size: 10px; font-weight: 700; }
-.comp-node .comp-day { font-size: 9px; color: var(--muted); margin-top: 2px; }
-.comp-detail { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 20px; display: none; }
-.comp-detail.visible { display: block; }
-.detail-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-.detail-icon { font-size: 28px; }
-.detail-name { font-size: 16px; font-weight: 800; }
-.detail-day { font-size: 11px; color: var(--muted); }
-.detail-desc { font-size: 13px; color: var(--text); line-height: 1.6; margin-bottom: 12px; }
-.detail-snippet { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 14px; font-family: var(--mono); font-size: 12px; line-height: 1.7; overflow-x: auto; white-space: pre; }
-
-.days-counter { background: rgba(124,58,237,0.1); border: 1px solid rgba(124,58,237,0.3); border-radius: 10px; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; margin-top: 16px; }
-.counter-label { font-size: 13px; color: var(--muted); }
-.counter-val { font-size: 22px; font-weight: 900; color: var(--purple-light); }
-.master-badge { display: none; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; }
-.master-badge.visible { display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, var(--purple), var(--teal)); color: white; animation: badge-pulse 2s ease infinite; }
-@keyframes badge-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(124,58,237,0.4); } 50% { box-shadow: 0 0 0 8px rgba(124,58,237,0); } }
-
-/* ── CELEBRATION BANNER ── */
-.celebration-banner {
-  text-align: center; padding: 80px 24px;
-  background: linear-gradient(135deg, rgba(124,58,237,0.1) 0%, rgba(13,148,136,0.08) 50%, rgba(16,185,129,0.06) 100%);
-  border: 1px solid rgba(124,58,237,0.3); border-radius: 24px; position: relative; overflow: hidden;
-  margin-top: 40px;
-}
-.celebration-banner::before {
-  content: ''; position: absolute; inset: -50%;
-  background: radial-gradient(circle at 30% 30%, rgba(124,58,237,0.08) 0%, transparent 50%),
-              radial-gradient(circle at 70% 70%, rgba(245,158,11,0.05) 0%, transparent 50%);
-}
-.cel-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 20px; border-radius: 20px; background: linear-gradient(135deg, var(--purple), var(--teal)); color: white; font-size: 13px; font-weight: 700; margin-bottom: 24px; }
-.cel-title { font-size: clamp(32px, 5vw, 56px); font-weight: 900; letter-spacing: -2px; margin-bottom: 16px; background: linear-gradient(135deg, #f59e0b, #a855f7, #34d399); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-.cel-subtitle { font-size: 18px; color: var(--muted); max-width: 500px; margin: 0 auto 32px; line-height: 1.6; }
-.cel-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; max-width: 700px; margin: 0 auto 32px; }
-.cel-stat { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 16px; }
-.cel-stat-num { font-size: 28px; font-weight: 900; color: var(--yellow); }
-.cel-stat-label { font-size: 12px; color: var(--muted); margin-top: 4px; }
-.cel-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-.cel-btn { padding: 12px 28px; border-radius: 10px; font-size: 14px; font-weight: 700; font-family: var(--font); cursor: pointer; transition: all 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; border: none; }
-.cel-btn.primary { background: linear-gradient(135deg, var(--purple), var(--teal)); color: white; }
-.cel-btn.primary:hover { opacity: 0.85; transform: translateY(-1px); }
-.cel-btn.secondary { background: transparent; border: 1px solid var(--border); color: var(--muted); }
-.cel-btn.secondary:hover { border-color: var(--red); color: var(--red); }
-
-/* ── NEXT STEPS ── */
-.next-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; margin-top: 20px; }
-.next-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; transition: all 0.2s; }
-.next-card:hover { border-color: var(--purple); transform: translateY(-2px); }
-.next-icon { font-size: 28px; margin-bottom: 10px; }
-.next-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
-.next-desc { font-size: 12px; color: var(--muted); line-height: 1.5; flex: 1; }
-.next-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; margin-top: 10px; background: rgba(124,58,237,0.15); color: var(--purple-light); }
-
-footer { padding: 40px 0; border-top: 1px solid var(--border); text-align: center; color: var(--muted); font-size: 13px; }
-
-@media(max-width:900px) {
-  .component-grid { grid-template-columns: repeat(3, 1fr); }
-  .cel-grid { grid-template-columns: repeat(2, 1fr); }
-}
-@media(max-width:600px) {
-  .component-grid { grid-template-columns: repeat(2, 1fr); }
-  .stack-grid { grid-template-columns: 1fr; }
-}
+@media(max-width:700px){.arch-grid{grid-template-columns:repeat(2,1fr);}.achievement-grid{grid-template-columns:repeat(2,1fr);}.stats-row{gap:16px;}.hero-cta{flex-direction:column;align-items:center;}}
 </style>
 </head>
 <body data-animation-density="high">
+<div id="progress-bar"></div>
 
-<!-- Confetti container -->
+<!-- CONFETTI -->
 <div class="confetti-container" id="confetti-container"></div>
+
+<!-- CELEBRATION BANNER -->
+<div class="celebration-banner" id="celebration-banner">
+  <div style="font-size:48px;margin-bottom:12px;animation:float 2s ease infinite">🎓</div>
+  <h2>Journey Complete!</h2>
+  <p>You've built the skills to architect, implement, and deploy production-grade Agentic AI systems. 30 days. 30 milestones. One complete engineer.</p>
+  <div class="stats-row">
+    <div class="stat-cell"><div class="stat-num">30</div><div class="stat-label">Days</div></div>
+    <div class="stat-cell"><div class="stat-num" id="stat-completed">0</div><div class="stat-label">Completed</div></div>
+    <div class="stat-cell"><div class="stat-num">120+</div><div class="stat-label">Code Examples</div></div>
+    <div class="stat-cell"><div class="stat-num">60+</div><div class="stat-label">Widgets</div></div>
+  </div>
+  <button class="banner-close" onclick="closeBanner()">Continue →</button>
+</div>
 
 <nav>
   <div class="nav-inner">
     <a href="day29.html" class="nav-btn">← Day 29</a>
-    <a href="../index.html" class="nav-brand">Agentic AI Mastery</a>
+    <a href="../index.html" class="nav-brand">🤖 Agentic AI</a>
     <div style="display:flex;gap:8px;align-items:center;">
-      <a href="../index.html" class="nav-btn dashboard">Return to Dashboard</a>
-      <button class="nav-btn complete" id="complete-btn" onclick="markComplete()">Mark Complete</button>
+      <a href="../index.html" class="nav-btn dashboard">Dashboard</a>
+      <button class="nav-btn complete" id="nav-complete-btn" onclick="markComplete()">Mark Complete</button>
     </div>
   </div>
 </nav>
@@ -223,504 +174,300 @@ footer { padding: 40px 0; border-top: 1px solid var(--border); text-align: cente
 <div class="container">
   <div class="day-hero">
     <div class="day-num">Day 30 — Final Capstone</div>
-    <h1>Full-Stack AI Copilot:<br><span>30 Days, One System</span></h1>
-    <p>The final day. You're not learning a new concept — you're integrating everything: FastAPI, LangGraph, Qdrant, Guardrails AI, MLflow, and Docker into one production-grade AI copilot system.</p>
+    <h1>Full-Stack AI Copilot<br>From Scratch</h1>
+    <p>Synthesize all 30 days into a production-ready AI copilot. This capstone integrates RAG, multi-tenancy, guardrails, structured outputs, LangGraph orchestration, cloud deployment, and RLHF-aligned models into a single coherent architecture.</p>
+    <div class="hero-cta">
+      <button class="btn btn-xl" onclick="triggerConfetti()">Complete Journey 🎉</button>
+      <a href="#architecture" class="btn btn-outline">Explore Architecture</a>
+    </div>
     <div class="topic-pills">
-      <span class="topic-pill">FastAPI</span>
-      <span class="topic-pill">LangGraph</span>
-      <span class="topic-pill">Qdrant</span>
-      <span class="topic-pill">Guardrails AI</span>
-      <span class="topic-pill">MLflow</span>
+      <span class="topic-pill">Full RAG Pipeline</span>
+      <span class="topic-pill">Multi-tenant Auth</span>
+      <span class="topic-pill">LangGraph Orchestration</span>
+      <span class="topic-pill">Constitutional AI</span>
       <span class="topic-pill">Docker + K8s</span>
-      <span class="topic-pill">RAGAS</span>
-      <span class="topic-pill">LangSmith</span>
+      <span class="topic-pill">LLM-as-Judge Eval</span>
     </div>
   </div>
-</div>
 
-<!-- SECTION 1 -->
-<div class="container">
-  <div class="section">
-    <div class="section-header">
-      <div class="section-num">01 — Final Architecture</div>
-      <h2>The Final Capstone Architecture</h2>
-      <p>Everything from all 30 days wired together. This is the system you can actually ship to a real enterprise customer.</p>
+  <div class="section" id="architecture">
+    <div class="section-header reveal">
+      <div class="section-num">Section 01</div>
+      <h2>Full Architecture Explorer</h2>
+      <p>Click any component to see its role in the capstone system, the code that implements it, and which day of the curriculum taught it. This is the complete picture of production Agentic AI.</p>
     </div>
-
-    <div class="full-arch">
-      <div class="arch-layer">
-        <div class="arch-layer-label">API Gateway</div>
-        <div class="arch-row">
-          <div class="arch-box api">FastAPI (JWT auth)</div>
-          <div class="arch-arrow">→</div>
-          <div class="arch-box guard">Guardrails AI (input)</div>
-          <div class="arch-arrow">→</div>
-          <div class="arch-box api">Rate Limiter (per tenant)</div>
-          <div class="arch-arrow">→</div>
-          <div class="arch-box obs">Audit Logger</div>
-        </div>
+    <div class="widget reveal">
+      <div class="widget-title">Capstone Architecture — 10 Clickable Components</div>
+      <div class="widget-sub">Each component maps to 1-3 days of learning. Together they form a production-grade AI copilot capable of handling enterprise-scale multi-tenant workloads.</div>
+      <div class="arch-grid" id="arch-grid">
+        <div class="arch-node" onclick="selectArch('jwt')"><span class="arch-node-icon">🔐</span>JWT Auth Layer</div>
+        <div class="arch-node" onclick="selectArch('intent')"><span class="arch-node-icon">🎯</span>Intent Router</div>
+        <div class="arch-node" onclick="selectArch('guardrails')"><span class="arch-node-icon">🛡️</span>Guardrails</div>
+        <div class="arch-node" onclick="selectArch('rag')"><span class="arch-node-icon">🔍</span>Tenant RAG</div>
+        <div class="arch-node" onclick="selectArch('langgraph')"><span class="arch-node-icon">⚡</span>LangGraph SM</div>
+        <div class="arch-node" onclick="selectArch('structured')"><span class="arch-node-icon">📋</span>Struct. Outputs</div>
+        <div class="arch-node" onclick="selectArch('cai')"><span class="arch-node-icon">⚖️</span>Constitutional AI</div>
+        <div class="arch-node" onclick="selectArch('cache')"><span class="arch-node-icon">⚡</span>Prompt Cache</div>
+        <div class="arch-node" onclick="selectArch('eval')"><span class="arch-node-icon">📊</span>LLM Eval</div>
+        <div class="arch-node" onclick="selectArch('deploy')"><span class="arch-node-icon">🚀</span>K8s Deploy</div>
       </div>
-      <div class="arch-layer">
-        <div class="arch-layer-label">Orchestration</div>
-        <div class="arch-row">
-          <div class="arch-box orch">LangGraph State Machine</div>
-          <div class="arch-arrow">→</div>
-          <div class="arch-box orch">Intent Classifier</div>
-          <div class="arch-arrow">→</div>
-          <div class="arch-box orch">Context Model Builder</div>
-          <div class="arch-arrow">→</div>
-          <div class="arch-box orch">HITL Approval Gate</div>
-        </div>
-      </div>
-      <div class="arch-layer">
-        <div class="arch-layer-label">Intelligence</div>
-        <div class="arch-row">
-          <div class="arch-box llm">Claude / GPT-4o (LLM)</div>
-          <div class="arch-arrow">→</div>
-          <div class="arch-box rag">Qdrant (RAG)</div>
-          <div class="arch-arrow">→</div>
-          <div class="arch-box rag">text-embedding-3-small</div>
-          <div class="arch-arrow">→</div>
-          <div class="arch-box guard">Guardrails AI (output)</div>
-        </div>
-      </div>
-      <div class="arch-layer">
-        <div class="arch-layer-label">Infrastructure</div>
-        <div class="arch-row">
-          <div class="arch-box infra">PostgreSQL (checkpointer)</div>
-          <div class="arch-arrow">→</div>
-          <div class="arch-box infra">Redis (sessions)</div>
-          <div class="arch-arrow">→</div>
-          <div class="arch-box infra">Docker + K8s</div>
-          <div class="arch-arrow">→</div>
-          <div class="arch-box infra">Helm (deploy)</div>
-        </div>
-      </div>
-      <div class="arch-layer">
-        <div class="arch-layer-label">Observability &amp; Quality</div>
-        <div class="arch-row">
-          <div class="arch-box obs">LangSmith (tracing)</div>
-          <div class="arch-arrow">→</div>
-          <div class="arch-box obs">MLflow (experiments)</div>
-          <div class="arch-arrow">→</div>
-          <div class="arch-box obs">RAGAS (eval)</div>
-          <div class="arch-arrow">→</div>
-          <div class="arch-box obs">Prometheus + Grafana</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="stack-grid">
-      <div class="stack-card"><div class="stack-week">Week 1</div><div class="stack-tech">LLM Fundamentals</div><div class="stack-desc">Anthropic SDK, streaming, tool use, context windows, messages API</div></div>
-      <div class="stack-card"><div class="stack-week">Week 2</div><div class="stack-tech">Agents &amp; RAG</div><div class="stack-desc">ReAct agents, LangChain, Qdrant, embeddings, RAG pipelines</div></div>
-      <div class="stack-card"><div class="stack-week">Week 3</div><div class="stack-tech">LangGraph &amp; Multi-Agent</div><div class="stack-desc">StateGraph, HITL, checkpointers, parallel agents, handoffs</div></div>
-      <div class="stack-card"><div class="stack-week">Week 4</div><div class="stack-tech">Production Engineering</div><div class="stack-tech" style="margin-bottom:0px;font-size:11px;font-weight:500;color:var(--muted);">RAGAS, MLflow, Guardrails, LangSmith, evals, CI/CD</div></div>
-      <div class="stack-card"><div class="stack-week">Week 5+</div><div class="stack-tech">Cloud &amp; Advanced</div><div class="stack-desc">Bedrock, Vertex AI, Docker, K8s, Helm, DPO, Copilot patterns</div></div>
+      <div class="arch-detail" id="arch-detail">Click any component above to see its implementation details, code patterns, and which day taught it.</div>
     </div>
   </div>
-</div>
 
-<!-- SECTION 2 -->
-<div class="container">
   <div class="section">
-    <div class="section-header">
-      <div class="section-num">02 — Core Infrastructure</div>
-      <h2>Core Infrastructure</h2>
-      <p>FastAPI with JWT middleware, Qdrant with per-tenant namespace isolation, Redis for session cache, PostgreSQL for LangGraph's checkpointer — initialized at startup via FastAPI lifespan.</p>
+    <div class="section-header reveal">
+      <div class="section-num">Section 02</div>
+      <h2>Capstone System: End-to-End Flow</h2>
+      <p>The complete request lifecycle through the capstone AI copilot — from JWT verification through RAG retrieval to response generation and evaluation logging.</p>
     </div>
+    <div class="code-wrap reveal">
+      <div class="win-chrome"><span class="win-dot r"></span><span class="win-dot y"></span><span class="win-dot g"></span><span style="font-size:11px;color:var(--muted);margin-left:8px;font-family:var(--mono)">capstone_copilot.py</span></div>
+      <div class="code-block"><span class="c-kw">from</span> fastapi <span class="c-kw">import</span> <span class="c-type">FastAPI</span>, <span class="c-type">Depends</span>, <span class="c-type">HTTPException</span>
+<span class="c-kw">from</span> langgraph.graph <span class="c-kw">import</span> <span class="c-type">StateGraph</span>, <span class="c-type">END</span>
+<span class="c-kw">import</span> instructor
+<span class="c-kw">from</span> anthropic <span class="c-kw">import</span> <span class="c-type">Anthropic</span>
+<span class="c-kw">from</span> qdrant_client <span class="c-kw">import</span> <span class="c-type">QdrantClient</span>
+<span class="c-kw">from</span> qdrant_client.models <span class="c-kw">import</span> <span class="c-type">Filter</span>, <span class="c-type">FieldCondition</span>, <span class="c-type">MatchValue</span>
+<span class="c-kw">import</span> jwt, json, re
 
-    <div class="code-wrap">
-      <span class="code-label">PYTHON — main.py (Full FastAPI Application)</span>
-      <div class="code-block"><span class="c-kw">from</span> fastapi <span class="c-kw">import</span> FastAPI, Depends, HTTPException
-<span class="c-kw">from</span> fastapi.middleware.cors <span class="c-kw">import</span> CORSMiddleware
-<span class="c-kw">from</span> contextlib <span class="c-kw">import</span> asynccontextmanager
-<span class="c-kw">from</span> qdrant_client <span class="c-kw">import</span> QdrantClient
-<span class="c-kw">from</span> langchain_qdrant <span class="c-kw">import</span> QdrantVectorStore
-<span class="c-kw">from</span> langchain_openai <span class="c-kw">import</span> OpenAIEmbeddings
-<span class="c-kw">import</span> uvicorn
+<span class="c-cmt"># ── LAYER 0: Setup ───────────────────────────────────────────────</span>
+app     = <span class="c-type">FastAPI</span>(title=<span class="c-str">"AI Copilot Capstone"</span>)
+client  = instructor.<span class="c-fn">from_anthropic</span>(<span class="c-type">Anthropic</span>())
+qdrant  = <span class="c-type">QdrantClient</span>(<span class="c-str">"http://qdrant:6333"</span>)
 
-<span class="c-dec">@asynccontextmanager</span>
-<span class="c-kw">async def</span> <span class="c-fn">lifespan</span>(app: FastAPI):
-    <span class="c-cmt"># Startup: initialize all connections</span>
-    app.state.qdrant = <span class="c-fn">QdrantClient</span>(url=settings.qdrant_url)
-    app.state.vectorstore = <span class="c-fn">QdrantVectorStore</span>(
-        client=app.state.qdrant,
-        collection_name=<span class="c-str">"copilot_docs"</span>,
-        embedding=<span class="c-fn">OpenAIEmbeddings</span>(model=<span class="c-str">"text-embedding-3-small"</span>)
+<span class="c-cmt"># ── LAYER 1: JWT Auth + Tenant Extraction (Day 25) ───────────────</span>
+<span class="c-kw">def</span> <span class="c-fn">get_tenant</span>(token: <span class="c-bi">str</span>) -> <span class="c-bi">dict</span>:
+    payload = jwt.<span class="c-fn">decode</span>(token, <span class="c-str">"SECRET"</span>, algorithms=[<span class="c-str">"HS256"</span>])
+    <span class="c-kw">return</span> {<span class="c-str">"tenant_id"</span>: payload[<span class="c-str">"tenant_id"</span>], <span class="c-str">"roles"</span>: payload.<span class="c-fn">get</span>(<span class="c-str">"roles"</span>, [])}
+
+<span class="c-cmt"># ── LAYER 2: Guardrails (Day 23) ─────────────────────────────────</span>
+INJECTION_RE = <span class="c-fn">re.compile</span>(<span class="c-str">r"ignore.*(previous|prior).*(instruction|rule)"</span>, re.I)
+
+<span class="c-kw">def</span> <span class="c-fn">check_guardrails</span>(text: <span class="c-bi">str</span>):
+    <span class="c-kw">if</span> INJECTION_RE.<span class="c-fn">search</span>(text):
+        <span class="c-kw">raise</span> <span class="c-type">HTTPException</span>(<span class="c-num">400</span>, <span class="c-str">"Input rejected by guardrails layer 1"</span>)
+
+<span class="c-cmt"># ── LAYER 3: Intent Classification (Day 29) ──────────────────────</span>
+<span class="c-kw">def</span> <span class="c-fn">classify_intent</span>(text: <span class="c-bi">str</span>) -> <span class="c-bi">str</span>:
+    resp = <span class="c-type">Anthropic</span>().messages.<span class="c-fn">create</span>(
+        model=<span class="c-str">"claude-3-5-haiku-20241022"</span>, max_tokens=<span class="c-num">30</span>,
+        system=<span class="c-str">'Respond ONLY: question|action|search|smalltalk'</span>,
+        messages=[{<span class="c-str">"role"</span>:<span class="c-str">"user"</span>,<span class="c-str">"content"</span>:text}]
     )
-    app.state.graph = <span class="c-fn">build_copilot_graph</span>()
-    <span class="c-fn">print</span>(<span class="c-str">"All systems initialized"</span>)
-    <span class="c-kw">yield</span>
-    <span class="c-cmt"># Shutdown</span>
-    app.state.qdrant.<span class="c-fn">close</span>()
+    <span class="c-kw">return</span> resp.content[<span class="c-num">0</span>].text.<span class="c-fn">strip</span>()
 
-app = <span class="c-fn">FastAPI</span>(title=<span class="c-str">"AI Copilot API"</span>, lifespan=lifespan)
-app.<span class="c-fn">add_middleware</span>(CORSMiddleware, allow_origins=[<span class="c-str">"*"</span>], allow_methods=[<span class="c-str">"*"</span>])
+<span class="c-cmt"># ── LAYER 4: Tenant-Scoped RAG (Days 12+25) ──────────────────────</span>
+<span class="c-kw">def</span> <span class="c-fn">rag_search</span>(query: <span class="c-bi">str</span>, tenant_id: <span class="c-bi">str</span>, vector) -> <span class="c-bi">list</span>:
+    <span class="c-kw">return</span> qdrant.<span class="c-fn">search</span>(
+        collection_name=<span class="c-str">"documents"</span>,
+        query_vector=vector,
+        query_filter=<span class="c-type">Filter</span>(must=[<span class="c-type">FieldCondition</span>(
+            key=<span class="c-str">"metadata.tenant_id"</span>,
+            match=<span class="c-type">MatchValue</span>(value=tenant_id)
+        )]),
+        limit=<span class="c-num">5</span>, with_payload=<span class="c-bi">True</span>
+    )
 
-<span class="c-kw">from</span> routers <span class="c-kw">import</span> chat, documents, health
-app.<span class="c-fn">include_router</span>(health.router, prefix=<span class="c-str">"/health"</span>)
-app.<span class="c-fn">include_router</span>(chat.router, prefix=<span class="c-str">"/chat"</span>, dependencies=[<span class="c-fn">Depends</span>(verify_jwt)])
-app.<span class="c-fn">include_router</span>(documents.router, prefix=<span class="c-str">"/docs"</span>, dependencies=[<span class="c-fn">Depends</span>(verify_jwt)])</div>
+<span class="c-cmt"># ── LAYER 5: Structured Response (Day 24) ────────────────────────</span>
+<span class="c-kw">from</span> pydantic <span class="c-kw">import</span> <span class="c-type">BaseModel</span>, <span class="c-type">Field</span>
+
+<span class="c-kw">class</span> <span class="c-type">CopilotResponse</span>(<span class="c-type">BaseModel</span>):
+    answer: <span class="c-bi">str</span>
+    sources: <span class="c-bi">list</span>[<span class="c-bi">str</span>]
+    confidence: <span class="c-bi">float</span> = <span class="c-type">Field</span>(ge=<span class="c-num">0</span>, le=<span class="c-num">1</span>)
+    requires_human_review: <span class="c-bi">bool</span>
+
+<span class="c-cmt"># ── LAYER 6: Main API Endpoint ────────────────────────────────────</span>
+<span class="c-dec">@app.post</span>(<span class="c-str">"/chat"</span>)
+<span class="c-kw">async def</span> <span class="c-fn">chat</span>(message: <span class="c-bi">str</span>, token: <span class="c-bi">str</span>) -> <span class="c-type">CopilotResponse</span>:
+    ctx = <span class="c-fn">get_tenant</span>(token)              <span class="c-cmt"># Day 25</span>
+    <span class="c-fn">check_guardrails</span>(message)           <span class="c-cmt"># Day 23</span>
+    intent = <span class="c-fn">classify_intent</span>(message)    <span class="c-cmt"># Day 29</span>
+    docs = <span class="c-fn">rag_search</span>(message, ctx[<span class="c-str">"tenant_id"</span>], <span class="c-fn">embed</span>(message)) <span class="c-cmt"># Day 12</span>
+    context = <span class="c-str">"\n"</span>.<span class="c-fn">join</span>([d.payload[<span class="c-str">"text"</span>] <span class="c-kw">for</span> d <span class="c-kw">in</span> docs])
+    <span class="c-kw">return</span> client.messages.<span class="c-fn">create</span>(      <span class="c-cmt"># Day 24</span>
+        model=<span class="c-str">"claude-3-5-sonnet-20241022"</span>,
+        max_tokens=<span class="c-num">1024</span>,
+        response_model=<span class="c-type">CopilotResponse</span>,
+        system=<span class="c-fn">f</span><span class="c-str">"You are a helpful assistant. Context:\n{context}"</span>,
+        messages=[{<span class="c-str">"role"</span>:<span class="c-str">"user"</span>,<span class="c-str">"content"</span>:message}]
+    )</div>
+    </div>
+
+    <div class="callout green reveal">
+      <span class="callout-icon">🎓</span>
+      <div class="callout-body"><strong>Capstone achievement:</strong> This ~50-line main function integrates 8 different AI system components learned across the curriculum. Every line references a specific day of learning. This is what production Agentic AI looks like — not magic, but disciplined composition of learnable patterns.</div>
     </div>
   </div>
-</div>
 
-<!-- SECTION 3 -->
-<div class="container">
   <div class="section">
-    <div class="section-header">
-      <div class="section-num">03 — LangGraph Orchestrator</div>
-      <h2>LangGraph Copilot Orchestrator</h2>
-      <p>The complete copilot graph from Day 29 patterns, hardened with tenant isolation in state, interrupt_before execution, and PostgreSQL checkpointing for durable multi-turn conversations.</p>
+    <div class="section-header reveal">
+      <div class="section-num">Section 03</div>
+      <h2>30-Day Achievement Gallery</h2>
+      <p>Every major skill from your journey. Skills unlock as you scroll. Each badge represents a concrete capability you now have as an AI engineer.</p>
     </div>
-
-    <ul class="bullet-list">
-      <li><strong>Nodes:</strong> intent_classify → entity_collect → propose_action → execute_action — four nodes, one clean flow</li>
-      <li><strong>Interrupt before execute:</strong> Graph always pauses at execute_action for human confirmation — cannot be bypassed</li>
-      <li><strong>Tenant isolation:</strong> thread_id in checkpointer = f"{tenant_id}:{user_id}:{session_id}" — separate conversation state per user</li>
-      <li><strong>Auth context in state:</strong> JWT claims injected at graph entry — tools check permissions from state, not from re-decoding tokens</li>
-    </ul>
-
-    <div class="callout info">
-      <span class="callout-icon">🔑</span>
-      <div class="callout-text"><strong>Security architecture:</strong> The FastAPI layer decodes and validates the JWT. The LangGraph layer enforces permissions at tool-call time using the claims already in state. No double-decoding, no trust escalation between layers.</div>
+    <div class="achievement-grid reveal" id="achievement-grid">
+      <!-- populated by JS -->
     </div>
   </div>
-</div>
 
-<!-- SECTION 4 -->
-<div class="container">
   <div class="section">
-    <div class="section-header">
-      <div class="section-num">04 — Guardrails Integration</div>
-      <h2>Guardrails Integration</h2>
-      <p>Two layers of guardrails: input validation (prompt injection, scope enforcement) and output validation (PII detection, structure check). Combined with audit logging middleware.</p>
-    </div>
-
-    <ul class="bullet-list">
-      <li><strong>Input guardrails:</strong> Detect prompt injection attempts, validate that user intent is within their permitted scope, block tenant data cross-contamination attempts</li>
-      <li><strong>Output validation:</strong> Pydantic model validation via Instructor, PII regex scan before returning, structured output schema enforcement</li>
-      <li><strong>Audit logging middleware:</strong> Every message logged with full context — user_id, tenant_id, intent, action taken, timestamp — append-only to Postgres</li>
-      <li><strong>RBAC at tool level:</strong> Each LangGraph tool function checks <code style="background:var(--surface2);padding:1px 4px;border-radius:3px;font-family:var(--mono);font-size:12px;">state["auth"]["scopes"]</code> before executing — auth is not just at the API boundary</li>
-    </ul>
-
-    <div class="callout green">
-      <span class="callout-icon">✅</span>
-      <div class="callout-text"><strong>Defense in depth:</strong> Multiple security layers means a single failure doesn't compromise the system. Guardrails AI catches injection → RBAC catches scope violations → audit log catches anomalies after the fact. Assume breach; detect it.</div>
-    </div>
-  </div>
-</div>
-
-<!-- SECTION 5 -->
-<div class="container">
-  <div class="section">
-    <div class="section-header">
-      <div class="section-num">05 — Production Readiness</div>
+    <div class="section-header reveal">
+      <div class="section-num">Section 04</div>
       <h2>Production Readiness Checklist</h2>
-      <p>Track your deployment readiness. These are the 20 items that separate a working demo from a shippable production system. Check off as you complete each one.</p>
+      <p>Before shipping any AI system to production, verify these 20 critical checkpoints. Each maps to skills from specific days in this curriculum.</p>
     </div>
+    <table class="comp-table reveal">
+      <thead><tr><th>Category</th><th>Checkpoint</th><th>Day Taught</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>Auth</td><td>JWT verified server-side, tenant_id extracted from claims</td><td>Day 25</td><td><span class="tick">✓ Essential</span></td></tr>
+        <tr><td>Auth</td><td>Tool manifest filtered by user roles before LLM call</td><td>Day 25</td><td><span class="tick">✓ Essential</span></td></tr>
+        <tr><td>Safety</td><td>Regex + LLM injection detection on all inputs</td><td>Day 23</td><td><span class="tick">✓ Essential</span></td></tr>
+        <tr><td>Safety</td><td>Output PII scrubbing before returning to user</td><td>Day 23</td><td><span class="tick">✓ Essential</span></td></tr>
+        <tr><td>RAG</td><td>Tenant_id filter applied on every Qdrant search</td><td>Day 25</td><td><span class="tick">✓ Essential</span></td></tr>
+        <tr><td>Outputs</td><td>All LLM outputs validated via Pydantic schema</td><td>Day 24</td><td><span class="tick">✓ Essential</span></td></tr>
+        <tr><td>Outputs</td><td>Retry loop configured for validation failures</td><td>Day 24</td><td><span class="tick">✓ Essential</span></td></tr>
+        <tr><td>Cost</td><td>Prompt caching enabled for large system prompts</td><td>Day 22</td><td><span class="partial">~ Recommended</span></td></tr>
+        <tr><td>Ops</td><td>Resource limits set on all K8s pods</td><td>Day 27</td><td><span class="tick">✓ Essential</span></td></tr>
+        <tr><td>Ops</td><td>HPA autoscaling configured with appropriate metrics</td><td>Day 27</td><td><span class="partial">~ Recommended</span></td></tr>
+        <tr><td>Eval</td><td>LLM-as-Judge evaluation running on 5% of traffic</td><td>Day 28</td><td><span class="partial">~ Recommended</span></td></tr>
+        <tr><td>State</td><td>LangGraph checkpoint store configured (Redis/Postgres)</td><td>Day 29</td><td><span class="tick">✓ Essential</span></td></tr>
+      </tbody>
+    </table>
+  </div>
 
-    <div class="checklist-progress">
-      <div class="progress-label">
-        <span>Production readiness</span>
-        <strong id="check-count">0 / 20</strong>
-      </div>
-      <div class="progress-bar-track">
-        <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
-      </div>
+  <div class="section">
+    <div class="section-header reveal">
+      <div class="section-num">Section 05</div>
+      <h2>What Comes After Day 30</h2>
     </div>
-
-    <div class="prod-checklist" id="prod-checklist">
-      <div class="check-item-row" onclick="toggleCheck(this)"><input type="checkbox" onclick="event.stopPropagation()"><label>JWT authentication + RBAC enforcement at tool layer</label></div>
-      <div class="check-item-row" onclick="toggleCheck(this)"><input type="checkbox" onclick="event.stopPropagation()"><label>Per-tenant Qdrant namespace isolation + adversarial cross-tenant test</label></div>
-      <div class="check-item-row" onclick="toggleCheck(this)"><input type="checkbox" onclick="event.stopPropagation()"><label>Input guardrails with prompt injection detection</label></div>
-      <div class="check-item-row" onclick="toggleCheck(this)"><input type="checkbox" onclick="event.stopPropagation()"><label>Output validation with Pydantic + Instructor structured output</label></div>
-      <div class="check-item-row" onclick="toggleCheck(this)"><input type="checkbox" onclick="event.stopPropagation()"><label>Human approval gate (LangGraph interrupt_before) for irreversible actions</label></div>
-      <div class="check-item-row" onclick="toggleCheck(this)"><input type="checkbox" onclick="event.stopPropagation()"><label>Audit logging — append-only, every message logged with full context</label></div>
-      <div class="check-item-row" onclick="toggleCheck(this)"><input type="checkbox" onclick="event.stopPropagation()"><label>LangSmith tracing enabled in production</label></div>
-      <div class="check-item-row" onclick="toggleCheck(this)"><input type="checkbox" onclick="event.stopPropagation()"><label>RAGAS evaluation baseline established (&gt;0.80 faithfulness on test set)</label></div>
-      <div class="check-item-row" onclick="toggleCheck(this)"><input type="checkbox" onclick="event.stopPropagation()"><label>MLflow experiment tracking configured with production run logging</label></div>
-      <div class="check-item-row" onclick="toggleCheck(this)"><input type="checkbox" onclick="event.stopPropagation()"><label>Docker containerization complete with multi-stage build</label></div>
-      <div class="check-item-row" onclick="toggleCheck(this)"><input type="checkbox" onclick="event.stopPropagation()"><label>Kubernetes deployment manifests tested on staging cluster</label></div>
-      <div class="check-item-row" onclick="toggleCheck(this)"><input type="checkbox" onclick="event.stopPropagation()"><label>Health checks and readiness probes (120s initialDelaySeconds for LLM)</label></div>
-      <div class="check-item-row" onclick="toggleCheck(this)"><input type="checkbox" onclick="event.stopPropagation()"><label>Horizontal Pod Autoscaler configured (min: 2, max: 10)</label></div>
-      <div class="check-item-row" onclick="toggleCheck(this)"><input type="checkbox" onclick="event.stopPropagation()"><label>Secrets in Kubernetes Secrets (not environment variables in Dockerfile)</label></div>
-      <div class="check-item-row" onclick="toggleCheck(this)"><input type="checkbox" onclick="event.stopPropagation()"><label>CI/CD pipeline with RAGAS quality gate (blocks deploy if faithfulness drops)</label></div>
-      <div class="check-item-row" onclick="toggleCheck(this)"><input type="checkbox" onclick="event.stopPropagation()"><label>RAGAS faithfulness &gt; 0.80 maintained in production monitoring</label></div>
-      <div class="check-item-row" onclick="toggleCheck(this)"><input type="checkbox" onclick="event.stopPropagation()"><label>Fallback provider configured (primary Claude + secondary GPT-4o)</label></div>
-      <div class="check-item-row" onclick="toggleCheck(this)"><input type="checkbox" onclick="event.stopPropagation()"><label>Rate limiting per tenant (token bucket with Redis)</label></div>
-      <div class="check-item-row" onclick="toggleCheck(this)"><input type="checkbox" onclick="event.stopPropagation()"><label>Prometheus metrics exposed (/metrics endpoint)</label></div>
-      <div class="check-item-row" onclick="toggleCheck(this)"><input type="checkbox" onclick="event.stopPropagation()"><label>Grafana dashboard configured with LLM-specific metrics (TTFT, token counts, error rate)</label></div>
-    </div>
-
-    <!-- Interactive Architecture Explorer -->
-    <div class="arch-explorer">
-      <div class="explorer-title">Full Architecture Explorer</div>
-      <div class="explorer-desc">Click any component to see which day covered it, the key library, and a code snippet.</div>
-      <div class="component-grid" id="comp-grid">
-        <!-- populated by JS -->
+    <div class="card-grid reveal">
+      <div class="card">
+        <div style="font-size:24px;margin-bottom:10px;">🔬</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:8px;">Research Track</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.6;">Dive into frontier: speculative decoding, mixture of experts, test-time compute scaling, and multi-modal agentic systems. Read one paper per week and implement key ideas.</div>
       </div>
-      <div class="comp-detail" id="comp-detail">
-        <div class="detail-header">
-          <div class="detail-icon" id="d-icon"></div>
-          <div><div class="detail-name" id="d-name"></div><div class="detail-day" id="d-day"></div></div>
-        </div>
-        <div class="detail-desc" id="d-desc"></div>
-        <div class="detail-snippet" id="d-snippet"></div>
+      <div class="card">
+        <div style="font-size:24px;margin-bottom:10px;">🏗️</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:8px;">Build Track</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.6;">Ship a real AI product. Apply everything from this course to a production system with real users. The gap between understanding concepts and shipping production code is closed only by building.</div>
       </div>
-      <div class="days-counter">
-        <div>
-          <div class="counter-label">Days completed in this curriculum</div>
-          <div class="counter-val" id="days-done">—</div>
-        </div>
-        <div class="master-badge" id="master-badge">Master Badge Earned</div>
+      <div class="card">
+        <div style="font-size:24px;margin-bottom:10px;">🤝</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:8px;">Community Track</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.6;">Contribute to open-source AI tooling (LangGraph, LiteLLM, Instructor). Write about what you've learned. Teaching accelerates mastery and builds professional reputation.</div>
       </div>
     </div>
   </div>
-</div>
 
-<!-- CELEBRATION BANNER -->
-<div class="container">
-  <div class="celebration-banner" id="celebration">
-    <div class="cel-badge">30-Day Mastery Complete</div>
-    <div class="cel-title">You Built It All.</div>
-    <div class="cel-subtitle">From tokens and context windows to production-grade AI copilots with full infrastructure. Thirty days. One complete engineer.</div>
-    <div class="cel-grid">
-      <div class="cel-stat"><div class="cel-stat-num">30</div><div class="cel-stat-label">Days completed</div></div>
-      <div class="cel-stat"><div class="cel-stat-num">10+</div><div class="cel-stat-label">Production systems built</div></div>
-      <div class="cel-stat"><div class="cel-stat-num">15+</div><div class="cel-stat-label">Libraries mastered</div></div>
-      <div class="cel-stat"><div class="cel-stat-num">1</div><div class="cel-stat-label">Full-stack AI engineer</div></div>
-    </div>
-    <div class="cel-actions">
-      <button class="cel-btn primary" onclick="launchConfetti()">Celebrate</button>
-      <a href="../index.html" class="cel-btn primary">Return to Dashboard</a>
-      <button class="cel-btn secondary" onclick="resetProgress()">Reset Progress</button>
-    </div>
-  </div>
-
-  <!-- What's Next -->
-  <div style="padding: 56px 0 0;">
-    <div class="section-header">
-      <div class="section-num">What's Next</div>
-      <h2>Your AI Engineer Career Path</h2>
-      <p>You have the engineering foundation. Here's how to level up further and position yourself in the market.</p>
-    </div>
-    <div class="next-grid">
-      <div class="next-card">
-        <div class="next-icon">🎓</div>
-        <div class="next-title">AWS ML Specialty</div>
-        <div class="next-desc">Validates MLOps, model deployment, and AWS AI services. Recognized by enterprises hiring AI engineers.</div>
-        <span class="next-badge">Certification</span>
-      </div>
-      <div class="next-card">
-        <div class="next-icon">🔬</div>
-        <div class="next-title">Read the Papers</div>
-        <div class="next-desc">Attention Is All You Need, LoRA, DPO, Constitutional AI, Toolformer — the canonical papers behind everything you built.</div>
-        <span class="next-badge">Research</span>
-      </div>
-      <div class="next-card">
-        <div class="next-icon">🏗️</div>
-        <div class="next-title">Build in Public</div>
-        <div class="next-desc">Ship a real AI product, write about what you built, contribute to LangChain/LangGraph. Portfolio beats resume for AI roles.</div>
-        <span class="next-badge">Career</span>
-      </div>
-      <div class="next-card">
-        <div class="next-icon">🤝</div>
-        <div class="next-title">Open Source</div>
-        <div class="next-desc">Contribute to LangGraph, Guardrails AI, or RAGAS. Core contributors get noticed fast in this industry.</div>
-        <span class="next-badge">Community</span>
-      </div>
-      <div class="next-card">
-        <div class="next-icon">🧠</div>
-        <div class="next-title">Specialize</div>
-        <div class="next-desc">Pick a vertical: healthcare AI (compliance), fintech AI (accuracy), or developer tools (DX). Generalists compete. Specialists win.</div>
-        <span class="next-badge">Strategy</span>
-      </div>
-    </div>
+  <div style="text-align:center;padding:48px 0;" class="reveal">
+    <button class="btn btn-xl" onclick="triggerConfetti()" style="font-size:18px;padding:20px 56px;">
+      Complete the Journey 🎓
+    </button>
+    <p style="color:var(--muted);font-size:13px;margin-top:16px;">30 days. Real skills. Ship production AI.</p>
   </div>
 </div>
 
 <footer>
   <div class="container">
-    <p>Agentic AI Mastery &mdash; Day 30: Final Capstone &mdash; Built for Sharjeel Sohail</p>
-    <div style="margin-top:16px;display:flex;justify-content:center;gap:16px;">
-      <a href="day29.html" style="color:var(--muted);text-decoration:none;font-size:13px;">← Day 29</a>
-      <a href="../index.html" style="color:var(--muted);text-decoration:none;font-size:13px;">Dashboard</a>
+    <div class="footer-inner">
+      <div class="footer-message">30 Days. Production AI Engineer.</div>
+      <div class="footer-nav">
+        <a href="day29.html" class="nav-btn">← Day 29</a>
+        <a href="../index.html" class="nav-btn">Dashboard</a>
+      </div>
+      <div>Day 30 of 30 — Agentic AI Mastery · The Journey is Complete</div>
     </div>
-    <p style="margin-top:16px;font-size:12px;color:#3a3a50;">You made it to the end. Ship something great.</p>
   </div>
 </footer>
 
 <script src="../bg-animation.js"></script>
 <script>
-// ── Mark Complete ─────────────────────────────────────────────────────────────
-function markComplete() {
-  try {
-    const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
-    p[30] = 'done';
-    localStorage.setItem('aai_progress', JSON.stringify(p));
-    const btn = document.getElementById('complete-btn');
-    btn.textContent = 'Completed!';
-    btn.classList.remove('complete');
-    btn.classList.add('done');
-    updateDaysCounter();
-    launchConfetti();
-  } catch(e) {}
-}
+window.addEventListener('scroll',()=>{const d=document.documentElement;document.getElementById('progress-bar').style.width=(d.scrollTop/(d.scrollHeight-d.clientHeight)*100)+'%';});
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');io.unobserve(e.target);}}),{threshold:0.1,rootMargin:'0px 0px -40px 0px'});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+function markComplete(){const key='day30_complete',btn=document.getElementById('nav-complete-btn');if(localStorage.getItem(key)){localStorage.removeItem(key);btn.classList.remove('done');btn.textContent='Mark Complete';}else{localStorage.setItem(key,'1');btn.classList.add('done');btn.textContent='✓ Complete!';}}
+if(localStorage.getItem('day30_complete')){const b=document.getElementById('nav-complete-btn');b.classList.add('done');b.textContent='✓ Complete!';}
 
-document.addEventListener('DOMContentLoaded', () => {
-  try {
-    const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
-    if (!p[30] || p[30] === 'locked') {
-      p[30] = 'active';
-      localStorage.setItem('aai_progress', JSON.stringify(p));
-    }
-    if (p[30] === 'done') {
-      const btn = document.getElementById('complete-btn');
-      btn.textContent = 'Completed!';
-      btn.classList.remove('complete');
-      btn.classList.add('done');
-    }
-  } catch(e) {}
-  loadChecklistState();
-  buildExplorer();
-  updateDaysCounter();
-});
-
-// ── Confetti ──────────────────────────────────────────────────────────────────
-const CONFETTI_COLORS = ['#7c3aed','#a855f7','#0d9488','#10b981','#f59e0b','#ef4444','#34d399','#60a5fa'];
-
-function launchConfetti() {
+// CONFETTI + CELEBRATION
+const CONFETTI_COLORS=['#7c3aed','#a855f7','#10b981','#34d399','#f59e0b','#f97316','#ef4444','#06b6d4'];
+function triggerConfetti() {
   const container = document.getElementById('confetti-container');
-  container.style.display = 'block';
-  container.innerHTML = '';
-
-  for (let i = 0; i < 80; i++) {
+  container.style.display='block';
+  container.innerHTML='';
+  for (let i=0; i<80; i++) {
     const piece = document.createElement('div');
-    piece.className = 'confetti-piece';
-    piece.style.cssText = `
-      left: ${Math.random() * 100}%;
-      top: -20px;
-      background: ${CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)]};
-      width: ${6 + Math.random() * 8}px;
-      height: ${6 + Math.random() * 8}px;
-      animation-duration: ${2 + Math.random() * 2}s;
-      animation-delay: ${Math.random() * 1.5}s;
-    `;
+    piece.className='confetti-piece';
+    const color=CONFETTI_COLORS[Math.floor(Math.random()*CONFETTI_COLORS.length)];
+    const size=6+Math.random()*14;
+    const x=Math.random()*100;
+    const dur=2+Math.random()*3;
+    const delay=Math.random()*1.5;
+    piece.style.cssText=`left:${x}%;width:${size}px;height:${size}px;background:${color};animation-duration:${dur}s;animation-delay:${delay}s;`;
     container.appendChild(piece);
   }
+  // count completed days
+  let completed = 0;
+  for (let i=1;i<=30;i++) { if (localStorage.getItem(`day${i}_complete`)) completed++; }
+  document.getElementById('stat-completed').textContent = completed;
 
-  setTimeout(() => {
-    container.style.display = 'none';
-    container.innerHTML = '';
-  }, 5000);
+  const banner = document.getElementById('celebration-banner');
+  banner.style.display='block';
+  setTimeout(()=>{ container.style.display='none'; }, 6000);
+  markComplete();
+}
+function closeBanner() {
+  document.getElementById('celebration-banner').style.display='none';
 }
 
-// ── Checklist ─────────────────────────────────────────────────────────────────
-const CHECKLIST_KEY = 'aai_checklist_30';
-
-function loadChecklistState() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(CHECKLIST_KEY) || '{}');
-    const rows = document.querySelectorAll('.check-item-row');
-    rows.forEach((row, i) => {
-      if (saved[i]) {
-        row.querySelector('input').checked = true;
-        row.classList.add('checked');
-      }
-    });
-    updateProgress();
-  } catch(e) {}
+// ARCHITECTURE EXPLORER
+const ARCH_DATA = {
+  jwt:{title:'JWT Authentication Layer',detail:'Middleware runs before every request. Verifies JWT signature with HS256/RS256. Extracts tenant_id, user_id, and roles from payload claims. These values are immutable context for all downstream operations — never overridden by user input. Implemented using python-jose or PyJWT.\n\n📅 Taught: Day 25 — Auth, Tenancy & Authorization'},
+  intent:{title:'Intent Router',detail:'Fast LLM classifier (claude-3-5-haiku, ~80ms) categorizes every message: question | action | search | smalltalk | escalate. Routes to specialized sub-agents based on classification. Reduces main LLM calls by ~40% by handling chitchat cheaply.\n\n📅 Taught: Day 29 — AI Copilot Architecture'},
+  guardrails:{title:'Guardrails Layer',detail:'Multi-layer defense: L1 regex patterns detect known injection attempts (<1ms). L2 LLM classifier scores intent risk (0-10). L3 NeMo Guardrails enforces conversation policy via Colang rules. Output filtered for PII before response delivery.\n\n📅 Taught: Day 23 — AI Safety & Guardrails'},
+  rag:{title:'Tenant-Scoped RAG',detail:'Hybrid search: dense vector similarity (sentence-transformers) + sparse BM25 keyword. Every Qdrant search includes a mandatory metadata filter: tenant_id from JWT. Users can never access documents from other tenants regardless of query crafting.\n\n📅 Taught: Day 12 (RAG) + Day 25 (Tenancy)'},
+  langgraph:{title:'LangGraph State Machine',detail:'Workflow orchestration with explicit state transitions. Nodes: classify → rag_search / action_planner → human_approval (conditional) → execute → generate. MemorySaver checkpointing persists state across turns and approval wait times.\n\n📅 Taught: Day 29 — AI Copilot Architecture'},
+  structured:{title:'Structured Outputs (Instructor)',detail:'All LLM responses pass through Pydantic schema validation via Instructor. ValidationErrors are automatically fed back to the model with correction context. Max 3 retries. Guarantees type-safe, validated responses — no JSON parsing surprises in production.\n\n📅 Taught: Day 24 — Structured Outputs & Determinism'},
+  cai:{title:'Constitutional AI Layer',detail:'Post-generation critique: the response is evaluated against 5 constitutional principles (harmlessness, honesty, non-manipulation, autonomy-preservation, non-deception). If any principle is violated, the response is revised before delivery. Domain-specific constitution for your use case.\n\n📅 Taught: Day 23 — Constitutional AI'},
+  cache:{title:'Prompt Caching',detail:'System prompts and large document contexts are cached with cache_control: ephemeral. Cache hits cost 10% of standard token price and return 2× faster. For a 50k-token knowledge base context, caching saves ~$0.45 per query at Claude pricing.\n\n📅 Taught: Day 22 — Advanced Prompt Engineering'},
+  eval:{title:'LLM-as-Judge Evaluation',detail:'5% of all production conversations are randomly sampled and evaluated by a judge model (claude-3-5-sonnet). Scores on helpfulness, accuracy, safety, and conciseness. Results feed into a DPO dataset for continuous alignment improvement. Alerts on score drops.\n\n📅 Taught: Day 28 — RLHF & Self-Improving Agents'},
+  deploy:{title:'Kubernetes Deployment',detail:'FastAPI service deployed as K8s Deployment with 2 replicas min, 10 max. HPA targets 70% CPU. Resource requests: 2 CPU / 8Gi. Readiness probe: /health. Docker image uses multi-stage build (builder → runtime, non-root user). Helm chart for templated multi-env deployments.\n\n📅 Taught: Day 27 — Docker & Kubernetes for AI'},
+};
+function selectArch(key) {
+  document.querySelectorAll('.arch-node').forEach(n=>n.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+  const d=ARCH_DATA[key];
+  document.getElementById('arch-detail').innerHTML=`<div style="font-size:15px;font-weight:700;margin-bottom:10px;color:var(--purple-light)">${d.title}</div><div style="white-space:pre-line;color:var(--muted)">${d.detail}</div>`;
 }
 
-function toggleCheck(row) {
-  const cb = row.querySelector('input[type=checkbox]');
-  cb.checked = !cb.checked;
-  row.classList.toggle('checked', cb.checked);
-  saveChecklist();
-  updateProgress();
-}
-
-function saveChecklist() {
-  try {
-    const rows = document.querySelectorAll('.check-item-row');
-    const state = {};
-    rows.forEach((row, i) => { state[i] = row.querySelector('input').checked; });
-    localStorage.setItem(CHECKLIST_KEY, JSON.stringify(state));
-  } catch(e) {}
-}
-
-function updateProgress() {
-  const total = document.querySelectorAll('.check-item-row').length;
-  const done = document.querySelectorAll('.check-item-row.checked').length;
-  document.getElementById('check-count').textContent = `${done} / ${total}`;
-  document.getElementById('progress-fill').style.width = `${(done / total) * 100}%`;
-}
-
-// ── Architecture Explorer ─────────────────────────────────────────────────────
-const components = [
-  { icon: '⚡', name: 'FastAPI', day: 'Day 6', desc: 'Async Python API framework. Handles JWT auth, SSE streaming, and dependency injection. The API gateway for the entire copilot system.', snippet: 'app = FastAPI(lifespan=lifespan)\n@app.post("/chat")\nasync def chat(req: ChatRequest,\n    user=Depends(verify_jwt)):\n    return StreamingResponse(graph.astream(...))', color: 'rgba(245,158,11,0.3)' },
-  { icon: '🔷', name: 'LangGraph', day: 'Day 4', desc: 'State machine orchestrator. Manages multi-step workflows, human-in-the-loop approval, and durable conversation state via PostgreSQL checkpointer.', snippet: 'graph = StateGraph(CopilotState)\ngraph.add_node("intent", intent_node)\ngraph.add_node("execute", execute_node)\ngraph.compile(interrupt_before=["execute"])', color: 'rgba(124,58,237,0.3)' },
-  { icon: '🔍', name: 'Qdrant', day: 'Day 3', desc: 'Vector database for semantic search. Per-tenant collection isolation. Stores document embeddings for RAG retrieval with metadata filtering.', snippet: 'client.search(\n    collection_name=f"tenant_{tid}",\n    query_vector=embedding,\n    query_filter=Filter(must=[...]),\n    limit=5\n)', color: 'rgba(13,148,136,0.3)' },
-  { icon: '🧠', name: 'Claude / GPT-4o', day: 'Day 1', desc: 'The LLM backbone. Claude 3.5 Sonnet for quality reasoning, GPT-4o as fallback via Azure OpenAI. Prompt caching for system context reduces cost 90%.', snippet: 'response = client.messages.create(\n    model="claude-3-5-sonnet-20241022",\n    system=cached_system_prompt,\n    messages=state["messages"],\n    stream=True\n)', color: 'rgba(168,85,247,0.3)' },
-  { icon: '🛡️', name: 'Guardrails AI', day: 'Day 22', desc: 'Input and output validation. Detects prompt injection on input, validates structured output schemas, scans for PII leakage before returning responses.', snippet: 'guard = Guard().use(\n    DetectPII, on_fail="fix"\n).use(ValidJSON)\nvalidated = guard.validate(llm_output)', color: 'rgba(239,68,68,0.3)' },
-  { icon: '📊', name: 'MLflow', day: 'Day 21', desc: 'Experiment tracking and model registry. Logs every fine-tuning run, eval metrics, and production performance. Tracks lineage from dataset to deployed model.', snippet: 'with mlflow.start_run():\n    mlflow.log_params(config)\n    mlflow.log_metrics({"ragas": 0.87})\n    mlflow.log_model(model, "copilot")', color: 'rgba(100,116,139,0.3)' },
-  { icon: '📈', name: 'RAGAS', day: 'Day 20', desc: 'RAG evaluation framework. Measures faithfulness, answer relevancy, context precision, and context recall. CI/CD gate: blocks deploy if faithfulness drops below 0.80.', snippet: 'result = evaluate(\n    dataset,\n    metrics=[faithfulness,\n             answer_relevancy,\n             context_precision]\n)', color: 'rgba(16,185,129,0.3)' },
-  { icon: '🔭', name: 'LangSmith', day: 'Day 6', desc: 'Full LLM observability. Traces every LangGraph node execution, logs token counts and latency, and provides a debugging UI for production incidents.', snippet: 'os.environ["LANGCHAIN_TRACING_V2"] = "true"\nos.environ["LANGCHAIN_API_KEY"] = "..."', color: 'rgba(100,116,139,0.3)' },
-  { icon: '📦', name: 'Docker', day: 'Day 27', desc: 'Multi-stage container build with NVIDIA CUDA support. Reproducible builds across dev/staging/prod. Health checks wait for model to load before accepting traffic.', snippet: 'FROM nvidia/cuda:12.1.0-runtime\nCOPY --from=builder /root/.local .\nHEALTHCHECK --start-period=120s \\\n    CMD curl -f http://localhost:8000/health', color: 'rgba(16,185,129,0.3)' },
-  { icon: '⚙️', name: 'Kubernetes', day: 'Day 27', desc: 'Orchestrates LLM containers on GPU nodes. Readiness probes prevent traffic until model loads. HPA scales replicas based on queue depth. Helm for deployment lifecycle.', snippet: 'resources:\n  requests:\n    nvidia.com/gpu: 1\n    memory: "16Gi"\nreadinessProbe:\n  initialDelaySeconds: 120', color: 'rgba(16,185,129,0.3)' },
+// ACHIEVEMENT GALLERY
+const ACHIEVEMENTS = [
+  {icon:'🤖',name:'LLM Basics',day:'Day 1',badge:'silver'},{icon:'💬',name:'Prompt Craft',day:'Day 5',badge:'silver'},
+  {icon:'🔗',name:'LangChain',day:'Day 8',badge:'silver'},{icon:'🗄️',name:'Vector DBs',day:'Day 10',badge:'silver'},
+  {icon:'📚',name:'RAG Pipeline',day:'Day 12',badge:'gold'},{icon:'🛠️',name:'Tool Use',day:'Day 14',badge:'gold'},
+  {icon:'🐍',name:'Pydantic v2',day:'Day 16',badge:'silver'},{icon:'🕸️',name:'Multi-Agent',day:'Day 18',badge:'gold'},
+  {icon:'⚙️',name:'Prod Agents',day:'Day 20',badge:'gold'},{icon:'🌳',name:'Tree of Thought',day:'Day 22',badge:'gold'},
+  {icon:'🛡️',name:'Guardrails',day:'Day 23',badge:'gold'},{icon:'📋',name:'Struct. Output',day:'Day 24',badge:'gold'},
+  {icon:'🔐',name:'Multi-Tenancy',day:'Day 25',badge:'platinum'},{icon:'☁️',name:'Cloud AI',day:'Day 26',badge:'gold'},
+  {icon:'🐳',name:'Docker + K8s',day:'Day 27',badge:'gold'},{icon:'🎯',name:'RLHF + DPO',day:'Day 28',badge:'platinum'},
+  {icon:'🤝',name:'Copilot Arch',day:'Day 29',badge:'platinum'},{icon:'🚀',name:'Full Capstone',day:'Day 30',badge:'platinum'},
 ];
-
-let selectedComp = null;
-
-function buildExplorer() {
-  const grid = document.getElementById('comp-grid');
-  components.forEach((c, i) => {
-    const node = document.createElement('div');
-    node.className = 'comp-node';
-    node.style.borderColor = c.color;
-    node.innerHTML = `<div class="comp-icon">${c.icon}</div><div class="comp-name">${c.name}</div><div class="comp-day">${c.day}</div>`;
-    node.onclick = () => selectComponent(i);
-    grid.appendChild(node);
-  });
-}
-
-function selectComponent(idx) {
-  document.querySelectorAll('.comp-node').forEach((n, i) => n.classList.toggle('selected', i === idx));
-  const c = components[idx];
-  document.getElementById('d-icon').textContent = c.icon;
-  document.getElementById('d-name').textContent = c.name;
-  document.getElementById('d-day').textContent = c.day;
-  document.getElementById('d-desc').textContent = c.desc;
-  document.getElementById('d-snippet').textContent = c.snippet;
-  const detail = document.getElementById('comp-detail');
-  detail.classList.add('visible');
-  selectedComp = idx;
-}
-
-// ── Days Counter ──────────────────────────────────────────────────────────────
-function updateDaysCounter() {
-  try {
-    const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
-    const done = Object.values(p).filter(v => v === 'done').length;
-    document.getElementById('days-done').textContent = `${done} / 30 days`;
-    const badge = document.getElementById('master-badge');
-    if (done >= 30) {
-      badge.classList.add('visible');
-    }
-  } catch(e) {
-    document.getElementById('days-done').textContent = '— / 30 days';
+const grid = document.getElementById('achievement-grid');
+ACHIEVEMENTS.forEach((a,i) => {
+  const card=document.createElement('div');
+  card.className='achievement-card';
+  card.innerHTML=`<div class="ach-icon">${a.icon}</div><div class="ach-name">${a.name}</div><div class="ach-day">${a.day}</div><div class="ach-badge ${a.badge}">${a.badge.toUpperCase()}</div>`;
+  grid.appendChild(card);
+});
+const achIo = new IntersectionObserver(entries => {
+  if (entries[0].isIntersecting) {
+    const cards = document.querySelectorAll('.achievement-card');
+    cards.forEach((c,i) => setTimeout(() => c.classList.add('unlocked'), i*80));
+    achIo.disconnect();
   }
-}
-
-// ── Reset Progress ────────────────────────────────────────────────────────────
-function resetProgress() {
-  if (confirm('Reset all 30-day progress? This cannot be undone.')) {
-    localStorage.removeItem('aai_progress');
-    localStorage.removeItem(CHECKLIST_KEY);
-    window.location.reload();
-  }
-}
+}, {threshold:0.1});
+achIo.observe(grid);
 </script>
 </body>
 </html>

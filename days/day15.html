@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-animation-density="high">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -22,6 +22,58 @@ body::before {
     radial-gradient(ellipse 50% 40% at 90% 80%, rgba(13,148,136,0.05) 0%, transparent 60%);
   pointer-events: none; z-index: 0;
 }
+
+/* PROGRESS BAR */
+#progress-bar {
+  position: fixed; top: 0; left: 0; height: 3px; z-index: 9999;
+  background: linear-gradient(90deg, var(--purple), var(--teal));
+  width: 0%; transition: width 0.1s linear;
+  box-shadow: 0 0 8px rgba(124,58,237,0.6);
+}
+
+/* ANIMATIONS */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(32px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 8px rgba(124,58,237,0.3); }
+  50%       { box-shadow: 0 0 24px rgba(124,58,237,0.7), 0 0 48px rgba(124,58,237,0.2); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+@keyframes gradientMove {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes counterUp {
+  from { opacity: 0; transform: translateY(12px) scale(0.8); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes pulse-ring {
+  0%   { transform: scale(1);   opacity: 0.8; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-8px); }
+}
+
+.animate-on-scroll {
+  opacity: 0; transform: translateY(28px);
+  transition: opacity 0.65s ease, transform 0.65s ease;
+}
+.animate-on-scroll.visible {
+  opacity: 1; transform: translateY(0);
+}
+
 .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
 
 nav {
@@ -45,587 +97,1057 @@ nav {
   font-family: inherit; cursor: pointer;
 }
 .nav-btn:hover { border-color: var(--purple); color: var(--text); }
-.nav-btn.next {
-  border-color: rgba(124,58,237,0.5);
-  color: var(--purple-light);
-}
-.nav-btn.next:hover {
-  background: var(--purple); color: white; border-color: var(--purple);
-}
-.nav-btn.complete {
-  border-color: rgba(245,158,11,0.5);
-  color: var(--yellow);
-}
-.nav-btn.complete:hover {
-  background: var(--yellow); color: #0a0a0f; border-color: var(--yellow);
-}
-.nav-btn.complete.done {
-  background: var(--yellow); color: #0a0a0f; border-color: var(--yellow);
-}
-.nav-brand {
-  font-size: 14px; font-weight: 700; color: var(--muted);
-  text-decoration: none; letter-spacing: -0.2px;
-  transition: color 0.2s;
-}
+.nav-btn.next { border-color: rgba(124,58,237,0.5); color: var(--purple-light); }
+.nav-btn.next:hover { background: var(--purple); color: white; border-color: var(--purple); }
+.nav-btn.complete { border-color: rgba(245,158,11,0.5); color: var(--yellow); }
+.nav-btn.complete:hover { background: var(--yellow); color: #0a0a0f; border-color: var(--yellow); }
+.nav-btn.complete.done { background: var(--yellow); color: #0a0a0f; border-color: var(--yellow); }
+.nav-brand { font-size: 14px; font-weight: 700; color: var(--muted); text-decoration: none; letter-spacing: -0.2px; transition: color 0.2s; }
 .nav-brand:hover { color: var(--text); }
 
-.day-hero { padding: 56px 0 40px; }
+.day-hero { padding: 72px 0 48px; }
 .day-num { font-size: 12px; font-weight: 700; color: var(--purple-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
-.day-hero h1 { font-size: clamp(32px, 5vw, 56px); font-weight: 900; letter-spacing: -2px; margin-bottom: 16px; }
-.day-hero p { font-size: 17px; color: var(--muted); max-width: 600px; line-height: 1.6; margin-bottom: 28px; }
+.day-hero h1 {
+  font-size: clamp(36px, 5.5vw, 64px); font-weight: 900; letter-spacing: -2.5px; margin-bottom: 20px;
+  background: linear-gradient(135deg, #fff 0%, var(--purple-light) 40%, var(--teal) 100%);
+  background-size: 200% 200%;
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  animation: gradientMove 5s ease infinite;
+}
+.day-hero p { font-size: 18px; color: var(--muted); max-width: 640px; line-height: 1.7; margin-bottom: 32px; }
 .topic-pills { display: flex; flex-wrap: wrap; gap: 8px; }
-.topic-pill { padding: 5px 12px; border-radius: 20px; background: var(--surface2); border: 1px solid var(--border); font-size: 12px; color: var(--muted); font-weight: 500; }
+.topic-pill { padding: 5px 14px; border-radius: 20px; background: var(--surface2); border: 1px solid var(--border); font-size: 12px; color: var(--muted); font-weight: 500; transition: all 0.2s; }
+.topic-pill:hover { border-color: var(--purple); color: var(--text); }
 
-.section { padding: 56px 0; border-top: 1px solid var(--border); }
-.section-header { margin-bottom: 32px; }
+/* STATS ROW */
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 40px 0; }
+.stat-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+  padding: 24px; text-align: center; transition: all 0.3s;
+}
+.stat-card:hover { transform: translateY(-4px); border-color: var(--purple); animation: glow 2s ease infinite; }
+.stat-num { font-size: 36px; font-weight: 900; letter-spacing: -1px; color: var(--purple-light); animation: counterUp 0.6s ease both; }
+.stat-label { font-size: 12px; color: var(--muted); margin-top: 4px; font-weight: 500; }
+
+.section { padding: 64px 0; border-top: 1px solid var(--border); }
+.section-header { margin-bottom: 36px; }
 .section-num { font-size: 11px; font-weight: 700; color: var(--purple-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
-.section-header h2 { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 10px; }
-.section-header p { color: var(--muted); font-size: 15px; line-height: 1.6; max-width: 640px; }
+.section-header h2 { font-size: 30px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 12px; }
+.section-header p { color: var(--muted); font-size: 16px; line-height: 1.7; max-width: 680px; }
+.section-body p { color: var(--muted); font-size: 15px; line-height: 1.8; margin-bottom: 16px; }
 
-/* CODE BLOCKS — white-space: pre is REQUIRED */
+/* CODE */
+.code-window {
+  background: #0d1117; border: 1px solid #30363d; border-radius: 14px;
+  overflow: hidden; margin-top: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+.code-title-bar {
+  background: #161b22; border-bottom: 1px solid #30363d;
+  padding: 10px 16px; display: flex; align-items: center; gap: 8px;
+}
+.dot { width: 12px; height: 12px; border-radius: 50%; }
+.dot-red { background: #ff5f57; } .dot-yellow { background: #ffbd2e; } .dot-green { background: #28ca41; }
+.code-file { font-size: 11px; color: #8b949e; margin-left: 8px; font-family: var(--mono); }
 .code-block {
-  background: #0d1117; border: 1px solid #30363d; border-radius: 12px;
-  padding: 24px; font-family: var(--mono); font-size: 12.5px; line-height: 1.8;
+  background: #0d1117; padding: 24px; font-family: var(--mono); font-size: 12.5px; line-height: 1.8;
   overflow-x: auto; white-space: pre;
 }
 .code-wrap { position: relative; margin-top: 16px; }
 .code-label { position: absolute; top: -10px; left: 16px; background: var(--purple); color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.5px; }
-.c-cmt { color: #8b949e; }
-.c-kw { color: #ff7b72; }
-.c-fn { color: #d2a8ff; }
-.c-str { color: #a5d6ff; }
-.c-type { color: #ffa657; }
-.c-num { color: #f2cc60; }
-.c-bi { color: #79c0ff; }
-.c-dec { color: #ffa657; }
+.c-cmt { color: #8b949e; } .c-kw { color: #ff7b72; } .c-fn { color: #d2a8ff; }
+.c-str { color: #a5d6ff; } .c-type { color: #ffa657; } .c-num { color: #f2cc60; }
+.c-bi { color: #79c0ff; } .c-dec { color: #ffa657; }
 
-/* DECISION TRIANGLE */
-.triangle-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 20px; }
-.tri-card {
-  background: var(--card); border: 1px solid var(--border); border-radius: 14px;
-  padding: 20px; text-align: center; position: relative; overflow: hidden;
-  transition: all 0.2s;
+/* CALLOUTS */
+.callout {
+  border-radius: 12px; padding: 20px 24px; margin: 24px 0;
+  border-left: 4px solid;
 }
-.tri-card:hover { transform: translateY(-3px); }
-.tri-card.active-prompting { border-color: rgba(16,185,129,0.5); }
-.tri-card.active-rag { border-color: rgba(13,148,136,0.5); }
-.tri-card.active-finetune { border-color: rgba(168,85,247,0.5); }
-.tri-icon { font-size: 32px; margin-bottom: 10px; }
-.tri-title { font-size: 15px; font-weight: 800; margin-bottom: 8px; }
-.tri-when { font-size: 11px; color: var(--muted); line-height: 1.5; margin-bottom: 10px; }
-.tri-cost { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 20px; }
-.cost-low { background: rgba(16,185,129,0.15); color: var(--green); }
-.cost-mid { background: rgba(13,148,136,0.15); color: var(--teal); }
-.cost-high { background: rgba(168,85,247,0.15); color: var(--purple-light); }
+.callout-teal { background: rgba(13,148,136,0.08); border-color: var(--teal); }
+.callout-red { background: rgba(239,68,68,0.08); border-color: var(--red); }
+.callout-yellow { background: rgba(245,158,11,0.08); border-color: var(--yellow); }
+.callout-title { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+.callout-teal .callout-title { color: var(--teal); }
+.callout-red .callout-title { color: var(--red); }
+.callout-yellow .callout-title { color: var(--yellow); }
+.callout p { font-size: 14px; line-height: 1.7; color: var(--muted); }
 
-/* FLOW DIAGRAM */
-.flow-diagram { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; overflow-x: auto; }
-.flow-row { display: flex; align-items: center; gap: 0; justify-content: center; flex-wrap: wrap; gap: 4px; }
-.flow-box {
-  background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
-  padding: 12px 16px; text-align: center; min-width: 120px;
+/* CARDS */
+.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-top: 24px; }
+.card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+  padding: 24px; transition: all 0.3s; cursor: default;
 }
-.flow-box.highlight { border-color: var(--purple); background: rgba(124,58,237,0.1); }
-.flow-box.result { border-color: var(--green); background: rgba(16,185,129,0.08); }
-.flow-box-title { font-size: 12px; font-weight: 700; margin-bottom: 3px; }
-.flow-box-sub { font-size: 10px; color: var(--muted); }
-.flow-arrow { color: var(--muted); font-size: 18px; padding: 0 6px; }
-.flow-plus { color: var(--yellow); font-size: 20px; font-weight: 800; padding: 0 8px; }
+.card:hover { transform: translateY(-6px); border-color: var(--purple); box-shadow: 0 0 0 1px rgba(124,58,237,0.3), 0 16px 40px rgba(0,0,0,0.4); }
+.card-icon { font-size: 28px; margin-bottom: 14px; }
+.card h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+.card p { font-size: 13px; color: var(--muted); line-height: 1.6; }
 
-/* LORA VISUAL */
-.lora-visual { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-.lora-panel { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 22px; }
-.lora-panel h3 { font-size: 14px; font-weight: 800; margin-bottom: 12px; }
-.param-bar { margin-bottom: 12px; }
-.param-label { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 12px; }
-.param-label span { color: var(--muted); }
-.bar-track { background: var(--surface2); border-radius: 99px; height: 8px; overflow: hidden; }
-.bar-fill { height: 100%; border-radius: 99px; transition: width 1s ease; }
-.bar-full { background: linear-gradient(90deg, var(--red), var(--yellow)); }
-.bar-lora { background: linear-gradient(90deg, var(--green), var(--teal)); }
-.lora-eq { text-align: center; padding: 16px; background: var(--surface2); border-radius: 10px; margin-top: 12px; font-family: var(--mono); font-size: 13px; color: var(--purple-light); }
-
-/* COMPARISON TABLE */
-.comp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.comp-table th { background: var(--surface2); padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); border-bottom: 1px solid var(--border); }
-.comp-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
-.comp-table tr:last-child td { border-bottom: none; }
-.comp-table tr:hover td { background: rgba(255,255,255,0.02); }
-.tick { color: var(--green); font-weight: 700; }
-.cross { color: var(--red); font-weight: 700; }
-.partial { color: var(--yellow); font-weight: 700; }
-
-/* USE CASES */
-.use-case-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.use-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
-.use-card.good { border-color: rgba(16,185,129,0.3); }
-.use-card.bad { border-color: rgba(239,68,68,0.3); }
-.use-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-.use-icon { font-size: 18px; }
-.use-title { font-size: 13px; font-weight: 700; }
-.use-items { list-style: none; display: flex; flex-direction: column; gap: 6px; }
-.use-items li { font-size: 12px; color: var(--muted); display: flex; align-items: flex-start; gap: 8px; }
-.use-items li::before { content: '•'; color: var(--green); flex-shrink: 0; }
-.use-card.bad .use-items li::before { color: var(--red); }
-
-/* PREREQS */
-.prereq-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
-.prereq-chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
-.prereq-day { background: var(--purple); color: white; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; }
-
-/* EXERCISES */
-.ex-list { display: flex; flex-direction: column; gap: 12px; counter-reset: ex; }
-.ex-item { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; display: flex; gap: 14px; counter-increment: ex; }
-.ex-num { width: 32px; height: 32px; border-radius: 50%; background: rgba(124,58,237,0.15); border: 2px solid var(--purple); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: var(--purple-light); flex-shrink: 0; }
-.ex-body { flex: 1; }
-.ex-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
-.ex-desc { font-size: 12px; color: var(--muted); line-height: 1.6; }
-.ex-difficulty { display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; }
-.diff-easy { background: rgba(16,185,129,0.15); color: var(--green); }
-.diff-med { background: rgba(245,158,11,0.15); color: var(--yellow); }
-.diff-hard { background: rgba(239,68,68,0.15); color: var(--red); }
-
-/* CALLOUT */
-.callout { background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.25); border-radius: 12px; padding: 16px 20px; display: flex; gap: 12px; align-items: flex-start; margin: 20px 0; }
-.callout-icon { font-size: 18px; flex-shrink: 0; }
-.callout-text { font-size: 13px; color: var(--text); line-height: 1.6; }
-.callout-text strong { color: var(--yellow); }
-.callout.info { background: rgba(124,58,237,0.07); border-color: rgba(124,58,237,0.25); }
-.callout.info .callout-text strong { color: var(--purple-light); }
+/* TABLE */
+.data-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+.data-table th { background: var(--surface2); padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); border-bottom: 1px solid var(--border); }
+.data-table td { padding: 14px 16px; font-size: 13px; border-bottom: 1px solid rgba(42,42,69,0.5); vertical-align: top; }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: rgba(124,58,237,0.04); }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+.badge-green { background: rgba(16,185,129,0.15); color: var(--green); }
+.badge-yellow { background: rgba(245,158,11,0.15); color: var(--yellow); }
+.badge-red { background: rgba(239,68,68,0.15); color: var(--red); }
+.badge-purple { background: rgba(124,58,237,0.15); color: var(--purple-light); }
 
 /* WIDGET */
-.widget { background: var(--card); border: 1px solid rgba(124,58,237,0.3); border-radius: 16px; padding: 28px; }
-.widget-title { font-size: 16px; font-weight: 800; margin-bottom: 6px; }
-.widget-sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+.widget {
+  background: var(--card); border: 1px solid var(--border); border-radius: 20px;
+  padding: 32px; margin-top: 24px;
+}
+.widget-title { font-size: 18px; font-weight: 800; margin-bottom: 6px; }
+.widget-sub { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+.slider-row { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+.slider-label { font-size: 13px; font-weight: 600; min-width: 140px; }
+.slider-val { font-size: 13px; font-weight: 700; color: var(--purple-light); min-width: 80px; text-align: right; font-family: var(--mono); }
+input[type=range] {
+  flex: 1; -webkit-appearance: none; height: 6px; border-radius: 4px;
+  background: var(--border); outline: none; cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--purple); cursor: pointer; box-shadow: 0 0 8px rgba(124,58,237,0.5);
+}
+.result-panel {
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 14px;
+  padding: 24px; margin-top: 16px;
+}
+.result-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.result-item { text-align: center; }
+.result-num { font-size: 28px; font-weight: 900; color: var(--teal); font-family: var(--mono); }
+.result-label { font-size: 11px; color: var(--muted); margin-top: 4px; }
+.gpu-rec {
+  margin-top: 20px; padding: 16px 20px; border-radius: 12px;
+  background: rgba(124,58,237,0.1); border: 1px solid rgba(124,58,237,0.3);
+  font-size: 14px; font-weight: 600;
+}
+.gpu-rec span { color: var(--purple-light); font-family: var(--mono); }
 
-/* SLIDER WIDGET */
-.slider-row { display: flex; align-items: center; gap: 16px; margin-bottom: 18px; }
-.slider-label { font-size: 13px; font-weight: 600; min-width: 130px; }
-.slider-val { font-size: 13px; font-weight: 700; color: var(--purple-light); min-width: 80px; text-align: right; }
-input[type=range] { flex: 1; accent-color: var(--purple); }
-.checkbox-row { display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 20px; }
-.checkbox-item { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; }
-.checkbox-item input { accent-color: var(--purple); width: 16px; height: 16px; }
-.result-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.result-item { }
-.result-label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-.result-value { font-size: 22px; font-weight: 900; color: var(--purple-light); }
-.result-value.warn { color: var(--yellow); }
-.result-value.danger { color: var(--red); }
-.gpu-rec { grid-column: 1 / -1; background: rgba(124,58,237,0.1); border: 1px solid rgba(124,58,237,0.3); border-radius: 8px; padding: 12px 16px; font-size: 13px; }
-.gpu-rec strong { color: var(--purple-light); }
+/* TENSOR VISUALIZER */
+.tensor-grid { display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start; margin-top: 20px; }
+.tensor-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+.tensor-title { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px; }
+.tensor-cells { display: grid; gap: 3px; }
+.tensor-cell {
+  width: 24px; height: 24px; border-radius: 4px;
+  background: rgba(124,58,237,0.3); border: 1px solid rgba(124,58,237,0.5);
+  transition: all 0.3s;
+}
+.tensor-cell.active { background: var(--purple); border-color: var(--purple-light); animation: glow 1.5s ease infinite; }
+.op-arrow { font-size: 24px; color: var(--muted); display: flex; align-items: center; padding-top: 40px; }
+.tensor-shape-label { font-size: 12px; color: var(--purple-light); font-family: var(--mono); margin-top: 8px; text-align: center; }
+.shape-inputs { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+.shape-input-group { display: flex; flex-direction: column; gap: 4px; }
+.shape-input-group label { font-size: 11px; color: var(--muted); font-weight: 600; }
+.shape-input-group input[type=number] {
+  width: 80px; padding: 8px 12px; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text); font-family: var(--mono); font-size: 14px;
+  outline: none; transition: border-color 0.2s;
+}
+.shape-input-group input[type=number]:focus { border-color: var(--purple); }
+.btn {
+  padding: 10px 20px; border-radius: 10px; border: none; cursor: pointer;
+  font-family: var(--font); font-size: 13px; font-weight: 700; transition: all 0.2s;
+}
+.btn-purple { background: var(--purple); color: white; }
+.btn-purple:hover { background: var(--purple-light); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(124,58,237,0.4); }
+.btn-teal { background: var(--teal); color: white; }
+.btn-teal:hover { background: #0f766e; transform: translateY(-1px); }
 
-/* BULLET LIST */
-.bullet-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
-.bullet-list li { list-style: none; font-size: 14px; color: var(--muted); display: flex; align-items: flex-start; gap: 10px; line-height: 1.6; }
-.bullet-list li::before { content: '→'; color: var(--purple-light); flex-shrink: 0; font-weight: 700; }
+/* BACK TO TOP */
+#back-to-top {
+  position: fixed; bottom: 32px; right: 32px; z-index: 500;
+  width: 48px; height: 48px; border-radius: 50%;
+  background: var(--purple); color: white; border: none;
+  font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 20px rgba(124,58,237,0.5); transition: all 0.3s;
+  opacity: 0; pointer-events: none;
+  animation: float 3s ease-in-out infinite;
+}
+#back-to-top.visible { opacity: 1; pointer-events: all; }
+#back-to-top:hover { transform: translateY(-4px) scale(1.1); box-shadow: 0 8px 32px rgba(124,58,237,0.6); }
 
-/* FOOTER */
-footer { padding: 40px 0; border-top: 1px solid var(--border); }
-.footer-inner { display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; color: var(--muted); font-size: 13px; }
-.footer-nav { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
-
-@media(max-width:700px) {
-  .triangle-container { grid-template-columns: 1fr; }
-  .lora-visual { grid-template-columns: 1fr; }
-  .use-case-grid { grid-template-columns: 1fr; }
-  .result-card { grid-template-columns: 1fr; }
+@media (max-width: 768px) {
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .card-grid { grid-template-columns: 1fr; }
+  .result-grid { grid-template-columns: repeat(2, 1fr); }
+  .tensor-grid { flex-direction: column; }
 }
 </style>
 </head>
-<body data-animation-density="high">
+<body>
+<div id="progress-bar"></div>
 
 <nav>
   <div class="nav-inner">
     <a href="day14.html" class="nav-btn">← Day 14</a>
-    <a href="../index.html" class="nav-brand">🤖 Agentic AI</a>
+    <a href="../index.html" class="nav-brand">30-Day AI Mastery</a>
     <div style="display:flex;gap:8px;align-items:center;">
-      <button class="nav-btn complete" id="nav-complete-btn" onclick="markComplete()">Mark Complete</button>
+      <button class="nav-btn complete" id="markComplete" onclick="toggleComplete()">Mark Complete</button>
       <a href="day16.html" class="nav-btn next">Day 16 →</a>
     </div>
   </div>
 </nav>
 
 <div class="container">
-
-  <div class="day-hero">
-    <div class="day-num">Day 15 — PyTorch</div>
-    <h1>PyTorch for<br>LLM Engineers</h1>
-    <p>Tensors, autograd &amp; model inference. You don't need to train from scratch — you need to understand inference, loading weights, and debugging memory issues.</p>
+  <div class="day-hero animate-on-scroll">
+    <div class="day-num">Day 15 — Week 3</div>
+    <h1>PyTorch for LLM Engineers</h1>
+    <p>Master the tensor operations, autograd mechanics, and GPU memory management patterns that power every large language model in production today.</p>
     <div class="topic-pills">
-      <span class="topic-pill">Tensors</span>
-      <span class="topic-pill">Autograd</span>
-      <span class="topic-pill">bfloat16</span>
-      <span class="topic-pill">GPU Memory</span>
-      <span class="topic-pill">Flash Attention 2</span>
-      <span class="topic-pill">Inference Patterns</span>
+      <span class="topic-pill">Tensors & Autograd</span>
+      <span class="topic-pill">GPU Memory Management</span>
+      <span class="topic-pill">Custom Layers</span>
+      <span class="topic-pill">Mixed Precision</span>
+      <span class="topic-pill">torch.compile()</span>
+      <span class="topic-pill">DataLoader Patterns</span>
     </div>
   </div>
 
-  <!-- SECTION 1 -->
-  <div class="section">
+  <div class="stats-row animate-on-scroll">
+    <div class="stat-card">
+      <div class="stat-num" data-target="3.2">0</div>
+      <div class="stat-label">Avg VRAM saved with FP16 (GB)</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" data-target="4">0</div>
+      <div class="stat-label">Bytes per FP32 parameter</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" data-target="30">0</div>
+      <div class="stat-num-suffix">%</div>
+      <div class="stat-label">Speed boost from torch.compile</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" data-target="7">0</div>
+      <div class="stat-num-suffix">B</div>
+      <div class="stat-label">Params in Mistral 7B base model</div>
+    </div>
+  </div>
+
+  <!-- SECTION 1: Tensors & Autograd -->
+  <section class="section animate-on-scroll">
     <div class="section-header">
       <div class="section-num">Section 01</div>
-      <h2>Why PyTorch for LLM Engineers</h2>
-      <p>You don't need to train from scratch — you need to understand inference, loading weights, and debugging memory issues. PyTorch won the research ecosystem in 2024/2025.</p>
+      <h2>Tensors, Autograd & the Computation Graph</h2>
+      <p>Every neural network operation in PyTorch traces through a dynamic computation graph. Understanding this mechanism is essential for debugging training failures and implementing custom loss functions.</p>
+    </div>
+    <div class="section-body">
+      <p>PyTorch uses <strong>define-by-run</strong> automatic differentiation — the computation graph is created dynamically as operations execute, unlike TensorFlow 1.x's static graphs. Each tensor with <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:12px;">requires_grad=True</code> carries a grad_fn that links it to its parent tensors in the DAG. Calling <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:12px;">.backward()</code> on the loss traverses this graph in reverse, accumulating gradients via the chain rule.</p>
+      <p>For LLM engineering, the most critical insight is that gradients are accumulated in <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:12px;">.grad</code> attributes — they are NOT automatically zeroed between mini-batches. Forgetting <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:12px;">optimizer.zero_grad()</code> causes gradient accumulation across batches, silently corrupting training. This is one of the top bugs in early PyTorch code.</p>
+      <p>When operating on large batches, use <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:12px;">torch.no_grad()</code> context manager during inference — it disables gradient tracking entirely, reducing memory by up to 50% and speeding up forward passes by 20-30%. For the validation loop, this is not optional, it's essential.</p>
     </div>
 
-    <ul class="bullet-list">
-      <li><strong>Tensor</strong> — n-dimensional array that lives on GPU or CPU. Every weight, activation, and embedding is a tensor.</li>
-      <li><strong>dtype</strong> — bfloat16 / float16 / float32 determines memory usage and numerical stability. bfloat16 is the LLM standard.</li>
-      <li><strong>device</strong> — where the tensor lives: "cpu", "cuda", or "mps" (Apple Silicon).</li>
-      <li><strong>PyTorch vs TensorFlow in 2024/2025</strong> — PyTorch dominates research and production LLM stacks. HuggingFace, vLLM, and every major lab runs PyTorch.</li>
-    </ul>
-
-    <div class="code-wrap" style="margin-top:28px;">
-      <span class="code-label">PYTHON</span>
-      <div class="code-block"><span class="c-kw">import</span> <span class="c-bi">torch</span>
-
-<span class="c-cmt"># Tensors — the fundamental data structure</span>
-x = <span class="c-bi">torch</span>.<span class="c-fn">tensor</span>([[<span class="c-num">1.0</span>, <span class="c-num">2.0</span>], [<span class="c-num">3.0</span>, <span class="c-num">4.0</span>]])
-<span class="c-fn">print</span>(x.<span class="c-bi">shape</span>)   <span class="c-cmt"># torch.Size([2, 2])</span>
-<span class="c-fn">print</span>(x.<span class="c-bi">dtype</span>)   <span class="c-cmt"># torch.float32</span>
-<span class="c-fn">print</span>(x.<span class="c-bi">device</span>)  <span class="c-cmt"># cpu</span>
-
-<span class="c-cmt"># GPU operations</span>
-device = <span class="c-str">"cuda"</span> <span class="c-kw">if</span> <span class="c-bi">torch</span>.cuda.<span class="c-fn">is_available</span>() <span class="c-kw">else</span> <span class="c-str">"mps"</span> <span class="c-kw">if</span> <span class="c-bi">torch</span>.backends.mps.<span class="c-fn">is_available</span>() <span class="c-kw">else</span> <span class="c-str">"cpu"</span>
-x_gpu = x.<span class="c-fn">to</span>(device)
-
-<span class="c-cmt"># bfloat16 for LLMs — better numerical stability than float16</span>
-x_bf16 = x.<span class="c-fn">to</span>(<span class="c-bi">torch</span>.<span class="c-type">bfloat16</span>)
-<span class="c-fn">print</span>(<span class="c-bi">torch</span>.cuda.<span class="c-fn">memory_allocated</span>() / <span class="c-num">1e9</span>, <span class="c-str">"GB"</span>)  <span class="c-cmt"># check GPU memory</span></div>
+    <div class="callout callout-teal">
+      <div class="callout-title">Why This Matters</div>
+      <p>The computation graph is what makes PyTorch debuggable. You can set breakpoints mid-forward-pass, inspect intermediate activations, and even modify tensors in-place during debugging. This is impossible with compiled/static graphs and is why PyTorch dominates research.</p>
     </div>
-  </div>
 
-  <!-- SECTION 2 -->
-  <div class="section">
+    <div class="code-window animate-on-scroll">
+      <div class="code-title-bar">
+        <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+        <span class="code-file">tensor_autograd.py</span>
+      </div>
+      <div class="code-block"><span class="c-kw">import</span> torch
+<span class="c-kw">import</span> torch.nn <span class="c-kw">as</span> nn
+
+<span class="c-cmt"># ── Tensor creation strategies ───────────────────────────────────</span>
+device <span class="c-kw">=</span> torch.<span class="c-fn">device</span>(<span class="c-str">"cuda"</span> <span class="c-kw">if</span> torch.cuda.<span class="c-fn">is_available</span>() <span class="c-kw">else</span> <span class="c-str">"cpu"</span>)
+
+<span class="c-cmt"># Always specify dtype explicitly — default float32 costs 2x vs bfloat16</span>
+x <span class="c-kw">=</span> torch.<span class="c-fn">randn</span>(<span class="c-num">4</span>, <span class="c-num">512</span>, <span class="c-num">768</span>, dtype<span class="c-kw">=</span>torch.bfloat16, device<span class="c-kw">=</span>device)
+<span class="c-bi">print</span>(<span class="c-str">f"Tensor shape: </span>{x.shape}<span class="c-str">, dtype: </span>{x.dtype}<span class="c-str">, device: </span>{x.device}<span class="c-str">"</span>)
+
+<span class="c-cmt"># ── Autograd mechanics ────────────────────────────────────────────</span>
+w <span class="c-kw">=</span> torch.<span class="c-fn">randn</span>(<span class="c-num">768</span>, <span class="c-num">768</span>, requires_grad<span class="c-kw">=True</span>)
+out <span class="c-kw">=</span> x @ w              <span class="c-cmt"># matrix multiply — creates grad_fn=MmBackward</span>
+loss <span class="c-kw">=</span> out.<span class="c-fn">mean</span>()        <span class="c-cmt"># scalar loss for backward pass</span>
+loss.<span class="c-fn">backward</span>()          <span class="c-cmt"># backprop through full graph</span>
+<span class="c-bi">print</span>(<span class="c-str">f"w.grad shape: </span>{w.grad.shape}<span class="c-str">"</span>)   <span class="c-cmt"># (768, 768)</span>
+
+<span class="c-cmt"># ── CRITICAL: always zero gradients before next backward pass ─────</span>
+optimizer <span class="c-kw">=</span> torch.optim.<span class="c-fn">AdamW</span>([w], lr<span class="c-kw">=</span><span class="c-num">1e-4</span>)
+optimizer.<span class="c-fn">zero_grad</span>()   <span class="c-cmt"># set_to_none=True is faster (PyTorch >= 1.7)</span>
+
+<span class="c-cmt"># ── Efficient inference with no_grad ──────────────────────────────</span>
+<span class="c-kw">with</span> torch.<span class="c-fn">no_grad</span>():
+    pred <span class="c-kw">=</span> x @ w
+    <span class="c-cmt"># No graph created — 2x faster, 50% less memory</span>
+
+<span class="c-cmt"># ── Detach a tensor from the graph (stop gradients) ───────────────</span>
+frozen_repr <span class="c-kw">=</span> pred.<span class="c-fn">detach</span>()   <span class="c-cmt"># common when freezing encoder outputs</span>
+<span class="c-bi">print</span>(frozen_repr.requires_grad)  <span class="c-cmt"># False</span></div>
+    </div>
+
+    <div class="callout callout-red animate-on-scroll">
+      <div class="callout-title">Common Pitfall: Gradient Accumulation vs. Forgetting zero_grad</div>
+      <p>Gradient accumulation is intentional when you call <code style="background:rgba(239,68,68,0.1);padding:1px 4px;border-radius:3px;font-family:var(--mono);">loss.backward()</code> N times before <code style="background:rgba(239,68,68,0.1);padding:1px 4px;border-radius:3px;font-family:var(--mono);">optimizer.step()</code> to simulate larger batches. But forgetting <code style="background:rgba(239,68,68,0.1);padding:1px 4px;border-radius:3px;font-family:var(--mono);">zero_grad()</code> entirely means gradients from ALL previous iterations accumulate — your effective learning rate grows unboundedly and the model diverges. Always check your training loop order: zero → forward → backward → step.</p>
+    </div>
+  </section>
+
+  <!-- SECTION 2: GPU Memory -->
+  <section class="section animate-on-scroll">
     <div class="section-header">
       <div class="section-num">Section 02</div>
-      <h2>Autograd &amp; The Computation Graph</h2>
-      <p>How autograd works: it tracks operations and builds a computation graph for backpropagation. In practice you rarely call backward() for LLMs — but understanding gradients helps debug NaN loss, gradient explosion, and memory OOM.</p>
+      <h2>GPU Memory Management for LLMs</h2>
+      <p>A 7B parameter model in FP32 requires ~28GB of VRAM just for weights — before accounting for activations, optimizer states, or gradients. Understanding the memory math is essential for production deployments.</p>
+    </div>
+    <div class="section-body">
+      <p>GPU memory is split into four major buckets during training: <strong>model weights</strong> (P bytes), <strong>optimizer states</strong> (2P bytes for Adam's momentum and variance), <strong>gradients</strong> (P bytes), and <strong>activations</strong> (batch-dependent). For a 7B model in FP32, that's 28 + 56 + 28 = 112GB — far beyond any single consumer GPU. This is why mixed precision and parameter-efficient fine-tuning exist.</p>
+      <p>Mixed precision training with <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:12px;">torch.cuda.amp</code> stores weights in FP16/BF16 but maintains a FP32 master copy for optimizer updates. Forward and backward passes run in half precision (2x throughput on Tensor Cores), but the optimizer step updates the FP32 copy to preserve numerical stability. BF16 is preferred over FP16 for LLMs because it has the same exponent range as FP32 — less risk of overflow during training.</p>
+      <p>Gradient checkpointing trades compute for memory: instead of storing all intermediate activations, it recomputes them during backward. This reduces activation memory from O(layers) to O(sqrt(layers)), enabling training of models that would otherwise OOM.</p>
     </div>
 
-    <ul class="bullet-list">
-      <li><strong>requires_grad=True</strong> — tells PyTorch to track this tensor in the computation graph.</li>
-      <li><strong>.backward()</strong> — traverses the graph and computes all gradients automatically.</li>
-      <li><strong>Gradient accumulation</strong> — simulate large batches by dividing loss and accumulating gradients over N steps.</li>
-      <li><strong>Understanding gradients</strong> helps debug NaN loss, gradient explosion, and OOM during fine-tuning.</li>
-    </ul>
-
-    <div class="code-wrap" style="margin-top:24px;">
-      <span class="code-label">PYTHON</span>
-      <div class="code-block"><span class="c-cmt"># Autograd — automatic differentiation</span>
-w = <span class="c-bi">torch</span>.<span class="c-fn">tensor</span>(<span class="c-num">2.0</span>, requires_grad=<span class="c-bi">True</span>)
-x = <span class="c-bi">torch</span>.<span class="c-fn">tensor</span>(<span class="c-num">3.0</span>, requires_grad=<span class="c-bi">True</span>)
-
-y = w * x ** <span class="c-num">2</span> + w  <span class="c-cmt"># y = 2*9 + 2 = 20</span>
-y.<span class="c-fn">backward</span>()  <span class="c-cmt"># compute dy/dw and dy/dx</span>
-
-<span class="c-fn">print</span>(w.grad)  <span class="c-cmt"># dy/dw = x^2 + 1 = 10</span>
-<span class="c-fn">print</span>(x.grad)  <span class="c-cmt"># dy/dx = 2*w*x = 12</span>
-
-<span class="c-cmt"># Gradient accumulation for large batch training</span>
-optimizer = <span class="c-bi">torch</span>.optim.<span class="c-fn">AdamW</span>(model.<span class="c-fn">parameters</span>(), lr=<span class="c-num">1e-4</span>)
-accumulation_steps = <span class="c-num">4</span>
-
-<span class="c-kw">for</span> step, batch <span class="c-kw">in</span> <span class="c-fn">enumerate</span>(dataloader):
-    loss = <span class="c-fn">model</span>(**batch).loss / accumulation_steps
-    loss.<span class="c-fn">backward</span>()
-
-    <span class="c-kw">if</span> (step + <span class="c-num">1</span>) % accumulation_steps == <span class="c-num">0</span>:
-        optimizer.<span class="c-fn">step</span>()
-        optimizer.<span class="c-fn">zero_grad</span>()</div>
-    </div>
-  </div>
-
-  <!-- SECTION 3 -->
-  <div class="section">
-    <div class="section-header">
-      <div class="section-num">Section 03</div>
-      <h2>Loading &amp; Running Pre-trained LLM Inference</h2>
-      <p>The two rules that matter most: always <code style="font-family:var(--mono);color:var(--purple-light)">model.eval()</code> and always <code style="font-family:var(--mono);color:var(--purple-light)">torch.no_grad()</code>. Skip either and you waste memory or get wrong outputs.</p>
+    <div class="callout callout-teal animate-on-scroll">
+      <div class="callout-title">Why This Matters</div>
+      <p>A common mistake is trying to maximize batch size without understanding memory allocation. The largest batch that fits in VRAM is NOT necessarily the fastest — GPU utilization and memory bandwidth interact. Use <code style="background:rgba(13,148,136,0.1);padding:1px 4px;border-radius:3px;font-family:var(--mono);">torch.cuda.memory_summary()</code> and NVIDIA's nsight systems to profile actual bottlenecks before assuming OOM errors are solved by reducing batch size.</p>
     </div>
 
-    <ul class="bullet-list">
-      <li><strong>model.eval()</strong> — disables dropout and batch norm training mode. Required for correct inference output.</li>
-      <li><strong>torch.no_grad()</strong> — disables gradient tracking. Saves 30-50% memory during inference.</li>
-      <li><strong>Half precision</strong> — model.to(torch.bfloat16) halves VRAM usage with minimal accuracy loss.</li>
-      <li><strong>device_map="auto"</strong> — HuggingFace automatically places layers across all available GPUs.</li>
-    </ul>
-
-    <div class="code-wrap" style="margin-top:24px;">
-      <span class="code-label">PYTHON</span>
-      <div class="code-block"><span class="c-kw">import</span> <span class="c-bi">torch</span>
-<span class="c-kw">from</span> <span class="c-bi">transformers</span> <span class="c-kw">import</span> <span class="c-type">AutoModelForCausalLM</span>, <span class="c-type">AutoTokenizer</span>
-
-<span class="c-cmt"># Load model in bfloat16 for efficient inference</span>
-model = <span class="c-type">AutoModelForCausalLM</span>.<span class="c-fn">from_pretrained</span>(
-    <span class="c-str">"meta-llama/Llama-3.2-3B-Instruct"</span>,
-    torch_dtype=<span class="c-bi">torch</span>.<span class="c-type">bfloat16</span>,
-    device_map=<span class="c-str">"auto"</span>  <span class="c-cmt"># automatically place layers across available GPUs</span>
-)
-tokenizer = <span class="c-type">AutoTokenizer</span>.<span class="c-fn">from_pretrained</span>(<span class="c-str">"meta-llama/Llama-3.2-3B-Instruct"</span>)
-
-<span class="c-cmt"># Always use eval mode + no_grad for inference</span>
-model.<span class="c-fn">eval</span>()
-<span class="c-kw">with</span> <span class="c-bi">torch</span>.<span class="c-fn">no_grad</span>():
-    inputs = <span class="c-fn">tokenizer</span>(<span class="c-str">"Explain LoRA:"</span>, return_tensors=<span class="c-str">"pt"</span>).<span class="c-fn">to</span>(device)
-    outputs = model.<span class="c-fn">generate</span>(
-        **inputs,
-        max_new_tokens=<span class="c-num">200</span>,
-        temperature=<span class="c-num">0.7</span>,
-        do_sample=<span class="c-bi">True</span>
-    )
-    response = <span class="c-fn">tokenizer</span>.<span class="c-fn">decode</span>(outputs[<span class="c-num">0</span>], skip_special_tokens=<span class="c-bi">True</span>)</div>
-    </div>
-  </div>
-
-  <!-- SECTION 4 -->
-  <div class="section">
-    <div class="section-header">
-      <div class="section-num">Section 04</div>
-      <h2>GPU Memory Management</h2>
-      <p>Why LLMs OOM: model weights + KV cache + activations + gradients. A 7B model in BF16 already uses 14GB — before any inputs are processed.</p>
-    </div>
-
-    <ul class="bullet-list">
-      <li><strong>Memory formula</strong> — params × bytes_per_param. 7B × 2 bytes (BF16) = 14GB for weights alone.</li>
-      <li><strong>Flash Attention 2</strong> — reduces attention memory from O(n²) to O(n). Essential for long contexts.</li>
-      <li><strong>gradient_checkpointing</strong> — trade compute for memory during training: recompute activations instead of storing them.</li>
-      <li><strong>torch.cuda.empty_cache()</strong> — frees cached but unused GPU memory back to the allocator.</li>
-    </ul>
-
-    <div class="code-wrap" style="margin-top:24px;">
-      <span class="code-label">PYTHON</span>
-      <div class="code-block"><span class="c-cmt"># Memory-efficient inference checklist</span>
-<span class="c-cmt"># 1. Use bfloat16 (half the memory of float32)</span>
-<span class="c-cmt"># 2. Use torch.no_grad() (no gradient storage)</span>
-<span class="c-cmt"># 3. Enable Flash Attention 2</span>
-<span class="c-cmt"># 4. Process in batches (not all at once)</span>
-
-model = <span class="c-type">AutoModelForCausalLM</span>.<span class="c-fn">from_pretrained</span>(
-    <span class="c-str">"meta-llama/Llama-3.2-3B"</span>,
-    torch_dtype=<span class="c-bi">torch</span>.<span class="c-type">bfloat16</span>,
-    attn_implementation=<span class="c-str">"flash_attention_2"</span>,  <span class="c-cmt"># Flash Attention 2</span>
-    device_map=<span class="c-str">"auto"</span>
-)
-
-<span class="c-cmt"># Check memory usage</span>
-<span class="c-fn">print</span>(<span class="c-bi">torch</span>.cuda.<span class="c-fn">memory_summary</span>(abbreviated=<span class="c-bi">True</span>))
-
-<span class="c-cmt"># Free GPU cache if needed</span>
-<span class="c-bi">torch</span>.cuda.<span class="c-fn">empty_cache</span>()
-
-<span class="c-cmt"># Memory per model size (approximate, BF16):</span>
-<span class="c-cmt"># 3B  model: ~6GB VRAM</span>
-<span class="c-cmt"># 7B  model: ~14GB VRAM</span>
-<span class="c-cmt"># 13B model: ~26GB VRAM</span>
-<span class="c-cmt"># 70B model: ~140GB VRAM (need A100 80GB × 2 with tensor parallel)</span></div>
-    </div>
-  </div>
-
-  <!-- SECTION 5 -->
-  <div class="section">
-    <div class="section-header">
-      <div class="section-num">Section 05</div>
-      <h2>Practical PyTorch for LLM Engineers</h2>
-      <p>Profiling, reproducibility, checkpointing, and the common gotchas that waste hours in practice.</p>
-    </div>
-
-    <ul class="bullet-list">
-      <li><strong>torch.profiler</strong> — find CPU/GPU bottlenecks. Identifies which ops are slow, not just that things are slow.</li>
-      <li><strong>torch.manual_seed(42)</strong> — set for reproducible runs. Also set numpy and random seeds in the same block.</li>
-      <li><strong>Device mismatch</strong> — model on GPU, inputs on CPU = cryptic RuntimeError. Always match with <code style="font-family:var(--mono);color:var(--purple-light)">.to(model.device)</code>.</li>
-      <li><strong>In-place ops with autograd</strong> — x += 1 on a tensor with requires_grad=True can corrupt the computation graph. Use x = x + 1.</li>
-    </ul>
-
-    <div class="callout info" style="margin-top:24px;">
-      <span class="callout-icon">💡</span>
-      <div class="callout-text"><strong>Three rules of LLM inference in PyTorch:</strong> (1) always <code style="font-family:var(--mono)">model.eval()</code>, (2) always <code style="font-family:var(--mono)">torch.no_grad()</code>, (3) always match dtypes between model and inputs. Break any of these and you get wrong outputs, wasted memory, or both.</div>
-    </div>
-
-    <div class="code-wrap" style="margin-top:24px;">
-      <span class="code-label">PYTHON</span>
-      <div class="code-block"><span class="c-kw">import</span> <span class="c-bi">torch</span>
-
-<span class="c-cmt"># Reproducibility</span>
-<span class="c-bi">torch</span>.<span class="c-fn">manual_seed</span>(<span class="c-num">42</span>)
-<span class="c-kw">if</span> <span class="c-bi">torch</span>.cuda.<span class="c-fn">is_available</span>():
-    <span class="c-bi">torch</span>.cuda.<span class="c-fn">manual_seed_all</span>(<span class="c-num">42</span>)
-
-<span class="c-cmt"># Save checkpoint</span>
-<span class="c-bi">torch</span>.<span class="c-fn">save</span>({
-    <span class="c-str">'epoch'</span>: epoch,
-    <span class="c-str">'model_state_dict'</span>: model.<span class="c-fn">state_dict</span>(),
-    <span class="c-str">'optimizer_state_dict'</span>: optimizer.<span class="c-fn">state_dict</span>(),
-    <span class="c-str">'loss'</span>: loss,
-}, <span class="c-str">'checkpoint.pt'</span>)
-
-<span class="c-cmt"># Load checkpoint</span>
-checkpoint = <span class="c-bi">torch</span>.<span class="c-fn">load</span>(<span class="c-str">'checkpoint.pt'</span>, map_location=device)
-model.<span class="c-fn">load_state_dict</span>(checkpoint[<span class="c-str">'model_state_dict'</span>])
-
-<span class="c-cmt"># Profiler — find GPU bottlenecks</span>
-<span class="c-kw">with</span> <span class="c-bi">torch</span>.profiler.<span class="c-fn">profile</span>(
-    activities=[<span class="c-bi">torch</span>.profiler.ProfilerActivity.<span class="c-type">CPU</span>, <span class="c-bi">torch</span>.profiler.ProfilerActivity.<span class="c-type">CUDA</span>],
-    record_shapes=<span class="c-bi">True</span>
-) <span class="c-kw">as</span> prof:
-    output = <span class="c-fn">model</span>(**inputs)
-
-<span class="c-fn">print</span>(prof.<span class="c-fn">key_averages</span>().<span class="c-fn">table</span>(sort_by=<span class="c-str">"cuda_time_total"</span>, row_limit=<span class="c-num">10</span>))</div>
-    </div>
-  </div>
-
-  <!-- WIDGET -->
-  <div class="section">
-    <div class="section-header">
-      <div class="section-num">Interactive</div>
-      <h2>GPU Memory Calculator</h2>
-      <p>Estimate how much VRAM you need for a given model size and configuration.</p>
-    </div>
-
-    <div class="widget">
-      <div class="widget-title">GPU Memory Calculator</div>
-      <div class="widget-sub">Adjust model size and precision to estimate VRAM requirements</div>
-
-      <div class="slider-row">
-        <span class="slider-label">Model Size</span>
-        <input type="range" id="model-size-slider" min="1" max="70" value="7" step="1" oninput="calcMemory()">
-        <span class="slider-val" id="model-size-val">7B params</span>
+    <div class="code-window animate-on-scroll">
+      <div class="code-title-bar">
+        <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+        <span class="code-file">gpu_memory.py</span>
       </div>
+      <div class="code-block"><span class="c-kw">import</span> torch
+<span class="c-kw">from</span> torch.cuda.amp <span class="c-kw">import</span> GradScaler, autocast
+<span class="c-kw">from</span> torch.utils.checkpoint <span class="c-kw">import</span> checkpoint
 
+<span class="c-cmt"># ── Memory math for LLMs ──────────────────────────────────────────</span>
+<span class="c-kw">def</span> <span class="c-fn">vram_estimate_gb</span>(params_b: <span class="c-type">float</span>, precision: <span class="c-type">str</span><span class="c-kw">=</span><span class="c-str">"bf16"</span>, training: <span class="c-type">bool</span><span class="c-kw">=True</span>) <span class="c-kw">-></span> <span class="c-type">float</span>:
+    <span class="c-str">"""Estimate VRAM in GB for a model with params_b billion parameters."""</span>
+    bytes_per_param <span class="c-kw">=</span> {<span class="c-str">"fp32"</span>: <span class="c-num">4</span>, <span class="c-str">"fp16"</span>: <span class="c-num">2</span>, <span class="c-str">"bf16"</span>: <span class="c-num">2</span>, <span class="c-str">"int8"</span>: <span class="c-num">1</span>, <span class="c-str">"int4"</span>: <span class="c-num">0.5</span>}
+    bpp <span class="c-kw">=</span> bytes_per_param[precision]
+    weight_gb <span class="c-kw">=</span> (params_b <span class="c-kw">*</span> <span class="c-num">1e9</span> <span class="c-kw">*</span> bpp) <span class="c-kw">/</span> (<span class="c-num">1024</span><span class="c-kw">**</span><span class="c-num">3</span>)
+    <span class="c-kw">if</span> training:
+        grad_gb <span class="c-kw">=</span> weight_gb                  <span class="c-cmt"># gradients same size as weights</span>
+        optimizer_gb <span class="c-kw">=</span> weight_gb <span class="c-kw">*</span> <span class="c-num">2</span>         <span class="c-cmt"># Adam: m + v states in FP32</span>
+        <span class="c-kw">return</span> weight_gb <span class="c-kw">+</span> grad_gb <span class="c-kw">+</span> optimizer_gb
+    <span class="c-kw">return</span> weight_gb
+
+<span class="c-bi">print</span>(<span class="c-fn">vram_estimate_gb</span>(<span class="c-num">7</span>, <span class="c-str">"bf16"</span>, training<span class="c-kw">=True</span>))   <span class="c-cmt"># ~42 GB</span>
+<span class="c-bi">print</span>(<span class="c-fn">vram_estimate_gb</span>(<span class="c-num">7</span>, <span class="c-str">"bf16"</span>, training<span class="c-kw">=False</span>))  <span class="c-cmt"># ~14 GB</span>
+
+<span class="c-cmt"># ── Mixed precision training loop ─────────────────────────────────</span>
+scaler <span class="c-kw">=</span> <span class="c-fn">GradScaler</span>()
+
+<span class="c-kw">for</span> batch <span class="c-kw">in</span> dataloader:
+    optimizer.<span class="c-fn">zero_grad</span>(set_to_none<span class="c-kw">=True</span>)
+    <span class="c-kw">with</span> <span class="c-fn">autocast</span>(dtype<span class="c-kw">=</span>torch.bfloat16):   <span class="c-cmt"># forward in BF16</span>
+        out <span class="c-kw">=</span> <span class="c-fn">model</span>(batch[<span class="c-str">"input_ids"</span>])
+        loss <span class="c-kw">=</span> <span class="c-fn">criterion</span>(out, batch[<span class="c-str">"labels"</span>])
+    scaler.<span class="c-fn">scale</span>(loss).<span class="c-fn">backward</span>()           <span class="c-cmt"># backward with scaled grads</span>
+    scaler.<span class="c-fn">unscale_</span>(optimizer)
+    torch.nn.utils.<span class="c-fn">clip_grad_norm_</span>(model.<span class="c-fn">parameters</span>(), max_norm<span class="c-kw">=</span><span class="c-num">1.0</span>)
+    scaler.<span class="c-fn">step</span>(optimizer)
+    scaler.<span class="c-fn">update</span>()
+
+<span class="c-cmt"># ── Gradient checkpointing to save activation memory ──────────────</span>
+<span class="c-kw">def</span> <span class="c-fn">forward_with_ckpt</span>(layer, x):
+    <span class="c-kw">return</span> <span class="c-fn">checkpoint</span>(layer, x, use_reentrant<span class="c-kw">=False</span>)  <span class="c-cmt"># recompute on backward</span>
+
+<span class="c-cmt"># Enable in HuggingFace models with a single line:</span>
+model.<span class="c-fn">gradient_checkpointing_enable</span>()   <span class="c-cmt"># saves ~60% activation memory</span></div>
+    </div>
+
+    <!-- WIDGET 1: GPU Memory Calculator -->
+    <div class="widget animate-on-scroll">
+      <div class="widget-title">GPU Memory Calculator</div>
+      <div class="widget-sub">Adjust model size and precision to estimate VRAM requirements and get GPU recommendations.</div>
+      <div class="slider-row">
+        <span class="slider-label">Model Size (B params)</span>
+        <input type="range" id="modelSize" min="0.5" max="70" step="0.5" value="7" oninput="calcVRAM()">
+        <span class="slider-val" id="modelSizeVal">7B</span>
+      </div>
       <div class="slider-row">
         <span class="slider-label">Precision</span>
-        <input type="range" id="precision-slider" min="0" max="3" value="1" step="1" oninput="calcMemory()">
-        <span class="slider-val" id="precision-val">BF16 (2B)</span>
+        <select id="precisionSel" onchange="calcVRAM()" style="flex:1;padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;">
+          <option value="4">FP32 (4 bytes/param)</option>
+          <option value="2" selected>BF16 / FP16 (2 bytes/param)</option>
+          <option value="1">INT8 (1 byte/param)</option>
+          <option value="0.5">INT4 (0.5 bytes/param)</option>
+        </select>
+        <span class="slider-val" id="precisionVal">BF16</span>
       </div>
-
-      <div class="checkbox-row">
-        <label class="checkbox-item">
-          <input type="checkbox" id="training-check" onchange="calcMemory()">
-          Training mode (gradients + optimizer ~3x)
-        </label>
-        <label class="checkbox-item">
-          <input type="checkbox" id="flash-check" checked onchange="calcMemory()">
-          Flash Attention 2 (saves ~30% KV cache)
-        </label>
+      <div class="slider-row">
+        <span class="slider-label">Mode</span>
+        <select id="modeSel" onchange="calcVRAM()" style="flex:1;padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;">
+          <option value="inf">Inference only</option>
+          <option value="train" selected>Training (with Adam)</option>
+          <option value="lora">LoRA fine-tuning</option>
+        </select>
+        <span class="slider-val" id="modeVal"></span>
       </div>
-
-      <div class="result-card" id="mem-result">
-        <div class="result-item">
-          <div class="result-label">Weights VRAM</div>
-          <div class="result-value" id="res-weights">14 GB</div>
+      <div class="result-panel">
+        <div class="result-grid">
+          <div class="result-item">
+            <div class="result-num" id="vramWeights">14.0</div>
+            <div class="result-label">Weights (GB)</div>
+          </div>
+          <div class="result-item">
+            <div class="result-num" id="vramTotal">42.0</div>
+            <div class="result-label">Total VRAM (GB)</div>
+          </div>
+          <div class="result-item">
+            <div class="result-num" id="vramOverhead">28.0</div>
+            <div class="result-label">Optimizer Overhead (GB)</div>
+          </div>
         </div>
-        <div class="result-item">
-          <div class="result-label">Total VRAM needed</div>
-          <div class="result-value" id="res-total">18 GB</div>
-        </div>
-        <div class="gpu-rec" id="res-gpu">
-          <strong>Minimum GPU:</strong> <span id="res-gpu-text">A100 40GB</span>
-        </div>
+        <div class="gpu-rec" id="gpuRec">Recommended: <span id="gpuName">A100 80GB (single GPU)</span></div>
       </div>
     </div>
-  </div>
 
-</div><!-- /container -->
-
-<footer>
-  <div class="container">
-    <div class="footer-inner">
-      <div class="footer-nav">
-        <a href="day14.html" class="nav-btn">← Day 14</a>
-        <button class="nav-btn complete" id="footer-complete-btn" onclick="markComplete()">Mark Complete</button>
-        <a href="day16.html" class="nav-btn next">Day 16 →</a>
+    <!-- WIDGET 2: Tensor Shape Visualizer -->
+    <div class="widget animate-on-scroll" style="margin-top:24px;">
+      <div class="widget-title">Tensor Shape Visualizer</div>
+      <div class="widget-sub">Enter batch size, sequence length, and hidden dim to see reshape and matmul operations as animated grids.</div>
+      <div class="shape-inputs">
+        <div class="shape-input-group">
+          <label>Batch (B)</label>
+          <input type="number" id="shapeBatch" value="4" min="1" max="16" oninput="updateTensorViz()">
+        </div>
+        <div class="shape-input-group">
+          <label>Seq Len (T)</label>
+          <input type="number" id="shapeSeq" value="8" min="1" max="16" oninput="updateTensorViz()">
+        </div>
+        <div class="shape-input-group">
+          <label>Hidden (D)</label>
+          <input type="number" id="shapeHidden" value="6" min="1" max="12" oninput="updateTensorViz()">
+        </div>
+        <div class="shape-input-group">
+          <label>Out Dim</label>
+          <input type="number" id="shapeOut" value="4" min="1" max="12" oninput="updateTensorViz()">
+        </div>
+        <div style="display:flex;align-items:flex-end;">
+          <button class="btn btn-purple" onclick="animateTensor()">Animate MatMul</button>
+        </div>
       </div>
-      <div>Day 15 of the AI Mastery Curriculum &middot; Built for Sharjeel Sohail</div>
+      <div class="tensor-grid" id="tensorVizGrid">
+        <!-- dynamically generated -->
+      </div>
+      <div id="tensorInfo" style="margin-top:12px;font-size:13px;color:var(--muted);font-family:var(--mono);"></div>
     </div>
-  </div>
-</footer>
+
+    <table class="data-table animate-on-scroll" style="margin-top:32px;">
+      <thead>
+        <tr>
+          <th>Precision</th>
+          <th>Bytes/Param</th>
+          <th>7B Weights</th>
+          <th>13B Weights</th>
+          <th>70B Weights</th>
+          <th>Recommended GPU</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>FP32</td><td class="c-num" style="font-family:var(--mono);">4</td><td><span class="badge badge-red">28 GB</span></td><td><span class="badge badge-red">52 GB</span></td><td><span class="badge badge-red">280 GB</span></td><td>A100 80GB x4</td></tr>
+        <tr><td>BF16</td><td class="c-num" style="font-family:var(--mono);">2</td><td><span class="badge badge-yellow">14 GB</span></td><td><span class="badge badge-yellow">26 GB</span></td><td><span class="badge badge-red">140 GB</span></td><td>A100 80GB x2</td></tr>
+        <tr><td>INT8</td><td class="c-num" style="font-family:var(--mono);">1</td><td><span class="badge badge-green">7 GB</span></td><td><span class="badge badge-yellow">13 GB</span></td><td><span class="badge badge-yellow">70 GB</span></td><td>RTX 4090 (7B)</td></tr>
+        <tr><td>INT4</td><td class="c-num" style="font-family:var(--mono);">0.5</td><td><span class="badge badge-green">3.5 GB</span></td><td><span class="badge badge-green">6.5 GB</span></td><td><span class="badge badge-yellow">35 GB</span></td><td>RTX 4080 (7B)</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- SECTION 3: Custom Layers -->
+  <section class="section animate-on-scroll">
+    <div class="section-header">
+      <div class="section-num">Section 03</div>
+      <h2>Custom Layers & nn.Module</h2>
+      <p>Every LLM component — attention, MLP, RMSNorm — is a subclass of <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:12px;">nn.Module</code>. Understanding the interface lets you implement novel architectures and debug existing ones.</p>
+    </div>
+    <div class="section-body">
+      <p>The <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:12px;">nn.Module</code> base class provides automatic parameter registration, device movement with <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:12px;">.to(device)</code>, serialization, and state dict management. The two methods you must implement are <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:12px;">__init__</code> (register sub-modules and parameters) and <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:12px;">forward</code> (define the computation). Never store tensors as plain Python attributes inside <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:12px;">nn.Module</code> — they won't move with the model or appear in state_dict.</p>
+      <p>RMSNorm (used in LLaMA, Mistral, Gemma) normalizes without computing the mean — only the root mean square. This makes it ~15% faster than LayerNorm while achieving comparable training stability. Understanding its implementation is essential for reproducing modern architectures from papers.</p>
+    </div>
+
+    <div class="code-window animate-on-scroll">
+      <div class="code-title-bar">
+        <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+        <span class="code-file">custom_layers.py</span>
+      </div>
+      <div class="code-block"><span class="c-kw">import</span> torch
+<span class="c-kw">import</span> torch.nn <span class="c-kw">as</span> nn
+<span class="c-kw">import</span> torch.nn.functional <span class="c-kw">as</span> F
+<span class="c-kw">import</span> math
+
+<span class="c-kw">class</span> <span class="c-type">RMSNorm</span>(nn.Module):
+    <span class="c-str">"""Root Mean Square Layer Normalization — used in LLaMA, Mistral, Gemma."""</span>
+    <span class="c-kw">def</span> <span class="c-fn">__init__</span>(self, dim: <span class="c-type">int</span>, eps: <span class="c-type">float</span> <span class="c-kw">=</span> <span class="c-num">1e-6</span>):
+        <span class="c-bi">super</span>().__init__()
+        self.eps <span class="c-kw">=</span> eps
+        self.weight <span class="c-kw">=</span> nn.<span class="c-fn">Parameter</span>(torch.<span class="c-fn">ones</span>(dim))  <span class="c-cmt"># learnable scale</span>
+
+    <span class="c-kw">def</span> <span class="c-fn">_norm</span>(self, x):
+        <span class="c-kw">return</span> x <span class="c-kw">*</span> torch.<span class="c-fn">rsqrt</span>(x.<span class="c-fn">pow</span>(<span class="c-num">2</span>).<span class="c-fn">mean</span>(<span class="c-kw">-1</span>, keepdim<span class="c-kw">=True</span>) <span class="c-kw">+</span> self.eps)
+
+    <span class="c-kw">def</span> <span class="c-fn">forward</span>(self, x: torch.Tensor) <span class="c-kw">-></span> torch.Tensor:
+        output <span class="c-kw">=</span> self.<span class="c-fn">_norm</span>(x.<span class="c-fn">float</span>()).<span class="c-fn">type_as</span>(x)
+        <span class="c-kw">return</span> output <span class="c-kw">*</span> self.weight
+
+<span class="c-kw">class</span> <span class="c-type">SwiGLU</span>(nn.Module):
+    <span class="c-str">"""SwiGLU activation used in LLaMA MLP — Swish gated linear unit."""</span>
+    <span class="c-kw">def</span> <span class="c-fn">__init__</span>(self, dim: <span class="c-type">int</span>, hidden: <span class="c-type">int</span>):
+        <span class="c-bi">super</span>().__init__()
+        self.w1 <span class="c-kw">=</span> nn.<span class="c-fn">Linear</span>(dim, hidden, bias<span class="c-kw">=False</span>)  <span class="c-cmt"># gate</span>
+        self.w2 <span class="c-kw">=</span> nn.<span class="c-fn">Linear</span>(hidden, dim, bias<span class="c-kw">=False</span>)  <span class="c-cmt"># down proj</span>
+        self.w3 <span class="c-kw">=</span> nn.<span class="c-fn">Linear</span>(dim, hidden, bias<span class="c-kw">=False</span>)  <span class="c-cmt"># up proj</span>
+
+    <span class="c-kw">def</span> <span class="c-fn">forward</span>(self, x: torch.Tensor) <span class="c-kw">-></span> torch.Tensor:
+        <span class="c-kw">return</span> self.<span class="c-fn">w2</span>(F.<span class="c-fn">silu</span>(self.<span class="c-fn">w1</span>(x)) <span class="c-kw">*</span> self.<span class="c-fn">w3</span>(x))
+
+<span class="c-kw">class</span> <span class="c-type">CausalSelfAttention</span>(nn.Module):
+    <span class="c-str">"""Multi-head causal self-attention with Flash Attention support."""</span>
+    <span class="c-kw">def</span> <span class="c-fn">__init__</span>(self, dim: <span class="c-type">int</span>, n_heads: <span class="c-type">int</span>):
+        <span class="c-bi">super</span>().__init__()
+        <span class="c-bi">assert</span> dim <span class="c-kw">%</span> n_heads <span class="c-kw">==</span> <span class="c-num">0</span>
+        self.n_heads <span class="c-kw">=</span> n_heads
+        self.head_dim <span class="c-kw">=</span> dim <span class="c-kw">//</span> n_heads
+        self.qkv <span class="c-kw">=</span> nn.<span class="c-fn">Linear</span>(dim, <span class="c-num">3</span> <span class="c-kw">*</span> dim, bias<span class="c-kw">=False</span>)
+        self.out_proj <span class="c-kw">=</span> nn.<span class="c-fn">Linear</span>(dim, dim, bias<span class="c-kw">=False</span>)
+
+    <span class="c-kw">def</span> <span class="c-fn">forward</span>(self, x: torch.Tensor) <span class="c-kw">-></span> torch.Tensor:
+        B, T, C <span class="c-kw">=</span> x.shape
+        q, k, v <span class="c-kw">=</span> self.<span class="c-fn">qkv</span>(x).<span class="c-fn">split</span>(C, dim<span class="c-kw">=2</span>)
+        q <span class="c-kw">=</span> q.<span class="c-fn">view</span>(B, T, self.n_heads, self.head_dim).<span class="c-fn">transpose</span>(<span class="c-num">1</span>, <span class="c-num">2</span>)
+        k <span class="c-kw">=</span> k.<span class="c-fn">view</span>(B, T, self.n_heads, self.head_dim).<span class="c-fn">transpose</span>(<span class="c-num">1</span>, <span class="c-num">2</span>)
+        v <span class="c-kw">=</span> v.<span class="c-fn">view</span>(B, T, self.n_heads, self.head_dim).<span class="c-fn">transpose</span>(<span class="c-num">1</span>, <span class="c-num">2</span>)
+        <span class="c-cmt"># PyTorch 2.0+ fused Flash Attention — no explicit mask needed</span>
+        y <span class="c-kw">=</span> F.<span class="c-fn">scaled_dot_product_attention</span>(q, k, v, is_causal<span class="c-kw">=True</span>)
+        y <span class="c-kw">=</span> y.<span class="c-fn">transpose</span>(<span class="c-num">1</span>, <span class="c-num">2</span>).<span class="c-fn">contiguous</span>().<span class="c-fn">view</span>(B, T, C)
+        <span class="c-kw">return</span> self.<span class="c-fn">out_proj</span>(y)</div>
+    </div>
+
+    <div class="card-grid animate-on-scroll">
+      <div class="card">
+        <div class="card-icon">⚡</div>
+        <h3>torch.compile()</h3>
+        <p>PyTorch 2.0's compilation traces your model into an optimized kernel graph. Typically gives 20-50% speedup on transformer models with <code style="font-family:var(--mono);font-size:12px;">mode="reduce-overhead"</code>. Works with CUDA graphs for fixed-shape inference.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔀</div>
+        <h3>Flash Attention 2</h3>
+        <p>Tiling algorithm that computes attention in SRAM chunks, avoiding the O(N²) HBM reads of naive attention. Built into PyTorch 2.0 via <code style="font-family:var(--mono);font-size:12px;">F.scaled_dot_product_attention</code>. 4-8x faster for long sequences.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🗜️</div>
+        <h3>Quantization-Aware Training</h3>
+        <p>Simulate INT8/INT4 precision during training using fake quantization ops. The model learns to be robust to quantization noise, so post-training quantization quality improves by 1-3 perplexity points compared to PTQ alone.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 4: DataLoaders -->
+  <section class="section animate-on-scroll">
+    <div class="section-header">
+      <div class="section-num">Section 04</div>
+      <h2>Efficient DataLoaders for LLM Training</h2>
+      <p>The DataLoader pipeline — tokenization, batching, padding, and GPU transfer — is frequently the training bottleneck in small-to-medium setups.</p>
+    </div>
+    <div class="section-body">
+      <p>For LLM training, the dominant pattern is <strong>packed sequences</strong>: instead of padding all sequences in a batch to the same length (wasteful), pack multiple short sequences end-to-end within a fixed context window and use attention masks to prevent cross-contamination. This maximizes GPU utilization and avoids the O(N²) attention cost of padding tokens.</p>
+      <p>The DataLoader's <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:12px;">num_workers</code> parameter controls CPU parallelism for data loading. A common mistake is setting it to 0 (synchronous loading) during development and forgetting to increase it in production — this creates a CPU bottleneck that keeps the GPU idle. For tokenized datasets that fit in RAM, use <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:12px;">pin_memory=True</code> to enable DMA transfers that bypass the CPU cache and feed directly into GPU VRAM.</p>
+      <p>Datasets larger than memory require streaming. The HuggingFace <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:12px;">datasets</code> library supports <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:12px;">streaming=True</code> mode that fetches data lazily from disk or object storage, with a prefetch buffer. For pre-training at scale, the data pipeline typically runs on multiple CPU nodes that feed a GPU training cluster.</p>
+    </div>
+
+    <div class="code-window animate-on-scroll">
+      <div class="code-title-bar">
+        <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+        <span class="code-file">dataloader.py</span>
+      </div>
+      <div class="code-block"><span class="c-kw">from</span> torch.utils.data <span class="c-kw">import</span> Dataset, DataLoader
+<span class="c-kw">from</span> transformers <span class="c-kw">import</span> AutoTokenizer
+<span class="c-kw">import</span> torch
+
+<span class="c-kw">class</span> <span class="c-type">PackedSequenceDataset</span>(Dataset):
+    <span class="c-str">"""Pack multiple sequences into a fixed context window — no padding waste."""</span>
+    <span class="c-kw">def</span> <span class="c-fn">__init__</span>(self, texts, tokenizer, ctx_len: <span class="c-type">int</span> <span class="c-kw">=</span> <span class="c-num">2048</span>):
+        self.ctx_len <span class="c-kw">=</span> ctx_len
+        <span class="c-cmt"># Tokenize and concatenate all texts with EOS separator</span>
+        eos <span class="c-kw">=</span> tokenizer.eos_token_id
+        all_ids <span class="c-kw">=</span> []
+        <span class="c-kw">for</span> t <span class="c-kw">in</span> texts:
+            ids <span class="c-kw">=</span> tokenizer.<span class="c-fn">encode</span>(t)
+            all_ids.<span class="c-fn">extend</span>(ids <span class="c-kw">+</span> [eos])
+        <span class="c-cmt"># Chunk into fixed-size windows</span>
+        self.chunks <span class="c-kw">=</span> [
+            all_ids[i:i<span class="c-kw">+</span>ctx_len<span class="c-kw">+</span><span class="c-num">1</span>]
+            <span class="c-kw">for</span> i <span class="c-kw">in</span> <span class="c-bi">range</span>(<span class="c-num">0</span>, <span class="c-bi">len</span>(all_ids) <span class="c-kw">-</span> ctx_len, ctx_len)
+        ]
+
+    <span class="c-kw">def</span> <span class="c-fn">__len__</span>(self): <span class="c-kw">return</span> <span class="c-bi">len</span>(self.chunks)
+
+    <span class="c-kw">def</span> <span class="c-fn">__getitem__</span>(self, idx):
+        chunk <span class="c-kw">=</span> torch.<span class="c-fn">tensor</span>(self.chunks[idx], dtype<span class="c-kw">=</span>torch.<span class="c-bi">long</span>)
+        <span class="c-kw">return</span> {<span class="c-str">"input_ids"</span>: chunk[:<span class="c-kw">-1</span>], <span class="c-str">"labels"</span>: chunk[<span class="c-num">1</span>:]}
+
+<span class="c-cmt"># Optimal DataLoader settings for GPU training</span>
+loader <span class="c-kw">=</span> <span class="c-fn">DataLoader</span>(
+    dataset,
+    batch_size<span class="c-kw">=</span><span class="c-num">8</span>,
+    num_workers<span class="c-kw">=</span><span class="c-num">4</span>,        <span class="c-cmt"># parallel CPU workers — match CPU cores</span>
+    pin_memory<span class="c-kw">=True</span>,      <span class="c-cmt"># DMA transfer — skips CPU cache</span>
+    prefetch_factor<span class="c-kw">=</span><span class="c-num">2</span>,    <span class="c-cmt"># load 2 batches ahead</span>
+    persistent_workers<span class="c-kw">=True</span>,  <span class="c-cmt"># keep workers alive between epochs</span>
+    shuffle<span class="c-kw">=True</span>,
+)</div>
+    </div>
+
+    <div class="callout callout-red animate-on-scroll">
+      <div class="callout-title">Common Pitfall: Moving Data Inside the Dataset</div>
+      <p>Never call <code style="background:rgba(239,68,68,0.1);padding:1px 4px;border-radius:3px;font-family:var(--mono);">.to(device)</code> inside <code style="background:rgba(239,68,68,0.1);padding:1px 4px;border-radius:3px;font-family:var(--mono);">__getitem__</code>. DataLoader workers are CPU processes — moving to GPU here creates CUDA context in each worker (expensive) and defeats <code style="background:rgba(239,68,68,0.1);padding:1px 4px;border-radius:3px;font-family:var(--mono);">pin_memory</code>. Always move the batch to device inside the training loop after collation: <code style="background:rgba(239,68,68,0.1);padding:1px 4px;border-radius:3px;font-family:var(--mono);">batch = {k: v.to(device) for k, v in batch.items()}</code>.</p>
+    </div>
+  </section>
+
+  <!-- SECTION 5: torch.compile -->
+  <section class="section animate-on-scroll">
+    <div class="section-header">
+      <div class="section-num">Section 05</div>
+      <h2>torch.compile() & Performance Profiling</h2>
+      <p>PyTorch 2.0 introduced a compiler stack that can trace, optimize, and JIT-compile your model's computation graph — often yielding 20-50% speed improvements with zero code changes.</p>
+    </div>
+    <div class="section-body">
+      <p>The compiler pipeline: <strong>TorchDynamo</strong> captures Python bytecode and traces the computation graph, <strong>AOTAutograd</strong> generates the backward graph ahead-of-time, and <strong>TorchInductor</strong> emits optimized CUDA/Triton kernels. The first forward pass is slow (compilation), but subsequent calls use the cached kernel — ideal for training loops.</p>
+      <p>Three compilation modes exist: <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:12px;">default</code> (balanced), <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:12px;">reduce-overhead</code> (minimize kernel launches via CUDA graphs — best for small models/large batches), and <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:12px;">max-autotune</code> (exhaustively benchmarks kernels — slow compilation, best throughput). For LLM training, <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:12px;">reduce-overhead</code> is usually optimal.</p>
+    </div>
+
+    <div class="code-window animate-on-scroll">
+      <div class="code-title-bar">
+        <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+        <span class="code-file">compile_and_profile.py</span>
+      </div>
+      <div class="code-block"><span class="c-kw">import</span> torch
+<span class="c-kw">from</span> torch.profiler <span class="c-kw">import</span> profile, record_function, ProfilerActivity
+
+<span class="c-cmt"># ── torch.compile — one line, big speedup ────────────────────────</span>
+model <span class="c-kw">=</span> <span class="c-fn">MyTransformer</span>().<span class="c-fn">to</span>(device)
+model <span class="c-kw">=</span> torch.<span class="c-fn">compile</span>(model, mode<span class="c-kw">=</span><span class="c-str">"reduce-overhead"</span>)
+<span class="c-cmt"># First call is slow (compilation), subsequent calls are fast</span>
+
+<span class="c-cmt"># ── Profiling — find the real bottleneck ─────────────────────────</span>
+<span class="c-kw">with</span> <span class="c-fn">profile</span>(
+    activities<span class="c-kw">=</span>[ProfilerActivity.CPU, ProfilerActivity.CUDA],
+    record_shapes<span class="c-kw">=True</span>,
+    with_stack<span class="c-kw">=True</span>,
+    with_flops<span class="c-kw">=True</span>,
+) <span class="c-kw">as</span> prof:
+    <span class="c-kw">with</span> <span class="c-fn">record_function</span>(<span class="c-str">"model_forward"</span>):
+        output <span class="c-kw">=</span> <span class="c-fn">model</span>(batch)
+
+<span class="c-bi">print</span>(prof.<span class="c-fn">key_averages</span>().<span class="c-fn">table</span>(
+    sort_by<span class="c-kw">=</span><span class="c-str">"cuda_time_total"</span>, row_limit<span class="c-kw">=</span><span class="c-num">10</span>
+))
+
+<span class="c-cmt"># Export to Chrome trace viewer (chrome://tracing)</span>
+prof.<span class="c-fn">export_chrome_trace</span>(<span class="c-str">"trace.json"</span>)
+
+<span class="c-cmt"># ── CUDA memory snapshot ─────────────────────────────────────────</span>
+torch.cuda.memory.<span class="c-fn">_record_memory_history</span>(max_entries<span class="c-kw">=</span><span class="c-num">100000</span>)
+<span class="c-cmt"># ... run training step ...</span>
+torch.cuda.memory.<span class="c-fn">_dump_snapshot</span>(<span class="c-str">"memory_snapshot.pickle"</span>)
+<span class="c-cmt"># Visualize at pytorch.org/memory_viz</span></div>
+    </div>
+  </section>
+
+  <!-- SECTION 6: Checklist -->
+  <section class="section animate-on-scroll">
+    <div class="section-header">
+      <div class="section-num">Section 06</div>
+      <h2>Day 15 Practice Checklist</h2>
+      <p>Hands-on exercises to solidify today's material. Complete these in a Colab notebook or local GPU environment.</p>
+    </div>
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-icon">🧪</div>
+        <h3>Implement from Scratch</h3>
+        <p>Build RMSNorm, SwiGLU, and causal self-attention using only PyTorch primitives. Verify against HuggingFace's LLaMA implementation using unit tests.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📊</div>
+        <h3>Profile a Training Step</h3>
+        <p>Use <code style="font-family:var(--mono);font-size:12px;">torch.profiler</code> on a small transformer. Identify the top 3 CUDA kernels by time. Try enabling <code style="font-family:var(--mono);font-size:12px;">torch.compile</code> and measure the difference.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🗜️</div>
+        <h3>Mixed Precision Benchmark</h3>
+        <p>Compare throughput and loss curves for FP32 vs BF16 training on the same model. Verify that BF16 achieves comparable final loss with 2x faster iteration speed.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
 
 <script src="../bg-animation.js"></script>
 <script>
-// ── Mark Complete (aai_progress) ────────────────────────────────
-function markComplete() {
-  try {
-    const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
-    const isDone = p[15] === 'complete';
-    p[15] = isDone ? 'active' : 'complete';
-    localStorage.setItem('aai_progress', JSON.stringify(p));
-    updateCompleteButtons();
-  } catch(e) {}
-}
-
-function updateCompleteButtons() {
-  try {
-    const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
-    const done = p[15] === 'complete';
-    const label = done ? 'Completed ✓' : 'Mark Complete';
-    ['nav-complete-btn', 'footer-complete-btn'].forEach(id => {
-      const btn = document.getElementById(id);
-      if (btn) {
-        btn.textContent = label;
-        btn.classList.toggle('done', done);
-      }
-    });
-  } catch(e) {}
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  try {
-    const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
-    if (!p[15] || p[15] === 'locked') { p[15] = 'active'; localStorage.setItem('aai_progress', JSON.stringify(p)); }
-  } catch(e) {}
-  updateCompleteButtons();
+// ── Progress bar ──────────────────────────────────────────────────
+const bar = document.getElementById('progress-bar');
+window.addEventListener('scroll', () => {
+  const pct = (window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100;
+  bar.style.width = pct + '%';
+  document.getElementById('back-to-top').classList.toggle('visible', window.scrollY > 400);
 });
 
-// ── GPU Memory Calculator Widget ────────────────────────────────
-const PRECISION_LABELS = ['FP32 (4B)', 'BF16 (2B)', 'INT8 (1B)', 'INT4 (0.5B)'];
-const PRECISION_BYTES  = [4, 2, 1, 0.5];
+// ── Mark complete ─────────────────────────────────────────────────
+const btn = document.getElementById('markComplete');
+if (localStorage.getItem('day15-complete') === 'true') btn.classList.add('done');
+function toggleComplete() {
+  const done = localStorage.getItem('day15-complete') !== 'true';
+  localStorage.setItem('day15-complete', done);
+  btn.classList.toggle('done', done);
+  btn.textContent = done ? '✓ Complete' : 'Mark Complete';
+}
+if (localStorage.getItem('day15-complete') === 'true') btn.textContent = '✓ Complete';
 
-function calcMemory() {
-  const sizeB = parseInt(document.getElementById('model-size-slider').value);
-  const precIdx = parseInt(document.getElementById('precision-slider').value);
-  const training = document.getElementById('training-check').checked;
-  const flash = document.getElementById('flash-check').checked;
+// ── IntersectionObserver scroll animations ───────────────────────
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting) {
+      setTimeout(() => e.target.classList.add('visible'), i * 80);
+      observer.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.08 });
+document.querySelectorAll('.animate-on-scroll').forEach(el => observer.observe(el));
 
-  document.getElementById('model-size-val').textContent = sizeB + 'B params';
-  document.getElementById('precision-val').textContent = PRECISION_LABELS[precIdx];
+// ── Animated stat counters ────────────────────────────────────────
+const statObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (!entry.isIntersecting) return;
+    const el = entry.target.querySelector('.stat-num[data-target]');
+    if (!el) return;
+    const target = parseFloat(el.dataset.target);
+    const suffix = entry.target.querySelector('.stat-num-suffix')?.textContent || '';
+    let start = 0; const duration = 1200;
+    const step = timestamp => {
+      if (!start) start = timestamp;
+      const progress = Math.min((timestamp - start) / duration, 1);
+      el.textContent = (target * progress).toFixed(target % 1 !== 0 ? 1 : 0);
+      if (progress < 1) requestAnimationFrame(step);
+      else el.textContent = target % 1 !== 0 ? target.toFixed(1) : target;
+    };
+    requestAnimationFrame(step);
+    statObserver.unobserve(entry.target);
+  });
+}, { threshold: 0.5 });
+document.querySelectorAll('.stat-card').forEach(el => statObserver.observe(el));
 
-  const bytesPerParam = PRECISION_BYTES[precIdx];
-  const weightsGB = (sizeB * 1e9 * bytesPerParam) / 1e9;
+// ── GPU Memory Calculator ─────────────────────────────────────────
+function calcVRAM() {
+  const params = parseFloat(document.getElementById('modelSize').value);
+  const bpp = parseFloat(document.getElementById('precisionSel').value);
+  const mode = document.getElementById('modeSel').value;
+  document.getElementById('modelSizeVal').textContent = params + 'B';
 
-  // KV cache estimate: ~20% of weights for typical seq length
-  let kvGB = weightsGB * 0.2;
-  if (flash) kvGB *= 0.7;  // Flash Attention saves ~30%
+  const weightGB = (params * 1e9 * bpp) / (1024 ** 3);
+  let totalGB = weightGB;
+  let overheadGB = 0;
 
-  // Activations: ~10% of weights
-  const actGB = weightsGB * 0.1;
+  if (mode === 'train') {
+    overheadGB = weightGB * 3; // grads + adam states
+    totalGB = weightGB + overheadGB;
+  } else if (mode === 'lora') {
+    overheadGB = weightGB * 0.1;
+    totalGB = weightGB + overheadGB;
+  }
 
-  // Training adds optimizer states + gradients (~3x weights)
-  let trainingGB = 0;
-  if (training) trainingGB = weightsGB * 3;
+  document.getElementById('vramWeights').textContent = weightGB.toFixed(1);
+  document.getElementById('vramTotal').textContent = totalGB.toFixed(1);
+  document.getElementById('vramOverhead').textContent = overheadGB.toFixed(1);
 
-  const totalGB = weightsGB + kvGB + actGB + trainingGB;
+  const gpus = [
+    { vram: 8,  name: 'RTX 4060 (8GB)' },
+    { vram: 12, name: 'RTX 4070 / A2000 (12GB)' },
+    { vram: 16, name: 'RTX 4080 (16GB)' },
+    { vram: 24, name: 'RTX 4090 / A5000 (24GB)' },
+    { vram: 40, name: 'A100 40GB' },
+    { vram: 80, name: 'A100 80GB' },
+    { vram: 160, name: 'A100 80GB x2' },
+    { vram: 320, name: 'A100 80GB x4 (tensor parallel)' },
+  ];
+  const rec = gpus.find(g => g.vram >= totalGB) || gpus[gpus.length - 1];
+  document.getElementById('gpuName').textContent = rec.name;
+}
+calcVRAM();
 
-  document.getElementById('res-weights').textContent = weightsGB.toFixed(1) + ' GB';
+// ── Tensor Visualizer ─────────────────────────────────────────────
+function updateTensorViz() {
+  const B = Math.min(parseInt(document.getElementById('shapeBatch').value) || 4, 16);
+  const T = Math.min(parseInt(document.getElementById('shapeSeq').value) || 8, 16);
+  const D = Math.min(parseInt(document.getElementById('shapeHidden').value) || 6, 12);
+  const O = Math.min(parseInt(document.getElementById('shapeOut').value) || 4, 12);
+  const grid = document.getElementById('tensorVizGrid');
+  grid.innerHTML = '';
 
-  const totalEl = document.getElementById('res-total');
-  totalEl.textContent = totalGB.toFixed(1) + ' GB';
-  totalEl.className = 'result-value' + (totalGB > 80 ? ' danger' : totalGB > 40 ? ' warn' : '');
+  // Input tensor [B, T, D] shown as T x D grid
+  const inBox = document.createElement('div');
+  inBox.className = 'tensor-box';
+  inBox.innerHTML = `<div class="tensor-title">Input [${B}, ${T}, ${D}]</div>`;
+  const inCells = document.createElement('div');
+  inCells.className = 'tensor-cells';
+  inCells.style.gridTemplateColumns = `repeat(${D}, 24px)`;
+  for (let i = 0; i < T * D; i++) {
+    const c = document.createElement('div');
+    c.className = 'tensor-cell';
+    c.dataset.idx = i;
+    inCells.appendChild(c);
+  }
+  inBox.appendChild(inCells);
+  inBox.innerHTML += `<div class="tensor-shape-label">[${T} × ${D}] shown</div>`;
+  grid.appendChild(inBox);
 
-  // GPU recommendation
-  let gpuRec = '';
-  if (totalGB <= 8) gpuRec = 'RTX 3080 / 3090 (10-24 GB)';
-  else if (totalGB <= 24) gpuRec = 'RTX 4090 (24 GB)';
-  else if (totalGB <= 40) gpuRec = 'A100 40 GB';
-  else if (totalGB <= 80) gpuRec = 'A100 80 GB or H100 80 GB';
-  else gpuRec = 'Multi-GPU: A100 80GB × ' + Math.ceil(totalGB / 80) + ' with tensor parallel';
+  // Arrow
+  const arrow = document.createElement('div');
+  arrow.className = 'op-arrow';
+  arrow.textContent = '×';
+  grid.appendChild(arrow);
 
-  document.getElementById('res-gpu-text').textContent = gpuRec;
+  // Weight [D, O]
+  const wBox = document.createElement('div');
+  wBox.className = 'tensor-box';
+  wBox.innerHTML = `<div class="tensor-title">Weight [${D}, ${O}]</div>`;
+  const wCells = document.createElement('div');
+  wCells.className = 'tensor-cells';
+  wCells.style.gridTemplateColumns = `repeat(${O}, 24px)`;
+  for (let i = 0; i < D * O; i++) {
+    const c = document.createElement('div');
+    c.className = 'tensor-cell';
+    c.style.background = 'rgba(13,148,136,0.3)';
+    c.style.borderColor = 'rgba(13,148,136,0.5)';
+    wCells.appendChild(c);
+  }
+  wBox.appendChild(wCells);
+  wBox.innerHTML += `<div class="tensor-shape-label">[${D} × ${O}]</div>`;
+  grid.appendChild(wBox);
+
+  // Arrow
+  const arrow2 = document.createElement('div');
+  arrow2.className = 'op-arrow';
+  arrow2.textContent = '→';
+  grid.appendChild(arrow2);
+
+  // Output [B, T, O]
+  const outBox = document.createElement('div');
+  outBox.className = 'tensor-box';
+  outBox.innerHTML = `<div class="tensor-title">Output [${B}, ${T}, ${O}]</div>`;
+  const outCells = document.createElement('div');
+  outCells.className = 'tensor-cells';
+  outCells.style.gridTemplateColumns = `repeat(${O}, 24px)`;
+  for (let i = 0; i < T * O; i++) {
+    const c = document.createElement('div');
+    c.className = 'tensor-cell';
+    c.style.background = 'rgba(16,185,129,0.3)';
+    c.style.borderColor = 'rgba(16,185,129,0.5)';
+    outCells.appendChild(c);
+  }
+  outBox.appendChild(outCells);
+  outBox.innerHTML += `<div class="tensor-shape-label">[${T} × ${O}] shown</div>`;
+  grid.appendChild(outBox);
+
+  document.getElementById('tensorInfo').textContent =
+    `MatMul: [${B},${T},${D}] @ [${D},${O}] → [${B},${T},${O}]  |  FLOPs: ${(2*B*T*D*O/1e6).toFixed(2)}M`;
 }
 
-// Initialize
-calcMemory();
+function animateTensor() {
+  const T = Math.min(parseInt(document.getElementById('shapeSeq').value) || 8, 16);
+  const D = Math.min(parseInt(document.getElementById('shapeHidden').value) || 6, 12);
+  const inCells = document.querySelectorAll('#tensorVizGrid .tensor-box:first-child .tensor-cell');
+  let row = 0;
+  const interval = setInterval(() => {
+    inCells.forEach(c => c.classList.remove('active'));
+    if (row >= T) { clearInterval(interval); return; }
+    for (let col = 0; col < D; col++) {
+      const idx = row * D + col;
+      if (inCells[idx]) inCells[idx].classList.add('active');
+    }
+    row++;
+  }, 200);
+}
+
+updateTensorViz();
 </script>
+
+<!-- ADDITIONAL SECTION: Advanced PyTorch Patterns -->
+<style>
+.expand-section { padding: 64px 0; border-top: 1px solid var(--border); }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 24px; }
+.two-col p { color: var(--muted); font-size: 14px; line-height: 1.8; }
+.tip-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; margin-top: 24px; }
+.tip-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 20px; transition: all 0.3s; }
+.tip-card:hover { border-color: var(--teal); transform: translateY(-3px); }
+.tip-num { font-size: 28px; font-weight: 900; color: var(--teal); font-family: var(--mono); margin-bottom: 8px; }
+.tip-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+.tip-desc { font-size: 12px; color: var(--muted); line-height: 1.6; }
+@media (max-width: 768px) { .two-col { grid-template-columns: 1fr; } }
+</style>
+
+<div class="container">
+
+  <!-- Advanced Patterns Section -->
+  <section class="expand-section animate-on-scroll">
+    <div class="section-header">
+      <div class="section-num">Section 07</div>
+      <h2>Advanced PyTorch Patterns for LLMs</h2>
+      <p>Production LLM engineering requires mastery of distributed training, KV caching, and memory-efficient inference. These patterns separate senior ML engineers from beginners.</p>
+    </div>
+    <div class="two-col">
+      <div>
+        <p>
+          <strong style="color: var(--text);">FSDP (Fully Sharded Data Parallel)</strong> is PyTorch's native approach to training models too large for a single GPU. Unlike DDP (which replicates the full model on each GPU), FSDP shards model parameters, gradients, and optimizer states across all GPUs. Each GPU only holds 1/N of each tensor in memory, and gathers the full layer during forward/backward before resharding. For 70B models, this is the only viable training strategy.
+        </p>
+        <p>
+          <strong style="color: var(--text);">KV Cache</strong> is the critical optimization that makes autoregressive LLM inference practical. During generation, the attention keys and values for all past tokens are cached in GPU memory — new tokens only need to compute their own K/V and attend over the cache. Without KV caching, generating a 1000-token response would require 1000 forward passes of increasing length. With caching, each step is O(1) instead of O(N). The cache size grows with sequence length and batch size, which is why long-context inference requires significant VRAM.
+        </p>
+        <p>
+          <strong style="color: var(--text);">vLLM's PagedAttention</strong> solves the KV cache memory fragmentation problem. Traditional KV caching pre-allocates contiguous memory for the maximum sequence length — wasteful when actual lengths vary. PagedAttention stores KV cache in fixed-size "pages" (blocks) that are allocated dynamically and can be referenced by multiple sequences. This enables near-perfect memory utilization and allows serving 5-20x more concurrent requests on the same hardware.
+        </p>
+      </div>
+      <div>
+        <p>
+          <strong style="color: var(--text);">Speculative Decoding</strong> uses a smaller draft model to generate candidate tokens speculatively, which are then verified (accepted or rejected) by the large target model in parallel. If the draft is correct, you get multiple tokens for the cost of one forward pass. This achieves 2-3x speedup for tasks where the draft model is often correct (like code completion or structured generation). The acceptance rate depends on the alignment between draft and target model distributions.
+        </p>
+        <p>
+          <strong style="color: var(--text);">torch.compile() + CUDA Graphs</strong> are the two complementary compilation strategies. torch.compile traces your model into an optimized Triton kernel graph that's faster than eager mode. CUDA graphs capture a sequence of GPU operations and replay them without CPU overhead — eliminating the kernel launch latency that dominates small-batch inference. Combined, these can achieve 3-5x inference speedup on H100 GPUs compared to vanilla PyTorch.
+        </p>
+        <p>
+          <strong style="color: var(--text);">Continuous Batching</strong> is the production serving pattern that processes tokens from different requests together in a single forward pass. Instead of waiting for a full batch of requests to arrive (static batching), continuous batching dynamically adds new requests to in-progress batches at each generation step. This maximizes GPU utilization and reduces median latency by processing short requests quickly without waiting for slow ones to finish.
+        </p>
+      </div>
+    </div>
+
+    <div class="code-window animate-on-scroll" style="margin-top: 32px;">
+      <div class="code-title-bar">
+        <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+        <span class="code-file">fsdp_training.py</span>
+      </div>
+      <div class="code-block"><span class="c-kw">import</span> torch
+<span class="c-kw">import</span> torch.distributed <span class="c-kw">as</span> dist
+<span class="c-kw">from</span> torch.distributed.fsdp <span class="c-kw">import</span> (
+    FullyShardedDataParallel <span class="c-kw">as</span> FSDP,
+    MixedPrecision, ShardingStrategy, CPUOffload
+)
+<span class="c-kw">from</span> torch.distributed.fsdp.wrap <span class="c-kw">import</span> transformer_auto_wrap_policy
+<span class="c-kw">from</span> transformers.models.mistral.modeling_mistral <span class="c-kw">import</span> MistralDecoderLayer
+
+<span class="c-cmt"># ── Initialize distributed training ──────────────────────────────</span>
+dist.<span class="c-fn">init_process_group</span>(<span class="c-str">"nccl"</span>)   <span class="c-cmt"># NCCL backend for GPU-to-GPU comms</span>
+local_rank <span class="c-kw">=</span> dist.<span class="c-fn">get_rank</span>() <span class="c-kw">%</span> torch.cuda.<span class="c-fn">device_count</span>()
+torch.cuda.<span class="c-fn">set_device</span>(local_rank)
+
+<span class="c-cmt"># ── FSDP wrapping policy ──────────────────────────────────────────</span>
+<span class="c-cmt"># Shard at decoder layer granularity — each layer is a separate FSDP unit</span>
+wrap_policy <span class="c-kw">=</span> transformer_auto_wrap_policy(
+    transformer_layer_cls<span class="c-kw">=</span>{MistralDecoderLayer}
+)
+
+<span class="c-cmt"># ── Mixed precision config ────────────────────────────────────────</span>
+mp_policy <span class="c-kw">=</span> <span class="c-fn">MixedPrecision</span>(
+    param_dtype<span class="c-kw">=</span>torch.bfloat16,    <span class="c-cmt"># store params in BF16</span>
+    reduce_dtype<span class="c-kw">=</span>torch.bfloat16,  <span class="c-cmt"># reduce gradients in BF16</span>
+    buffer_dtype<span class="c-kw">=</span>torch.bfloat16,  <span class="c-cmt"># buffers in BF16</span>
+)
+
+<span class="c-cmt"># ── Wrap model with FSDP ──────────────────────────────────────────</span>
+model <span class="c-kw">=</span> <span class="c-fn">FSDP</span>(
+    model,
+    auto_wrap_policy<span class="c-kw">=</span>wrap_policy,
+    mixed_precision<span class="c-kw">=</span>mp_policy,
+    sharding_strategy<span class="c-kw">=</span>ShardingStrategy.FULL_SHARD,   <span class="c-cmt"># shard params+grads+optimizer</span>
+    cpu_offload<span class="c-kw">=</span><span class="c-fn">CPUOffload</span>(offload_params<span class="c-kw">=False</span>),      <span class="c-cmt"># keep on GPU</span>
+    device_id<span class="c-kw">=</span>local_rank,
+)
+<span class="c-cmt"># Each of 8 A100s now holds 1/8 of the 70B model = ~17.5GB/GPU (BF16)</span></div>
+    </div>
+
+    <div class="tip-grid animate-on-scroll">
+      <div class="tip-card">
+        <div class="tip-num">01</div>
+        <div class="tip-title">Always profile before optimizing</div>
+        <div class="tip-desc">Use torch.profiler or NVIDIA Nsight to identify actual bottlenecks before adding optimization complexity. GPU utilization below 70% usually means data loading is the bottleneck, not the model.</div>
+      </div>
+      <div class="tip-card">
+        <div class="tip-num">02</div>
+        <div class="tip-title">Set seed for reproducibility</div>
+        <div class="tip-desc">Always set torch.manual_seed(), numpy.random.seed(), and random.seed() at the start of training. Without seeds, results vary between runs — impossible to debug performance regressions.</div>
+      </div>
+      <div class="tip-card">
+        <div class="tip-num">03</div>
+        <div class="tip-title">Use torch.backends.cudnn.benchmark</div>
+        <div class="tip-desc">Setting benchmark=True lets cuDNN benchmark several convolution algorithms on the first run and select the fastest. For fixed-size inputs (like LLMs), this gives 5-15% speedup with no code changes.</div>
+      </div>
+      <div class="tip-card">
+        <div class="tip-num">04</div>
+        <div class="tip-title">Monitor GPU utilization, not just loss</div>
+        <div class="tip-desc">nvidia-smi, nvtop, or wandb system metrics should show GPU utilization near 95%+ during training. Lower means your data pipeline is the bottleneck. Higher num_workers and pin_memory are the fix.</div>
+      </div>
+    </div>
+
+    <div class="callout callout-yellow animate-on-scroll">
+      <div class="callout-title">Production Inference: vLLM vs. TGI vs. llama.cpp</div>
+      <p><strong>vLLM</strong> is the best choice for GPU serving in production — PagedAttention, continuous batching, OpenAI-compatible API. Requires CUDA. <strong>TGI (Text Generation Inference)</strong> by HuggingFace is similarly capable, with better HuggingFace Hub integration. <strong>llama.cpp</strong> is optimal for CPU inference and Apple Silicon — runs quantized GGUF models with no GPU requirement. For a backend engineer building a production service, vLLM is the first choice unless you specifically need CPU-only deployment.</p>
+    </div>
+
+    <table class="data-table animate-on-scroll">
+      <thead>
+        <tr>
+          <th>Technique</th>
+          <th>Memory Reduction</th>
+          <th>Speed Impact</th>
+          <th>Quality Impact</th>
+          <th>Recommended For</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Mixed Precision (BF16)</td>
+          <td><span class="badge badge-green">50%</span></td>
+          <td><span class="badge badge-green">+2x throughput</span></td>
+          <td><span class="badge badge-green">Negligible</span></td>
+          <td>All GPU training (Ampere+)</td>
+        </tr>
+        <tr>
+          <td>Gradient Checkpointing</td>
+          <td><span class="badge badge-green">~60% activations</span></td>
+          <td><span class="badge badge-yellow">-20% slower</span></td>
+          <td><span class="badge badge-green">None</span></td>
+          <td>Fine-tuning on limited VRAM</td>
+        </tr>
+        <tr>
+          <td>Flash Attention 2</td>
+          <td><span class="badge badge-green">O(N) vs O(N²)</span></td>
+          <td><span class="badge badge-green">4-8x on long ctx</span></td>
+          <td><span class="badge badge-green">None</span></td>
+          <td>All transformer training</td>
+        </tr>
+        <tr>
+          <td>KV Cache</td>
+          <td>N/A (adds memory)</td>
+          <td><span class="badge badge-green">10-100x inference</span></td>
+          <td><span class="badge badge-green">None</span></td>
+          <td>All autoregressive serving</td>
+        </tr>
+        <tr>
+          <td>Speculative Decoding</td>
+          <td><span class="badge badge-yellow">+draft model VRAM</span></td>
+          <td><span class="badge badge-green">2-3x throughput</span></td>
+          <td><span class="badge badge-green">Exact same outputs</span></td>
+          <td>High-throughput serving</td>
+        </tr>
+        <tr>
+          <td>torch.compile</td>
+          <td><span class="badge badge-green">Minimal</span></td>
+          <td><span class="badge badge-green">20-50% faster</span></td>
+          <td><span class="badge badge-green">None</span></td>
+          <td>PyTorch 2.0+ training & serving</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+</div>
 </body>
 </html>
+

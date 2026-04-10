@@ -15,232 +15,133 @@
 }
 html { scroll-behavior: smooth; }
 body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; overflow-x: hidden; }
-body::before {
-  content: ''; position: fixed; inset: 0;
-  background:
-    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(124,58,237,0.08) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 40% at 90% 80%, rgba(13,148,136,0.05) 0%, transparent 60%);
-  pointer-events: none; z-index: 0;
-}
+body::before { content: ''; position: fixed; inset: 0; background: radial-gradient(ellipse 80% 50% at 50% 0%, rgba(124,58,237,0.07) 0%, transparent 60%), radial-gradient(ellipse 50% 40% at 90% 80%, rgba(16,185,129,0.05) 0%, transparent 60%); pointer-events: none; z-index: 0; }
 .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
-
-nav {
-  position: sticky; top: 0; z-index: 100;
-  border-bottom: 1px solid var(--border);
-  background: rgba(10,10,15,0.9);
-  backdrop-filter: blur(12px);
-  padding: 0;
-}
-.nav-inner {
-  max-width: 1100px; margin: 0 auto; padding: 0 24px;
-  height: 52px;
-  display: flex; align-items: center; justify-content: space-between;
-}
-.nav-btn {
-  padding: 7px 18px; border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--surface2); color: var(--muted);
-  font-size: 13px; font-weight: 600;
-  text-decoration: none; transition: all 0.2s;
-  font-family: inherit; cursor: pointer;
-}
+#progress-bar { position: fixed; top: 0; left: 0; height: 3px; width: 0%; background: linear-gradient(90deg, var(--purple), var(--green)); z-index: 9999; transition: width 0.1s linear; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(32px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideIn { from { opacity: 0; transform: translateX(-24px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes glow { 0%,100% { box-shadow: 0 0 12px rgba(124,58,237,0.25); } 50% { box-shadow: 0 0 28px rgba(124,58,237,0.55); } }
+@keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+@keyframes shimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
+@keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+@keyframes retryBlink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+.reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.6s ease, transform 0.6s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+nav { position: sticky; top: 0; z-index: 100; border-bottom: 1px solid var(--border); background: rgba(10,10,15,0.92); backdrop-filter: blur(16px); }
+.nav-inner { max-width: 1100px; margin: 0 auto; padding: 0 24px; height: 52px; display: flex; align-items: center; justify-content: space-between; }
+.nav-btn { padding: 7px 18px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 13px; font-weight: 600; text-decoration: none; transition: all 0.2s; font-family: inherit; cursor: pointer; }
 .nav-btn:hover { border-color: var(--purple); color: var(--text); }
-.nav-btn.next {
-  border-color: rgba(124,58,237,0.5);
-  color: var(--purple-light);
-}
-.nav-btn.next:hover {
-  background: var(--purple); color: white; border-color: var(--purple);
-}
-.nav-btn.complete {
-  border-color: rgba(245,158,11,0.5);
-  color: var(--yellow);
-}
-.nav-btn.complete:hover {
-  background: var(--yellow); color: #0a0a0f; border-color: var(--yellow);
-}
-.nav-btn.complete.done {
-  background: var(--yellow); color: #0a0a0f; border-color: var(--yellow);
-}
-.nav-brand {
-  font-size: 14px; font-weight: 700; color: var(--muted);
-  text-decoration: none; letter-spacing: -0.2px;
-  transition: color 0.2s;
-}
+.nav-btn.next { border-color: rgba(124,58,237,0.5); color: var(--purple-light); }
+.nav-btn.next:hover { background: var(--purple); color: white; }
+.nav-btn.complete { border-color: rgba(245,158,11,0.5); color: var(--yellow); }
+.nav-btn.complete:hover { background: var(--yellow); color: #0a0a0f; }
+.nav-btn.complete.done { background: var(--yellow); color: #0a0a0f; }
+.nav-brand { font-size: 14px; font-weight: 700; color: var(--muted); text-decoration: none; transition: color 0.2s; }
 .nav-brand:hover { color: var(--text); }
-
-.day-hero { padding: 56px 0 40px; }
-.day-num { font-size: 12px; font-weight: 700; color: var(--purple-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
-.day-hero h1 { font-size: clamp(32px, 5vw, 56px); font-weight: 900; letter-spacing: -2px; margin-bottom: 16px; }
-.day-hero p { font-size: 17px; color: var(--muted); max-width: 600px; line-height: 1.6; margin-bottom: 28px; }
-.topic-pills { display: flex; flex-wrap: wrap; gap: 8px; }
-.topic-pill { padding: 5px 12px; border-radius: 20px; background: var(--surface2); border: 1px solid var(--border); font-size: 12px; color: var(--muted); font-weight: 500; }
-
-.section { padding: 56px 0; border-top: 1px solid var(--border); }
-.section-header { margin-bottom: 32px; }
+.day-hero { padding: 72px 0 48px; }
+.day-num { font-size: 12px; font-weight: 700; color: var(--green); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; animation: slideIn 0.6s ease both; }
+.day-hero h1 { font-size: clamp(36px, 5.5vw, 62px); font-weight: 900; letter-spacing: -2px; margin-bottom: 18px; background: linear-gradient(135deg, #fff 0%, #a855f7 40%, #10b981 100%); background-size: 200% 200%; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: gradientShift 4s ease infinite, fadeUp 0.7s ease both 0.1s; }
+.day-hero p { font-size: 17px; color: var(--muted); max-width: 620px; line-height: 1.7; margin-bottom: 28px; animation: fadeUp 0.7s ease both 0.2s; }
+.topic-pills { display: flex; flex-wrap: wrap; gap: 8px; animation: fadeUp 0.7s ease both 0.3s; }
+.topic-pill { padding: 5px 12px; border-radius: 20px; background: var(--surface2); border: 1px solid var(--border); font-size: 12px; color: var(--muted); font-weight: 500; transition: all 0.2s; }
+.topic-pill:hover { border-color: var(--green); color: var(--green); }
+.section { padding: 64px 0; border-top: 1px solid var(--border); }
+.section-header { margin-bottom: 36px; }
 .section-num { font-size: 11px; font-weight: 700; color: var(--purple-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
-.section-header h2 { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 10px; }
-.section-header p { color: var(--muted); font-size: 15px; line-height: 1.6; max-width: 640px; }
+.section-header h2 { font-size: 30px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 12px; }
+.section-header p { color: var(--muted); font-size: 15px; line-height: 1.7; max-width: 680px; }
+.code-block { background: #0d1117; border: 1px solid #30363d; border-radius: 12px; padding: 24px; font-family: var(--mono); font-size: 12.5px; line-height: 1.8; overflow-x: auto; white-space: pre; }
+.code-wrap { position: relative; margin-top: 20px; }
+.win-chrome { background: #1c1c28; border: 1px solid #30363d; border-radius: 12px 12px 0 0; padding: 10px 16px; display: flex; gap: 6px; align-items: center; }
+.win-dot { width: 12px; height: 12px; border-radius: 50%; }
+.win-dot.r { background: #ef4444; } .win-dot.y { background: #f59e0b; } .win-dot.g { background: #10b981; }
+.win-chrome + .code-block { border-radius: 0 0 12px 12px; border-top: none; }
+.c-cmt { color: #8b949e; } .c-kw { color: #ff7b72; } .c-fn { color: #d2a8ff; }
+.c-str { color: #a5d6ff; } .c-type { color: #ffa657; } .c-num { color: #f2cc60; }
+.c-bi { color: #79c0ff; } .c-dec { color: #ffa657; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease; }
+.card:hover { transform: translateY(-6px); border-color: var(--purple); box-shadow: 0 0 24px rgba(124,58,237,0.2); }
+.card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; }
+.callout { background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.3); border-radius: 12px; padding: 18px 22px; display: flex; gap: 14px; align-items: flex-start; margin: 24px 0; }
+.callout.teal { background: rgba(13,148,136,0.07); border-color: rgba(13,148,136,0.3); }
+.callout.red { background: rgba(239,68,68,0.07); border-color: rgba(239,68,68,0.3); }
+.callout.info { background: rgba(124,58,237,0.07); border-color: rgba(124,58,237,0.3); }
+.callout-icon { font-size: 20px; flex-shrink: 0; }
+.callout-body { font-size: 14px; color: var(--text); line-height: 1.7; }
+.callout-body strong { color: var(--teal); }
+.callout.red .callout-body strong { color: #fca5a5; }
+.callout.info .callout-body strong { color: var(--purple-light); }
+.widget { background: var(--card); border: 1px solid rgba(124,58,237,0.35); border-radius: 18px; padding: 30px; margin-top: 20px; animation: glow 4s ease-in-out infinite; }
+.widget-title { font-size: 17px; font-weight: 800; margin-bottom: 6px; }
+.widget-sub { font-size: 13px; color: var(--muted); margin-bottom: 22px; line-height: 1.6; }
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 24px; border-radius: 10px; background: linear-gradient(135deg, var(--purple), var(--teal)); border: none; color: white; font-size: 14px; font-weight: 700; cursor: pointer; font-family: var(--font); transition: opacity 0.2s, transform 0.2s; }
+.btn:hover { opacity: 0.88; transform: translateY(-1px); }
+.btn-sm { padding: 7px 16px; font-size: 12px; border-radius: 8px; }
+.btn-outline { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); }
+.btn-outline:hover { border-color: var(--purple); color: var(--purple-light); }
 
-/* CODE BLOCKS — white-space: pre is REQUIRED */
-.code-block {
-  background: #0d1117; border: 1px solid #30363d; border-radius: 12px;
-  padding: 24px; font-family: var(--mono); font-size: 12.5px; line-height: 1.8;
-  overflow-x: auto; white-space: pre;
-}
-.code-wrap { position: relative; margin-top: 16px; }
-.code-label { position: absolute; top: -10px; left: 16px; background: var(--purple); color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.5px; }
-.c-cmt { color: #8b949e; }
-.c-kw { color: #ff7b72; }
-.c-fn { color: #d2a8ff; }
-.c-str { color: #a5d6ff; }
-.c-type { color: #ffa657; }
-.c-num { color: #f2cc60; }
-.c-bi { color: #79c0ff; }
-.c-dec { color: #ffa657; }
+/* ── PYDANTIC SCHEMA BUILDER ── */
+.schema-builder { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.field-palette { display: flex; flex-direction: column; gap: 8px; }
+.field-type-btn { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; font-family: var(--font); color: var(--text); transition: all 0.2s; text-align: left; }
+.field-type-btn:hover { border-color: var(--purple); background: rgba(124,58,237,0.1); }
+.field-type-icon { font-size: 16px; }
+.field-type-name { flex: 1; }
+.field-type-py { font-family: var(--mono); font-size: 10px; color: var(--muted); }
+.schema-preview { background: #0d1117; border: 1px solid #30363d; border-radius: 12px; padding: 18px; font-family: var(--mono); font-size: 12px; line-height: 1.8; min-height: 200px; overflow-y: auto; white-space: pre; }
+.schema-fields { display: flex; flex-direction: column; gap: 6px; margin-top: 16px; }
+.schema-field-chip { display: flex; align-items: center; gap: 8px; padding: 7px 12px; background: rgba(124,58,237,0.08); border: 1px solid rgba(124,58,237,0.25); border-radius: 6px; font-size: 12px; }
+.schema-field-chip button { margin-left: auto; background: none; border: none; color: var(--muted); cursor: pointer; font-size: 14px; padding: 0; line-height: 1; }
+.schema-field-chip button:hover { color: var(--red); }
+.field-input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-family: var(--mono); font-size: 12px; color: var(--text); margin-bottom: 8px; }
+.field-input:focus { outline: none; border-color: var(--purple); }
 
-/* DECISION TRIANGLE */
-.triangle-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 20px; }
-.tri-card {
-  background: var(--card); border: 1px solid var(--border); border-radius: 14px;
-  padding: 20px; text-align: center; position: relative; overflow: hidden;
-  transition: all 0.2s;
-}
-.tri-card:hover { transform: translateY(-3px); }
-.tri-card.active-prompting { border-color: rgba(16,185,129,0.5); }
-.tri-card.active-rag { border-color: rgba(13,148,136,0.5); }
-.tri-card.active-finetune { border-color: rgba(168,85,247,0.5); }
-.tri-icon { font-size: 32px; margin-bottom: 10px; }
-.tri-title { font-size: 15px; font-weight: 800; margin-bottom: 8px; }
-.tri-when { font-size: 11px; color: var(--muted); line-height: 1.5; margin-bottom: 10px; }
-.tri-cost { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 20px; }
-.cost-low { background: rgba(16,185,129,0.15); color: var(--green); }
-.cost-mid { background: rgba(13,148,136,0.15); color: var(--teal); }
-.cost-high { background: rgba(168,85,247,0.15); color: var(--purple-light); }
+/* ── RETRY LOOP VISUALIZER ── */
+.retry-track { display: flex; flex-direction: column; gap: 12px; }
+.retry-attempt { display: flex; align-items: flex-start; gap: 14px; padding: 14px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; transition: all 0.4s ease; }
+.retry-attempt.active { border-color: var(--yellow); background: rgba(245,158,11,0.07); }
+.retry-attempt.success { border-color: var(--green); background: rgba(16,185,129,0.07); }
+.retry-attempt.fail { border-color: var(--red); background: rgba(239,68,68,0.07); }
+.retry-badge { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; background: var(--card); border: 2px solid var(--border); }
+.retry-badge.active { border-color: var(--yellow); color: var(--yellow); animation: retryBlink 1s ease infinite; }
+.retry-badge.success { border-color: var(--green); color: var(--green); }
+.retry-badge.fail { border-color: var(--red); color: var(--red); }
+.retry-content { flex: 1; }
+.retry-label { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+.retry-detail { font-family: var(--mono); font-size: 11px; color: var(--muted); line-height: 1.6; }
 
-/* FLOW DIAGRAM */
-.flow-diagram { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; overflow-x: auto; }
-.flow-row { display: flex; align-items: center; gap: 0; justify-content: center; flex-wrap: wrap; gap: 4px; }
-.flow-box {
-  background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
-  padding: 12px 16px; text-align: center; min-width: 120px;
-}
-.flow-box.highlight { border-color: var(--purple); background: rgba(124,58,237,0.1); }
-.flow-box.result { border-color: var(--green); background: rgba(16,185,129,0.08); }
-.flow-box-title { font-size: 12px; font-weight: 700; margin-bottom: 3px; }
-.flow-box-sub { font-size: 10px; color: var(--muted); }
-.flow-arrow { color: var(--muted); font-size: 18px; padding: 0 6px; }
-.flow-plus { color: var(--yellow); font-size: 20px; font-weight: 800; padding: 0 8px; }
-
-/* LORA VISUAL */
-.lora-visual { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-.lora-panel { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 22px; }
-.lora-panel h3 { font-size: 14px; font-weight: 800; margin-bottom: 12px; }
-.param-bar { margin-bottom: 12px; }
-.param-label { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 12px; }
-.param-label span { color: var(--muted); }
-.bar-track { background: var(--surface2); border-radius: 99px; height: 8px; overflow: hidden; }
-.bar-fill { height: 100%; border-radius: 99px; transition: width 1s ease; }
-.bar-full { background: linear-gradient(90deg, var(--red), var(--yellow)); }
-.bar-lora { background: linear-gradient(90deg, var(--green), var(--teal)); }
-.lora-eq { text-align: center; padding: 16px; background: var(--surface2); border-radius: 10px; margin-top: 12px; font-family: var(--mono); font-size: 13px; color: var(--purple-light); }
-
-/* COMPARISON TABLE */
-.comp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.comp-table th { background: var(--surface2); padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); border-bottom: 1px solid var(--border); }
-.comp-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.comp-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 16px; }
+.comp-table th { background: var(--surface2); padding: 12px 14px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); border-bottom: 1px solid var(--border); }
+.comp-table td { padding: 13px 14px; border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.5; font-size: 13px; }
 .comp-table tr:last-child td { border-bottom: none; }
-.comp-table tr:hover td { background: rgba(255,255,255,0.02); }
-.tick { color: var(--green); font-weight: 700; }
-.cross { color: var(--red); font-weight: 700; }
-.partial { color: var(--yellow); font-weight: 700; }
-
-/* USE CASES */
-.use-case-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.use-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
-.use-card.good { border-color: rgba(16,185,129,0.3); }
-.use-card.bad { border-color: rgba(239,68,68,0.3); }
-.use-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-.use-icon { font-size: 18px; }
-.use-title { font-size: 13px; font-weight: 700; }
-.use-items { list-style: none; display: flex; flex-direction: column; gap: 6px; }
-.use-items li { font-size: 12px; color: var(--muted); display: flex; align-items: flex-start; gap: 8px; }
-.use-items li::before { content: '•'; color: var(--green); flex-shrink: 0; }
-.use-card.bad .use-items li::before { color: var(--red); }
-
-/* PREREQS */
+.comp-table tr:hover td { background: rgba(255,255,255,0.025); }
+.tick { color: var(--green); font-weight: 700; } .cross { color: var(--red); font-weight: 700; } .partial { color: var(--yellow); font-weight: 700; }
+.bullet-list { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+.bullet-list li { list-style: none; font-size: 14px; color: var(--muted); display: flex; align-items: flex-start; gap: 10px; line-height: 1.7; }
+.bullet-list li::before { content: '→'; color: var(--green); flex-shrink: 0; font-weight: 700; margin-top: 1px; }
+.bullet-list li strong { color: var(--text); }
+.ex-list { display: flex; flex-direction: column; gap: 14px; }
+.ex-item { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; display: flex; gap: 16px; transition: border-color 0.2s; }
+.ex-item:hover { border-color: var(--purple); }
+.ex-num { width: 34px; height: 34px; border-radius: 50%; background: rgba(124,58,237,0.12); border: 2px solid var(--purple); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: var(--purple-light); flex-shrink: 0; }
+.ex-body { flex: 1; }
+.ex-title { font-size: 15px; font-weight: 700; margin-bottom: 5px; }
+.ex-desc { font-size: 13px; color: var(--muted); line-height: 1.7; }
+.diff { display: inline-block; margin-top: 8px; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+.diff-easy { background: rgba(16,185,129,0.15); color: var(--green); }
+.diff-med  { background: rgba(245,158,11,0.15); color: var(--yellow); }
+.diff-hard { background: rgba(239,68,68,0.15); color: var(--red); }
 .prereq-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
 .prereq-chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
-.prereq-day { background: var(--purple); color: white; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; }
-
-/* EXERCISES */
-.ex-list { display: flex; flex-direction: column; gap: 12px; counter-reset: ex; }
-.ex-item { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; display: flex; gap: 14px; counter-increment: ex; }
-.ex-num { width: 32px; height: 32px; border-radius: 50%; background: rgba(124,58,237,0.15); border: 2px solid var(--purple); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: var(--purple-light); flex-shrink: 0; }
-.ex-body { flex: 1; }
-.ex-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
-.ex-desc { font-size: 12px; color: var(--muted); line-height: 1.6; }
-.ex-difficulty { display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; }
-.diff-easy { background: rgba(16,185,129,0.15); color: var(--green); }
-.diff-med { background: rgba(245,158,11,0.15); color: var(--yellow); }
-.diff-hard { background: rgba(239,68,68,0.15); color: var(--red); }
-
-/* CALLOUT */
-.callout { background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.25); border-radius: 12px; padding: 16px 20px; display: flex; gap: 12px; align-items: flex-start; margin: 20px 0; }
-.callout-icon { font-size: 18px; flex-shrink: 0; }
-.callout-text { font-size: 13px; color: var(--text); line-height: 1.6; }
-.callout-text strong { color: var(--yellow); }
-.callout.info { background: rgba(124,58,237,0.07); border-color: rgba(124,58,237,0.25); }
-.callout.info .callout-text strong { color: var(--purple-light); }
-.callout.tip { background: rgba(16,185,129,0.07); border-color: rgba(16,185,129,0.25); }
-.callout.tip .callout-text strong { color: var(--green); }
-
-/* WIDGET */
-.widget { background: var(--card); border: 1px solid rgba(124,58,237,0.3); border-radius: 16px; padding: 28px; }
-.widget-title { font-size: 16px; font-weight: 800; margin-bottom: 6px; }
-.widget-sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
-
-/* BULLET LIST */
-.bullet-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
-.bullet-list li { list-style: none; font-size: 14px; color: var(--muted); display: flex; align-items: flex-start; gap: 10px; line-height: 1.6; }
-.bullet-list li::before { content: '→'; color: var(--purple-light); flex-shrink: 0; font-weight: 700; }
-
-/* FOOTER */
-footer { padding: 40px 0; border-top: 1px solid var(--border); }
+.prereq-day { background: var(--green); color: #0a0a0f; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; }
+footer { padding: 48px 0; border-top: 1px solid var(--border); }
 .footer-inner { display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; color: var(--muted); font-size: 13px; }
 .footer-nav { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
-
-/* SCHEMA BUILDER WIDGET */
-.schema-controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
-.add-field-btn { padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); font-size: 12px; font-weight: 600; cursor: pointer; font-family: var(--font); transition: all 0.2s; }
-.add-field-btn:hover { border-color: var(--purple); color: var(--purple-light); }
-.field-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; min-height: 48px; }
-.field-row { display: grid; grid-template-columns: 1fr auto auto auto; gap: 8px; align-items: center; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
-.field-name-input { background: none; border: none; color: var(--text); font-family: var(--mono); font-size: 12px; outline: none; width: 100%; }
-.field-name-input::placeholder { color: var(--muted); }
-.field-type-badge { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; background: rgba(168,85,247,0.15); color: var(--purple-light); white-space: nowrap; }
-.field-required-label { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--muted); white-space: nowrap; cursor: pointer; }
-.field-required-label input { accent-color: var(--teal); }
-.field-remove { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px; padding: 0 4px; transition: color 0.15s; }
-.field-remove:hover { color: var(--red); }
-.schema-output { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-.schema-pane { background: #0d1117; border: 1px solid #30363d; border-radius: 10px; padding: 16px; }
-.schema-pane-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 10px; }
-.schema-code { font-family: var(--mono); font-size: 11.5px; color: #c9d1d9; white-space: pre; overflow-x: auto; line-height: 1.7; }
-.gen-example-btn { padding: 10px 20px; border-radius: 8px; background: linear-gradient(135deg, var(--teal), var(--green)); border: none; color: white; font-size: 13px; font-weight: 700; cursor: pointer; font-family: var(--font); transition: opacity 0.2s; margin-top: 16px; }
-.gen-example-btn:hover { opacity: 0.88; }
-
-@media(max-width:700px) {
-  .triangle-container { grid-template-columns: 1fr; }
-  .lora-visual { grid-template-columns: 1fr; }
-  .use-case-grid { grid-template-columns: 1fr; }
-  .schema-output { grid-template-columns: 1fr; }
-  .field-row { grid-template-columns: 1fr auto auto; }
-}
+@media(max-width:700px) { .schema-builder { grid-template-columns: 1fr; } .card-grid { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body data-animation-density="high">
-
+<div id="progress-bar"></div>
 <nav>
   <div class="nav-inner">
     <a href="day23.html" class="nav-btn">← Day 23</a>
@@ -251,424 +152,301 @@ footer { padding: 40px 0; border-top: 1px solid var(--border); }
     </div>
   </div>
 </nav>
-
 <div class="container">
-
   <div class="day-hero">
     <div class="day-num">Day 24 — Structured Outputs &amp; Determinism</div>
-    <h1>JSON Mode, Pydantic<br>Validation &amp; Retry Loops</h1>
-    <p>LLM output is untrusted data. Learn to enforce schema compliance, feed validation errors back to the model, and build deterministic extraction pipelines that never crash in production.</p>
+    <h1>Pydantic Schemas, Retry Loops<br>&amp; Validation-Driven AI</h1>
+    <p>Eliminate JSON parsing fragility from your AI pipelines. Master Pydantic schema design, Instructor's retry loop mechanics, output determinism strategies, and the art of building AI systems that either succeed or fail gracefully.</p>
     <div class="topic-pills">
-      <span class="topic-pill">JSON Mode</span>
-      <span class="topic-pill">Structured Outputs</span>
       <span class="topic-pill">Pydantic v2</span>
-      <span class="topic-pill">Retry-with-Feedback</span>
-      <span class="topic-pill">Canonical Models</span>
-      <span class="topic-pill">Discriminated Union</span>
+      <span class="topic-pill">Instructor</span>
+      <span class="topic-pill">JSON Mode</span>
+      <span class="topic-pill">Retry Loops</span>
+      <span class="topic-pill">Field Validators</span>
+      <span class="topic-pill">Temperature=0</span>
     </div>
   </div>
 
-  <!-- SECTION 1: Determinism Problem -->
   <div class="section">
-    <div class="section-header">
+    <div class="section-header reveal">
       <div class="section-num">Section 01</div>
-      <h2>The Determinism Problem</h2>
-      <p>LLMs are stochastic by design. Production systems need guarantees. Understanding the tradeoffs between each approach determines which tool to reach for.</p>
+      <h2>Why Structured Outputs Are Non-Negotiable</h2>
+      <p>Free-form LLM text output is a liability in production. Structured outputs enforce contracts between your AI and the rest of your system — transforming probabilistic generation into deterministic, typed data.</p>
     </div>
-
-    <ul class="bullet-list">
-      <li><strong>Why LLMs are non-deterministic:</strong> temperature and sampling introduce randomness — same prompt, different output every time</li>
-      <li><strong>When you need determinism:</strong> structured data extraction, system integrations, automated pipelines, compliance requirements</li>
-      <li><strong>Three tools for structured outputs:</strong> JSON mode (valid JSON, no schema), function calling/tool use (schema enforced), Instructor (Pydantic + retries)</li>
-      <li><strong>The validation layer:</strong> never trust unvalidated LLM output in production — treat it as untrusted external data</li>
-    </ul>
+    <p style="color:var(--muted);font-size:14px;line-height:1.7;margin-bottom:16px;" class="reveal">
+      The core problem: every component downstream of an LLM call expects typed data. Your database expects a proper date, not "sometime next week." Your API expects a valid enum, not "maybe option A or B." Your business logic expects a float in range [0, 1], not "quite confident." When the LLM outputs free text, you must write fragile parsing logic that breaks on every edge case.
+    </p>
+    <p style="color:var(--muted);font-size:14px;line-height:1.7;margin-bottom:24px;" class="reveal">
+      Pydantic v2 + Instructor solves this at the source. Rather than parsing LLM output, you declare your expected types as a Python class. Instructor injects the JSON schema into the prompt, parses the response, validates it, and if validation fails — feeds the error message back to the model for self-correction. This retry loop typically converges in 1-2 attempts for well-designed schemas.
+    </p>
+    <div class="card-grid reveal">
+      <div class="card">
+        <div style="font-size:24px;margin-bottom:10px;">🎯</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:8px;">Type Safety</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.6;">Pydantic validates every field type, range constraint, and regex pattern. Invalid output is caught before it reaches your database or API — not after a 3am incident.</div>
+      </div>
+      <div class="card">
+        <div style="font-size:24px;margin-bottom:10px;">🔄</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:8px;">Auto-Retry</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.6;">Instructor feeds validation errors back to the model as correction context. Models self-correct in 95%+ of cases within 2-3 retries without any prompt engineering effort.</div>
+      </div>
+      <div class="card">
+        <div style="font-size:24px;margin-bottom:10px;">📖</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:8px;">Schema = Documentation</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.6;">Your Pydantic model is simultaneously the validation logic, the API documentation, the prompt schema injection, and the serialization format. One source of truth.</div>
+      </div>
+    </div>
+    <div class="callout red reveal">
+      <span class="callout-icon">⚠️</span>
+      <div class="callout-body"><strong>Common pitfall:</strong> Overly complex schemas with deeply nested optionals cause parse failures even with retries. Keep schemas flat where possible. Use Union types sparingly — they confuse the model. If you need complex schemas, break extraction into multiple sequential calls.</div>
+    </div>
   </div>
 
-  <!-- SECTION 2: JSON Mode vs Structured Outputs -->
   <div class="section">
-    <div class="section-header">
+    <div class="section-header reveal">
       <div class="section-num">Section 02</div>
-      <h2>JSON Mode vs Structured Outputs</h2>
-      <p>JSON mode guarantees syntactically valid JSON but not schema compliance. Structured Outputs use constrained decoding to guarantee field names, types, and required properties.</p>
+      <h2>Pydantic Schema Builder — Interactive</h2>
+      <p>Click field types to add them to your model. Watch the generated Pydantic class and JSON schema update in real time. This is how Instructor injects your schema into the model's context.</p>
     </div>
+    <div class="widget reveal">
+      <div class="widget-title">Visual Pydantic Schema Builder</div>
+      <div class="widget-sub">Click a field type, give it a name, and it will appear in the generated schema. Build a real Pydantic model interactively.</div>
+      <div class="schema-builder">
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Available Field Types</div>
+          <div class="field-palette">
+            <button class="field-type-btn" onclick="addField('str')"><span class="field-type-icon">📝</span><span class="field-type-name">String</span><span class="field-type-py">str</span></button>
+            <button class="field-type-btn" onclick="addField('int')"><span class="field-type-icon">🔢</span><span class="field-type-name">Integer</span><span class="field-type-py">int</span></button>
+            <button class="field-type-btn" onclick="addField('float')"><span class="field-type-icon">💯</span><span class="field-type-name">Float (0-1)</span><span class="field-type-py">float</span></button>
+            <button class="field-type-btn" onclick="addField('bool')"><span class="field-type-icon">✅</span><span class="field-type-name">Boolean</span><span class="field-type-py">bool</span></button>
+            <button class="field-type-btn" onclick="addField('list')"><span class="field-type-icon">📋</span><span class="field-type-name">List[str]</span><span class="field-type-py">list[str]</span></button>
+            <button class="field-type-btn" onclick="addField('enum')"><span class="field-type-icon">🔀</span><span class="field-type-name">Enum (Literal)</span><span class="field-type-py">Literal[...]</span></button>
+          </div>
+          <div style="margin-top:16px;">
+            <input class="field-input" id="field-name-input" placeholder="Field name (e.g. 'confidence', 'entity_type')" />
+            <div style="font-size:11px;color:var(--muted);margin-top:4px;">Then click a type above to add it.</div>
+          </div>
+          <div id="schema-fields" class="schema-fields"></div>
+          <div style="margin-top:14px;display:flex;gap:8px;">
+            <button class="btn btn-sm" onclick="clearSchema()">Clear All</button>
+            <button class="btn btn-sm btn-outline" onclick="loadExampleSchema()">Load Example</button>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Generated Code</div>
+          <div class="schema-preview" id="schema-preview">from pydantic import BaseModel, Field
 
-    <div style="margin-top:0;margin-bottom:24px;">
-      <table class="comp-table" style="background:var(--card);border-radius:12px;overflow:hidden">
-        <thead>
-          <tr>
-            <th>Approach</th>
-            <th>Guarantees</th>
-            <th>Flexibility</th>
-            <th>Model Support</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><strong>JSON mode</strong></td>
-            <td>Valid JSON syntax only</td>
-            <td class="tick">✓ Any schema</td>
-            <td>OpenAI, Anthropic, most</td>
-          </tr>
-          <tr>
-            <td><strong>OpenAI Structured Outputs</strong></td>
-            <td>Strict JSON Schema compliance</td>
-            <td class="partial">~ Limited types</td>
-            <td>GPT-4o only</td>
-          </tr>
-          <tr>
-            <td><strong>Anthropic tool_use</strong></td>
-            <td>Schema-conformant, explicit</td>
-            <td class="tick">✓ Full Pydantic</td>
-            <td>Claude 3+ family</td>
-          </tr>
-          <tr>
-            <td><strong>Instructor</strong></td>
-            <td>Pydantic v2 + auto-retry</td>
-            <td class="tick">✓ Full Pydantic</td>
-            <td>All major providers</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="code-wrap" style="margin-top:28px;">
-      <span class="code-label">PYTHON</span>
-      <div class="code-block"><span class="c-kw">from</span> openai <span class="c-kw">import</span> <span class="c-type">OpenAI</span>
-<span class="c-kw">from</span> pydantic <span class="c-kw">import</span> <span class="c-type">BaseModel</span>
-<span class="c-kw">from</span> typing <span class="c-kw">import</span> <span class="c-type">Optional</span>
-
-client = <span class="c-type">OpenAI</span>()
-
-<span class="c-cmt"># JSON mode — valid JSON but no schema guarantee</span>
-response = client.chat.completions.<span class="c-fn">create</span>(
-    model=<span class="c-str">"gpt-4o-mini"</span>,
-    response_format={<span class="c-str">"type"</span>: <span class="c-str">"json_object"</span>},
-    messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: <span class="c-str">"Extract invoice data as JSON from: Invoice #INV-2024-001, Amount: $1,234.56, Due: 2024-03-15, Client: Acme Corp"</span>}]
-)
-<span class="c-cmt"># Response is VALID JSON but fields may vary</span>
-
-<span class="c-cmt"># Structured Outputs — guaranteed schema compliance</span>
-<span class="c-kw">class</span> <span class="c-type">Invoice</span>(<span class="c-type">BaseModel</span>):
-    invoice_id: <span class="c-bi">str</span>
-    amount_usd: <span class="c-bi">float</span>
-    due_date: <span class="c-bi">str</span>  <span class="c-cmt"># ISO format</span>
-    client_name: <span class="c-bi">str</span>
-    is_overdue: <span class="c-type">Optional</span>[<span class="c-bi">bool</span>] = <span class="c-bi">None</span>
-
-completion = client.beta.chat.completions.<span class="c-fn">parse</span>(
-    model=<span class="c-str">"gpt-4o-2024-11-20"</span>,
-    messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: <span class="c-str">"Extract: Invoice #INV-2024-001, $1,234.56, Due 2024-03-15, Acme Corp"</span>}],
-    response_format=<span class="c-type">Invoice</span>,
-)
-invoice: <span class="c-type">Invoice</span> = completion.choices[<span class="c-num">0</span>].message.parsed
-<span class="c-fn">print</span>(invoice.amount_usd)  <span class="c-cmt"># 1234.56 (always a float, always this field)</span></div>
+class MyModel(BaseModel):
+    pass  # Add fields using the palette</div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- SECTION 3: Pydantic + Retry Loop -->
   <div class="section">
-    <div class="section-header">
+    <div class="section-header reveal">
       <div class="section-num">Section 03</div>
-      <h2>Pydantic + Retry-with-Feedback Loop</h2>
-      <p>When the LLM produces invalid output, send the validation error back as a natural-language correction request. Models respond remarkably well to their own error messages.</p>
+      <h2>Retry Loop Visualizer</h2>
+      <p>See how Instructor's validation-retry loop works in practice. Each attempt generates output, validates against the Pydantic schema, and either succeeds or feeds the error back for correction.</p>
+    </div>
+    <div class="widget reveal" style="border-color:rgba(16,185,129,0.3);">
+      <div class="widget-title">Animated Retry Loop Simulator</div>
+      <div class="widget-sub">Press "Run Extraction" to see a realistic 3-attempt retry sequence with validation feedback at each step. Simulates extracting a financial entity with type violations.</div>
+      <div style="margin-bottom:20px;">
+        <button class="btn btn-sm" onclick="runRetryLoop()">Run Extraction</button>
+        <button class="btn btn-sm btn-outline" onclick="resetRetry()" style="margin-left:8px;">Reset</button>
+      </div>
+      <div class="retry-track" id="retry-track">
+        <div class="retry-attempt" id="ra-1"><div class="retry-badge" id="rb-1">1</div><div class="retry-content"><div class="retry-label">Attempt 1 — Waiting...</div><div class="retry-detail">Idle</div></div></div>
+        <div class="retry-attempt" id="ra-2"><div class="retry-badge" id="rb-2">2</div><div class="retry-content"><div class="retry-label">Attempt 2 — Waiting...</div><div class="retry-detail">Idle</div></div></div>
+        <div class="retry-attempt" id="ra-3"><div class="retry-badge" id="rb-3">3</div><div class="retry-content"><div class="retry-label">Attempt 3 — Waiting...</div><div class="retry-detail">Idle</div></div></div>
+      </div>
+      <div id="retry-result" style="margin-top:16px;display:none;"></div>
     </div>
 
-    <ul class="bullet-list">
-      <li><strong>Parse and validate:</strong> always run LLM output through Pydantic before using it — this is the trust boundary</li>
-      <li><strong>ValidationError feedback:</strong> Pydantic errors are human-readable — feed them directly back to the LLM for self-correction</li>
-      <li><strong>Retry-with-feedback:</strong> each attempt includes the previous failed response and exact error — convergence typically within 2-3 attempts</li>
-      <li><strong>Max retries, fallback strategies:</strong> after N attempts, log the failure, alert, and return a safe default rather than crashing</li>
-    </ul>
+    <div class="code-wrap reveal" style="margin-top:28px;">
+      <div class="win-chrome"><span class="win-dot r"></span><span class="win-dot y"></span><span class="win-dot g"></span><span style="font-size:11px;color:var(--muted);margin-left:8px;font-family:var(--mono)">instructor_extraction.py</span></div>
+      <div class="code-block"><span class="c-kw">import</span> instructor
+<span class="c-kw">from</span> pydantic <span class="c-kw">import</span> <span class="c-type">BaseModel</span>, <span class="c-type">Field</span>, field_validator
+<span class="c-kw">from</span> anthropic <span class="c-kw">import</span> <span class="c-type">Anthropic</span>
+<span class="c-kw">from</span> typing <span class="c-kw">import</span> <span class="c-type">Literal</span>
+<span class="c-kw">from</span> datetime <span class="c-kw">import</span> date
 
-    <div class="code-wrap" style="margin-top:28px;">
-      <span class="code-label">PYTHON</span>
-      <div class="code-block"><span class="c-kw">from</span> pydantic <span class="c-kw">import</span> <span class="c-type">BaseModel</span>, <span class="c-type">ValidationError</span>, validator, <span class="c-type">Field</span>
-<span class="c-kw">import</span> json
+client = instructor.<span class="c-fn">from_anthropic</span>(<span class="c-type">Anthropic</span>())
 
-<span class="c-kw">class</span> <span class="c-type">ExtractedOrder</span>(<span class="c-type">BaseModel</span>):
-    order_id: <span class="c-bi">str</span> = <span class="c-type">Field</span>(pattern=<span class="c-str">r"^ORD-\d{6}$"</span>)
-    quantity: <span class="c-bi">int</span> = <span class="c-type">Field</span>(gt=<span class="c-num">0</span>, le=<span class="c-num">10000</span>)
-    product_sku: <span class="c-bi">str</span> = <span class="c-type">Field</span>(min_length=<span class="c-num">3</span>, max_length=<span class="c-num">20</span>)
-    priority: <span class="c-bi">str</span> = <span class="c-type">Field</span>(pattern=<span class="c-str">r"^(low|medium|high|urgent)$"</span>)
+<span class="c-kw">class</span> <span class="c-type">FinancialMention</span>(<span class="c-type">BaseModel</span>):
+    company: <span class="c-bi">str</span> = <span class="c-type">Field</span>(description=<span class="c-str">"Company name as mentioned"</span>)
+    revenue: <span class="c-bi">float</span> = <span class="c-type">Field</span>(ge=<span class="c-num">0</span>, description=<span class="c-str">"Revenue in millions USD"</span>)
+    period: <span class="c-bi">str</span> = <span class="c-type">Field</span>(description=<span class="c-str">"Fiscal period, e.g. Q3 2024"</span>)
+    sentiment: <span class="c-type">Literal</span>[<span class="c-str">"bullish"</span>, <span class="c-str">"bearish"</span>, <span class="c-str">"neutral"</span>]
+    confidence: <span class="c-bi">float</span> = <span class="c-type">Field</span>(ge=<span class="c-num">0.0</span>, le=<span class="c-num">1.0</span>)
+    currency: <span class="c-bi">str</span> = <span class="c-type">Field</span>(description=<span class="c-str">"ISO currency code"</span>)
 
-    <span class="c-dec">@validator</span>(<span class="c-str">"product_sku"</span>)
-    <span class="c-kw">def</span> <span class="c-fn">sku_uppercase</span>(cls, v):
+    <span class="c-dec">@field_validator</span>(<span class="c-str">"currency"</span>)
+    <span class="c-dec">@classmethod</span>
+    <span class="c-kw">def</span> <span class="c-fn">valid_currency</span>(<span class="c-bi">cls</span>, v: <span class="c-bi">str</span>) -> <span class="c-bi">str</span>:
+        valid = {<span class="c-str">"USD"</span>, <span class="c-str">"EUR"</span>, <span class="c-str">"GBP"</span>, <span class="c-str">"JPY"</span>, <span class="c-str">"CAD"</span>}
+        <span class="c-kw">if</span> v.<span class="c-fn">upper</span>() <span class="c-kw">not in</span> valid:
+            <span class="c-kw">raise</span> <span class="c-type">ValueError</span>(<span class="c-fn">f</span><span class="c-str">f"'{v}' is not a valid ISO currency. Use one of: {valid}"</span>)
         <span class="c-kw">return</span> v.<span class="c-fn">upper</span>()
 
-<span class="c-kw">def</span> <span class="c-fn">extract_with_retry</span>(text: <span class="c-bi">str</span>, max_retries: <span class="c-bi">int</span> = <span class="c-num">3</span>) -> <span class="c-type">ExtractedOrder</span>:
-    last_error = <span class="c-bi">None</span>
-    previous_response = <span class="c-bi">None</span>
-
-    <span class="c-kw">for</span> attempt <span class="c-kw">in</span> <span class="c-fn">range</span>(max_retries):
-        <span class="c-cmt"># Build prompt with feedback from previous failure</span>
-        prompt = <span class="c-str">f"Extract order data as JSON from: {text}"</span>
-        <span class="c-kw">if</span> last_error <span class="c-kw">and</span> previous_response:
-            prompt += <span class="c-str">f"""
-
-PREVIOUS ATTEMPT FAILED:
-Your response: {previous_response}
-Validation errors: {last_error}
-
-Fix these specific errors and try again.
-Return ONLY valid JSON matching the exact schema."""</span>
-
-        <span class="c-kw">try</span>:
-            response = llm.<span class="c-fn">invoke</span>(prompt)
-            json_str = <span class="c-fn">extract_json</span>(response.content)
-            <span class="c-kw">return</span> <span class="c-type">ExtractedOrder</span>.<span class="c-fn">model_validate_json</span>(json_str)
-        <span class="c-kw">except</span> (<span class="c-type">ValidationError</span>, json.<span class="c-type">JSONDecodeError</span>) <span class="c-kw">as</span> e:
-            last_error = <span class="c-bi">str</span>(e)
-            previous_response = response.content
-
-    <span class="c-kw">raise</span> <span class="c-type">ValueError</span>(<span class="c-str">f"Failed after {max_retries} attempts. Last error: {last_error}"</span>)</div>
-    </div>
-  </div>
-
-  <!-- SECTION 4: Canonical Data Models -->
-  <div class="section">
-    <div class="section-header">
-      <div class="section-num">Section 04</div>
-      <h2>Canonical Data Models &amp; Deterministic Pipelines</h2>
-      <p>The canonical model is a normalized business entity — the stable contract between your AI layer and the rest of your system. Discriminated unions let you type AI responses precisely.</p>
+<span class="c-cmt"># Instructor auto-retries on ValidationError, feeding error → model</span>
+result = client.messages.<span class="c-fn">create</span>(
+    model=<span class="c-str">"claude-3-5-sonnet-20241022"</span>,
+    max_tokens=<span class="c-num">512</span>,
+    response_model=<span class="c-type">FinancialMention</span>,
+    max_retries=<span class="c-num">3</span>,
+    messages=[{
+        <span class="c-str">"role"</span>: <span class="c-str">"user"</span>,
+        <span class="c-str">"content"</span>: <span class="c-str">"Apple reported 119.6 billion dollars revenue for Q1 2025. Very bullish outlook."</span>
+    }]
+)
+<span class="c-fn">print</span>(result.model_dump_json(indent=<span class="c-num">2</span>))</div>
     </div>
 
-    <ul class="bullet-list">
-      <li><strong>Canonical data model:</strong> normalized business entity representation for AI — one source of truth for what an "Order" or "Customer" looks like</li>
-      <li><strong>Never pass raw integration payloads to LLM:</strong> normalize first — raw Salesforce/Jira objects have noise that inflates token count and confuses models</li>
-      <li><strong>Structured contracts:</strong> typed input/output between AI and backend — catches schema drift at import time, not at 2am</li>
-      <li><strong>Response type discriminator:</strong> <code style="color:var(--purple-light);font-family:var(--mono);">"informative"</code> vs <code style="color:var(--purple-light);font-family:var(--mono);">"action"</code> — parse once, route correctly</li>
-    </ul>
-
-    <div class="code-wrap" style="margin-top:28px;">
-      <span class="code-label">PYTHON</span>
-      <div class="code-block"><span class="c-kw">from</span> pydantic <span class="c-kw">import</span> <span class="c-type">BaseModel</span>
-<span class="c-kw">from</span> typing <span class="c-kw">import</span> <span class="c-type">Literal</span>, <span class="c-type">Union</span>
-
-<span class="c-cmt"># Canonical entities — normalized for AI consumption</span>
-<span class="c-kw">class</span> <span class="c-type">CanonicalCustomer</span>(<span class="c-type">BaseModel</span>):
-    customer_id: <span class="c-bi">str</span>
-    full_name: <span class="c-bi">str</span>
-    tier: <span class="c-type">Literal</span>[<span class="c-str">"standard"</span>, <span class="c-str">"premium"</span>, <span class="c-str">"enterprise"</span>]
-    open_orders: <span class="c-bi">int</span>
-    lifetime_value_usd: <span class="c-bi">float</span>
-
-<span class="c-cmt"># Discriminated union for AI responses</span>
-<span class="c-kw">class</span> <span class="c-type">InformativeResponse</span>(<span class="c-type">BaseModel</span>):
-    type: <span class="c-type">Literal</span>[<span class="c-str">"informative"</span>]
-    message: <span class="c-bi">str</span>
-    confidence: <span class="c-bi">float</span>
-
-<span class="c-kw">class</span> <span class="c-type">ActionResponse</span>(<span class="c-type">BaseModel</span>):
-    type: <span class="c-type">Literal</span>[<span class="c-str">"action"</span>]
-    action: <span class="c-type">Literal</span>[<span class="c-str">"schedule_visit"</span>, <span class="c-str">"update_order"</span>, <span class="c-str">"send_notification"</span>, <span class="c-str">"escalate"</span>]
-    payload: <span class="c-bi">dict</span>
-    requires_approval: <span class="c-bi">bool</span>
-    reasoning: <span class="c-bi">str</span>  <span class="c-cmt"># why the AI chose this action (for audit)</span>
-
-<span class="c-type">CopilotResponse</span> = <span class="c-type">Union</span>[<span class="c-type">InformativeResponse</span>, <span class="c-type">ActionResponse</span>]
-
-<span class="c-kw">def</span> <span class="c-fn">parse_copilot_response</span>(llm_output: <span class="c-bi">str</span>) -> <span class="c-type">CopilotResponse</span>:
-    data = json.<span class="c-fn">loads</span>(llm_output)
-    <span class="c-kw">if</span> data[<span class="c-str">"type"</span>] == <span class="c-str">"informative"</span>:
-        <span class="c-kw">return</span> <span class="c-type">InformativeResponse</span>.<span class="c-fn">model_validate</span>(data)
-    <span class="c-kw">return</span> <span class="c-type">ActionResponse</span>.<span class="c-fn">model_validate</span>(data)</div>
-    </div>
-  </div>
-
-  <!-- SECTION 5: Production Patterns -->
-  <div class="section">
-    <div class="section-header">
-      <div class="section-num">Section 05</div>
-      <h2>Production Patterns for Structured Output Systems</h2>
-      <p>Schema contracts evolve. Systems must handle both — validate at the boundary, degrade gracefully, test exhaustively.</p>
-    </div>
-
-    <div class="callout tip">
+    <div class="callout teal reveal">
       <span class="callout-icon">💡</span>
-      <div class="callout-text"><strong>Always validate at the boundary.</strong> LLM output is untrusted data — treat it like external API responses: parse, validate, handle errors. A ValidationError in production should be caught, logged, and retried — never propagated as an unhandled exception.</div>
+      <div class="callout-body"><strong>Why this matters:</strong> In a production pipeline processing 10,000 extractions/day, even a 1% parse failure rate means 100 failed records that corrupt downstream analytics. With Instructor's retry loop and field validators, parse failures become sub-0.1%, and remaining failures are caught with descriptive errors rather than silent data corruption.</div>
     </div>
-
-    <ul class="bullet-list">
-      <li><strong>Schema versioning:</strong> include a <code style="color:var(--mono);font-family:var(--mono);">schema_version</code> field — migration layer handles old vs new responses without breaking existing integrations</li>
-      <li><strong>Partial extraction:</strong> use <code style="color:var(--purple-light);font-family:var(--mono);">Optional[T] = None</code> for fields that may be absent — extract what's available, not what's required</li>
-      <li><strong>Async validation pipelines:</strong> validate in background, serve optimistic response to user, correct asynchronously if validation fails</li>
-      <li><strong>Testing structured outputs:</strong> property-based testing with Hypothesis — generate random text, verify extraction never throws unhandled exceptions</li>
-    </ul>
   </div>
 
-  <!-- WIDGET: Schema Builder -->
   <div class="section">
-    <div class="section-header">
-      <div class="section-num">Interactive</div>
-      <h2>Pydantic Schema Builder</h2>
-      <p>Add fields to build a Pydantic model. See the generated class code and a valid JSON example in real time.</p>
+    <div class="section-header reveal">
+      <div class="section-num">Section 04</div>
+      <h2>Determinism: Temperature, Seeds &amp; Caching</h2>
+      <p>AI outputs are stochastic by default. Production systems often need reproducible results. Master the levers that control output determinism without sacrificing quality.</p>
     </div>
+    <p style="color:var(--muted);font-size:14px;line-height:1.7;margin-bottom:24px;" class="reveal">
+      Temperature controls the entropy of token selection — temperature=0 means always pick the highest-probability token (greedy decoding), which is maximally deterministic but may miss creative options. Temperature=1 samples proportionally to model probabilities, producing diverse but less predictable outputs. For structured extraction, always use temperature=0 or close to it.
+    </p>
+    <table class="comp-table reveal">
+      <thead><tr><th>Determinism Strategy</th><th>Mechanism</th><th>Reliability</th><th>Trade-off</th></tr></thead>
+      <tbody>
+        <tr><td><strong>temperature=0</strong></td><td>Greedy token selection</td><td><span class="tick">✓</span> High</td><td>Less creative output</td></tr>
+        <tr><td><strong>JSON mode</strong></td><td>Grammar-constrained decoding</td><td><span class="tick">✓</span> Valid JSON</td><td>Schema not enforced</td></tr>
+        <tr><td><strong>Instructor + Pydantic</strong></td><td>Schema injection + validation retry</td><td><span class="tick">✓</span> Type-safe</td><td>Extra token cost on retry</td></tr>
+        <tr><td><strong>Prompt caching</strong></td><td>Deterministic cached prefix</td><td><span class="tick">✓</span> Same prefix = same bias</td><td>5-min TTL</td></tr>
+        <tr><td><strong>Few-shot examples</strong></td><td>Format exemplars in prompt</td><td><span class="partial">~</span> Format consistent</td><td>Higher prompt cost</td></tr>
+      </tbody>
+    </table>
+  </div>
 
-    <div class="widget">
-      <div class="widget-title">Live Pydantic Schema Builder</div>
-      <div class="widget-sub">Add fields and configure them. The Pydantic class and example JSON update instantly.</div>
-
-      <div class="schema-controls">
-        <button class="add-field-btn" onclick="addField('str')">+ String</button>
-        <button class="add-field-btn" onclick="addField('int')">+ Number</button>
-        <button class="add-field-btn" onclick="addField('bool')">+ Boolean</button>
-        <button class="add-field-btn" onclick="addField('list')">+ List</button>
-        <button class="add-field-btn" onclick="addField('enum')">+ Enum</button>
-      </div>
-
-      <div class="field-list" id="field-list"></div>
-
-      <button class="gen-example-btn" onclick="renderSchema()">Generate / Refresh</button>
-
-      <div class="schema-output" id="schema-output" style="margin-top:20px;display:none;">
-        <div class="schema-pane">
-          <div class="schema-pane-label">Python — Pydantic Class</div>
-          <div class="schema-code" id="pydantic-code"></div>
-        </div>
-        <div class="schema-pane">
-          <div class="schema-pane-label">Example JSON Response</div>
-          <div class="schema-code" id="json-example"></div>
-        </div>
-      </div>
+  <div class="section">
+    <div class="section-header reveal">
+      <div class="section-num">Section 05</div>
+      <h2>Exercises</h2>
+    </div>
+    <div class="ex-list reveal">
+      <div class="ex-item"><div class="ex-num">1</div><div class="ex-body"><div class="ex-title">Financial NER Extractor</div><div class="ex-desc">Build a FinancialMention extractor using Instructor. Add validators for currency codes (ISO 4217), period format (Q[1-4] YYYY), and confidence range. Test on 5 earnings call snippets from different industries.</div><span class="diff diff-easy">Easy</span></div></div>
+      <div class="ex-item"><div class="ex-num">2</div><div class="ex-body"><div class="ex-title">Nested Schema with Retry Monitoring</div><div class="ex-desc">Create a schema with a nested list of entities. Instrument the retry loop to log each attempt's validation error. Deliberately create prompts that trigger retry and measure how many tokens the retry costs.</div><span class="diff diff-med">Medium</span></div></div>
+      <div class="ex-item"><div class="ex-num">3</div><div class="ex-body"><div class="ex-title">Schema-Driven API Bridge</div><div class="ex-desc">Build a bridge that takes natural-language user requests and converts them into validated API call schemas (method, endpoint, params, auth_required). Route the validated schema to the appropriate FastAPI endpoint. Handle validation failures gracefully.</div><span class="diff diff-hard">Hard</span></div></div>
     </div>
   </div>
 
-</div><!-- /container -->
+  <div class="section">
+    <div class="section-header reveal"><div class="section-num">Prerequisites</div><h2>What You Should Know</h2></div>
+    <div class="prereq-grid reveal">
+      <div class="prereq-chip"><span class="prereq-day">Day 16</span> Pydantic Models</div>
+      <div class="prereq-chip"><span class="prereq-day">Day 22</span> Advanced Prompting</div>
+      <div class="prereq-chip"><span class="prereq-day">Day 23</span> Guardrails</div>
+    </div>
+  </div>
+</div>
 
 <footer>
   <div class="container">
     <div class="footer-inner">
       <div class="footer-nav">
         <a href="day23.html" class="nav-btn">← Day 23</a>
-        <button class="nav-btn complete" id="footer-complete-btn" onclick="markComplete()">Mark Complete</button>
+        <a href="../index.html" class="nav-btn">Dashboard</a>
         <a href="day25.html" class="nav-btn next">Day 25 →</a>
       </div>
-      <div>
-        <a href="../exercises/day24_exercises.html" style="color:var(--purple-light);text-decoration:none;font-weight:600;">⚡ Open Interactive Exercises →</a>
-      </div>
-      <div>Day 24 of the AI Mastery Curriculum &middot; Built for Sharjeel Sohail</div>
+      <div>Day 24 of 30 — Agentic AI Mastery</div>
     </div>
   </div>
 </footer>
 
 <script src="../bg-animation.js"></script>
 <script>
-// ── Mark Complete ────────────────────────────────────────────────
-function markComplete() {
-  try {
-    const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
-    const isDone = p[24] === 'complete';
-    p[24] = isDone ? 'active' : 'complete';
-    localStorage.setItem('aai_progress', JSON.stringify(p));
-    updateCompleteButtons();
-  } catch(e) {}
-}
+window.addEventListener('scroll', () => { const d = document.documentElement; document.getElementById('progress-bar').style.width = (d.scrollTop/(d.scrollHeight-d.clientHeight)*100)+'%'; });
+const io = new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');io.unobserve(e.target);}}),{threshold:0.1,rootMargin:'0px 0px -40px 0px'});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+function markComplete(){const key='day24_complete',btn=document.getElementById('nav-complete-btn');if(localStorage.getItem(key)){localStorage.removeItem(key);btn.classList.remove('done');btn.textContent='Mark Complete';}else{localStorage.setItem(key,'1');btn.classList.add('done');btn.textContent='✓ Complete';}}
+if(localStorage.getItem('day24_complete')){const b=document.getElementById('nav-complete-btn');b.classList.add('done');b.textContent='✓ Complete';}
 
-function updateCompleteButtons() {
-  try {
-    const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
-    const done = p[24] === 'complete';
-    const label = done ? 'Completed ✓' : 'Mark Complete';
-    ['nav-complete-btn', 'footer-complete-btn'].forEach(id => {
-      const btn = document.getElementById(id);
-      if (btn) {
-        btn.textContent = label;
-        btn.classList.toggle('done', done);
-      }
-    });
-  } catch(e) {}
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  try {
-    const p = JSON.parse(localStorage.getItem('aai_progress') || '{}');
-    if (!p[24] || p[24] === 'locked') { p[24] = 'active'; localStorage.setItem('aai_progress', JSON.stringify(p)); }
-  } catch(e) {}
-  updateCompleteButtons();
-  // Seed with 2 default fields
-  addField('str', 'customer_name');
-  addField('int', 'order_count');
+// ── SCHEMA BUILDER ──
+let schemaFields = [];
+const typeMap = {
+  str:   {py:'str',           json:'{"type":"string"}',              desc:'Text string field'},
+  int:   {py:'int',           json:'{"type":"integer"}',             desc:'Integer number'},
+  float: {py:'float = Field(ge=0.0, le=1.0)', json:'{"type":"number","minimum":0,"maximum":1}', desc:'Float 0.0-1.0'},
+  bool:  {py:'bool',          json:'{"type":"boolean"}',             desc:'True/False flag'},
+  list:  {py:'list[str]',     json:'{"type":"array","items":{"type":"string"}}', desc:'List of strings'},
+  enum:  {py:'Literal["a","b","c"]', json:'{"type":"string","enum":["a","b","c"]}', desc:'Constrained choices'},
+};
+function addField(type) {
+  const nameEl = document.getElementById('field-name-input');
+  const name = nameEl.value.trim().replace(/\s+/g,'_').toLowerCase() || 'field_'+schemaFields.length;
+  schemaFields.push({name, type});
+  nameEl.value = '';
   renderSchema();
-});
-
-// ── Schema Builder Widget ────────────────────────────────────────
-let fieldCounter = 0;
-const TYPE_EXAMPLES = {
-  str:  '"Acme Corp"',
-  int:  '42',
-  bool: 'true',
-  list: '["item1", "item2"]',
-  enum: '"active"',
-};
-const TYPE_ANNOTATIONS = {
-  str:  'str',
-  int:  'int',
-  bool: 'bool',
-  list: 'list[str]',
-  enum: 'Literal["active", "inactive", "pending"]',
-};
-
-function addField(type, defaultName) {
-  fieldCounter++;
-  const id = 'field-' + fieldCounter;
-  const name = defaultName || (type + '_field_' + fieldCounter);
-  const row = document.createElement('div');
-  row.className = 'field-row';
-  row.id = id;
-  row.dataset.type = type;
-  row.innerHTML = `
-    <input class="field-name-input" type="text" value="${name}" placeholder="field_name" oninput="renderSchema()">
-    <span class="field-type-badge">${type}</span>
-    <label class="field-required-label"><input type="checkbox" checked onchange="renderSchema()"> required</label>
-    <button class="field-remove" onclick="removeField('${id}')">✕</button>
-  `;
-  document.getElementById('field-list').appendChild(row);
 }
-
-function removeField(id) {
-  const el = document.getElementById(id);
-  if (el) { el.remove(); renderSchema(); }
-}
-
 function renderSchema() {
-  const rows = document.querySelectorAll('.field-row');
-  if (rows.length === 0) {
-    document.getElementById('schema-output').style.display = 'none';
-    return;
+  const fields = document.getElementById('schema-fields');
+  const preview = document.getElementById('schema-preview');
+  fields.innerHTML = schemaFields.map((f,i) =>
+    `<div class="schema-field-chip"><span style="color:var(--purple-light);font-family:var(--mono);font-size:11px">${f.name}</span><span style="color:var(--muted);font-size:11px;margin-left:4px">: ${typeMap[f.type].py}</span><button onclick="removeField(${i})">×</button></div>`
+  ).join('');
+  const lines = schemaFields.map(f => `    ${f.name}: ${typeMap[f.type].py}`).join('\n') || '    pass  # Add fields above';
+  const jsonProps = schemaFields.map(f => `    "${f.name}": ${typeMap[f.type].json}`).join(',\n');
+  preview.textContent = `from pydantic import BaseModel, Field\nfrom typing import Literal\nimport instructor\nfrom anthropic import Anthropic\n\nclient = instructor.from_anthropic(Anthropic())\n\nclass MyModel(BaseModel):\n${lines}\n\n# JSON Schema injected by Instructor:\n# {\n#   "properties": {\n${jsonProps || '#     (empty schema)'}\n#   }\n# }\n\nresult = client.messages.create(\n    model="claude-3-5-sonnet-20241022",\n    max_tokens=512,\n    response_model=MyModel,\n    max_retries=3,\n    messages=[{"role":"user","content":"..."}]\n)`;
+}
+function removeField(i) { schemaFields.splice(i,1); renderSchema(); }
+function clearSchema() { schemaFields=[]; renderSchema(); }
+function loadExampleSchema() {
+  schemaFields=[{name:'company',type:'str'},{name:'revenue',type:'float'},{name:'sentiment',type:'enum'},{name:'is_public',type:'bool'},{name:'mentions',type:'list'}];
+  renderSchema();
+}
+renderSchema();
+
+// ── RETRY LOOP ──
+const RETRY_SCENARIOS = [
+  { status:'fail', label:'Attempt 1 — Validation Error', detail:'Model returned revenue as string "119.6B"\nValidationError: float required, got str\nFeedback sent back to model: "revenue must be a float number in millions (e.g., 119600.0)"' },
+  { status:'fail', label:'Attempt 2 — Partial Fix', detail:'Model returned revenue=119.6 (correct!)\nBut currency="dollars" instead of ISO code\nValidationError: \'dollars\' not in valid set {USD,EUR,GBP,JPY,CAD}\nFeedback: "Use ISO 4217 currency code e.g. USD"' },
+  { status:'success', label:'Attempt 3 — SUCCESS', detail:'All fields validated:\n  company="Apple Inc." ✓\n  revenue=119600.0 ✓\n  period="Q1 2025" ✓\n  sentiment="bullish" ✓\n  confidence=0.92 ✓\n  currency="USD" ✓\n\nReturning FinancialMention object.' },
+];
+let retryRunning = false;
+async function runRetryLoop() {
+  if (retryRunning) return; retryRunning = true;
+  resetRetry();
+  for (let i=0; i<3; i++) {
+    await new Promise(r=>setTimeout(r,600));
+    const ra = document.getElementById(`ra-${i+1}`);
+    const rb = document.getElementById(`rb-${i+1}`);
+    const sc = RETRY_SCENARIOS[i];
+    ra.className = 'retry-attempt active';
+    rb.className = 'retry-badge active';
+    ra.querySelector('.retry-label').textContent = sc.label;
+    ra.querySelector('.retry-detail').textContent = 'Processing...';
+    await new Promise(r=>setTimeout(r,1000));
+    ra.className = 'retry-attempt ' + sc.status;
+    rb.className = 'retry-badge ' + sc.status;
+    rb.textContent = sc.status==='success' ? '✓' : '✗';
+    ra.querySelector('.retry-detail').textContent = sc.detail;
   }
-
-  const fields = Array.from(rows).map(r => ({
-    name: r.querySelector('.field-name-input').value.trim().replace(/\s+/g,'_') || 'field',
-    type: r.dataset.type,
-    required: r.querySelector('input[type=checkbox]').checked,
-  }));
-
-  // Generate Pydantic class
-  let pydantic = 'from pydantic import BaseModel\nfrom typing import Optional, Literal\n\nclass ExtractedData(BaseModel):\n';
-  fields.forEach(f => {
-    const ann = TYPE_ANNOTATIONS[f.type];
-    if (f.required) {
-      pydantic += `    ${f.name}: ${ann}\n`;
-    } else {
-      pydantic += `    ${f.name}: Optional[${ann}] = None\n`;
-    }
+  const res = document.getElementById('retry-result');
+  res.style.display='block';
+  res.innerHTML='<div style="background:rgba(16,185,129,0.1);border:1px solid var(--green);border-radius:8px;padding:12px;font-size:13px;color:var(--green);font-weight:700">✓ Extraction complete after 3 attempts. 2 validation errors auto-corrected by Instructor\'s retry loop.</div>';
+  retryRunning=false;
+}
+function resetRetry() {
+  [1,2,3].forEach(i=>{
+    const ra=document.getElementById(`ra-${i}`); const rb=document.getElementById(`rb-${i}`);
+    ra.className='retry-attempt'; rb.className='retry-badge'; rb.textContent=i;
+    ra.querySelector('.retry-label').textContent=`Attempt ${i} — Waiting...`;
+    ra.querySelector('.retry-detail').textContent='Idle';
   });
-
-  // Generate JSON example
-  let json = '{\n';
-  fields.forEach((f, i) => {
-    const comma = i < fields.length - 1 ? ',' : '';
-    if (f.required) {
-      json += `  "${f.name}": ${TYPE_EXAMPLES[f.type]}${comma}\n`;
-    } else {
-      json += `  "${f.name}": null${comma}  // optional\n`;
-    }
-  });
-  json += '}';
-
-  document.getElementById('pydantic-code').textContent = pydantic;
-  document.getElementById('json-example').textContent = json;
-  document.getElementById('schema-output').style.display = 'grid';
+  const r=document.getElementById('retry-result'); r.style.display='none'; r.innerHTML='';
 }
 </script>
 </body>
