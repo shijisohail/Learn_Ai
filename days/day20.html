@@ -1116,5 +1116,20 @@ Return your analysis as JSON."""</span>)
   </section>
 </div>
 
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  var late = document.querySelectorAll(".animate-on-scroll:not([data-observed])");
+  if (!late.length) return;
+  var obs = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e, i) {
+      if (e.isIntersecting) {
+        setTimeout(function() { e.target.classList.add("visible"); }, i * 60);
+        obs.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.06 });
+  late.forEach(function(el) { obs.observe(el); });
+});
+</script>
 </body>
 </html>
