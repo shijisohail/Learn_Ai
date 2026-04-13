@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tabular ML &amp; NLP Pipelines — What's Next</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="pillar-lesson.css">
+<style>
+/* ── Page-specific widgets ── */
+.decision-flow{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;margin:22px 0}
+.decision-flow h4{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:16px}
+.decision-svg{width:100%;max-width:560px;height:auto;display:block;margin:0 auto}
+.d-box rect{rx:8;ry:8;transition:all .25s}
+.d-box:hover rect{filter:brightness(1.25)}
+.d-box text{pointer-events:none}
+
+/* Pipeline steps */
+.pipeline{display:flex;align-items:stretch;gap:0;margin:22px 0;overflow-x:auto;padding-bottom:4px}
+.pipe-step{flex:1;min-width:110px;background:var(--card);border:1px solid var(--border);border-radius:0;padding:16px 12px;text-align:center;position:relative;cursor:pointer;transition:all .25s}
+.pipe-step:first-child{border-radius:12px 0 0 12px}
+.pipe-step:last-child{border-radius:0 12px 12px 0}
+.pipe-step.active{background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.45);z-index:1}
+.pipe-step::after{content:'›';position:absolute;right:-12px;top:50%;transform:translateY(-50%);font-size:20px;color:var(--muted);z-index:2}
+.pipe-step:last-child::after{display:none}
+.pipe-icon{font-size:22px;margin-bottom:6px}
+.pipe-label{font-size:11px;font-weight:700;color:var(--muted);line-height:1.3;transition:color .25s}
+.pipe-step.active .pipe-label{color:var(--green)}
+.pipe-detail{background:var(--card);border:1px solid rgba(16,185,129,.35);border-top:none;border-radius:0 0 12px 12px;padding:18px 20px;min-height:80px}
+
+/* Comparison grid */
+.two-col-cards{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+@media(max-width:640px){.two-col-cards{grid-template-columns:1fr}}
+.cmp-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 22px;transition:transform .3s,box-shadow .3s}
+.cmp-card:hover{transform:translateY(-4px);box-shadow:0 14px 38px rgba(0,0,0,.4)}
+.cmp-card.green-card{border-top:3px solid var(--green)}
+.cmp-card.purple-card{border-top:3px solid var(--purple-light)}
+.cmp-badge{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;padding:3px 10px;border-radius:99px;margin-bottom:10px;display:inline-block}
+.green-badge{background:rgba(16,185,129,.15);color:var(--green)}
+.purple-badge{background:rgba(168,85,247,.15);color:var(--purple-light)}
+.cmp-card h3{font-size:15px;font-weight:800;margin-bottom:8px}
+.cmp-card ul{padding-left:16px;font-size:13px;color:var(--muted);line-height:1.75}
+.cmp-card ul strong{color:var(--text)}
+.cmp-card .use-when{margin-top:10px;padding:10px 12px;border-radius:8px;font-size:12px;line-height:1.6}
+.green-card .use-when{background:rgba(16,185,129,.08);color:#86efac}
+.purple-card .use-when{background:rgba(168,85,247,.08);color:#d8b4fe}
+
+/* Signal decision table */
+.signal-grid{display:grid;gap:10px;margin:20px 0}
+.signal-row{display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 16px;transition:border-color .25s}
+.signal-row:hover{border-color:rgba(16,185,129,.35)}
+.signal-text{font-size:13px;color:var(--text);line-height:1.5}
+.signal-verdict{font-size:11px;font-weight:800;padding:4px 10px;border-radius:99px;white-space:nowrap}
+.sv-tabular{background:rgba(16,185,129,.15);color:var(--green)}
+.sv-llm{background:rgba(168,85,247,.15);color:var(--purple-light)}
+.sv-hybrid{background:rgba(245,158,11,.15);color:var(--amber)}
+
+/* Code tabs */
+.code-tabs{display:flex;gap:4px;background:var(--surface2);border:1px solid var(--border);border-radius:10px 10px 0 0;padding:8px 8px 0;overflow-x:auto}
+.code-tab{font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;padding:6px 14px;border-radius:7px 7px 0 0;border:none;background:transparent;color:var(--muted);transition:all .2s}
+.code-tab.active{background:var(--card);color:var(--text)}
+.code-pane{display:none}
+.code-pane.active{display:block}
+.code-pane pre{border-radius:0 0 12px 12px;margin:0}
+
+/* Entity resolution visual */
+.er-demo{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;margin:20px 0}
+.er-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px}
+.er-row:last-child{border-bottom:none}
+.er-str{font-family:var(--mono);font-size:12px;padding:4px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;flex:1}
+.er-arrow{color:var(--muted);font-size:18px;flex-shrink:0}
+.er-resolved{font-size:12px;font-weight:700;padding:4px 10px;border-radius:6px}
+.er-match{background:rgba(16,185,129,.15);color:var(--green)}
+.er-nomatch{background:rgba(239,68,68,.12);color:#f87171}
+.er-btn{font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);transition:all .2s;margin-top:14px}
+.er-btn:hover{border-color:rgba(16,185,129,.5);color:var(--green)}
+</style>
+</head>
+<body data-pillar-track="ds" data-animation-density="high">
+
+<div id="progress-bar" role="progressbar" aria-hidden="true"></div>
+<button type="button" id="back-to-top" aria-label="Back to top">↑</button>
+
+<nav>
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-brand">&#8592; Back to Dashboard</a>
+    <div class="nav-right">
+      <a href="learning_pillars.html" class="nav-btn next">Learning pillars</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+
+  <section class="hero">
+    <div class="hero-eyebrow">
+      <span class="hero-icon">&#128202;</span>
+      <span class="difficulty-badge">DS / ML track</span>
+      <span class="time-badge">&#9201; 1&#8211;2 days</span>
+    </div>
+    <h1>Tabular ML &amp;<br><span>NLP pipelines</span></h1>
+    <p class="hero-sub">Most production ML isn't chatbots. It's structured data: lead scoring, entity resolution, and churn prediction. This lesson maps classical ML to your LLM stack and shows where each fits.</p>
+    <div class="hero-stats">
+      <div class="stat-item"><div class="stat-num" data-target="4">0</div><div class="stat-label">Sections</div></div>
+      <div class="stat-item"><div class="stat-num" data-target="5">0</div><div class="stat-label">Interactive steps</div></div>
+      <div class="stat-item"><div class="stat-num" data-target="7">0</div><div class="stat-label">Code examples</div></div>
+      <div class="stat-item"><div class="stat-num" data-target="40">0</div><div class="stat-label">Min read</div></div>
+    </div>
+    <div class="topic-pills">
+      <span class="topic-pill">GBDT / XGBoost</span>
+      <span class="topic-pill">Feature Engineering</span>
+      <span class="topic-pill">Entity Resolution</span>
+      <span class="topic-pill">Lead Scoring</span>
+      <span class="topic-pill">Embeddings</span>
+      <span class="topic-pill">Hybrid Pipelines</span>
+    </div>
+  </section>
+
+  <!-- 01 ── WHEN TO USE WHAT ──────────────────────────────── -->
+  <section class="section reveal">
+    <div class="section-header">
+      <div class="section-num">Section 01</div>
+      <h2>The Right Tool for the Signal</h2>
+      <p>The single most expensive mistake is using a 70B LLM to sort rows of structured data you already have in SQL. Each tool has a domain where it dominates — learn the signals.</p>
+    </div>
+
+    <div class="two-col-cards reveal">
+      <div class="cmp-card green-card">
+        <div class="cmp-badge green-badge">Classical ML</div>
+        <h3>Gradient boosting / logistic regression</h3>
+        <ul>
+          <li><strong>Input:</strong> Tabular, structured features</li>
+          <li><strong>Labels:</strong> Many labeled examples (1k+)</li>
+          <li><strong>Output:</strong> Calibrated probability</li>
+          <li><strong>Latency:</strong> Microseconds–milliseconds</li>
+          <li><strong>Cost:</strong> Near-zero per prediction</li>
+          <li><strong>Debuggability:</strong> SHAP values, feature importance</li>
+        </ul>
+        <div class="use-when">&#9989; When you have: labeled structured data, need calibration, want low latency and cost, must audit decisions</div>
+      </div>
+      <div class="cmp-card purple-card">
+        <div class="cmp-badge purple-badge">LLM / RAG</div>
+        <h3>Large language model + retrieval</h3>
+        <ul>
+          <li><strong>Input:</strong> Unstructured text, docs, code</li>
+          <li><strong>Labels:</strong> Few-shot or no labels needed</li>
+          <li><strong>Output:</strong> Free-form reasoning + JSON</li>
+          <li><strong>Latency:</strong> 200ms–5s</li>
+          <li><strong>Cost:</strong> $0.001–0.05 per call</li>
+          <li><strong>Debuggability:</strong> Chain-of-thought, evals</li>
+        </ul>
+        <div class="use-when">&#9989; When you have: unstructured input, reasoning tasks, few labels, need language understanding</div>
+      </div>
+    </div>
+
+    <!-- Signal decision rows -->
+    <div class="signal-grid reveal">
+      <div class="signal-row"><span class="signal-text">Labeled rows, stable features, need calibrated probability output</span><span class="signal-verdict sv-tabular">Tabular ML</span></div>
+      <div class="signal-row"><span class="signal-text">Unstructured text, reasoning across documents, few-shot adaption</span><span class="signal-verdict sv-llm">LLM + RAG</span></div>
+      <div class="signal-row"><span class="signal-text">CRM fields (structured) + email body (text)</span><span class="signal-verdict sv-hybrid">Hybrid pipeline</span></div>
+      <div class="signal-row"><span class="signal-text">Need to explain every decision to regulators or legal</span><span class="signal-verdict sv-tabular">Tabular ML</span></div>
+      <div class="signal-row"><span class="signal-text">Extract structured facts from PDFs, contracts, support tickets</span><span class="signal-verdict sv-llm">LLM extraction</span></div>
+      <div class="signal-row"><span class="signal-text">Rank 10M leads overnight in a batch job</span><span class="signal-verdict sv-tabular">Tabular ML</span></div>
+      <div class="signal-row"><span class="signal-text">Match "Acme Corp" with "ACME CORP." and "Acme Corporation"</span><span class="signal-verdict sv-hybrid">ER + ML</span></div>
+    </div>
+
+    <div class="concept-check reveal">
+      <div class="cc-head">Concept check</div>
+      <p class="cc-q">A 70B LLM is being used to classify support tickets into 8 categories. You have 50,000 labeled examples. What should you probably do instead?</p>
+      <div class="cc-options">
+        <button type="button" class="cc-opt" data-correct="false">Use an even larger LLM for better accuracy</button>
+        <button type="button" class="cc-opt" data-correct="true">Fine-tune a small encoder or train a classical classifier on embeddings — much faster and cheaper</button>
+        <button type="button" class="cc-opt" data-correct="false">Build a RAG pipeline to retrieve similar tickets</button>
+      </div>
+      <p class="cc-feedback">With 50k labels and 8 classes, a fine-tuned text classifier or logistic regression on embeddings will outperform a large LLM and cost 100× less per prediction.</p>
+    </div>
+  </section>
+
+  <!-- 02 ── ML PIPELINE VISUALIZER ────────────────────────── -->
+  <section class="section reveal">
+    <div class="section-header">
+      <div class="section-num">Section 02</div>
+      <h2>The Tabular ML Pipeline — Click Each Step</h2>
+      <p>Every production ML system follows this sequence. Click a stage to see what happens (and what breaks) at that point.</p>
+    </div>
+
+    <div class="reveal">
+      <div class="pipeline" role="tablist" id="pipeline-nav">
+        <div class="pipe-step active" data-pane="p-raw" role="tab">
+          <div class="pipe-icon">&#128190;</div>
+          <div class="pipe-label">Raw data</div>
+        </div>
+        <div class="pipe-step" data-pane="p-feat" role="tab">
+          <div class="pipe-icon">&#9881;</div>
+          <div class="pipe-label">Feature eng.</div>
+        </div>
+        <div class="pipe-step" data-pane="p-train" role="tab">
+          <div class="pipe-icon">&#129302;</div>
+          <div class="pipe-label">Train</div>
+        </div>
+        <div class="pipe-step" data-pane="p-eval" role="tab">
+          <div class="pipe-icon">&#128202;</div>
+          <div class="pipe-label">Evaluate</div>
+        </div>
+        <div class="pipe-step" data-pane="p-serve" role="tab">
+          <div class="pipe-icon">&#9729;</div>
+          <div class="pipe-label">Serve</div>
+        </div>
+        <div class="pipe-step" data-pane="p-monitor" role="tab">
+          <div class="pipe-icon">&#128269;</div>
+          <div class="pipe-label">Monitor</div>
+        </div>
+      </div>
+      <div class="pipe-detail" id="pipe-detail-area" aria-live="polite"></div>
+    </div>
+
+    <div class="callout warn reveal" style="margin-top:22px">
+      <span class="callout-ico">&#9888;</span>
+      <div class="callout-body">
+        <h4>Training-serving skew is the #1 silent killer</h4>
+        <p>Features computed differently at training time vs serving time produce a model that looks great offline and fails in production. Use a feature store or vetted pipeline that runs the <em>exact same</em> transformation code both places.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 ── ENTITY RESOLUTION ─────────────────────────────── -->
+  <section class="section reveal">
+    <div class="section-header">
+      <div class="section-num">Section 03</div>
+      <h2>Entity Resolution — the Hard Problem</h2>
+      <p>"Acme Corp", "ACME CORP.", "Acme Corporation LLC" are the same business. ER is the foundational data problem in B2B data pipelines, CRM deduplication, and knowledge graph construction.</p>
+    </div>
+
+    <div class="timeline reveal">
+      <div class="tl-step">
+        <div class="tl-dot" style="background:rgba(16,185,129,.15);border-color:var(--green);color:var(--green)">1</div>
+        <div class="tl-body">
+          <div class="tl-tag" style="background:rgba(16,185,129,.1);color:var(--green)">Blocking</div>
+          <div class="tl-title">Reduce candidate pairs from O(n²) to manageable</div>
+          <div class="tl-desc">Cheap rules: same ZIP code AND same 3-letter name prefix → candidate pair. Without blocking, comparing every record to every other is quadratic and impossible at scale.</div>
+        </div>
+      </div>
+      <div class="tl-step">
+        <div class="tl-dot" style="background:rgba(245,158,11,.15);border-color:var(--amber);color:var(--amber)">2</div>
+        <div class="tl-body">
+          <div class="tl-tag" style="background:rgba(245,158,11,.1);color:var(--amber)">Scoring</div>
+          <div class="tl-title">Compute similarity features on candidate pairs</div>
+          <div class="tl-desc">Levenshtein distance on name, Jaro–Winkler, exact match on EIN/DUNS, embedding cosine similarity of company description. Stack these as features into a binary classifier.</div>
+        </div>
+      </div>
+      <div class="tl-step">
+        <div class="tl-dot" style="background:rgba(59,130,246,.15);border-color:var(--blue);color:var(--blue)">3</div>
+        <div class="tl-body">
+          <div class="tl-tag" style="background:rgba(59,130,246,.1);color:var(--blue)">Clustering</div>
+          <div class="tl-title">Transitivity: A=B and B=C means A=C</div>
+          <div class="tl-desc">Pairwise matches don't give you clusters. Use connected-components or hierarchical clustering with a threshold. Handle conflicts with a tiebreaker (highest-confidence edge wins).</div>
+        </div>
+      </div>
+      <div class="tl-step">
+        <div class="tl-dot" style="background:rgba(168,85,247,.15);border-color:var(--purple-light);color:var(--purple-light)">4</div>
+        <div class="tl-body">
+          <div class="tl-tag" style="background:rgba(168,85,247,.1);color:var(--purple-light)">LLM assist</div>
+          <div class="tl-title">Use LLM only for ambiguous edge cases</div>
+          <div class="tl-desc">"Two hedge fund subsidiaries with the same name in different states" — this is where your LLM earns its cost. Routing <em>only</em> ambiguous pairs to an LLM keeps costs rational (1-5% of pairs).</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Interactive ER demo -->
+    <div class="er-demo reveal">
+      <p style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px">Interactive — entity pairs (click Resolve to see classifier decisions)</p>
+      <div id="er-pairs">
+        <div class="er-row"><span class="er-str" data-a="Acme Corp" data-b="ACME CORP.">Acme Corp</span><span class="er-arrow">↔</span><span class="er-str">ACME CORP.</span><span class="er-resolved er-match">Same ✓</span></div>
+        <div class="er-row"><span class="er-str" data-a="First Capital" data-b="First Capital Partners LLC">First Capital</span><span class="er-arrow">↔</span><span class="er-str">First Capital Partners LLC</span><span class="er-resolved" id="er-1">?</span></div>
+        <div class="er-row"><span class="er-str">Acme Inc.</span><span class="er-arrow">↔</span><span class="er-str">Apex Dynamics</span><span class="er-resolved" id="er-2">?</span></div>
+        <div class="er-row"><span class="er-str">BlackRock</span><span class="er-arrow">↔</span><span class="er-str">Blackrock Capital Management</span><span class="er-resolved" id="er-3">?</span></div>
+      </div>
+      <button type="button" class="er-btn" id="er-resolve-btn">&#9654; Resolve pairs</button>
+    </div>
+  </section>
+
+  <!-- 04 ── LEAD SCORING + CODE ───────────────────────────── -->
+  <section class="section reveal">
+    <div class="section-header">
+      <div class="section-num">Section 04</div>
+      <h2>Lead Scoring — Practical Pipeline</h2>
+      <p>A canonical tabular ML task. Features: firmographics + behaviour + intent signals. Target: P(convert within 90 days). The same principles apply to churn, upsell, and fraud detection.</p>
+    </div>
+
+    <div class="code-tabs reveal">
+      <button class="code-tab active" data-pane="t-pipeline">sklearn pipeline</button>
+      <button class="code-tab" data-pane="t-calibrate">calibration</button>
+      <button class="code-tab" data-pane="t-hybrid">hybrid (LLM + tabular)</button>
+    </div>
+    <div class="code-window" style="border-radius:0 0 12px 12px;border-top:none;margin:0 0 20px">
+      <div class="code-pane active" id="t-pipeline">
+        <pre><span class="c-kw">from</span> sklearn.pipeline <span class="c-kw">import</span> Pipeline
+<span class="c-kw">from</span> sklearn.preprocessing <span class="c-kw">import</span> StandardScaler, OrdinalEncoder
+<span class="c-kw">from</span> sklearn.compose <span class="c-kw">import</span> ColumnTransformer
+<span class="c-kw">from</span> sklearn.ensemble <span class="c-kw">import</span> GradientBoostingClassifier
+<span class="c-kw">from</span> sklearn.model_selection <span class="c-kw">import</span> cross_val_score
+<span class="c-kw">import</span> pandas <span class="c-kw">as</span> pd, numpy <span class="c-kw">as</span> np
+
+<span class="c-cmt"># Feature groups</span>
+NUM_FEATURES = [<span class="c-str">'employee_count'</span>, <span class="c-str">'annual_revenue'</span>, <span class="c-str">'page_views_30d'</span>,
+                <span class="c-str">'email_opens_7d'</span>, <span class="c-str">'trial_days_active'</span>]
+CAT_FEATURES = [<span class="c-str">'industry'</span>, <span class="c-str">'country'</span>, <span class="c-str">'source_channel'</span>]
+
+preprocessor = ColumnTransformer([
+    (<span class="c-str">'num'</span>, StandardScaler(), NUM_FEATURES),
+    (<span class="c-str">'cat'</span>, OrdinalEncoder(handle_unknown=<span class="c-str">'use_encoded_value'</span>,
+                              unknown_value=-<span class="c-num">1</span>), CAT_FEATURES),
+])
+
+pipeline = Pipeline([
+    (<span class="c-str">'pre'</span>, preprocessor),
+    (<span class="c-str">'clf'</span>, GradientBoostingClassifier(
+        n_estimators=<span class="c-num">400</span>, max_depth=<span class="c-num">4</span>, learning_rate=<span class="c-num">0.05</span>,
+        subsample=<span class="c-num">0.8</span>, random_state=<span class="c-num">42</span>,
+    )),
+])
+
+<span class="c-cmt"># Class imbalance: use PR-AUC, not accuracy</span>
+scores = cross_val_score(pipeline, X_train, y_train, cv=<span class="c-num">5</span>,
+                         scoring=<span class="c-str">'average_precision'</span>)
+<span class="c-fn">print</span>(<span class="c-str">f"CV PR-AUC: {scores.mean():.3f} ± {scores.std():.3f}"</span>)</pre>
+      </div>
+      <div class="code-pane" id="t-calibrate">
+        <pre><span class="c-kw">from</span> sklearn.calibration <span class="c-kw">import</span> CalibratedClassifierCV, calibration_curve
+<span class="c-kw">import</span> matplotlib.pyplot <span class="c-kw">as</span> plt
+
+<span class="c-cmt"># Wrap the model in Platt scaling (logistic) or isotonic regression</span>
+calibrated = CalibratedClassifierCV(pipeline, cv=<span class="c-num">5</span>, method=<span class="c-str">'sigmoid'</span>)
+calibrated.<span class="c-fn">fit</span>(X_train, y_train)
+
+<span class="c-cmt"># Verify calibration plot (reliability diagram)</span>
+prob_true, prob_pred = calibration_curve(
+    y_test, calibrated.<span class="c-fn">predict_proba</span>(X_test)[:, <span class="c-num">1</span>], n_bins=<span class="c-num">10</span>
+)
+
+<span class="c-cmt"># A well-calibrated model: P(y=1|score=0.7) ≈ 70% of the time</span>
+<span class="c-cmt"># If it's not: score of 0.7 means nothing to your sales team</span>
+
+<span class="c-cmt"># Expected calibration error (ECE)</span>
+ece = np.<span class="c-fn">mean</span>(np.<span class="c-fn">abs</span>(prob_true - prob_pred))
+<span class="c-fn">print</span>(<span class="c-str">f"ECE: {ece:.3f}"</span>)  <span class="c-cmt"># Good: &lt; 0.05</span></pre>
+      </div>
+      <div class="code-pane" id="t-hybrid">
+        <pre><span class="c-kw">import</span> anthropic, json, numpy <span class="c-kw">as</span> np
+
+<span class="c-cmt"># Step 1: Extract structured signals from unstructured email body</span>
+<span class="c-kw">def</span> <span class="c-fn">extract_intent_signals</span>(email_text: <span class="c-cls">str</span>) -> <span class="c-cls">dict</span>:
+    client = anthropic.<span class="c-cls">Anthropic</span>()
+    resp = client.messages.<span class="c-fn">create</span>(
+        model=<span class="c-str">"claude-3-5-haiku-20241022"</span>,  <span class="c-cmt"># cheap extraction model</span>
+        max_tokens=<span class="c-num">256</span>,
+        messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: <span class="c-str">f"""
+Extract signals from this sales email. Return JSON only.
+Fields: urgency(high/med/low), buying_stage(aware/consider/decide),
+mentions_competitor(bool), pain_point_mentioned(str or null).
+
+Email: {email_text}
+"""</span>}]
+    )
+    <span class="c-kw">return</span> json.<span class="c-fn">loads</span>(resp.content[<span class="c-num">0</span>].text)
+
+<span class="c-cmt"># Step 2: Encode extracted signals as additional tabular features</span>
+<span class="c-kw">def</span> <span class="c-fn">build_hybrid_features</span>(row: <span class="c-cls">dict</span>, email_signals: <span class="c-cls">dict</span>) -> np.ndarray:
+    urgency_map = {<span class="c-str">'low'</span>: <span class="c-num">0</span>, <span class="c-str">'med'</span>: <span class="c-num">1</span>, <span class="c-str">'high'</span>: <span class="c-num">2</span>}
+    stage_map   = {<span class="c-str">'aware'</span>: <span class="c-num">0</span>, <span class="c-str">'consider'</span>: <span class="c-num">1</span>, <span class="c-str">'decide'</span>: <span class="c-num">2</span>}
+    <span class="c-kw">return</span> np.<span class="c-fn">concatenate</span>([
+        <span class="c-fn">extract_tabular_features</span>(row),             <span class="c-cmt"># firmographics</span>
+        [urgency_map[email_signals[<span class="c-str">'urgency'</span>]],     <span class="c-cmt"># from LLM</span>
+         stage_map[email_signals[<span class="c-str">'buying_stage'</span>]],
+         <span class="c-cls">int</span>(email_signals[<span class="c-str">'mentions_competitor'</span>])],
+    ])
+
+<span class="c-cmt"># Step 3: Feed combined feature vector into the calibrated GBDT</span>
+features = <span class="c-fn">build_hybrid_features</span>(lead_row, <span class="c-fn">extract_intent_signals</span>(email))
+score = calibrated.<span class="c-fn">predict_proba</span>([features])[<span class="c-num">0</span>, <span class="c-num">1</span>]</pre>
+      </div>
+    </div>
+
+    <div class="callout why reveal">
+      <span class="callout-ico">&#128161;</span>
+      <div class="callout-body">
+        <h4>Why calibration matters for lead scoring</h4>
+        <p>Your sales team will act on "70% likelihood to convert". If that probability is not calibrated — i.e., only 40% of leads scored 70 actually convert — you've trained a useless tool. Always check your reliability diagram before shipping a scoring model to a business team.</p>
+      </div>
+    </div>
+
+    <div class="concept-check reveal">
+      <div class="cc-head">Concept check</div>
+      <p class="cc-q">You train a GBDT on 1000 labeled leads with class imbalance (95 no-convert, 5 convert). Which metric should you optimize?</p>
+      <div class="cc-options">
+        <button type="button" class="cc-opt" data-correct="false">Accuracy — a model predicting "never converts" scores 95%</button>
+        <button type="button" class="cc-opt" data-correct="true">PR-AUC (average precision) — directly reflects performance on the minority class</button>
+        <button type="button" class="cc-opt" data-correct="false">Log loss — equally affected by majority and minority classes</button>
+      </div>
+      <p class="cc-feedback">Correct: with 95/5 imbalance, accuracy is trivially gamed. PR-AUC measures how well you rank positives above negatives — the right objective for a scoring model.</p>
+    </div>
+  </section>
+
+  <!-- PREREQUISITES + EXERCISES ───────────────────────────── -->
+  <section class="section reveal">
+    <div class="section-header">
+      <div class="section-num">Prerequisites</div>
+      <h2>Which days to complete first</h2>
+    </div>
+    <div class="prereq-grid">
+      <div class="prereq-chip"><span class="prereq-day">Day 3</span> RAG fundamentals</div>
+      <div class="prereq-chip"><span class="prereq-day">Day 12</span> Advanced RAG</div>
+      <div class="prereq-chip"><span class="prereq-day">Day 15</span> PyTorch basics</div>
+      <div class="prereq-chip"><span class="prereq-day">Day 18</span> MLflow</div>
+      <div class="prereq-chip"><span class="prereq-day">Day 19</span> MLOps pipelines</div>
+      <div class="prereq-chip"><span class="prereq-day">Day 20</span> Observability</div>
+    </div>
+    <p style="margin-top:14px;font-size:13px;color:var(--muted)">Hands-on exercise: <code style="font-family:var(--mono);font-size:12px">exercises/pillar_lead_score_baseline.py</code> &nbsp;·&nbsp; <a href="finetune.html" style="color:var(--purple-light)">Fine-tuning deep dive</a></p>
+  </section>
+
+  <section class="section reveal">
+    <div class="section-header">
+      <div class="section-num">Exercises</div>
+      <h2>Practice</h2>
+    </div>
+    <div class="ex-list">
+      <div class="ex-item reveal">
+        <div class="ex-num">1</div>
+        <div class="ex-body">
+          <div class="ex-title">Audit one workflow for tool choice</div>
+          <div class="ex-desc">Pick a data pipeline you know (or the lead scorer). List each step, classify it as tabular ML / classical NLP / RAG / generative LLM, and justify why. Rewrite any step using the wrong tool.</div>
+          <span class="ex-difficulty diff-easy">Easy</span>
+        </div>
+      </div>
+      <div class="ex-item reveal">
+        <div class="ex-num">2</div>
+        <div class="ex-body">
+          <div class="ex-title">Run the baseline lead scorer</div>
+          <div class="ex-desc">Execute <code style="font-family:var(--mono);font-size:11px">pillar_lead_score_baseline.py</code>. Add one new feature (e.g., log-transform revenue). Compare PR-AUC on a holdout. Try isotonic calibration instead of Platt scaling.</div>
+          <span class="ex-difficulty diff-med">Medium</span>
+        </div>
+      </div>
+      <div class="ex-item reveal">
+        <div class="ex-num">3</div>
+        <div class="ex-body">
+          <div class="ex-title">Build a mini entity resolution system</div>
+          <div class="ex-desc">Given 200 company names (generate with GPT), implement blocking (3-letter prefix) + Jaro–Winkler scoring + connected-components clustering. Precision/recall against ground truth.</div>
+          <span class="ex-difficulty diff-hard">Hard</span>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<footer class="pillar-footer">
+  <div class="container pillar-footer-inner">
+    <div>Agentic AI Mastery</div>
+    <a href="learning_pillars.html">&#8592; Learning pillars</a>
+  </div>
+</footer>
+
+<script src="../bg-animation.js"></script>
+<script src="pillar-interactive.js"></script>
+<script>
+(function(){
+  // Pipeline step interactivity
+  var pipeSteps = document.querySelectorAll('.pipe-step');
+  var pipeDetail = document.getElementById('pipe-detail-area');
+  var pipeContent = {
+    'p-raw':    {title:'Raw data ingestion', color:'var(--green)', text:'Sources: CRM exports (Salesforce, HubSpot), product event streams (Segment, Mixpanel), firmographic enrichment (Clearbit, ZoomInfo). <strong>Key question:</strong> what is the unit of a row? One lead? One account? One event? Decide before modeling. Watch out for: duplicate rows from multiple exports, stale data from infrequent syncs.'},
+    'p-feat':   {title:'Feature engineering', color:'var(--amber)', text:'Transform raw fields into model-ready signals. Log-transform skewed numeric columns (revenue, page views). Encode recency as <code>days_since_last_event</code>. Handle missing values explicitly (separate "unknown" category, not imputation that lies). <strong>Golden rule:</strong> every transformation at train time must be reproduced exactly at serving time.'},
+    'p-train':  {title:'Model training', color:'var(--blue)', text:'GradientBoostingClassifier or XGBClassifier for tabular data. Tune: <code>n_estimators</code> (400–2000), <code>max_depth</code> (3–6), <code>learning_rate</code> (0.01–0.1), <code>subsample</code> (0.7–0.9). Use PR-AUC as scoring metric with <code>cross_val_score</code>. Class imbalance: try <code>class_weight="balanced"</code> or SMOTE before complex resampling.'},
+    'p-eval':   {title:'Model evaluation', color:'#f87171)', text:'Beyond accuracy: PR-AUC (precision-recall), ROC-AUC, calibration (reliability diagram, ECE). Check SHAP values to confirm features make business sense. Segment by subgroup: does the model perform equally for enterprise vs SMB? <strong>Pre-deployment gate:</strong> PR-AUC must exceed baseline (always-positive) by at least 15%.'},
+    'p-serve':  {title:'Model serving', color:'var(--purple-light)', text:'Offline batch scoring (nightly cron → scores table in DB) vs online serving (REST API, &lt;50ms p95). For lead scoring, batch is usually fine and 100× cheaper. Log every prediction with timestamp, feature snapshot, and model version. Store raw features and transformed features separately for debugging.'},
+    'p-monitor':{title:'Drift monitoring', color:'var(--muted)', text:'<strong>Data drift:</strong> feature distributions shift (e.g., COVID changed "employee count" meaning overnight). <strong>Concept drift:</strong> the relationship between features and labels changes. Monitor with PSI (population stability index) on key features weekly. Trigger retraining when PSI > 0.2 or PR-AUC drops >5% on a holdout window.'},
+  };
+  var active = 'p-raw';
+  function renderDetail(key){
+    var c = pipeContent[key] || {};
+    if(pipeDetail) pipeDetail.innerHTML = '<div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--green);margin-bottom:8px">'+c.title+'</div><p style="font-size:13px;color:var(--muted);line-height:1.7">'+c.text+'</p>';
+  }
+  pipeSteps.forEach(function(step){
+    step.addEventListener('click', function(){
+      pipeSteps.forEach(function(s){ s.classList.remove('active'); });
+      step.classList.add('active');
+      active = step.getAttribute('data-pane');
+      renderDetail(active);
+    });
+  });
+  renderDetail(active);
+
+  // Entity resolution demo
+  var resolveBtn = document.getElementById('er-resolve-btn');
+  var erResults = [
+    {id:'er-1', match:true,  label:'Same ✓'},
+    {id:'er-2', match:false, label:'Different ✗'},
+    {id:'er-3', match:true,  label:'Same ✓ (ambiguous)'},
+  ];
+  var resolved = false;
+  if(resolveBtn){
+    resolveBtn.addEventListener('click', function(){
+      if(resolved){ 
+        erResults.forEach(function(r){ var el=document.getElementById(r.id); if(el){el.textContent='?'; el.className='er-resolved';} });
+        resolveBtn.textContent='▶ Resolve pairs';
+        resolved=false; return;
+      }
+      erResults.forEach(function(r, i){
+        setTimeout(function(){
+          var el = document.getElementById(r.id);
+          if(!el) return;
+          el.textContent = r.label;
+          el.className = 'er-resolved ' + (r.match ? 'er-match' : 'er-nomatch');
+        }, i * 350);
+      });
+      resolveBtn.textContent = '↺ Reset';
+      resolved = true;
+    });
+  }
+
+  // Code tabs
+  document.querySelectorAll('.code-tab').forEach(function(tab){
+    tab.addEventListener('click', function(){
+      var pane = tab.getAttribute('data-pane');
+      var container = tab.closest('.code-window') ? tab.closest('.code-window').parentElement : document;
+      container.querySelectorAll('.code-tab').forEach(function(t){ t.classList.remove('active'); });
+      container.querySelectorAll('.code-pane').forEach(function(p){ p.classList.remove('active'); });
+      tab.classList.add('active');
+      var el = document.getElementById(pane);
+      if(el) el.classList.add('active');
+    });
+  });
+})();
+</script>
+</body>
+</html>

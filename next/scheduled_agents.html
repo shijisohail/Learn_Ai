@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scheduled &amp; Event-Driven Agents — What's Next</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="pillar-lesson.css">
+<style>
+/* ── Trigger comparison cards ── */
+.trigger-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:20px 0}
+@media(max-width:680px){.trigger-grid{grid-template-columns:1fr}}
+.trigger-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;transition:transform .3s,border-color .3s,box-shadow .3s;cursor:default}
+.trigger-card:hover{transform:translateY(-4px);box-shadow:0 14px 38px rgba(0,0,0,.4)}
+.trigger-card.cron{border-top:3px solid var(--amber)}
+.trigger-card.webhook{border-top:3px solid var(--purple-light)}
+.trigger-card.queue{border-top:3px solid var(--teal)}
+.trigger-icon{font-size:28px;margin-bottom:8px}
+.trigger-name{font-size:13px;font-weight:800;margin-bottom:6px}
+.trigger-props{font-size:12px;color:var(--muted);line-height:1.7}
+.trigger-props strong{color:var(--text)}
+.trigger-badge{font-size:10px;font-weight:800;padding:2px 8px;border-radius:99px;display:inline-block;margin-top:6px}
+.badge-amber{background:rgba(245,158,11,.15);color:var(--amber)}
+.badge-purple{background:rgba(168,85,247,.15);color:var(--purple-light)}
+.badge-teal{background:rgba(13,148,136,.15);color:var(--teal-light)}
+
+/* ── State machine SVG ── */
+.sm-wrap{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;margin:22px 0;overflow:hidden}
+.sm-svg{width:100%;max-width:640px;height:auto;display:block;margin:0 auto}
+.sm-node{cursor:pointer;transition:all .25s}
+.sm-node:hover circle,.sm-node:hover rect{filter:brightness(1.3)}
+.sm-info{margin-top:16px;min-height:56px;font-size:13px;color:var(--muted);line-height:1.65;padding:12px 14px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);transition:all .3s}
+.sm-info strong{color:var(--text)}
+
+/* ── Retry backoff visualizer ── */
+.retry-wrap{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;margin:22px 0}
+.retry-timeline{display:flex;align-items:flex-end;gap:8px;height:130px;margin:16px 0 8px;padding:0 4px;overflow-x:auto}
+.retry-attempt{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;min-width:40px}
+.retry-bar{width:36px;border-radius:6px 6px 0 0;transition:height 1s cubic-bezier(.22,1,.36,1);height:4px}
+.retry-label{font-size:10px;color:var(--muted);font-weight:600;text-align:center;white-space:nowrap}
+.retry-btn{font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;padding:8px 16px;border-radius:8px;border:1px solid var(--purple-light);background:rgba(124,58,237,.15);color:#d8b4fe;transition:all .2s}
+.retry-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(124,58,237,.2)}
+.retry-summary{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.55}
+
+/* ── Idempotency demo ── */
+.idem-demo{background:linear-gradient(145deg,rgba(124,58,237,.08),rgba(13,148,136,.06));border:1px solid rgba(124,58,237,.28);border-radius:14px;padding:22px;margin:20px 0}
+.idem-log{font-family:var(--mono);font-size:12px;min-height:88px;margin-top:12px}
+.idem-line{padding:7px 0;border-bottom:1px solid rgba(42,42,69,.7);opacity:0;animation:fadeUp .35s ease forwards}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.log-ok{color:#34d399}.log-dup{color:#fbbf24}.log-err{color:#f87171}
+.demo-btn{font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;padding:10px 18px;border-radius:10px;border:1px solid var(--purple-light);background:rgba(124,58,237,.2);color:var(--text);transition:transform .2s,box-shadow .2s}
+.demo-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(124,58,237,.22)}
+
+/* ── Code tabs ── */
+.code-tabs{display:flex;gap:4px;background:var(--surface2);border:1px solid var(--border);border-radius:10px 10px 0 0;padding:8px 8px 0;overflow-x:auto}
+.code-tab{font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;padding:6px 14px;border-radius:7px 7px 0 0;border:none;background:transparent;color:var(--muted);transition:all .2s}
+.code-tab.active{background:var(--card);color:var(--text)}
+.code-pane{display:none}
+.code-pane.active{display:block}
+.code-pane pre{border-radius:0 0 12px 12px;margin:0}
+
+/* ── Failure mode table ── */
+.fm-grid{display:grid;gap:10px;margin:20px 0}
+.fm-row{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start;transition:border-color .2s}
+.fm-row:hover{border-color:rgba(168,85,247,.35)}
+.fm-icon{font-size:18px;line-height:1.4}
+.fm-content h4{font-size:13px;font-weight:700;margin-bottom:4px}
+.fm-content p{font-size:12px;color:var(--muted);line-height:1.6}
+.fm-fix{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;background:rgba(168,85,247,.12);color:var(--purple-light);margin-top:4px}
+</style>
+</head>
+<body data-pillar-track="agents" data-animation-density="high">
+
+<div id="progress-bar" role="progressbar" aria-hidden="true"></div>
+<button type="button" id="back-to-top" aria-label="Back to top">↑</button>
+
+<nav>
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-brand">&#8592; Back to Dashboard</a>
+    <div class="nav-right">
+      <a href="learning_pillars.html" class="nav-btn next">Learning pillars</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+
+  <section class="hero">
+    <div class="hero-eyebrow">
+      <span class="hero-icon">&#9200;</span>
+      <span class="difficulty-badge">Agents track</span>
+      <span class="time-badge">&#9201; 1&#8211;2 days</span>
+    </div>
+    <h1>Scheduled &amp;<br><span>event-driven agents</span></h1>
+    <p class="hero-sub">Chat-triggered loops are only one shape. Production agents run on cron, webhooks, and message queues — owning a job without anyone typing "go". This is the gap between a prompt chain and a reliable autonomous system.</p>
+    <div class="hero-stats">
+      <div class="stat-item"><div class="stat-num" data-target="3">0</div><div class="stat-label">Trigger types</div></div>
+      <div class="stat-item"><div class="stat-num" data-target="5">0</div><div class="stat-label">State machine states</div></div>
+      <div class="stat-item"><div class="stat-num" data-target="6">0</div><div class="stat-label">Failure modes</div></div>
+      <div class="stat-item"><div class="stat-num" data-target="45">0</div><div class="stat-label">Min read</div></div>
+    </div>
+    <div class="topic-pills">
+      <span class="topic-pill">Cron jobs</span>
+      <span class="topic-pill">Webhooks</span>
+      <span class="topic-pill">Message queues</span>
+      <span class="topic-pill">Idempotency</span>
+      <span class="topic-pill">State machines</span>
+      <span class="topic-pill">Exponential backoff</span>
+    </div>
+  </section>
+
+  <!-- 01 ── THREE TRIGGERS ────────────────────────────────── -->
+  <section class="section reveal">
+    <div class="section-header">
+      <div class="section-num">Section 01</div>
+      <h2>Three Ways Work Arrives</h2>
+      <p>Design from the trigger outward: what fires the run, what idempotency key you use, and where state lives between runs. Getting this wrong is almost impossible to fix after you ship.</p>
+    </div>
+
+    <div class="trigger-grid reveal">
+      <div class="trigger-card cron">
+        <div class="trigger-icon">&#8987;</div>
+        <div class="trigger-name">Schedule / Cron</div>
+        <div class="trigger-props">
+          <strong>Examples:</strong> daily digest, stale-data refresh, nightly report<br>
+          <strong>Idempotency key:</strong> tenant + date + job_type<br>
+          <strong>Watch out:</strong> clock skew across replicas, DST jumps, missed runs after downtime (should a 2am job run at 3am if the server was down?)<br>
+        </div>
+        <span class="trigger-badge badge-amber">Predictable cadence</span>
+      </div>
+      <div class="trigger-card webhook">
+        <div class="trigger-icon">&#128279;</div>
+        <div class="trigger-name">Webhook / Event</div>
+        <div class="trigger-props">
+          <strong>Examples:</strong> CRM update, new filing, RSS item, Stripe event<br>
+          <strong>Idempotency key:</strong> event_id from the source system<br>
+          <strong>Watch out:</strong> replay attacks, duplicate deliveries (same event_id twice), out-of-order delivery<br>
+        </div>
+        <span class="trigger-badge badge-purple">Real-time, external</span>
+      </div>
+      <div class="trigger-card queue">
+        <div class="trigger-icon">&#128240;</div>
+        <div class="trigger-name">Queue / Stream</div>
+        <div class="trigger-props">
+          <strong>Examples:</strong> Kafka, SQS, Celery, RabbitMQ<br>
+          <strong>Idempotency key:</strong> message key (Kafka) or deduplication_id (SQS)<br>
+          <strong>Watch out:</strong> at-least-once delivery means you <em>will</em> process some messages twice — plan for it from day one<br>
+        </div>
+        <span class="trigger-badge badge-teal">At-least-once delivery</span>
+      </div>
+    </div>
+
+    <div class="concept-check reveal">
+      <div class="cc-head">Concept check</div>
+      <p class="cc-q">Your agent processes webhook events and sometimes sends two emails to the same user. Most likely root cause?</p>
+      <div class="cc-options">
+        <button type="button" class="cc-opt" data-correct="false">The LLM hallucinated a duplicate send instruction</button>
+        <button type="button" class="cc-opt" data-correct="true">At-least-once delivery: the webhook fired twice and you have no idempotency key check</button>
+        <button type="button" class="cc-opt" data-correct="false">The cron schedule is configured to run twice</button>
+      </div>
+      <p class="cc-feedback">At-least-once delivery is the default for almost every message broker. Every external side-effect (email, Slack, DB write) must be keyed by a deterministic idempotency key derived from the business event.</p>
+    </div>
+  </section>
+
+  <!-- 02 ── IDEMPOTENCY ────────────────────────────────────── -->
+  <section class="section reveal">
+    <div class="section-header">
+      <div class="section-num">Section 02</div>
+      <h2>Idempotency — Run Twice, Pay Once</h2>
+      <p>The idempotency key must be <em>derived from business identity</em>, not from random UUIDs generated per attempt. A random UUID is unique per attempt — useless for deduplication.</p>
+    </div>
+
+    <div class="callout warn reveal">
+      <span class="callout-ico">&#9888;</span>
+      <div class="callout-body">
+        <h4>Wrong pattern: random key per delivery</h4>
+        <p><code style="font-family:var(--mono);font-size:12px">key = str(uuid.uuid4())</code> — this is unique per attempt, so three deliveries of the same event create three different keys and all three side-effects fire. Your idempotency key must be stable: the same business event → the same key, always.</p>
+      </div>
+    </div>
+
+    <!-- Interactive idempotency demo -->
+    <div class="idem-demo reveal">
+      <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Interactive — same webhook payload delivered three times (simulating network retries).</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button type="button" class="demo-btn" id="webhook-fire">&#9654; Fire webhook ×3 (same payload)</button>
+        <button type="button" class="demo-btn" id="webhook-reset" style="background:transparent;border-color:var(--border);color:var(--muted)">&#8635; Reset</button>
+      </div>
+      <div id="webhook-log" class="idem-log" aria-live="polite"></div>
+    </div>
+
+    <div class="code-tabs reveal">
+      <button class="code-tab active" data-pane="id-pattern">idempotency pattern</button>
+      <button class="code-tab" data-pane="id-db">DB-backed key store</button>
+      <button class="code-tab" data-pane="id-redis">Redis key store</button>
+    </div>
+    <div class="code-window" style="border-radius:0 0 12px 12px;border-top:none;margin:0 0 20px">
+      <div class="code-pane active" id="id-pattern">
+        <pre><span class="c-kw">import</span> hashlib, json
+
+<span class="c-kw">def</span> <span class="c-fn">make_idempotency_key</span>(payload: <span class="c-cls">dict</span>) -> <span class="c-cls">str</span>:
+    <span class="c-cmt"># Stable key from business-identity fields ONLY</span>
+    identity = {
+        <span class="c-str">"tenant_id"</span>: payload[<span class="c-str">"tenant_id"</span>],
+        <span class="c-str">"event_type"</span>: payload[<span class="c-str">"event_type"</span>],
+        <span class="c-str">"entity_id"</span>: payload[<span class="c-str">"entity_id"</span>],
+        <span class="c-str">"event_date"</span>: payload[<span class="c-str">"event_date"</span>],  <span class="c-cmt"># or filing_id, not timestamp</span>
+    }
+    raw = json.<span class="c-fn">dumps</span>(identity, sort_keys=<span class="c-kw">True</span>)
+    <span class="c-kw">return</span> hashlib.<span class="c-fn">sha256</span>(raw.<span class="c-fn">encode</span>()).<span class="c-fn">hexdigest</span>()[:32]
+
+<span class="c-kw">def</span> <span class="c-fn">handle_event</span>(payload: <span class="c-cls">dict</span>) -> <span class="c-cls">dict</span>:
+    key = <span class="c-fn">make_idempotency_key</span>(payload)
+
+    <span class="c-kw">if</span> <span class="c-fn">already_processed</span>(key):
+        <span class="c-kw">return</span> {<span class="c-str">"status"</span>: <span class="c-str">"duplicate_ignored"</span>, <span class="c-str">"key"</span>: key}
+
+    <span class="c-fn">mark_processing</span>(key)   <span class="c-cmt"># atomic upsert with status='in_progress'</span>
+    <span class="c-kw">try</span>:
+        result = <span class="c-fn">run_agent_pipeline</span>(payload)
+        <span class="c-fn">mark_done</span>(key, result)
+        <span class="c-kw">return</span> {<span class="c-str">"status"</span>: <span class="c-str">"processed"</span>, <span class="c-str">"key"</span>: key}
+    <span class="c-kw">except</span> <span class="c-cls">Exception</span> <span class="c-kw">as</span> e:
+        <span class="c-fn">mark_failed</span>(key, <span class="c-cls">str</span>(e))
+        <span class="c-kw">raise</span></pre>
+      </div>
+      <div class="code-pane" id="id-db">
+        <pre><span class="c-kw">from</span> sqlalchemy <span class="c-kw">import</span> text
+<span class="c-kw">from</span> datetime <span class="c-kw">import</span> datetime, timedelta
+
+<span class="c-cmt"># Schema: idempotency_keys(key TEXT PK, status TEXT,
+#   created_at TIMESTAMP, expires_at TIMESTAMP, result JSONB)</span>
+
+<span class="c-kw">def</span> <span class="c-fn">already_processed</span>(key: <span class="c-cls">str</span>, db) -> <span class="c-cls">bool</span>:
+    row = db.<span class="c-fn">execute</span>(
+        text(<span class="c-str">"SELECT status FROM idempotency_keys WHERE key=:k"</span>),
+        {<span class="c-str">"k"</span>: key}
+    ).<span class="c-fn">fetchone</span>()
+    <span class="c-kw">if</span> row <span class="c-kw">is</span> <span class="c-kw">None</span>: <span class="c-kw">return</span> <span class="c-kw">False</span>
+    <span class="c-cmt"># Allow re-processing of failed/stuck records after TTL</span>
+    <span class="c-kw">return</span> row.status <span class="c-kw">in</span> (<span class="c-str">'done'</span>, <span class="c-str">'in_progress'</span>)
+
+<span class="c-kw">def</span> <span class="c-fn">mark_processing</span>(key: <span class="c-cls">str</span>, db):
+    ttl = datetime.<span class="c-fn">utcnow</span>() + timedelta(hours=<span class="c-num">24</span>)
+    db.<span class="c-fn">execute</span>(text(<span class="c-str">"""
+        INSERT INTO idempotency_keys(key, status, created_at, expires_at)
+        VALUES(:k, 'in_progress', now(), :exp)
+        ON CONFLICT(key) DO NOTHING
+    """</span>), {<span class="c-str">"k"</span>: key, <span class="c-str">"exp"</span>: ttl})
+    db.<span class="c-fn">commit</span>()</pre>
+      </div>
+      <div class="code-pane" id="id-redis">
+        <pre><span class="c-kw">import</span> redis, json
+r = redis.<span class="c-cls">Redis</span>(decode_responses=<span class="c-kw">True</span>)
+
+<span class="c-kw">def</span> <span class="c-fn">already_processed</span>(key: <span class="c-cls">str</span>) -> <span class="c-cls">bool</span>:
+    <span class="c-kw">return</span> r.<span class="c-fn">exists</span>(<span class="c-str">f"idem:{key}"</span>) == <span class="c-num">1</span>
+
+<span class="c-kw">def</span> <span class="c-fn">mark_processing</span>(key: <span class="c-cls">str</span>, ttl_hours: <span class="c-cls">int</span> = <span class="c-num">24</span>):
+    <span class="c-cmt"># SET NX: only set if key doesn't exist (atomic)</span>
+    ok = r.<span class="c-fn">set</span>(<span class="c-str">f"idem:{key}"</span>, <span class="c-str">"in_progress"</span>,
+               ex=ttl_hours*<span class="c-num">3600</span>, nx=<span class="c-kw">True</span>)
+    <span class="c-kw">if</span> <span class="c-kw">not</span> ok:
+        <span class="c-kw">raise</span> <span class="c-cls">DuplicateEventError</span>(f<span class="c-str">"Already in-flight: {key}"</span>)
+
+<span class="c-kw">def</span> <span class="c-fn">mark_done</span>(key: <span class="c-cls">str</span>, result: <span class="c-cls">dict</span>):
+    r.<span class="c-fn">set</span>(<span class="c-str">f"idem:{key}"</span>, json.<span class="c-fn">dumps</span>(result), ex=<span class="c-num">7</span>*<span class="c-num">24</span>*<span class="c-num">3600</span>)
+    <span class="c-cmt"># 7-day TTL so you can replay the result without re-running</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 ── STATE MACHINE ──────────────────────────────────── -->
+  <section class="section reveal">
+    <div class="section-header">
+      <div class="section-num">Section 03</div>
+      <h2>The Agent as a State Machine</h2>
+      <p>Every scheduled agent transitions through states. Modelling this explicitly prevents "stuck" runs and makes observability trivial — you can always answer "what is this agent doing right now?"</p>
+    </div>
+
+    <div class="sm-wrap reveal">
+      <p style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px">Click any state to learn what can go wrong there</p>
+      <svg class="sm-svg" viewBox="0 0 640 240" role="img" aria-label="Agent state machine: idle, triggered, running, done, failed">
+        <defs>
+          <marker id="smArrow" markerWidth="8" markerHeight="6" refX="6" refY="3" orient="auto">
+            <polygon points="0 0,8 3,0 6" fill="#64748b"/>
+          </marker>
+          <marker id="smArrowGreen" markerWidth="8" markerHeight="6" refX="6" refY="3" orient="auto">
+            <polygon points="0 0,8 3,0 6" fill="#10b981"/>
+          </marker>
+          <marker id="smArrowRed" markerWidth="8" markerHeight="6" refX="6" refY="3" orient="auto">
+            <polygon points="0 0,8 3,0 6" fill="#f87171"/>
+          </marker>
+        </defs>
+        <!-- Edges -->
+        <line x1="76" y1="120" x2="138" y2="120" stroke="#64748b" stroke-width="1.8" marker-end="url(#smArrow)"/>
+        <line x1="238" y1="120" x2="298" y2="120" stroke="#64748b" stroke-width="1.8" marker-end="url(#smArrow)"/>
+        <line x1="398" y1="120" x2="468" y2="95" stroke="#10b981" stroke-width="1.8" marker-end="url(#smArrowGreen)"/>
+        <line x1="398" y1="130" x2="468" y2="155" stroke="#f87171" stroke-width="1.8" stroke-dasharray="5 3" marker-end="url(#smArrowRed)"/>
+        <!-- Retry edge: failed → triggered -->
+        <path d="M 540 168 Q 540 210 340 210 Q 168 210 168 160" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="4 3" fill="none" marker-end="url(#smArrow)"/>
+        <text x="340" y="225" text-anchor="middle" fill="#f59e0b" font-size="10" font-family="Inter">retry (max 3)</text>
+        <!-- Idle -->
+        <g class="sm-node" data-state="idle" tabindex="0" role="button" aria-label="Idle state">
+          <circle cx="46" cy="120" r="36" fill="rgba(100,116,139,.12)" stroke="#64748b" stroke-width="1.5"/>
+          <text x="46" y="124" text-anchor="middle" fill="#94a3b8" font-size="11" font-weight="700" font-family="Inter">IDLE</text>
+        </g>
+        <!-- Triggered -->
+        <g class="sm-node" data-state="triggered" tabindex="0" role="button" aria-label="Triggered state">
+          <rect x="142" y="96" width="92" height="48" rx="10" fill="rgba(245,158,11,.12)" stroke="var(--amber)" stroke-width="1.5"/>
+          <text x="188" y="124" text-anchor="middle" fill="#fcd34d" font-size="11" font-weight="700" font-family="Inter">TRIGGERED</text>
+        </g>
+        <!-- Running -->
+        <g class="sm-node" data-state="running" tabindex="0" role="button" aria-label="Running state">
+          <rect x="302" y="96" width="92" height="48" rx="10" fill="rgba(59,130,246,.12)" stroke="var(--blue)" stroke-width="1.5"/>
+          <text x="348" y="124" text-anchor="middle" fill="#93c5fd" font-size="11" font-weight="700" font-family="Inter">RUNNING</text>
+        </g>
+        <!-- Done -->
+        <g class="sm-node" data-state="done" tabindex="0" role="button" aria-label="Done state">
+          <rect x="472" y="72" width="86" height="44" rx="10" fill="rgba(16,185,129,.12)" stroke="#10b981" stroke-width="1.5"/>
+          <text x="515" y="98" text-anchor="middle" fill="#34d399" font-size="11" font-weight="700" font-family="Inter">DONE</text>
+        </g>
+        <!-- Failed -->
+        <g class="sm-node" data-state="failed" tabindex="0" role="button" aria-label="Failed state">
+          <rect x="472" y="132" width="86" height="44" rx="10" fill="rgba(239,68,68,.1)" stroke="#f87171" stroke-width="1.5" stroke-dasharray="5 3"/>
+          <text x="515" y="158" text-anchor="middle" fill="#fca5a5" font-size="11" font-weight="700" font-family="Inter">FAILED</text>
+        </g>
+        <!-- Edge labels -->
+        <text x="105" y="112" fill="#64748b" font-size="9" font-family="Inter" text-anchor="middle">trigger</text>
+        <text x="268" y="112" fill="#64748b" font-size="9" font-family="Inter" text-anchor="middle">start</text>
+        <text x="448" y="105" fill="#10b981" font-size="9" font-family="Inter" text-anchor="middle">success</text>
+        <text x="448" y="155" fill="#f87171" font-size="9" font-family="Inter" text-anchor="middle">exception</text>
+      </svg>
+      <div class="sm-info" id="sm-info">Click a state to see what happens there and what can go wrong.</div>
+    </div>
+
+    <div class="callout tip reveal">
+      <span class="callout-ico">&#128161;</span>
+      <div class="callout-body">
+        <h4>Persist state in the DB, not in the worker process</h4>
+        <p>If the worker crashes mid-run, the DB record shows <code style="font-family:var(--mono);font-size:12px">status='running'</code>. A watchdog process can detect stale running records (older than TTL) and either retry or alert. This is impossible if state lives only in-memory.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 ── RETRY + BACKOFF ────────────────────────────────── -->
+  <section class="section reveal">
+    <div class="section-header">
+      <div class="section-num">Section 04</div>
+      <h2>Exponential Backoff with Jitter</h2>
+      <p>When the LLM API or a downstream service is rate-limited, retrying immediately makes it worse (thundering herd). Exponential backoff gives the system time to recover. Jitter prevents all workers from retrying at the same instant.</p>
+    </div>
+
+    <!-- Retry visualizer -->
+    <div class="retry-wrap reveal">
+      <p style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Retry backoff visualizer — click to animate</p>
+      <button class="retry-btn" id="retry-anim-btn" type="button">&#9654; Animate backoff</button>
+      <div class="retry-timeline" id="retry-timeline" aria-label="Retry backoff chart"></div>
+      <div class="retry-summary" id="retry-summary"></div>
+    </div>
+
+    <div class="code-window reveal">
+      <div class="code-chrome"><div class="dot-r"></div><div class="dot-y"></div><div class="dot-g"></div><div class="code-win-label">retry.py</div></div>
+      <pre><span class="c-kw">import</span> time, random, anthropic
+<span class="c-kw">from</span> typing <span class="c-kw">import</span> Callable, TypeVar
+
+T = TypeVar(<span class="c-str">'T'</span>)
+
+<span class="c-kw">def</span> <span class="c-fn">retry_with_backoff</span>(
+    fn: Callable[[], T],
+    max_attempts: <span class="c-cls">int</span> = <span class="c-num">5</span>,
+    base_delay: <span class="c-cls">float</span> = <span class="c-num">1.0</span>,
+    max_delay: <span class="c-cls">float</span> = <span class="c-num">60.0</span>,
+    jitter: <span class="c-cls">float</span> = <span class="c-num">0.25</span>,
+) -> T:
+    <span class="c-str">"""Exponential backoff with full jitter for LLM API calls."""</span>
+    <span class="c-kw">for</span> attempt <span class="c-kw">in</span> <span class="c-fn">range</span>(max_attempts):
+        <span class="c-kw">try</span>:
+            <span class="c-kw">return</span> <span class="c-fn">fn</span>()
+        <span class="c-kw">except</span> (anthropic.<span class="c-cls">RateLimitError</span>,
+                anthropic.<span class="c-cls">APITimeoutError</span>) <span class="c-kw">as</span> e:
+            <span class="c-kw">if</span> attempt == max_attempts - <span class="c-num">1</span>:
+                <span class="c-kw">raise</span>
+            <span class="c-cmt"># Exponential delay with full jitter</span>
+            delay = <span class="c-fn">min</span>(
+                base_delay * (<span class="c-num">2</span> ** attempt) * (<span class="c-num">1</span> + random.<span class="c-fn">random</span>() * jitter),
+                max_delay,
+            )
+            logger.<span class="c-fn">warning</span>(<span class="c-str">f"Rate limited (attempt {attempt+1}), sleeping {delay:.1f}s"</span>)
+            time.<span class="c-fn">sleep</span>(delay)
+        <span class="c-kw">except</span> anthropic.<span class="c-cls">APIStatusError</span> <span class="c-kw">as</span> e:
+            <span class="c-kw">if</span> e.status_code <span class="c-kw">in</span> {<span class="c-num">400</span>, <span class="c-num">401</span>, <span class="c-num">403</span>}:
+                <span class="c-kw">raise</span>  <span class="c-cmt"># Don't retry client errors</span>
+            <span class="c-kw">raise</span></pre>
+    </div>
+  </section>
+
+  <!-- 05 ── FAILURE MODES ──────────────────────────────────── -->
+  <section class="section reveal">
+    <div class="section-header">
+      <div class="section-num">Section 05</div>
+      <h2>Failure Modes &amp; Fixes</h2>
+      <p>Background jobs fail silently. No user is watching. You need alerts, dead-letter queues, and self-healing patterns baked in from the start.</p>
+    </div>
+    <div class="fm-grid reveal">
+      <div class="fm-row">
+        <div class="fm-icon">&#9762;</div>
+        <div class="fm-content">
+          <h4>Poison message</h4>
+          <p>A malformed payload causes the worker to crash every time it processes it. Without a DLQ, the message re-queues forever, blocking all other work.</p>
+          <span class="fm-fix">Fix: max delivery count → DLQ + alert on DLQ depth</span>
+        </div>
+      </div>
+      <div class="fm-row">
+        <div class="fm-icon">&#9928;</div>
+        <div class="fm-content">
+          <h4>Thundering herd</h4>
+          <p>All tenants scheduled at :00 → 10,000 LLM calls in the first second. Rate-limit errors cascade.</p>
+          <span class="fm-fix">Fix: jitter the schedule per tenant (hash(tenant_id) % 60 seconds)</span>
+        </div>
+      </div>
+      <div class="fm-row">
+        <div class="fm-icon">&#9917;</div>
+        <div class="fm-content">
+          <h4>LLM rate limits</h4>
+          <p>Provider returns 429. Naive retry with no backoff amplifies the load and gets you banned.</p>
+          <span class="fm-fix">Fix: exponential backoff + per-tenant token bucket + fallback to smaller model</span>
+        </div>
+      </div>
+      <div class="fm-row">
+        <div class="fm-icon">&#128274;</div>
+        <div class="fm-content">
+          <h4>Stale locks / stuck runs</h4>
+          <p>Worker crashes mid-run; DB record stays <code style="font-family:var(--mono);font-size:11px">status='running'</code> forever. New runs are blocked forever.</p>
+          <span class="fm-fix">Fix: heartbeat + TTL; watchdog marks as 'failed' if no heartbeat in N minutes</span>
+        </div>
+      </div>
+      <div class="fm-row">
+        <div class="fm-icon">&#128488;</div>
+        <div class="fm-content">
+          <h4>Silent tool failure</h4>
+          <p>External API returns 200 with an error body. The agent accepts the "success" and writes bad data silently.</p>
+          <span class="fm-fix">Fix: validate every tool response schema; distinguish "API returned" from "API returned correct data"</span>
+        </div>
+      </div>
+      <div class="fm-row">
+        <div class="fm-icon">&#127744;</div>
+        <div class="fm-content">
+          <h4>Missing runs after downtime</h4>
+          <p>Server was down during the 2am cron window. Should the job run at restart time? Usually yes, with a catch-up mechanism.</p>
+          <span class="fm-fix">Fix: use a job scheduler (APScheduler, Celery beat) with misfire grace period rather than raw cron</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="concept-check reveal">
+      <div class="cc-head">Concept check</div>
+      <p class="cc-q">Your job scheduler is set to cron `0 2 * * *` (2am daily) but the server was down from midnight to 4am. What happens when the server restarts at 4am with a raw crontab?</p>
+      <div class="cc-options">
+        <button type="button" class="cc-opt" data-correct="false">The job runs immediately at restart</button>
+        <button type="button" class="cc-opt" data-correct="true">The job never runs that day — raw cron has no catch-up/misfire concept</button>
+        <button type="button" class="cc-opt" data-correct="false">The job queues and runs at the next scheduled time</button>
+      </div>
+      <p class="cc-feedback">Raw cron has no misfire concept — the 2am window passed while the server was down, so the job simply doesn't run that day. Use APScheduler, Celery beat, or a cloud scheduler with misfire handling if this matters for your use case.</p>
+    </div>
+  </section>
+
+  <!-- PREREQUISITES + EXERCISES ───────────────────────────── -->
+  <section class="section reveal">
+    <div class="section-header">
+      <div class="section-num">Prerequisites</div>
+      <h2>Which days to complete first</h2>
+    </div>
+    <div class="prereq-grid">
+      <div class="prereq-chip"><span class="prereq-day">Day 2</span> Tool use &amp; ReAct</div>
+      <div class="prereq-chip"><span class="prereq-day">Day 4</span> LangGraph state machines</div>
+      <div class="prereq-chip"><span class="prereq-day">Day 6</span> Production engineering</div>
+      <div class="prereq-chip"><span class="prereq-day">Day 13</span> Multi-agent patterns (CrewAI)</div>
+    </div>
+    <p style="margin-top:14px;font-size:13px;color:var(--muted)">Hands-on: <code style="font-family:var(--mono);font-size:12px">exercises/pillar_scheduled_agent_idempotency.py</code></p>
+  </section>
+
+  <section class="section reveal">
+    <div class="section-header">
+      <div class="section-num">Exercises</div>
+      <h2>Practice</h2>
+    </div>
+    <div class="ex-list">
+      <div class="ex-item reveal">
+        <div class="ex-num">1</div>
+        <div class="ex-body">
+          <div class="ex-title">Draw the control plane diagram</div>
+          <div class="ex-desc">For one recurring job (e.g., nightly competitor monitor), diagram: trigger → queue → worker → LLM/tools → side effects → idempotency store. Annotate each arrow with the failure mode and fix.</div>
+          <span class="ex-difficulty diff-easy">Design exercise</span>
+        </div>
+      </div>
+      <div class="ex-item reveal">
+        <div class="ex-num">2</div>
+        <div class="ex-body">
+          <div class="ex-title">Implement idempotent webhook handler</div>
+          <div class="ex-desc">Stub an HTTP endpoint with Flask or FastAPI. Use an in-memory dict as the key store. POST the same payload three times and confirm only one side effect fires. Then simulate a crash mid-handler and observe the stuck state.</div>
+          <span class="ex-difficulty diff-med">Medium</span>
+        </div>
+      </div>
+      <div class="ex-item reveal">
+        <div class="ex-num">3</div>
+        <div class="ex-body">
+          <div class="ex-title">Run the idempotency exercise script</div>
+          <div class="ex-desc">Execute <code style="font-family:var(--mono);font-size:11px">pillar_scheduled_agent_idempotency.py</code>. Extend it with exponential backoff and a DLQ stub. Simulate 5 duplicates and 2 "poison" events and verify correct behaviour.</div>
+          <span class="ex-difficulty diff-hard">Hard</span>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<footer class="pillar-footer">
+  <div class="container pillar-footer-inner">
+    <div>Agentic AI Mastery</div>
+    <a href="learning_pillars.html">&#8592; Learning pillars</a>
+  </div>
+</footer>
+
+<script src="../bg-animation.js"></script>
+<script src="pillar-interactive.js"></script>
+<script>
+(function(){
+  // State machine click handler
+  var smInfo = document.getElementById('sm-info');
+  var smData = {
+    idle:      '<strong>IDLE</strong> — The agent is waiting for the next trigger. This is the healthy resting state. A watchdog should alert if an agent stays idle longer than expected (e.g., no job ran in 48h when daily cadence is expected).',
+    triggered: '<strong>TRIGGERED</strong> — A trigger (cron fire, webhook arrival, queue pop) has started the job. The idempotency key is checked here. If it\'s a duplicate, return immediately without doing work. If fresh, write status=<code style="font-family:var(--mono);font-size:11px">in_progress</code> atomically.',
+    running:   '<strong>RUNNING</strong> — The agent pipeline is executing: load context, call tools, invoke the LLM, write structured outputs. This state should have a TTL. A heartbeat should update a timestamp every N seconds so a watchdog can detect crash without recovery.',
+    done:      '<strong>DONE</strong> — All side effects (emails, DB writes, API calls) succeeded. Write status=<code style="font-family:var(--mono);font-size:11px">done</code> + result + timestamp. This is your audit log.',
+    failed:    '<strong>FAILED</strong> — An unhandled exception or max retries reached. Log the error, update status=<code style="font-family:var(--mono);font-size:11px">failed</code> with stack trace. A retry from FAILED → TRIGGERED is safe <em>only</em> if you already keyed idempotency on the business event, not on the attempt.',
+  };
+  document.querySelectorAll('.sm-node').forEach(function(node){
+    node.addEventListener('click', function(){
+      if(smInfo) smInfo.innerHTML = smData[node.getAttribute('data-state')] || '';
+    });
+    node.addEventListener('keydown', function(e){ if(e.key==='Enter'||e.key===' ') node.click(); });
+  });
+
+  // Webhook idempotency demo
+  var fireBtn = document.getElementById('webhook-fire');
+  var resetBtn = document.getElementById('webhook-reset');
+  var log = document.getElementById('webhook-log');
+  var processed = new Set();
+  var payload = {tenant:'t1', event_type:'contact_updated', entity_id:'ent-42', event_date:'2026-04-14'};
+  var key = payload.tenant+':'+payload.event_type+':'+payload.entity_id+':'+payload.event_date;
+  function addLine(text, cls, delay){
+    setTimeout(function(){
+      var line = document.createElement('div');
+      line.className = 'idem-line ' + cls;
+      line.textContent = text;
+      if(log) log.appendChild(line);
+    }, delay);
+  }
+  if(fireBtn){
+    fireBtn.addEventListener('click', function(){
+      processed.clear();
+      if(log) log.innerHTML='';
+      var deliveries = [
+        {n:1, label:'Delivery 1 arrived — key: '+key.slice(0,24)+'…'},
+        {n:2, label:'Delivery 2 arrived (retry) — same key'},
+        {n:3, label:'Delivery 3 arrived (retry) — same key'},
+      ];
+      deliveries.forEach(function(d, i){
+        addLine(d.label, 'log-ok', i*500);
+        if(!processed.has(key)){
+          processed.add(key);
+          addLine('  → side_effect fired ✓  (email sent, DB updated)', 'log-ok', i*500+120);
+        } else {
+          addLine('  → duplicate_ignored ✗  (no side effects)', 'log-dup', i*500+120);
+        }
+      });
+    });
+  }
+  if(resetBtn){
+    resetBtn.addEventListener('click', function(){
+      processed.clear();
+      if(log) log.innerHTML='';
+    });
+  }
+
+  // Retry backoff visualizer
+  var retryBtn = document.getElementById('retry-anim-btn');
+  var retryTimeline = document.getElementById('retry-timeline');
+  var retrySummary = document.getElementById('retry-summary');
+  var retryAnimated = false;
+  var BASE=1.0, MAX=32.0;
+  var attempts = [0,1,2,3,4];
+  var delays = attempts.map(function(a){ return Math.min(BASE*Math.pow(2,a),MAX); });
+  // Build bars
+  function buildBars(){
+    if(!retryTimeline) return;
+    retryTimeline.innerHTML='';
+    var colors = ['#f87171','#fb923c','#f59e0b','#84cc16','#10b981'];
+    delays.forEach(function(d,i){
+      var group = document.createElement('div');
+      group.className='retry-attempt';
+      var bar = document.createElement('div');
+      bar.className='retry-bar';
+      bar.style.background = colors[i];
+      bar.style.height = '4px';
+      var lbl = document.createElement('div');
+      lbl.className='retry-label';
+      lbl.textContent = 'Attempt '+(i+1)+'\n'+d+'s wait';
+      lbl.style.whiteSpace='pre';
+      group.appendChild(bar);
+      group.appendChild(lbl);
+      retryTimeline.appendChild(group);
+    });
+  }
+  buildBars();
+  if(retryBtn){
+    retryBtn.addEventListener('click', function(){
+      buildBars();
+      retryAnimated = false;
+      if(retrySummary) retrySummary.textContent='';
+      retryBtn.textContent='Animating…';
+      retryBtn.disabled=true;
+      var bars = retryTimeline.querySelectorAll('.retry-bar');
+      var maxD = Math.max.apply(null,delays);
+      var total = 0;
+      delays.forEach(function(d,i){
+        setTimeout(function(){
+          var h = Math.max(18, Math.round((d/maxD)*118));
+          bars[i].style.height = h+'px';
+          total += d;
+          if(i===delays.length-1){
+            if(retrySummary) retrySummary.innerHTML = 'Total wait before giving up: <strong>'+total+'s ('+Math.round(total/60)+'m)</strong> &nbsp;·&nbsp; With 25% jitter added per attempt &nbsp;·&nbsp; No two workers retry at the exact same instant.';
+            retryBtn.textContent='↺ Animate again';
+            retryBtn.disabled=false;
+          }
+        }, i*280);
+      });
+    });
+  }
+
+  // Code tabs
+  document.querySelectorAll('.code-tab').forEach(function(tab){
+    tab.addEventListener('click', function(){
+      var pane = tab.getAttribute('data-pane');
+      tab.closest('.code-tabs').querySelectorAll('.code-tab').forEach(function(t){ t.classList.remove('active'); });
+      document.querySelectorAll('.code-pane').forEach(function(p){ p.classList.remove('active'); });
+      tab.classList.add('active');
+      var el = document.getElementById(pane);
+      if(el) el.classList.add('active');
+    });
+  });
+})();
+</script>
+</body>
+</html>

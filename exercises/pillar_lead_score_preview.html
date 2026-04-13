@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lead score baseline — preview</title>
+<style>
+:root { --bg:#0a0a0f; --card:#141420; --border:#2a2a45; --teal:#0d9488; --purple:#a855f7; --text:#e2e8f0; --muted:#64748b; font-family: system-ui, sans-serif; }
+body { margin:0; min-height:100vh; background:var(--bg); color:var(--text); display:flex; align-items:center; justify-content:center; padding:24px; }
+.card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:28px 32px; max-width:420px; width:100%; }
+h1 { font-size:1.1rem; margin:0 0 8px; font-weight:800; }
+p { color:var(--muted); font-size:0.85rem; line-height:1.5; margin:0 0 20px; }
+.metric { font-size:2.2rem; font-weight:900; background: linear-gradient(135deg, var(--teal), var(--purple)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; animation: popIn 0.8s ease; }
+@keyframes popIn { from { opacity:0; transform: scale(0.92); } to { opacity:1; transform: none; } }
+.bar-wrap { margin-top:18px; }
+.bar-label { font-size:11px; color:var(--muted); margin-bottom:6px; display:flex; justify-content:space-between; }
+.track { height:10px; border-radius:99px; background:#1a1a2e; overflow:hidden; border:1px solid var(--border); }
+.fill { height:100%; border-radius:99px; width:0; transition: width 1.2s cubic-bezier(0.22,1,0.36,1); }
+.fill.a { background: linear-gradient(90deg, var(--teal), #2dd4bf); }
+.fill.b { background: linear-gradient(90deg, #7c3aed, var(--purple)); }
+body.is-ready .fill.a { width: 97%; }
+body.is-ready .fill.b { width: 85%; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>Synthetic lead baseline</h1>
+  <p>Illustrative PR-AUC / precision from <code>pillar_lead_score_baseline.py</code>. Bars animate on load.</p>
+  <div class="metric">0.8500</div>
+  <div class="bar-wrap">
+    <div class="bar-label"><span>Feature: employees (proxy)</span><span>importance</span></div>
+    <div class="track"><div class="fill a"></div></div>
+  </div>
+  <div class="bar-wrap">
+    <div class="bar-label"><span>Feature: site visits</span><span>importance</span></div>
+    <div class="track"><div class="fill b"></div></div>
+  </div>
+</div>
+<script>requestAnimationFrame(function(){ document.body.classList.add('is-ready'); });</script>
+</body>
+</html>

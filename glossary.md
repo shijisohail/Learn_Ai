@@ -1,6 +1,6 @@
 # AI & Agentic AI Glossary
 
-> Quick reference for all 83 technical terms in the 7-day curriculum.
+> Quick reference for technical terms in the curriculum (83 core terms) plus pillar deep-dive addenda.
 > Built for **Sharjeel Sohail** — Senior Backend Engineer learning Generative AI and Agentic AI.
 
 ## Categories
@@ -11,6 +11,7 @@
 - [Multi-Agent](#multi-agent)
 - [Production](#production)
 - [Models & Training](#models--training)
+- [Product & Experimentation (Pillar deep dives)](#product--experimentation-pillar-deep-dives)
 
 ---
 
@@ -547,4 +548,26 @@
 
 ---
 
-*Last updated: 2026-04-06 | 83 terms across 7 categories*
+---
+
+## Product & Experimentation (Pillar deep dives)
+
+### Unit economics (AI product)
+**Definition:** The direct variable cost and revenue implication of one additional unit of usage — here, typically one user request, one document indexed, or one agent run. For LLM products: tokens in/out × price, plus retrieval and orchestration. Compare to value delivered (time saved, revenue lift) to sanity-check pricing and model tier.
+**Example:** If each support ticket costs $0.08 in API spend but saves $12 in agent time, the feature has room before optimizing model size.
+
+### Idempotency key
+**Definition:** A stable identifier attached to a business operation so that retrying the same logical event (e.g. duplicate webhook delivery) does not execute side effects twice. Keys are derived from business fields (account + event id), not from a new random id per HTTP attempt.
+**Example:** `sha256(f"{tenant_id}:{external_event_id}")` stored in a processed-events table before sending email.
+
+### Entity resolution
+**Definition:** The task of determining which records refer to the same real-world entity across noisy strings (names, addresses) and systems. Usually blocking → pairwise scoring → clustering or classification; LLMs may assist only on ambiguous pairs.
+**Example:** Merging "J. Smith", "John Smith Jr.", and a CRM ID into one golden profile.
+
+### Average treatment effect (ATE)
+**Definition:** The expected difference in an outcome between receiving treatment B vs control A, averaged over the population, under randomized assignment. A/B tests estimate ATE for the experiment cohort; extrapolation to other cohorts requires care.
+**Example:** +1.2% conversion for prompt B vs A over 14 days with no change in p95 latency.
+
+---
+
+*Last updated: 2026-04-14 | 87 terms across 8 categories (see also glossary.html for the full interactive 203-term set)*

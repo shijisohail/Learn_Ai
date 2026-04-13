@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Experimentation, A/B &amp; Causal Thinking — What's Next</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="pillar-lesson.css">
+<style>
+/* ── Page-specific widgets ── */
+.two-col-cards{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+@media(max-width:640px){.two-col-cards{grid-template-columns:1fr}}
+.mode-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px 24px;transition:transform .3s,border-color .3s,box-shadow .3s}
+.mode-card:hover{transform:translateY(-4px);box-shadow:0 14px 38px rgba(0,0,0,.4)}
+.mode-card.offline{border-top:3px solid var(--muted)}
+.mode-card.online{border-top:3px solid #f87171}
+.mode-card .mode-badge{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;padding:3px 10px;border-radius:99px;margin-bottom:10px;display:inline-block}
+.mode-card.offline .mode-badge{background:rgba(100,116,139,.15);color:var(--muted)}
+.mode-card.online .mode-badge{background:rgba(248,113,113,.15);color:#f87171}
+.mode-card h3{font-size:15px;font-weight:800;margin-bottom:8px}
+.mode-card ul{padding-left:16px;font-size:13px;color:var(--muted);line-height:1.75}
+.mode-card ul strong{color:var(--text)}
+
+/* AB bar chart */
+.ab-demo-wrap{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;margin:22px 0}
+.ab-demo-wrap h4{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:16px}
+.ab-bars{display:flex;align-items:flex-end;gap:32px;height:160px;margin-bottom:12px}
+.ab-group{display:flex;flex-direction:column;align-items:center;gap:8px;flex:1}
+.ab-bar-wrap{width:100%;max-width:90px;margin:0 auto;height:130px;display:flex;flex-direction:column;justify-content:flex-end;position:relative}
+.ab-bar-fill{width:100%;border-radius:8px 8px 0 0;transition:height 1.3s cubic-bezier(.22,1,.36,1);position:relative}
+.ab-bar-fill.ctrl{background:linear-gradient(180deg,#475569,#334155);height:4px}
+.ab-bar-fill.trt{background:linear-gradient(180deg,#c084fc,#7c3aed);height:4px}
+.ab-bar-fill .bar-label{position:absolute;top:-24px;left:0;right:0;text-align:center;font-size:11px;font-weight:700;opacity:0;transition:opacity .4s .8s}
+.ab-bar-fill.ctrl.grown .bar-label{opacity:1;color:var(--muted)}
+.ab-bar-fill.trt.grown .bar-label{opacity:1;color:#d8b4fe}
+.ab-bar-fill.ctrl.grown{height:72px}
+.ab-bar-fill.trt.grown{height:118px}
+.ab-label{font-size:12px;color:var(--muted);font-weight:600}
+.ab-lift-badge{margin-top:12px;padding:8px 16px;border-radius:99px;background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.3);font-size:12px;font-weight:700;color:#d8b4fe;text-align:center;opacity:0;transition:opacity .5s 1.4s}
+.ab-lift-badge.visible{opacity:1}
+.run-btn{font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;padding:10px 22px;border-radius:10px;border:1px solid #f87171;background:rgba(239,68,68,.12);color:#fca5a5;transition:transform .2s,box-shadow .2s;display:block;margin:0 auto}
+.run-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(239,68,68,.2)}
+.run-btn:active{transform:translateY(0)}
+
+/* Sample size calculator */
+.calc-panel{background:linear-gradient(145deg,rgba(248,113,113,.07),rgba(124,58,237,.06));border:1px solid rgba(248,113,113,.22);border-radius:16px;padding:26px 28px;margin:22px 0}
+.calc-panel h4{font-size:14px;font-weight:800;margin-bottom:18px}
+.calc-row{margin-bottom:16px}
+.calc-row label{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.calc-row label span{font-size:14px;font-weight:800;color:var(--text);text-transform:none;letter-spacing:0}
+.calc-row input[type=range]{width:100%;height:6px;border-radius:99px;outline:none;cursor:pointer;-webkit-appearance:none;background:var(--border)}
+.calc-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#f87171;cursor:pointer;box-shadow:0 0 0 3px rgba(248,113,113,.25)}
+.calc-result{margin-top:20px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+@media(max-width:560px){.calc-result{grid-template-columns:1fr 1fr}}
+.calc-stat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;text-align:center}
+.calc-stat-num{font-size:clamp(1.4rem,3vw,1.9rem);font-weight:900;font-variant-numeric:tabular-nums;color:#f87171;line-height:1}
+.calc-stat-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-top:5px}
+
+/* Validity checklist */
+.validity-wrap{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:26px 28px;margin:22px 0}
+.checklist-progress{height:6px;background:var(--border);border-radius:99px;overflow:hidden;margin-bottom:18px}
+.checklist-progress-bar{height:100%;border-radius:99px;background:linear-gradient(90deg,#f87171,#a855f7);transition:width .45s ease;width:0%}
+.checklist-label{display:flex;justify-content:space-between;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.check-item{display:flex;gap:14px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s}
+.check-item:last-child{border-bottom:none;padding-bottom:0}
+.check-item:hover{background:rgba(248,113,113,.03)}
+.check-btn{width:24px;height:24px;flex-shrink:0;border-radius:6px;border:2px solid var(--border);background:var(--surface2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:transparent;transition:all .2s;padding:0;font-family:inherit}
+.check-item.done .check-btn{background:#10b981;border-color:#10b981;color:#fff}
+.check-content{flex:1}
+.check-title{font-size:13px;font-weight:700;margin-bottom:3px;transition:color .2s}
+.check-item.done .check-title{color:var(--muted);text-decoration:line-through}
+.check-desc{font-size:12px;color:var(--muted);line-height:1.55}
+
+/* Causal DAG */
+.dag-wrap{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px;margin:20px 0}
+.dag-svg{width:100%;max-width:500px;height:auto;display:block;margin:0 auto}
+.dag-node rect{rx:8;ry:8}
+.dag-path{fill:none;stroke-width:2;stroke-linecap:round;marker-end:url(#dagArrow)}
+.dag-path.causal{stroke:var(--green)}
+.dag-path.confound{stroke:#f87171;stroke-dasharray:6 4}
+
+/* Code window with tab switching */
+.code-tabs{display:flex;gap:4px;background:var(--surface2);border:1px solid var(--border);border-radius:10px 10px 0 0;padding:8px 8px 0;overflow-x:auto}
+.code-tab{font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;padding:6px 14px;border-radius:7px 7px 0 0;border:none;background:transparent;color:var(--muted);transition:all .2s}
+.code-tab.active{background:var(--card);color:var(--text)}
+.code-pane{display:none}
+.code-pane.active{display:block}
+.code-pane pre{border-radius:0 0 12px 12px;margin:0}
+
+/* Timeline */
+.timeline{display:flex;flex-direction:column;gap:0;margin:20px 0;position:relative}
+.timeline::before{content:'';position:absolute;left:19px;top:10px;bottom:10px;width:2px;background:linear-gradient(180deg,#f87171,#a855f7)}
+.tl-step{display:flex;gap:18px;padding:0 0 28px}
+.tl-step:last-child{padding-bottom:0}
+.tl-dot{width:40px;height:40px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;z-index:1;border:2px solid}
+.tl-step:nth-child(1) .tl-dot{background:rgba(248,113,113,.15);border-color:#f87171;color:#f87171}
+.tl-step:nth-child(2) .tl-dot{background:rgba(245,158,11,.15);border-color:var(--amber);color:var(--amber)}
+.tl-step:nth-child(3) .tl-dot{background:rgba(59,130,246,.15);border-color:var(--blue);color:var(--blue)}
+.tl-step:nth-child(4) .tl-dot{background:rgba(16,185,129,.15);border-color:var(--green);color:var(--green)}
+.tl-step:nth-child(5) .tl-dot{background:rgba(168,85,247,.15);border-color:var(--purple-light);color:var(--purple-light)}
+.tl-body{flex:1;padding-top:8px}
+.tl-title{font-size:14px;font-weight:700;margin-bottom:5px}
+.tl-desc{font-size:13px;color:var(--muted);line-height:1.6}
+.tl-tag{display:inline-block;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;padding:2px 8px;border-radius:4px;margin-bottom:6px}
+.tl-step:nth-child(1) .tl-tag{background:rgba(248,113,113,.12);color:#f87171}
+.tl-step:nth-child(2) .tl-tag{background:rgba(245,158,11,.12);color:var(--amber)}
+.tl-step:nth-child(3) .tl-tag{background:rgba(59,130,246,.12);color:var(--blue)}
+.tl-step:nth-child(4) .tl-tag{background:rgba(16,185,129,.12);color:var(--green)}
+.tl-step:nth-child(5) .tl-tag{background:rgba(168,85,247,.12);color:var(--purple-light)}
+</style>
+</head>
+<body data-pillar-track="exp" data-animation-density="high">
+
+<div id="progress-bar" role="progressbar" aria-hidden="true"></div>
+<button type="button" id="back-to-top" aria-label="Back to top">↑</button>
+
+<nav>
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-brand">&#8592; Back to Dashboard</a>
+    <div class="nav-right">
+      <a href="learning_pillars.html" class="nav-btn next">Learning pillars</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+
+  <section class="hero">
+    <div class="hero-eyebrow">
+      <span class="hero-icon">&#9878;</span>
+      <span class="difficulty-badge">DS / ML track</span>
+      <span class="time-badge">&#9201; 1&#8211;2 days</span>
+    </div>
+    <h1>Experimentation &amp;<br><span>causal thinking</span></h1>
+    <p class="hero-sub">Offline benchmarks tell you whether a change <em>can</em> work. A/B tests tell you whether it <em>did</em> work in production. Causal reasoning tells you whether the test measured what you think it measured.</p>
+    <div class="hero-stats">
+      <div class="stat-item"><div class="stat-num" data-target="5">0</div><div class="stat-label">Sections</div></div>
+      <div class="stat-item"><div class="stat-num" data-target="3">0</div><div class="stat-label">Widgets</div></div>
+      <div class="stat-item"><div class="stat-num" data-target="8">0</div><div class="stat-label">Common pitfalls</div></div>
+      <div class="stat-item"><div class="stat-num" data-target="45">0</div><div class="stat-label">Min read</div></div>
+    </div>
+    <div class="topic-pills">
+      <span class="topic-pill">A/B Testing</span>
+      <span class="topic-pill">Sample Size</span>
+      <span class="topic-pill">Causal DAG</span>
+      <span class="topic-pill">Statistical Power</span>
+      <span class="topic-pill">LLM Evals</span>
+      <span class="topic-pill">Guardrail Metrics</span>
+    </div>
+  </section>
+
+  <!-- 01 ── OFFLINE VS ONLINE ─────────────────────────────── -->
+  <section class="section reveal">
+    <div class="section-header">
+      <div class="section-num">Section 01</div>
+      <h2>Offline vs Online — Two Different Games</h2>
+      <p>Confusing leaderboard gains with business impact is the most common failure mode. These two evaluation loops serve different purposes and must both be run.</p>
+    </div>
+    <div class="two-col-cards">
+      <div class="mode-card offline reveal reveal-delay-1">
+        <div class="mode-badge">Offline Eval</div>
+        <h3>Before you ship</h3>
+        <ul>
+          <li><strong>Speed:</strong> Fast — seconds to hours</li>
+          <li><strong>Control:</strong> Full control over inputs, golden sets</li>
+          <li><strong>Good for:</strong> Regression testing, safety, capability checks</li>
+          <li><strong>Blind spots:</strong> Doesn't capture user behaviour, latency effects, novelty effect, or traffic distribution shift</li>
+        </ul>
+      </div>
+      <div class="mode-card online reveal reveal-delay-2">
+        <div class="mode-badge">Online A/B</div>
+        <h3>After you ship (to a slice)</h3>
+        <ul>
+          <li><strong>Speed:</strong> Days to weeks (needs statistical power)</li>
+          <li><strong>Control:</strong> Random assignment; real traffic</li>
+          <li><strong>Good for:</strong> Conversion, retention, revenue, latency in practice</li>
+          <li><strong>Blind spots:</strong> Network effects, novelty, equilibrium shifts post-ship</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- AB bar chart demo -->
+    <div class="ab-demo-wrap reveal">
+      <h4>Illustrative lift — animates when you click Run</h4>
+      <div class="ab-bars">
+        <div class="ab-group">
+          <div class="ab-bar-wrap">
+            <div class="ab-bar-fill ctrl" id="bar-ctrl"><span class="bar-label">3.1%</span></div>
+          </div>
+          <div class="ab-label">Control A</div>
+        </div>
+        <div class="ab-group">
+          <div class="ab-bar-wrap">
+            <div class="ab-bar-fill trt" id="bar-trt"><span class="bar-label">4.7% (+52%)</span></div>
+          </div>
+          <div class="ab-label">Variant B</div>
+        </div>
+      </div>
+      <div class="ab-lift-badge" id="lift-badge">Stat-sig lift ✓ — p = 0.003 &nbsp;·&nbsp; n = 24,000 per arm</div>
+      <button class="run-btn" id="ab-run-btn" type="button">&#9654; Run experiment animation</button>
+      <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:14px;line-height:1.55">This fictional result: baseline 3.1% → 4.7% conversion. Real experiments require pre-registration and fixed stopping rules.</p>
+    </div>
+
+    <div class="concept-check">
+      <div class="cc-head">Concept check</div>
+      <p class="cc-q">Your offline eval shows 15% lower hallucination rate with the new prompt. What should you conclude?</p>
+      <div class="cc-options">
+        <button type="button" class="cc-opt" data-correct="false">Ship it — offline evals are the gold standard</button>
+        <button type="button" class="cc-opt" data-correct="true">Good signal to run an A/B test; offline evals don't capture real user effects</button>
+        <button type="button" class="cc-opt" data-correct="false">Nothing — offline evals are useless for LLMs</button>
+      </div>
+      <p class="cc-feedback">Correct: offline evals are necessary for regression safety but not sufficient. Ship to a traffic slice and measure OEC (overall evaluation criterion) in production.</p>
+    </div>
+  </section>
+
+  <!-- 02 ── SAMPLE SIZE CALCULATOR ────────────────────────── -->
+  <section class="section reveal">
+    <div class="section-header">
+      <div class="section-num">Section 02</div>
+      <h2>Sample Size Calculator</h2>
+      <p>The most common A/B mistake is stopping early. Pre-compute required sample size <em>before</em> you start collecting data and commit to the stopping rule.</p>
+    </div>
+
+    <div class="callout tip reveal">
+      <span class="callout-ico">&#128161;</span>
+      <div class="callout-body">
+        <h4>The Peeking Problem</h4>
+        <p>If you check results daily and stop when p &lt; 0.05, your false-positive rate explodes to ~30% even at α=0.05. Fix: pre-register sample size and look only once, or use sequential testing (Bayesian or SPRT).</p>
+      </div>
+    </div>
+
+    <div class="calc-panel reveal">
+      <h4>&#128202; Interactive sample size estimator (two-proportion z-test)</h4>
+      <div class="calc-row">
+        <label>Baseline conversion rate <span id="lbl-baseline">5%</span></label>
+        <input type="range" id="sl-baseline" min="1" max="40" step="0.5" value="5">
+      </div>
+      <div class="calc-row">
+        <label>Minimum detectable effect (relative) <span id="lbl-mde">20%</span></label>
+        <input type="range" id="sl-mde" min="5" max="80" step="5" value="20">
+      </div>
+      <div class="calc-row">
+        <label>Statistical power (1−β) <span id="lbl-power">80%</span></label>
+        <input type="range" id="sl-power" min="70" max="95" step="5" value="80">
+      </div>
+      <div class="calc-row">
+        <label>Significance level (α, two-tailed) <span id="lbl-alpha">5%</span></label>
+        <input type="range" id="sl-alpha" min="1" max="10" step="1" value="5">
+      </div>
+      <div class="calc-result">
+        <div class="calc-stat"><div class="calc-stat-num" id="calc-n">—</div><div class="calc-stat-label">n per arm</div></div>
+        <div class="calc-stat"><div class="calc-stat-num" id="calc-total">—</div><div class="calc-stat-label">Total users</div></div>
+        <div class="calc-stat"><div class="calc-stat-num" id="calc-days">—</div><div class="calc-stat-label">Days @ 1k/day</div></div>
+      </div>
+    </div>
+
+    <div class="callout warn reveal">
+      <span class="callout-ico">&#9888;</span>
+      <div class="callout-body">
+        <h4>LLM-specific challenge: what is your conversion rate?</h4>
+        <p>LLM apps often measure proxy metrics (thumbs-up rate, re-prompt rate, session length) rather than direct conversion. Proxy metrics have lower signal-to-noise — you need <strong>much larger samples</strong> to detect the same underlying effect. When in doubt, run longer.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 ── VALIDITY CHECKLIST ─────────────────────────────── -->
+  <section class="section reveal">
+    <div class="section-header">
+      <div class="section-num">Section 03</div>
+      <h2>Experiment Validity Checklist</h2>
+      <p>Tick each item before you start collecting data. An experiment with structural biases gives you false confidence — worse than no experiment.</p>
+    </div>
+
+    <div class="validity-wrap reveal">
+      <div class="checklist-label">
+        <span>Pre-flight readiness</span>
+        <span id="check-pct">0 / 8</span>
+      </div>
+      <div class="checklist-progress"><div class="checklist-progress-bar" id="check-bar"></div></div>
+
+      <div class="check-item" data-checked="false">
+        <button class="check-btn" type="button" aria-label="toggle"></button>
+        <div class="check-content">
+          <div class="check-title">Single independent variable</div>
+          <div class="check-desc">Only one thing differs between control and treatment — model, prompt, OR feature, never multiple at once.</div>
+        </div>
+      </div>
+      <div class="check-item" data-checked="false">
+        <button class="check-btn" type="button" aria-label="toggle"></button>
+        <div class="check-content">
+          <div class="check-title">Identical infrastructure</div>
+          <div class="check-desc">Both arms use the same servers, routing, and cache configuration. Latency differences confound quality perception.</div>
+        </div>
+      </div>
+      <div class="check-item" data-checked="false">
+        <button class="check-btn" type="button" aria-label="toggle"></button>
+        <div class="check-content">
+          <div class="check-title">Sample size pre-computed</div>
+          <div class="check-desc">Required n is calculated before data collection. Stopping rule is fixed and agreed upon.</div>
+        </div>
+      </div>
+      <div class="check-item" data-checked="false">
+        <button class="check-btn" type="button" aria-label="toggle"></button>
+        <div class="check-content">
+          <div class="check-title">Unit of randomization matches unit of analysis</div>
+          <div class="check-desc">Randomize users, not requests. One user in both arms = contamination.</div>
+        </div>
+      </div>
+      <div class="check-item" data-checked="false">
+        <button class="check-btn" type="button" aria-label="toggle"></button>
+        <div class="check-content">
+          <div class="check-title">Cost &amp; latency tracked as co-primary metrics</div>
+          <div class="check-desc">A faster / cheaper variant that degrades quality is not a win. Track all three.</div>
+        </div>
+      </div>
+      <div class="check-item" data-checked="false">
+        <button class="check-btn" type="button" aria-label="toggle"></button>
+        <div class="check-content">
+          <div class="check-title">Duration covers at least one full weekly cycle</div>
+          <div class="check-desc">Weekly seasonality (Mon–Fri peaks, weekend troughs) contaminates experiments run for only 3 days.</div>
+        </div>
+      </div>
+      <div class="check-item" data-checked="false">
+        <button class="check-btn" type="button" aria-label="toggle"></button>
+        <div class="check-content">
+          <div class="check-title">Guardrail metrics defined</div>
+          <div class="check-desc">Name metrics that must NOT regress (error rate, refusal rate, per-request cost). Auto-abort if guardrail trips.</div>
+        </div>
+      </div>
+      <div class="check-item" data-checked="false">
+        <button class="check-btn" type="button" aria-label="toggle"></button>
+        <div class="check-content">
+          <div class="check-title">Rollback plan documented</div>
+          <div class="check-desc">One-click revert to control via feature flag. Not a runbook you write when something goes wrong.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="concept-check reveal">
+      <div class="cc-head">Concept check</div>
+      <p class="cc-q">You ran your A/B test for 3 days, got p=0.04, and shipped. Two weeks later, the lift disappeared. Most likely cause?</p>
+      <div class="cc-options">
+        <button type="button" class="cc-opt" data-correct="false">The model secretly updated itself</button>
+        <button type="button" class="cc-opt" data-correct="true">Novelty effect + stopping too early before weekly seasonality averaged out</button>
+        <button type="button" class="cc-opt" data-correct="false">The A/B framework was broken</button>
+      </div>
+      <p class="cc-feedback">Classic combination: 3-day test misses the weekly cycle and captures novelty effect (users engage more with anything new). Run for at least 7 days, ideally 14.</p>
+    </div>
+  </section>
+
+  <!-- 04 ── CAUSAL THINKING ────────────────────────────────── -->
+  <section class="section reveal">
+    <div class="section-header">
+      <div class="section-num">Section 04</div>
+      <h2>When A/B is (Causally) Enough</h2>
+      <p>Random assignment is powerful but not magic. Understanding <strong>what it does and doesn't control for</strong> lets you design better experiments and interpret results correctly.</p>
+    </div>
+
+    <div class="dag-wrap reveal">
+      <p style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:16px">Causal DAG — why randomisation blocks confounders</p>
+      <svg class="dag-svg" viewBox="0 0 480 200" role="img" aria-label="Causal diagram showing A/B randomisation blocking confounders">
+        <defs>
+          <marker id="dagArrow" markerWidth="8" markerHeight="6" refX="6" refY="3" orient="auto">
+            <polygon points="0 0,8 3,0 6" fill="#64748b"/>
+          </marker>
+          <marker id="dagArrowGreen" markerWidth="8" markerHeight="6" refX="6" refY="3" orient="auto">
+            <polygon points="0 0,8 3,0 6" fill="#10b981"/>
+          </marker>
+          <marker id="dagArrowRed" markerWidth="8" markerHeight="6" refX="6" refY="3" orient="auto">
+            <polygon points="0 0,8 3,0 6" fill="#f87171"/>
+          </marker>
+        </defs>
+        <!-- Confounder (top) -->
+        <rect x="170" y="10" width="140" height="36" rx="8" fill="rgba(248,113,113,.12)" stroke="#f87171" stroke-width="1.5"/>
+        <text x="240" y="32" text-anchor="middle" fill="#fca5a5" font-size="12" font-family="Inter" font-weight="700">Confounder</text>
+        <text x="240" y="47" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter">(user segment, day-of-week…)</text>
+        <!-- Random assignment -->
+        <rect x="10" y="90" width="140" height="36" rx="8" fill="rgba(16,185,129,.12)" stroke="#10b981" stroke-width="1.5"/>
+        <text x="80" y="112" text-anchor="middle" fill="#34d399" font-size="12" font-family="Inter" font-weight="700">Random Assignment</text>
+        <!-- Treatment -->
+        <rect x="170" y="90" width="140" height="36" rx="8" fill="rgba(124,58,237,.12)" stroke="#a855f7" stroke-width="1.5"/>
+        <text x="240" y="112" text-anchor="middle" fill="#d8b4fe" font-size="12" font-family="Inter" font-weight="700">Treatment (A or B)</text>
+        <!-- Outcome -->
+        <rect x="330" y="90" width="140" height="36" rx="8" fill="rgba(245,158,11,.12)" stroke="var(--amber)" stroke-width="1.5"/>
+        <text x="400" y="112" text-anchor="middle" fill="#fcd34d" font-size="12" font-family="Inter" font-weight="700">Outcome (OEC)</text>
+        <!-- Confounder → Treatment (blocked) -->
+        <line x1="240" y1="46" x2="240" y2="88" stroke="#f87171" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#dagArrowRed)"/>
+        <text x="250" y="70" fill="#f87171" font-size="10" font-family="Inter">blocked ✗</text>
+        <!-- Confounder → Outcome -->
+        <line x1="310" y1="28" x2="380" y2="88" stroke="#f87171" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#dagArrowRed)"/>
+        <!-- Random → Treatment (causal) -->
+        <line x1="150" y1="108" x2="168" y2="108" stroke="#10b981" stroke-width="2" marker-end="url(#dagArrowGreen)"/>
+        <!-- Treatment → Outcome (causal) -->
+        <line x1="310" y1="108" x2="328" y2="108" stroke="#10b981" stroke-width="2" marker-end="url(#dagArrowGreen)"/>
+        <!-- Legend -->
+        <line x1="10" y1="165" x2="40" y2="165" stroke="#10b981" stroke-width="2"/>
+        <text x="46" y="169" fill="#94a3b8" font-size="11" font-family="Inter">Causal path</text>
+        <line x1="130" y1="165" x2="160" y2="165" stroke="#f87171" stroke-width="1.5" stroke-dasharray="5 3"/>
+        <text x="166" y="169" fill="#94a3b8" font-size="11" font-family="Inter">Confounder path (randomisation severs Treatment ↔ Confounder)</text>
+      </svg>
+      <p style="font-size:12px;color:var(--muted);margin-top:12px;line-height:1.6">Randomisation breaks the arrow from <em>Confounder → Treatment</em>, making Treatment assignment independent of any pre-existing user trait. The confounder still affects the Outcome — but equally in both arms, so it cancels in the difference.</p>
+    </div>
+
+    <div class="callout info reveal">
+      <span class="callout-ico">&#128218;</span>
+      <div class="callout-body">
+        <h4>When you can't randomise: causal inference methods</h4>
+        <p>Propensity score matching, diff-in-diff (before/after in treated vs control region), and instrumental variables (IV) — these let you estimate causal effects from observational data. Needed when ethics, product constraints, or network effects prevent clean randomisation. Start with A/B; graduate to these only when necessary.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 ── EXPERIMENT LIFECYCLE ───────────────────────────── -->
+  <section class="section reveal">
+    <div class="section-header">
+      <div class="section-num">Section 05</div>
+      <h2>The Experiment Lifecycle</h2>
+      <p>Each stage has a checklist. Skipping early stages doesn't save time — it creates rework at the end.</p>
+    </div>
+    <div class="timeline reveal">
+      <div class="tl-step">
+        <div class="tl-dot">1</div>
+        <div class="tl-body">
+          <div class="tl-tag">Hypothesis</div>
+          <div class="tl-title">Define OEC and hypothesis</div>
+          <div class="tl-desc">Name the primary metric (OEC), the expected direction, and a magnitude. "We believe prompt B will increase 7-day retention by 10% because it reduces hallucination in onboarding answers."</div>
+        </div>
+      </div>
+      <div class="tl-step">
+        <div class="tl-dot">2</div>
+        <div class="tl-body">
+          <div class="tl-tag">Design</div>
+          <div class="tl-title">Calculate n, pick split, set guardrails</div>
+          <div class="tl-desc">Use the calculator above. Register your stopping rule — usually "analyse once at day N." Name guardrail metrics: cost/request must stay within 5% of control, error rate must not exceed baseline × 1.1.</div>
+        </div>
+      </div>
+      <div class="tl-step">
+        <div class="tl-dot">3</div>
+        <div class="tl-body">
+          <div class="tl-tag">Collect</div>
+          <div class="tl-title">Run the experiment (don't peek)</div>
+          <div class="tl-desc">Monitor for guardrail trips only. If a guardrail trips, abort and roll back. Otherwise, don't touch the analysis until the pre-registered date. Log everything: prompt version, model, latency, tokens, cost.</div>
+        </div>
+      </div>
+      <div class="tl-step">
+        <div class="tl-dot">4</div>
+        <div class="tl-body">
+          <div class="tl-tag">Analyse</div>
+          <div class="tl-title">Run the pre-specified test once</div>
+          <div class="tl-desc">Two-proportion z-test, t-test, or Mann-Whitney depending on metric distribution. Check practical significance (effect size) not just statistical significance. A p=0.001 with 0.01% lift is worthless.</div>
+        </div>
+      </div>
+      <div class="tl-step">
+        <div class="tl-dot">5</div>
+        <div class="tl-body">
+          <div class="tl-tag">Ship</div>
+          <div class="tl-title">Roll out gradually, monitor for novelty decay</div>
+          <div class="tl-desc">10% → 50% → 100% with dashboard watching OEC and guardrails. Watch for novelty effect decay over 2–4 weeks post-ship. Log the experiment to MLflow (tag: experiment_id, variant, result).</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 06 ── CODE ───────────────────────────────────────────── -->
+  <section class="section reveal">
+    <div class="section-header">
+      <div class="section-num">Section 06</div>
+      <h2>Python: Running the Statistics</h2>
+    </div>
+    <div class="code-tabs reveal">
+      <button class="code-tab active" data-pane="pane-scipy">scipy test</button>
+      <button class="code-tab" data-pane="pane-size">sample_size.py</button>
+      <button class="code-tab" data-pane="pane-mlflow">mlflow log</button>
+    </div>
+    <div class="code-window" style="border-radius:0 0 12px 12px;border-top:none;margin:0 0 20px">
+      <div class="code-pane active" id="pane-scipy">
+        <pre><span class="c-kw">from</span> scipy <span class="c-kw">import</span> stats
+<span class="c-kw">import</span> numpy <span class="c-kw">as</span> np
+
+<span class="c-cmt"># Raw data: 1 = converted, 0 = didn't</span>
+ctrl_n, ctrl_conversions = <span class="c-num">24_000</span>, <span class="c-num">744</span>   <span class="c-cmt"># 3.1%</span>
+trt_n,  trt_conversions  = <span class="c-num">24_000</span>, <span class="c-num">1_128</span>  <span class="c-cmt"># 4.7%</span>
+
+<span class="c-cmt"># Two-proportion z-test (two-tailed)</span>
+count = np.<span class="c-fn">array</span>([ctrl_conversions, trt_conversions])
+nobs  = np.<span class="c-fn">array</span>([ctrl_n, trt_n])
+z, p = stats.<span class="c-fn">proportions_ztest</span>(count, nobs, alternative=<span class="c-str">'two-sided'</span>)
+
+<span class="c-fn">print</span>(<span class="c-str">f"z = {z:.3f}, p = {p:.4f}"</span>)  <span class="c-cmt"># z = 8.91, p = 0.0000</span>
+
+<span class="c-cmt"># Practical significance: absolute lift and relative lift</span>
+p_ctrl = ctrl_conversions / ctrl_n
+p_trt  = trt_conversions  / trt_n
+abs_lift = p_trt - p_ctrl
+rel_lift = abs_lift / p_ctrl
+
+<span class="c-fn">print</span>(<span class="c-str">f"Absolute lift: {abs_lift:.2%}"</span>)   <span class="c-cmt"># +1.60 pp</span>
+<span class="c-fn">print</span>(<span class="c-str">f"Relative lift: {rel_lift:.1%}"</span>)    <span class="c-cmt"># +51.6%</span>
+
+<span class="c-cmt"># 95% CI on absolute lift</span>
+se = np.<span class="c-fn">sqrt</span>(p_ctrl*(1-p_ctrl)/ctrl_n + p_trt*(1-p_trt)/trt_n)
+ci = (abs_lift - 1.96*se, abs_lift + 1.96*se)
+<span class="c-fn">print</span>(<span class="c-str">f"95% CI: [{ci[0]:.2%}, {ci[1]:.2%}]"</span>)  <span class="c-cmt"># [+1.25 pp, +1.95 pp]</span></pre>
+      </div>
+      <div class="code-pane" id="pane-size">
+        <pre><span class="c-kw">from</span> statsmodels.stats.power <span class="c-kw">import</span> zt_ind_solve_power
+<span class="c-kw">from</span> statsmodels.stats.proportion <span class="c-kw">import</span> proportion_effectsize
+
+<span class="c-kw">def</span> <span class="c-fn">sample_size_for_proportions</span>(
+    baseline: <span class="c-cls">float</span>,
+    mde_relative: <span class="c-cls">float</span>,  <span class="c-cmt"># e.g. 0.20 for 20% relative lift</span>
+    power: <span class="c-cls">float</span> = <span class="c-num">0.80</span>,
+    alpha: <span class="c-cls">float</span> = <span class="c-num">0.05</span>,
+) -> <span class="c-cls">int</span>:
+    p1 = baseline
+    p2 = baseline * (<span class="c-num">1</span> + mde_relative)
+    effect_size = proportion_effectsize(p1, p2)
+    n = zt_ind_solve_power(
+        effect_size=effect_size,
+        alpha=alpha,
+        power=power,
+        alternative=<span class="c-str">'two-sided'</span>,
+    )
+    <span class="c-kw">return</span> <span class="c-fn">int</span>(np.<span class="c-fn">ceil</span>(n))
+
+n_per_arm = <span class="c-fn">sample_size_for_proportions</span>(
+    baseline=<span class="c-num">0.05</span>,  <span class="c-cmt"># 5% baseline conversion</span>
+    mde_relative=<span class="c-num">0.20</span>,  <span class="c-cmt"># detect ≥ 20% relative lift</span>
+)
+<span class="c-fn">print</span>(<span class="c-str">f"n per arm: {n_per_arm:,}"</span>)   <span class="c-cmt"># ~3,840</span>
+<span class="c-fn">print</span>(<span class="c-str">f"Total: {n_per_arm*2:,}"</span>)       <span class="c-cmt"># ~7,680</span></pre>
+      </div>
+      <div class="code-pane" id="pane-mlflow">
+        <pre><span class="c-kw">import</span> mlflow
+
+mlflow.<span class="c-fn">set_experiment</span>(<span class="c-str">"prompt-v2-ab-test"</span>)
+
+<span class="c-kw">with</span> mlflow.<span class="c-fn">start_run</span>(run_name=<span class="c-str">"treatment-prompt-v2"</span>):
+    <span class="c-cmt"># Log experiment metadata</span>
+    mlflow.<span class="c-fn">log_params</span>({
+        <span class="c-str">"variant"</span>: <span class="c-str">"treatment"</span>,
+        <span class="c-str">"prompt_version"</span>: <span class="c-str">"v2.1"</span>,
+        <span class="c-str">"model"</span>: <span class="c-str">"claude-sonnet-4-5"</span>,
+        <span class="c-str">"n_per_arm"</span>: <span class="c-num">24_000</span>,
+        <span class="c-str">"alpha"</span>: <span class="c-num">0.05</span>,
+        <span class="c-str">"power"</span>: <span class="c-num">0.80</span>,
+    })
+    <span class="c-cmt"># Log final results after experiment completes</span>
+    mlflow.<span class="c-fn">log_metrics</span>({
+        <span class="c-str">"conversion_rate"</span>: <span class="c-num">0.047</span>,
+        <span class="c-str">"abs_lift_pp"</span>: <span class="c-num">0.016</span>,
+        <span class="c-str">"rel_lift_pct"</span>: <span class="c-num">51.6</span>,
+        <span class="c-str">"p_value"</span>: <span class="c-num">0.0000</span>,
+        <span class="c-str">"avg_cost_per_req_usd"</span>: <span class="c-num">0.0023</span>,
+        <span class="c-str">"p95_latency_ms"</span>: <span class="c-num">1850</span>,
+    })
+    mlflow.<span class="c-fn">set_tag</span>(<span class="c-str">"decision"</span>, <span class="c-str">"ship"</span>)
+    mlflow.<span class="c-fn">set_tag</span>(<span class="c-str">"shipped_pct"</span>, <span class="c-str">"100"</span>)</pre>
+      </div>
+    </div>
+
+    <div class="callout why reveal">
+      <span class="callout-ico">&#128200;</span>
+      <div class="callout-body">
+        <h4>Log to MLflow — same loop whether tabular ML or LLM</h4>
+        <p>Day 18–20 covers MLflow for ML models. The exact same workflow applies here: hypothesis → run → log params &amp; metrics → tag decision. This makes experiments searchable, reproducible, and reviewable months later.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- PREREQUISITES + EXERCISES ───────────────────────────── -->
+  <section class="section reveal">
+    <div class="section-header">
+      <div class="section-num">Prerequisites</div>
+      <h2>Which days to complete first</h2>
+    </div>
+    <div class="prereq-grid">
+      <div class="prereq-chip"><span class="prereq-day">Day 18</span> MLflow &amp; experiment tracking</div>
+      <div class="prereq-chip"><span class="prereq-day">Day 20</span> Observability</div>
+      <div class="prereq-chip"><span class="prereq-day">Day 21</span> Production MLOps</div>
+      <div class="prereq-chip"><span class="prereq-day">Evals</span> <a href="evals.html" style="color:var(--purple-light);text-decoration:none">Agent Evaluation at Scale</a></div>
+    </div>
+  </section>
+
+  <section class="section reveal">
+    <div class="section-header">
+      <div class="section-num">Exercises</div>
+      <h2>Practice</h2>
+    </div>
+    <div class="ex-list">
+      <div class="ex-item reveal">
+        <div class="ex-num">1</div>
+        <div class="ex-body">
+          <div class="ex-title">Design an LLM A/B experiment end-to-end</div>
+          <div class="ex-desc">Pick one AI feature. Write: hypothesis, OEC, 3 guardrail metrics, sample size (show your calculator), stopping rule, and rollback plan. No code required — just the design doc.</div>
+          <span class="ex-difficulty diff-easy">Design exercise</span>
+        </div>
+      </div>
+      <div class="ex-item reveal">
+        <div class="ex-num">2</div>
+        <div class="ex-body">
+          <div class="ex-title">Run <code style="font-family:var(--mono);font-size:11px">scipy</code> test on synthetic data</div>
+          <div class="ex-desc">Generate two arrays with different conversion rates using <code style="font-family:var(--mono);font-size:11px">np.random.binomial</code>, run the two-proportion z-test, and plot a bar chart of the result. What happens when you halve your sample size?</div>
+          <span class="ex-difficulty diff-med">Medium</span>
+        </div>
+      </div>
+      <div class="ex-item reveal">
+        <div class="ex-num">3</div>
+        <div class="ex-body">
+          <div class="ex-title">Detect the peeking problem</div>
+          <div class="ex-desc">Simulate an experiment 1000 times where the null hypothesis is true. Check significance after each day. Plot the false-positive rate vs the single-look FPR. This should convince you of the peeking problem empirically.</div>
+          <span class="ex-difficulty diff-hard">Hard</span>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<footer class="pillar-footer">
+  <div class="container pillar-footer-inner">
+    <div>Agentic AI Mastery</div>
+    <a href="learning_pillars.html">&#8592; Learning pillars</a>
+  </div>
+</footer>
+
+<script src="../bg-animation.js"></script>
+<script src="pillar-interactive.js"></script>
+<script>
+(function(){
+  // AB run button
+  var runBtn = document.getElementById('ab-run-btn');
+  var barCtrl = document.getElementById('bar-ctrl');
+  var barTrt = document.getElementById('bar-trt');
+  var liftBadge = document.getElementById('lift-badge');
+  var running = false;
+  if(runBtn){
+    runBtn.addEventListener('click', function(){
+      if(running) return;
+      running = true;
+      barCtrl.classList.remove('grown'); barTrt.classList.remove('grown');
+      liftBadge.classList.remove('visible');
+      runBtn.textContent = 'Running…';
+      runBtn.disabled = true;
+      setTimeout(function(){
+        barCtrl.classList.add('grown'); barTrt.classList.add('grown');
+        setTimeout(function(){ liftBadge.classList.add('visible'); }, 1400);
+        setTimeout(function(){
+          runBtn.textContent = '↺ Run again';
+          runBtn.disabled = false;
+          running = false;
+        }, 2200);
+      }, 120);
+    });
+  }
+
+  // Sample size calculator
+  var slBaseline = document.getElementById('sl-baseline');
+  var slMde = document.getElementById('sl-mde');
+  var slPower = document.getElementById('sl-power');
+  var slAlpha = document.getElementById('sl-alpha');
+  function zLookup(pct, map){ return map[pct] || map[Object.keys(map)[0]]; }
+  var zA = {1:2.576,5:1.96,10:1.645};
+  var zB = {70:0.524,75:0.674,80:0.842,85:1.036,90:1.282,95:1.645};
+
+  function updateCalc(){
+    var base = parseFloat(slBaseline.value)/100;
+    var mde  = parseFloat(slMde.value)/100;
+    var pwr  = parseInt(slPower.value);
+    var alph = parseInt(slAlpha.value);
+    document.getElementById('lbl-baseline').textContent = slBaseline.value+'%';
+    document.getElementById('lbl-mde').textContent = slMde.value+'%';
+    document.getElementById('lbl-power').textContent = slPower.value+'%';
+    document.getElementById('lbl-alpha').textContent = slAlpha.value+'%';
+    var p2 = base*(1+mde);
+    var delta = p2 - base;
+    var za = zLookup(alph, zA);
+    var zb = zLookup(pwr, zB);
+    var n = Math.ceil((za+zb)*(za+zb)*(base*(1-base)+p2*(1-p2))/(delta*delta));
+    var total = n*2;
+    var days = Math.ceil(total/1000);
+    var fmt = function(v){ return v.toLocaleString(); };
+    document.getElementById('calc-n').textContent = fmt(n);
+    document.getElementById('calc-total').textContent = fmt(total);
+    document.getElementById('calc-days').textContent = days+'d';
+  }
+  [slBaseline,slMde,slPower,slAlpha].forEach(function(el){ if(el) el.addEventListener('input', updateCalc); });
+  if(slBaseline) updateCalc();
+
+  // Validity checklist
+  document.querySelectorAll('.check-item').forEach(function(item){
+    item.addEventListener('click', function(){
+      var on = item.getAttribute('data-checked')==='true';
+      item.setAttribute('data-checked', on ? 'false' : 'true');
+      item.classList.toggle('done', !on);
+      updateCheckPct();
+    });
+  });
+  function updateCheckPct(){
+    var total = document.querySelectorAll('.check-item').length;
+    var done  = document.querySelectorAll('.check-item[data-checked="true"]').length;
+    var pct   = Math.round(done/total*100);
+    var bar   = document.getElementById('check-bar');
+    var lbl   = document.getElementById('check-pct');
+    if(bar) bar.style.width = pct+'%';
+    if(lbl) lbl.textContent = done+' / '+total;
+  }
+
+  // Code tabs
+  document.querySelectorAll('.code-tab').forEach(function(tab){
+    tab.addEventListener('click', function(){
+      var pane = tab.getAttribute('data-pane');
+      document.querySelectorAll('.code-tab').forEach(function(t){ t.classList.remove('active'); });
+      document.querySelectorAll('.code-pane').forEach(function(p){ p.classList.remove('active'); });
+      tab.classList.add('active');
+      var el = document.getElementById(pane);
+      if(el) el.classList.add('active');
+    });
+  });
+})();
+</script>
+</body>
+</html>

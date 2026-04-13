@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Learning Pillars — Map Your Course</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="pillar-lesson.css">
+</head>
+<body data-pillar-track="hub" data-animation-density="high">
+
+<div id="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-hidden="true"></div>
+<button type="button" id="back-to-top" aria-label="Back to top">↑</button>
+
+<nav>
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-brand">&#8592; Back to Dashboard</a>
+    <span class="nav-tag">What&#8217;s Next &#8212; Learning pillars</span>
+  </div>
+</nav>
+
+<div class="container" id="pillar-hub">
+
+  <section class="pillar-hero">
+    <div class="hero-glow" aria-hidden="true"></div>
+    <div class="pillar-badge"><span class="dot" aria-hidden="true"></span> Curriculum map</div>
+    <h1>Three pillars,<br><span class="grad">one curriculum</span></h1>
+    <p class="hero-sub">
+      Use this page to see how <strong>AI product creation</strong>,
+      <strong>agent development</strong>, and
+      <strong>data science / ML</strong> map onto the 30-day track and the
+      <code style="font-family:var(--mono);font-size:13px;background:var(--surface2);padding:2px 8px;border-radius:6px">next/</code>
+      deep dives. Stretch topics are ideas for further self-study beyond what the HTML course covers end-to-end.
+    </p>
+    <div class="hero-stats">
+      <div class="stat-item">
+        <div class="stat-num" data-target="3">0</div>
+        <div class="stat-label">Pillars</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num" data-target="16">0</div>
+        <div class="stat-label">Deep dives</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num" data-target="30">0</div>
+        <div class="stat-label">Day track</div>
+      </div>
+    </div>
+    <div class="hero-pills" aria-hidden="true">
+      <span class="hero-pill teal">Product &#8594; economics</span>
+      <span class="hero-pill purple">Agents &#8594; reliable loops</span>
+      <span class="hero-pill green">DS/ML &#8594; evidence</span>
+    </div>
+
+    <div class="diagram-wrap" data-reveal>
+      <svg class="pillar-diagram-svg" viewBox="0 0 400 260" role="img" aria-label="Three pillars connect to the curriculum center">
+        <defs>
+          <linearGradient id="pillarGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#0d9488"/>
+            <stop offset="50%" style="stop-color:#7c3aed"/>
+            <stop offset="100%" style="stop-color:#a855f7"/>
+          </linearGradient>
+        </defs>
+        <path class="diagram-line" d="M200 138 L200 48"/>
+        <path class="diagram-line" d="M200 138 L78 218" style="animation-delay:-8s"/>
+        <path class="diagram-line" d="M200 138 L322 218" style="animation-delay:-16s"/>
+        <circle class="diagram-node center" cx="200" cy="138" r="15" fill="#1a1a2e" stroke="url(#pillarGrad)" stroke-width="2.5"/>
+        <text x="200" y="142" text-anchor="middle" fill="#94a3b8" font-size="9" font-family="Inter,sans-serif" font-weight="700">30d</text>
+        <circle class="diagram-node n1" cx="200" cy="48" r="14" fill="rgba(13,148,136,0.2)" stroke="#0d9488" stroke-width="2"/>
+        <text x="200" y="30" text-anchor="middle" fill="#5eead4" font-size="10" font-family="Inter,sans-serif" font-weight="700">Product</text>
+        <circle class="diagram-node n2" cx="78" cy="218" r="14" fill="rgba(124,58,237,0.2)" stroke="#a855f7" stroke-width="2"/>
+        <text x="78" y="242" text-anchor="middle" fill="#d8b4fe" font-size="10" font-family="Inter,sans-serif" font-weight="700">Agents</text>
+        <circle class="diagram-node n3" cx="322" cy="218" r="14" fill="rgba(16,185,129,0.2)" stroke="#10b981" stroke-width="2"/>
+        <text x="322" y="242" text-anchor="middle" fill="#6ee7b7" font-size="10" font-family="Inter,sans-serif" font-weight="700">DS / ML</text>
+      </svg>
+    </div>
+
+    <div class="concept-check" data-reveal>
+      <div class="cc-head">Concept check</div>
+      <p class="cc-q">The three learning pillars are best understood as:</p>
+      <div class="cc-options">
+        <button type="button" class="cc-opt" data-correct="false">Three unrelated certifications you finish in isolation</button>
+        <button type="button" class="cc-opt" data-correct="true">Lenses on the same curriculum—product, agents, and DS/ML reinforce each other</button>
+        <button type="button" class="cc-opt" data-correct="false">Only the DS/ML pillar needs measurable outcomes</button>
+      </div>
+      <p class="cc-feedback">Right: pillars cross-cut days and <code style="font-family:var(--mono);font-size:12px">next/</code> lessons—use them to plan depth, not to silo topics.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-header" data-reveal>
+      <div class="section-num">Pillar map</div>
+      <h2>Where each pillar shows up</h2>
+    </div>
+    <div class="pillar-grid">
+
+      <div class="pillar-card" data-reveal data-reveal-delay="60">
+        <h3><span class="badge">Product</span> AI product creation</h3>
+        <ul>
+          <li><strong>Days:</strong> <a href="../days/day6.html">6</a> (production), <a href="../days/day9.html">9</a> (providers/cost), <a href="../days/day20.html">20</a> (observability), <a href="../days/day25.html">25</a> (auth/tenancy), <a href="../days/day29.html">29</a> &amp; <a href="../days/day30.html">30</a> (architecture capstones)</li>
+          <li><strong>Deep dives:</strong> <a href="ai_product_building.html">From idea to shipped AI product</a></li>
+        </ul>
+        <button type="button" class="stretch-toggle" aria-expanded="false" data-card-toggle>
+          <span class="chev">&#9656;</span> Stretch topics
+        </button>
+        <div class="stretch"><strong>Stretch:</strong> discovery interviews, pricing experiments, roadmap prioritization (RICE), sales/demo narrative for AI features.</div>
+      </div>
+
+      <div class="pillar-card" data-reveal data-reveal-delay="120">
+        <h3><span class="badge">Agents</span> AI agent development</h3>
+        <ul>
+          <li><strong>Days:</strong> <a href="../days/day2.html">2</a>&#8211;<a href="../days/day5.html">5</a> (tools, RAG, LangGraph, multi-agent), <a href="../days/day12.html">12</a> (advanced RAG), <a href="../days/day13.html">13</a> (CrewAI)</li>
+          <li><strong>Deep dives:</strong> <a href="evals.html">Evals</a>, <a href="mcp.html">MCP</a>, <a href="a2a.html">A2A</a>, <a href="scheduled_agents.html">Scheduled &amp; event-driven agents</a></li>
+        </ul>
+        <button type="button" class="stretch-toggle" aria-expanded="false" data-card-toggle>
+          <span class="chev">&#9656;</span> Stretch topics
+        </button>
+        <div class="stretch"><strong>Stretch:</strong> formal HITL review queues, multi-tenant agent isolation at scale, custom tool marketplaces.</div>
+      </div>
+
+      <div class="pillar-card" data-reveal data-reveal-delay="180">
+        <h3><span class="badge">DS / ML</span> Data science &amp; machine learning</h3>
+        <ul>
+          <li><strong>Days:</strong> <a href="../days/day15.html">15</a>&#8211;<a href="../days/day21.html">21</a> (PyTorch, HF, LoRA, MLflow, MLOps, observability)</li>
+          <li><strong>Deep dives:</strong> <a href="finetune.html">Fine-tuning</a>, <a href="tabular_ml_nlp_bridge.html">Tabular ML &amp; NLP pipelines</a>, <a href="experimentation_ab_testing.html">Experimentation &amp; causal thinking</a></li>
+        </ul>
+        <button type="button" class="stretch-toggle" aria-expanded="false" data-card-toggle>
+          <span class="chev">&#9656;</span> Stretch topics
+        </button>
+        <div class="stretch"><strong>Stretch:</strong> deep entity-resolution systems, uplift modeling, Bayesian A/B, drift detection for tabular + LLM features.</div>
+      </div>
+
+      <div class="pillar-card" style="grid-column:1/-1;" data-reveal data-reveal-delay="240">
+        <h3>Related interview prep</h3>
+        <p style="font-size:13px;color:var(--muted);line-height:1.65;margin-bottom:10px">
+          Production and system-design questions in <a href="../interview.html">interview.html</a> reinforce the same pillars — especially Days 31&#8211;40 (system design) and 41&#8211;50 (production / MLOps).
+        </p>
+        <div class="deep-links">
+          <a href="../interview.html" class="deep-link-item" data-pillar="all"><span class="tag agents">Prep</span> Interview</a>
+          <a href="../glossary.html" class="deep-link-item" data-pillar="all"><span class="tag ds">Terms</span> Glossary</a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="section">
+    <div data-reveal>
+      <div class="section-header">
+        <div class="section-num">New deep dives (pillars)</div>
+        <h2>Extra lessons beyond Day 30</h2>
+        <p class="section-lead">
+          Filter by pillar, then open a lesson. Hover the diagram above for a subtle 3D tilt.
+        </p>
+      </div>
+      <div class="pillar-chips" role="tablist" aria-label="Filter deep dives by pillar">
+        <button type="button" class="pillar-chip is-active" data-pillar="all" role="tab" aria-selected="true">All lessons</button>
+        <button type="button" class="pillar-chip" data-pillar="product" role="tab" aria-selected="false">Product</button>
+        <button type="button" class="pillar-chip" data-pillar="agents" role="tab" aria-selected="false">Agents</button>
+        <button type="button" class="pillar-chip" data-pillar="ds" role="tab" aria-selected="false">DS / ML</button>
+      </div>
+      <div class="deep-links">
+        <a href="ai_product_building.html" class="deep-link-item" data-pillar="product"><span class="tag product">Product</span> AI product: idea &#8594; revenue</a>
+        <a href="scheduled_agents.html" class="deep-link-item" data-pillar="agents"><span class="tag agents">Agents</span> Scheduled &amp; event agents</a>
+        <a href="tabular_ml_nlp_bridge.html" class="deep-link-item" data-pillar="ds"><span class="tag ds">DS/ML</span> Tabular ML &amp; NLP bridge</a>
+        <a href="experimentation_ab_testing.html" class="deep-link-item" data-pillar="ds"><span class="tag ds">DS/ML</span> A/B &amp; causal basics</a>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer class="pillar-footer">
+  <div class="container pillar-footer-inner">
+    <div>Agentic AI Mastery</div>
+    <a href="../index.html">&#8592; Back to Dashboard</a>
+  </div>
+</footer>
+
+<script src="../bg-animation.js"></script>
+<script>
+(function(){
+  document.querySelectorAll('[data-card-toggle]').forEach(function(btn){
+    var card = btn.closest('.pillar-card');
+    if (!card) return;
+    btn.addEventListener('click', function(){
+      var open = !card.classList.contains('is-expanded');
+      card.classList.toggle('is-expanded', open);
+      btn.setAttribute('aria-expanded', open);
+    });
+  });
+})();
+</script>
+<script src="pillar-interactive.js"></script>
+</body>
+</html>

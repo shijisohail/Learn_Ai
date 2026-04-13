@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Product: Idea to Revenue — What's Next</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="pillar-lesson.css">
+<style>
+/* ── Discovery funnel ── */
+.funnel{display:flex;flex-direction:column;gap:0;margin:22px 0}
+.funnel-step{padding:16px 22px;font-size:14px;font-weight:700;border-radius:0;border:1px solid var(--border);border-top:none;cursor:pointer;text-align:center;transition:all .25s;position:relative}
+.funnel-step:first-child{border-top:1px solid var(--border);border-radius:12px 12px 0 0}
+.funnel-step:last-child{border-radius:0 0 12px 12px}
+.funnel-step::after{content:'▼';position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--muted);transition:color .2s}
+.funnel-step:last-child::after{display:none}
+.funnel-step:hover,.funnel-step.active{background:rgba(13,148,136,.1);border-color:rgba(13,148,136,.4);color:var(--teal-light)}
+.funnel-step:hover::after,.funnel-step.active::after{color:var(--teal-light)}
+.funnel-detail{padding:16px 20px;background:var(--card);border:1px solid rgba(13,148,136,.3);border-top:none;border-radius:0 0 10px 10px;font-size:13px;color:var(--muted);line-height:1.7;min-height:72px;transition:all .3s}
+.funnel-step.active + .funnel-detail{display:block}
+
+/* ── Architecture decision tree ── */
+.arch-tree{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;margin:22px 0}
+.arch-svg{width:100%;max-width:640px;height:auto;display:block;margin:0 auto}
+.arch-node{cursor:pointer;transition:all .25s}
+.arch-node:hover rect,.arch-node:hover circle{filter:brightness(1.2)}
+.arch-info{margin-top:14px;font-size:13px;color:var(--muted);line-height:1.65;min-height:48px;padding:12px 14px;border-radius:10px;background:var(--surface2);border:1px solid var(--border)}
+.arch-info strong{color:var(--text)}
+
+/* ── PRD checklist ── */
+.prd-sections{display:grid;gap:10px;margin:20px 0}
+.prd-section{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color .2s}
+.prd-section:hover{border-color:rgba(13,148,136,.35)}
+.prd-toggle{width:100%;text-align:left;font-family:inherit;font-size:14px;font-weight:700;padding:14px 18px;background:transparent;border:none;color:var(--text);cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.prd-chevron{transition:transform .3s;color:var(--muted);font-size:12px}
+.prd-body{padding:0 18px;max-height:0;overflow:hidden;transition:max-height .4s ease,padding .4s}
+.prd-body.open{max-height:400px;padding:14px 18px}
+.prd-body ul{padding-left:16px;font-size:13px;color:var(--muted);line-height:1.8}
+.prd-body ul strong{color:var(--text)}
+
+/* ── Unit economics slider ── */
+.econ-panel{background:linear-gradient(145deg,rgba(13,148,136,.07),rgba(124,58,237,.06));border:1px solid rgba(13,148,136,.25);border-radius:16px;padding:26px 28px;margin:22px 0}
+.econ-panel h4{font-size:14px;font-weight:800;margin-bottom:18px}
+.econ-row{margin-bottom:14px}
+.econ-row label{display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px}
+.econ-row label span{font-size:13px;font-weight:800;color:var(--text);text-transform:none;letter-spacing:0}
+.econ-row input[type=range]{width:100%;height:6px;border-radius:99px;outline:none;cursor:pointer;-webkit-appearance:none;background:var(--border)}
+.econ-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--teal);cursor:pointer;box-shadow:0 0 0 3px rgba(13,148,136,.25)}
+.econ-results{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:20px}
+@media(max-width:560px){.econ-results{grid-template-columns:1fr 1fr}}
+.econ-stat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;text-align:center}
+.econ-num{font-size:clamp(1.2rem,2.5vw,1.7rem);font-weight:900;font-variant-numeric:tabular-nums;line-height:1}
+.econ-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-top:5px}
+.econ-positive{color:var(--green)}
+.econ-negative{color:#f87171}
+.econ-neutral{color:var(--teal-light)}
+
+/* ── Launch checklist ── */
+.launch-checklist{display:flex;flex-direction:column;gap:0;margin:20px 0}
+.lc-item{display:flex;gap:14px;align-items:flex-start;padding:13px 0;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s}
+.lc-item:last-child{border-bottom:none;padding-bottom:0}
+.lc-btn{width:22px;height:22px;flex-shrink:0;border-radius:50%;border:2px solid var(--border);background:var(--surface2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:transparent;transition:all .2s;padding:0;font-family:inherit;margin-top:1px}
+.lc-item.done .lc-btn{background:var(--teal);border-color:var(--teal);color:#fff}
+.lc-title{font-size:13px;font-weight:700;margin-bottom:3px;transition:color .2s}
+.lc-item.done .lc-title{color:var(--muted);text-decoration:line-through}
+.lc-sub{font-size:12px;color:var(--muted);line-height:1.5}
+.lc-cat{font-size:10px;font-weight:800;padding:1px 7px;border-radius:99px;margin-left:6px;vertical-align:middle}
+.cat-eval{background:rgba(59,130,246,.12);color:#93c5fd}
+.cat-ops{background:rgba(16,185,129,.12);color:var(--green)}
+.cat-sec{background:rgba(239,68,68,.1);color:#f87171}
+.cat-cost{background:rgba(245,158,11,.12);color:var(--amber)}
+
+/* ── Code tabs ── */
+.code-tabs{display:flex;gap:4px;background:var(--surface2);border:1px solid var(--border);border-radius:10px 10px 0 0;padding:8px 8px 0;overflow-x:auto}
+.code-tab{font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;padding:6px 14px;border-radius:7px 7px 0 0;border:none;background:transparent;color:var(--muted);transition:all .2s}
+.code-tab.active{background:var(--card);color:var(--text)}
+.code-pane{display:none}
+.code-pane.active{display:block}
+.code-pane pre{border-radius:0 0 12px 12px;margin:0}
+
+/* ── Timeline ── */
+.timeline{display:flex;flex-direction:column;gap:0;margin:20px 0;position:relative}
+.timeline::before{content:'';position:absolute;left:19px;top:10px;bottom:10px;width:2px;background:linear-gradient(180deg,var(--teal),var(--purple))}
+.tl-step{display:flex;gap:18px;padding:0 0 26px}
+.tl-step:last-child{padding-bottom:0}
+.tl-dot{width:40px;height:40px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;z-index:1;border:2px solid var(--teal);background:rgba(13,148,136,.15);color:var(--teal-light)}
+.tl-body{flex:1;padding-top:8px}
+.tl-tag{display:inline-block;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;padding:2px 8px;border-radius:4px;background:rgba(13,148,136,.12);color:var(--teal-light);margin-bottom:6px}
+.tl-title{font-size:14px;font-weight:700;margin-bottom:5px}
+.tl-desc{font-size:13px;color:var(--muted);line-height:1.65}
+</style>
+</head>
+<body data-pillar-track="product" data-animation-density="high">
+
+<div id="progress-bar" role="progressbar" aria-hidden="true"></div>
+<button type="button" id="back-to-top" aria-label="Back to top">↑</button>
+
+<nav>
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-brand">&#8592; Back to Dashboard</a>
+    <div class="nav-right">
+      <a href="learning_pillars.html" class="nav-btn next">Learning pillars</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+
+  <section class="hero">
+    <div class="hero-eyebrow">
+      <span class="hero-icon">&#128640;</span>
+      <span class="difficulty-badge">Product track</span>
+      <span class="time-badge">&#9201; 1&#8211;2 days</span>
+    </div>
+    <h1>AI Product:<br><span>Idea to revenue</span></h1>
+    <p class="hero-sub">Bridge market problems to shipped AI: discovery, PRD-level clarity, architecture tradeoffs, unit economics, and a launch gate checklist. Complements Days 6, 9, 20, 25, and 29–30 without repeating them.</p>
+    <div class="hero-stats">
+      <div class="stat-item"><div class="stat-num" data-target="5">0</div><div class="stat-label">Sections</div></div>
+      <div class="stat-item"><div class="stat-num" data-target="4">0</div><div class="stat-label">Widgets</div></div>
+      <div class="stat-item"><div class="stat-num" data-target="12">0</div><div class="stat-label">Launch gates</div></div>
+      <div class="stat-item"><div class="stat-num" data-target="45">0</div><div class="stat-label">Min read</div></div>
+    </div>
+    <div class="topic-pills">
+      <span class="topic-pill">Discovery</span>
+      <span class="topic-pill">PRD</span>
+      <span class="topic-pill">Unit economics</span>
+      <span class="topic-pill">Architecture tradeoffs</span>
+      <span class="topic-pill">Launch checklist</span>
+      <span class="topic-pill">Evals in production</span>
+    </div>
+  </section>
+
+  <!-- 01 ── DISCOVERY ─────────────────────────────────────── -->
+  <section class="section reveal">
+    <div class="section-header">
+      <div class="section-num">Section 01</div>
+      <h2>Discovery — From Vague Idea to a Testable Problem</h2>
+      <p>Before architecture: who pays, what decision gets better, and what "good" means in numbers. If you can't state a baseline metric, you can't prove the AI improved anything.</p>
+    </div>
+
+    <div class="callout warn reveal">
+      <span class="callout-ico">&#9888;</span>
+      <div class="callout-body">
+        <h4>The "feels smarter" trap</h4>
+        <p>If the only stated benefit of your AI feature is "it feels smarter" or "users will love it," you have not done discovery. Keep asking: what specific <strong>decision</strong> does a specific <strong>user</strong> make <strong>better or faster</strong>, and how much does the current wrong answer cost them in dollars, time, or trust?</p>
+      </div>
+    </div>
+
+    <!-- Discovery funnel - click each stage -->
+    <div class="reveal">
+      <p style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px">Discovery framework — click each stage</p>
+      <div class="funnel" id="discovery-funnel">
+        <div class="funnel-step" data-detail="d0">&#128101; User &amp; job-to-be-done</div>
+        <div class="funnel-detail" id="d0" style="display:none">
+          Who is the user and what outcome are they trying to achieve? NOT "uses the product" but: "SDR at a 50-person SaaS who needs to prioritise which of 800 leads to call this week". The more specific, the easier it is to know whether your AI actually helps.
+        </div>
+        <div class="funnel-step" data-detail="d1">&#128680; Current workaround</div>
+        <div class="funnel-detail" id="d1" style="display:none">
+          What are they doing today without your feature? "They sort the Salesforce list by last-activity date and call the top 20." Understanding the workaround reveals the real cost bar: your AI must be meaningfully better than this, not just technically impressive.
+        </div>
+        <div class="funnel-step" data-detail="d2">&#128176; Cost of the wrong decision</div>
+        <div class="funnel-detail" id="d2" style="display:none">
+          If the workaround produces a wrong answer, what is the dollar / time / trust cost? "Calling a cold lead instead of a hot lead wastes 20 min and loses a potential deal worth $5k ARR." This number becomes your value ceiling — your AI cannot be worth more than the cost of the problem.
+        </div>
+        <div class="funnel-step" data-detail="d3">&#128200; Success metric</div>
+        <div class="funnel-detail" id="d3" style="display:none">
+          Name the metric that proves you solved the problem. "SDR connects-to-close rate increases by 15% within 60 days." This becomes your OEC for the A/B test and your north-star for the eval set. If you can't name it now, your launch gate will be arbitrary.
+        </div>
+        <div class="funnel-step" data-detail="d4">&#9989; One-sentence problem statement</div>
+        <div class="funnel-detail" id="d4" style="display:none">
+          "We are building for [specific user] who needs to [job-to-be-done] and currently [workaround], causing [cost]. We know we've solved this when [metric]." Write this before any architecture conversation. If you can't fill this in, you're not ready to build.
+        </div>
+      </div>
+    </div>
+
+    <div class="concept-check reveal">
+      <div class="cc-head">Concept check</div>
+      <p class="cc-q">Which of these is a testable AI product hypothesis?</p>
+      <div class="cc-options">
+        <button type="button" class="cc-opt" data-correct="false">"AI will make our product much smarter and users will see the value"</button>
+        <button type="button" class="cc-opt" data-correct="true">"AI-ranked lead scoring will increase connect-to-close rate by 15% for SDRs with 500+ leads"</button>
+        <button type="button" class="cc-opt" data-correct="false">"We will integrate GPT-4 to improve our Q&amp;A flow"</button>
+      </div>
+      <p class="cc-feedback">Correct: a testable hypothesis names a user, a measurable outcome, and a magnitude. The first is aspirational, the third is a technical task — neither can be disproved.</p>
+    </div>
+  </section>
+
+  <!-- 02 ── PRD ────────────────────────────────────────────── -->
+  <section class="section reveal">
+    <div class="section-header">
+      <div class="section-num">Section 02</div>
+      <h2>What Goes in an AI PRD</h2>
+      <p>Same structure as any PRD, but with LLM-specific contracts that you must nail before architecture decisions are made. Click each section to see what belongs there.</p>
+    </div>
+
+    <div class="prd-sections reveal">
+      <div class="prd-section">
+        <button class="prd-toggle" type="button" aria-expanded="false">
+          <span>&#127919; Goals &amp; success metrics</span><span class="prd-chevron">&#9660;</span>
+        </button>
+        <div class="prd-body">
+          <ul>
+            <li><strong>Primary OEC:</strong> The one metric that proves this worked (from discovery)</li>
+            <li><strong>Guardrail metrics:</strong> Must NOT regress (cost/request, error rate, latency, refusal rate)</li>
+            <li><strong>Leading indicators:</strong> Proxy metrics available before OEC can be measured (session length, re-prompt rate, thumbs-up rate)</li>
+          </ul>
+        </div>
+      </div>
+      <div class="prd-section">
+        <button class="prd-toggle" type="button" aria-expanded="false">
+          <span>&#128683; Non-goals (critical for AI)</span><span class="prd-chevron">&#9660;</span>
+        </button>
+        <div class="prd-body">
+          <ul>
+            <li>Explicitly list what the AI will NOT do. "The assistant will not answer questions outside the billing domain."</li>
+            <li>Scope creep in AI products is uniquely dangerous because LLMs will helpfully try to answer everything</li>
+            <li>Non-goals become your refusal tests in the eval set</li>
+          </ul>
+        </div>
+      </div>
+      <div class="prd-section">
+        <button class="prd-toggle" type="button" aria-expanded="false">
+          <span>&#128202; Quality bar &amp; eval contract</span><span class="prd-chevron">&#9660;</span>
+        </button>
+        <div class="prd-body">
+          <ul>
+            <li><strong>Golden eval set:</strong> 50–200 input/expected-output pairs, version-controlled in git</li>
+            <li><strong>Precision/recall targets:</strong> e.g. "precision ≥ 0.92 on factual queries, recall ≥ 0.88 on refusal cases"</li>
+            <li><strong>Human rubric:</strong> Tone, citation format, length limits — things automated evals miss</li>
+            <li><strong>Regression gate:</strong> Eval must pass before any model or prompt change ships</li>
+          </ul>
+        </div>
+      </div>
+      <div class="prd-section">
+        <button class="prd-toggle" type="button" aria-expanded="false">
+          <span>&#9881; Technical constraints</span><span class="prd-chevron">&#9660;</span>
+        </button>
+        <div class="prd-body">
+          <ul>
+            <li><strong>Latency SLO:</strong> p95 end-to-end (include retrieval + LLM + post-processing)</li>
+            <li><strong>Cost envelope:</strong> Max $/request or $/user/month — derived from unit economics</li>
+            <li><strong>Max tokens:</strong> Context window, max completion length</li>
+            <li><strong>Regions / data residency:</strong> EU data must not leave EU, etc.</li>
+            <li><strong>PII handling:</strong> What user data reaches the LLM API? What's stripped?</li>
+          </ul>
+        </div>
+      </div>
+      <div class="prd-section">
+        <button class="prd-toggle" type="button" aria-expanded="false">
+          <span>&#9940; Risks &amp; mitigations</span><span class="prd-chevron">&#9660;</span>
+        </button>
+        <div class="prd-body">
+          <ul>
+            <li><strong>Hallucination:</strong> What happens when the model confidently answers incorrectly? (citations, confidence score, human review tier)</li>
+            <li><strong>Prompt injection:</strong> Can user input override system prompt behaviour?</li>
+            <li><strong>Tool abuse:</strong> Which tools can the agent call, and what's the blast radius of a wrong call?</li>
+            <li><strong>Vendor lock-in:</strong> What's the migration cost if the model provider changes pricing overnight?</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 ── ARCHITECTURE + ECONOMICS ──────────────────────── -->
+  <section class="section reveal">
+    <div class="section-header">
+      <div class="section-num">Section 03</div>
+      <h2>Architecture Tradeoffs &amp; Unit Economics</h2>
+      <p>Production AI is a three-way negotiation between cost, latency, and quality. You can rarely optimise all three simultaneously — understanding the constraints lets you make the right call.</p>
+    </div>
+
+    <!-- Architecture decision tree SVG -->
+    <div class="arch-tree reveal">
+      <p style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px">Architecture decision tree — click a node</p>
+      <svg class="arch-svg" viewBox="0 0 640 280" role="img" aria-label="Architecture decision tree">
+        <defs>
+          <marker id="archArrow" markerWidth="8" markerHeight="6" refX="6" refY="3" orient="auto">
+            <polygon points="0 0,8 3,0 6" fill="#64748b"/>
+          </marker>
+        </defs>
+        <!-- Root question -->
+        <g class="arch-node" data-arch="q1" tabindex="0" role="button" aria-label="Question: latency requirement">
+          <rect x="220" y="10" width="200" height="44" rx="10" fill="rgba(13,148,136,.12)" stroke="var(--teal)" stroke-width="1.5"/>
+          <text x="320" y="36" text-anchor="middle" fill="#5eead4" font-size="12" font-weight="700" font-family="Inter">Latency &lt; 1s required?</text>
+        </g>
+        <!-- Yes branch: streaming -->
+        <line x1="250" y1="54" x2="130" y2="100" stroke="#64748b" stroke-width="1.5" marker-end="url(#archArrow)"/>
+        <text x="168" y="85" fill="#64748b" font-size="10" font-family="Inter">Yes</text>
+        <g class="arch-node" data-arch="streaming" tabindex="0" role="button" aria-label="Streaming response">
+          <rect x="42" y="104" width="170" height="44" rx="10" fill="rgba(124,58,237,.12)" stroke="var(--purple-light)" stroke-width="1.5"/>
+          <text x="127" y="130" text-anchor="middle" fill="#d8b4fe" font-size="12" font-weight="700" font-family="Inter">Streaming + small model</text>
+        </g>
+        <!-- No branch -->
+        <line x1="390" y1="54" x2="510" y2="100" stroke="#64748b" stroke-width="1.5" marker-end="url(#archArrow)"/>
+        <text x="458" y="85" fill="#64748b" font-size="10" font-family="Inter">No</text>
+        <g class="arch-node" data-arch="q2" tabindex="0" role="button" aria-label="Question: real-time or batch">
+          <rect x="420" y="104" width="180" height="44" rx="10" fill="rgba(13,148,136,.12)" stroke="var(--teal)" stroke-width="1.5"/>
+          <text x="510" y="130" text-anchor="middle" fill="#5eead4" font-size="12" font-weight="700" font-family="Inter">Real-time or batch?</text>
+        </g>
+        <!-- Streaming → cache -->
+        <line x1="127" y1="148" x2="127" y2="196" stroke="#64748b" stroke-width="1.5" marker-end="url(#archArrow)"/>
+        <g class="arch-node" data-arch="cache" tabindex="0" role="button" aria-label="Cache repeated prompts">
+          <rect x="42" y="200" width="170" height="44" rx="10" fill="rgba(245,158,11,.1)" stroke="var(--amber)" stroke-width="1.5"/>
+          <text x="127" y="226" text-anchor="middle" fill="#fcd34d" font-size="12" font-weight="700" font-family="Inter">Prompt cache for repeats</text>
+        </g>
+        <!-- Batch -->
+        <line x1="480" y1="148" x2="330" y2="196" stroke="#64748b" stroke-width="1.5" marker-end="url(#archArrow)"/>
+        <text x="385" y="182" fill="#64748b" font-size="10" font-family="Inter">Batch</text>
+        <g class="arch-node" data-arch="batch" tabindex="0" role="button" aria-label="Batch processing with larger model">
+          <rect x="238" y="200" width="186" height="44" rx="10" fill="rgba(16,185,129,.1)" stroke="var(--green)" stroke-width="1.5"/>
+          <text x="331" y="226" text-anchor="middle" fill="#34d399" font-size="12" font-weight="700" font-family="Inter">Batch + largest model</text>
+        </g>
+        <!-- Real-time -->
+        <line x1="540" y1="148" x2="560" y2="196" stroke="#64748b" stroke-width="1.5" marker-end="url(#archArrow)"/>
+        <text x="556" y="182" fill="#64748b" font-size="10" font-family="Inter">RT</text>
+        <g class="arch-node" data-arch="routing" tabindex="0" role="button" aria-label="Model routing by complexity">
+          <rect x="468" y="200" width="160" height="44" rx="10" fill="rgba(168,85,247,.1)" stroke="var(--purple-light)" stroke-width="1.5"/>
+          <text x="548" y="226" text-anchor="middle" fill="#d8b4fe" font-size="12" font-weight="700" font-family="Inter">Model routing</text>
+        </g>
+      </svg>
+      <div class="arch-info" id="arch-info">Click a node to learn when to use this pattern and the tradeoffs.</div>
+    </div>
+
+    <!-- Unit economics slider -->
+    <div class="econ-panel reveal">
+      <h4>&#128200; Interactive unit economics calculator</h4>
+      <div class="econ-row">
+        <label>Monthly active users <span id="e-users-lbl">10,000</span></label>
+        <input type="range" id="e-users" min="1000" max="500000" step="1000" value="10000">
+      </div>
+      <div class="econ-row">
+        <label>API calls per user per month <span id="e-calls-lbl">50</span></label>
+        <input type="range" id="e-calls" min="5" max="500" step="5" value="50">
+      </div>
+      <div class="econ-row">
+        <label>Avg tokens per call (in + out) <span id="e-tokens-lbl">1,200</span></label>
+        <input type="range" id="e-tokens" min="300" max="8000" step="100" value="1200">
+      </div>
+      <div class="econ-row">
+        <label>Price per 1K tokens ($) <span id="e-price-lbl">$0.003</span></label>
+        <input type="range" id="e-price" min="0.0005" max="0.075" step="0.0005" value="0.003">
+      </div>
+      <div class="econ-row">
+        <label>ARPU (avg monthly revenue/user) <span id="e-arpu-lbl">$20</span></label>
+        <input type="range" id="e-arpu" min="5" max="500" step="5" value="20">
+      </div>
+      <div class="econ-results">
+        <div class="econ-stat"><div class="econ-num econ-neutral" id="e-cost-req">—</div><div class="econ-label">Cost / request</div></div>
+        <div class="econ-stat"><div class="econ-num econ-neutral" id="e-cost-user">—</div><div class="econ-label">Cost / user / mo</div></div>
+        <div class="econ-stat"><div class="econ-num econ-neutral" id="e-cost-total">—</div><div class="econ-label">Total AI cost / mo</div></div>
+        <div class="econ-stat"><div class="econ-num econ-neutral" id="e-revenue">—</div><div class="econ-label">Monthly revenue</div></div>
+        <div class="econ-stat"><div class="econ-num econ-neutral" id="e-margin">—</div><div class="econ-label">AI cost as % revenue</div></div>
+        <div class="econ-stat"><div class="econ-num econ-neutral" id="e-target">—</div><div class="econ-label">10× cheaper target</div></div>
+      </div>
+      <p style="font-size:11px;color:var(--muted);margin-top:14px;line-height:1.5">Illustrative only — does not include infrastructure, vector DB, or orchestration costs. Target: AI cost &lt; 5–10% of ARPU. If &gt; 20%, revisit model choice and caching strategy.</p>
+    </div>
+
+    <div class="code-tabs reveal">
+      <button class="code-tab active" data-pane="p-cost">cost model</button>
+      <button class="code-tab" data-pane="p-routing">model routing</button>
+      <button class="code-tab" data-pane="p-cache">prompt caching</button>
+    </div>
+    <div class="code-window" style="border-radius:0 0 12px 12px;border-top:none;margin:0 0 20px">
+      <div class="code-pane active" id="p-cost">
+        <pre><span class="c-kw">from</span> dataclasses <span class="c-kw">import</span> dataclass
+
+@dataclass
+<span class="c-kw">class</span> <span class="c-cls">ModelPricing</span>:
+    name: <span class="c-cls">str</span>
+    price_in_per_1m: <span class="c-cls">float</span>   <span class="c-cmt"># $ per 1M input tokens</span>
+    price_out_per_1m: <span class="c-cls">float</span>  <span class="c-cmt"># $ per 1M output tokens</span>
+
+MODELS = {
+    <span class="c-str">'haiku'</span>:  <span class="c-cls">ModelPricing</span>(<span class="c-str">'claude-3-5-haiku-20241022'</span>,  <span class="c-num">0.80</span>,  <span class="c-num">4.0</span>),
+    <span class="c-str">'sonnet'</span>: <span class="c-cls">ModelPricing</span>(<span class="c-str">'claude-sonnet-4-5'</span>,           <span class="c-num">3.0</span>,  <span class="c-num">15.0</span>),
+    <span class="c-str">'opus'</span>:   <span class="c-cls">ModelPricing</span>(<span class="c-str">'claude-opus-4-5'</span>,             <span class="c-num">15.0</span>, <span class="c-num">75.0</span>),
+}
+
+<span class="c-kw">def</span> <span class="c-fn">cost_per_request</span>(model_key: <span class="c-cls">str</span>, in_tok: <span class="c-cls">int</span>, out_tok: <span class="c-cls">int</span>) -> <span class="c-cls">float</span>:
+    m = MODELS[model_key]
+    <span class="c-kw">return</span> (in_tok * m.price_in_per_1m + out_tok * m.price_out_per_1m) / <span class="c-num">1_000_000</span>
+
+<span class="c-kw">def</span> <span class="c-fn">monthly_ai_cost</span>(mau: <span class="c-cls">int</span>, calls_per_user: <span class="c-cls">int</span>, **kw) -> <span class="c-cls">float</span>:
+    <span class="c-kw">return</span> mau * calls_per_user * <span class="c-fn">cost_per_request</span>(**kw)
+
+<span class="c-cmt"># Example: 50k MAU, 50 calls/user/mo, 800 in + 400 out tokens</span>
+monthly = <span class="c-fn">monthly_ai_cost</span>(<span class="c-num">50_000</span>, <span class="c-num">50</span>, model_key=<span class="c-str">'haiku'</span>, in_tok=<span class="c-num">800</span>, out_tok=<span class="c-num">400</span>)
+<span class="c-fn">print</span>(<span class="c-str">f"Monthly: ${monthly:,.0f}"</span>)  <span class="c-cmt"># ~$240 — very manageable</span>
+
+<span class="c-cmt"># Same traffic with Opus instead:</span>
+monthly_opus = <span class="c-fn">monthly_ai_cost</span>(<span class="c-num">50_000</span>, <span class="c-num">50</span>, model_key=<span class="c-str">'opus'</span>, in_tok=<span class="c-num">800</span>, out_tok=<span class="c-num">400</span>)
+<span class="c-fn">print</span>(<span class="c-str">f"Opus: ${monthly_opus:,.0f}"</span>)   <span class="c-cmt"># ~$8,400 — 35× more expensive</span></pre>
+      </div>
+      <div class="code-pane" id="p-routing">
+        <pre><span class="c-kw">from</span> anthropic <span class="c-kw">import</span> Anthropic
+
+client = Anthropic()
+
+<span class="c-kw">def</span> <span class="c-fn">classify_complexity</span>(user_query: <span class="c-cls">str</span>) -> <span class="c-cls">str</span>:
+    <span class="c-cmt"># Use the cheapest model to classify query complexity</span>
+    resp = client.messages.<span class="c-fn">create</span>(
+        model=<span class="c-str">"claude-3-5-haiku-20241022"</span>,
+        max_tokens=<span class="c-num">10</span>,
+        messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>,
+                   <span class="c-str">"content"</span>: <span class="c-str">f"Reply 'simple' or 'complex' only. Query: {user_query}"</span>}]
+    )
+    <span class="c-kw">return</span> resp.content[<span class="c-num">0</span>].text.<span class="c-fn">strip</span>().<span class="c-fn">lower</span>()
+
+<span class="c-kw">def</span> <span class="c-fn">routed_completion</span>(user_query: <span class="c-cls">str</span>, system: <span class="c-cls">str</span>) -> <span class="c-cls">str</span>:
+    complexity = <span class="c-fn">classify_complexity</span>(user_query)
+    model = (
+        <span class="c-str">"claude-3-5-haiku-20241022"</span> <span class="c-kw">if</span> complexity == <span class="c-str">"simple"</span>
+        <span class="c-kw">else</span> <span class="c-str">"claude-sonnet-4-5"</span>     <span class="c-cmt"># reserve Sonnet for complex</span>
+    )
+    resp = client.messages.<span class="c-fn">create</span>(
+        model=model, max_tokens=<span class="c-num">1024</span>,
+        system=system,
+        messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: user_query}]
+    )
+    <span class="c-kw">return</span> resp.content[<span class="c-num">0</span>].text
+    <span class="c-cmt"># Result: ~80% of traffic routed to Haiku → 60-80% cost reduction</span></pre>
+      </div>
+      <div class="code-pane" id="p-cache">
+        <pre><span class="c-kw">import</span> anthropic
+
+client = anthropic.<span class="c-cls">Anthropic</span>()
+
+<span class="c-cmt"># Long system prompts repeated across many users = expensive</span>
+<span class="c-cmt"># Prompt caching stores the KV cache server-side for 5 minutes</span>
+<span class="c-cmt"># Cache hit: ~90% cheaper on input tokens</span>
+
+SYSTEM_PROMPT = <span class="c-str">"""You are a billing assistant for Acme SaaS...
+[2000 tokens of policy, examples, and context]"""</span>
+
+response = client.messages.<span class="c-fn">create</span>(
+    model=<span class="c-str">"claude-sonnet-4-5"</span>,
+    max_tokens=<span class="c-num">1024</span>,
+    system=[{
+        <span class="c-str">"type"</span>: <span class="c-str">"text"</span>,
+        <span class="c-str">"text"</span>: SYSTEM_PROMPT,
+        <span class="c-str">"cache_control"</span>: {<span class="c-str">"type"</span>: <span class="c-str">"ephemeral"</span>}  <span class="c-cmt"># ← mark for caching</span>
+    }],
+    messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: user_query}]
+)
+
+<span class="c-cmt"># cache_read_input_tokens: tokens served from cache (cheap)</span>
+<span class="c-cmt"># cache_creation_input_tokens: tokens written to cache (first time)</span>
+usage = response.usage
+<span class="c-fn">print</span>(usage.cache_read_input_tokens, usage.cache_creation_input_tokens)</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 ── LAUNCH CHECKLIST ──────────────────────────────── -->
+  <section class="section reveal">
+    <div class="section-header">
+      <div class="section-num">Section 04</div>
+      <h2>Launch Gate Checklist</h2>
+      <p>This is a <strong>gate</strong>, not a guarantee. Each item that's unchecked at launch is a known risk you're accepting. Check them off as you complete them.</p>
+    </div>
+
+    <div class="launch-checklist reveal" id="launch-checklist">
+      <div class="lc-item" data-checked="false">
+        <button class="lc-btn" type="button" aria-label="toggle">✓</button>
+        <div style="flex:1">
+          <div class="lc-title">Golden eval set versioned in git <span class="lc-cat cat-eval">Eval</span></div>
+          <div class="lc-sub">≥ 50 input/output pairs. Runs automatically on every prompt or model change. Gating CI step.</div>
+        </div>
+      </div>
+      <div class="lc-item" data-checked="false">
+        <button class="lc-btn" type="button" aria-label="toggle">✓</button>
+        <div style="flex:1">
+          <div class="lc-title">Observability dashboards live <span class="lc-cat cat-ops">Ops</span></div>
+          <div class="lc-sub">Latency (p50/p95/p99), error rate, cost per request, refusal rate — all live before users hit production.</div>
+        </div>
+      </div>
+      <div class="lc-item" data-checked="false">
+        <button class="lc-btn" type="button" aria-label="toggle">✓</button>
+        <div style="flex:1">
+          <div class="lc-title">Feature flag + one-click rollback <span class="lc-cat cat-ops">Ops</span></div>
+          <div class="lc-sub">Can disable the AI feature in under 2 minutes without a deploy. Verified that the rollback path works in staging.</div>
+        </div>
+      </div>
+      <div class="lc-item" data-checked="false">
+        <button class="lc-btn" type="button" aria-label="toggle">✓</button>
+        <div style="flex:1">
+          <div class="lc-title">Model version pinned <span class="lc-cat cat-ops">Ops</span></div>
+          <div class="lc-sub">Using a dated model ID (e.g. <code style="font-family:var(--mono);font-size:11px">claude-3-5-haiku-20241022</code>), not a floating alias that can silently update.</div>
+        </div>
+      </div>
+      <div class="lc-item" data-checked="false">
+        <button class="lc-btn" type="button" aria-label="toggle">✓</button>
+        <div style="flex:1">
+          <div class="lc-title">Tenant isolation verified <span class="lc-cat cat-sec">Security</span></div>
+          <div class="lc-sub">One tenant's data cannot appear in another tenant's context. Tested with two test accounts, confirmed no leakage.</div>
+        </div>
+      </div>
+      <div class="lc-item" data-checked="false">
+        <button class="lc-btn" type="button" aria-label="toggle">✓</button>
+        <div style="flex:1">
+          <div class="lc-title">PII scrubbed before LLM API call <span class="lc-cat cat-sec">Security</span></div>
+          <div class="lc-sub">Names, emails, SSNs, and card numbers are masked or omitted. Data classification documented in the PRD.</div>
+        </div>
+      </div>
+      <div class="lc-item" data-checked="false">
+        <button class="lc-btn" type="button" aria-label="toggle">✓</button>
+        <div style="flex:1">
+          <div class="lc-title">Cost per request within budget <span class="lc-cat cat-cost">Cost</span></div>
+          <div class="lc-sub">At 10× current traffic, monthly AI cost stays below 10% of ARPU. Verified with the calculator above at projected peak.</div>
+        </div>
+      </div>
+      <div class="lc-item" data-checked="false">
+        <button class="lc-btn" type="button" aria-label="toggle">✓</button>
+        <div style="flex:1">
+          <div class="lc-title">Prompt injection tested <span class="lc-cat cat-sec">Security</span></div>
+          <div class="lc-sub">"Ignore previous instructions and…" variants tested. System prompt cannot be overridden via user input. Constrained output format enforced.</div>
+        </div>
+      </div>
+      <div class="lc-item" data-checked="false">
+        <button class="lc-btn" type="button" aria-label="toggle">✓</button>
+        <div style="flex:1">
+          <div class="lc-title">Graceful degradation defined <span class="lc-cat cat-ops">Ops</span></div>
+          <div class="lc-sub">What happens when the LLM API is down? Fallback message, retry, or queue? Users are informed — not left with a spinner.</div>
+        </div>
+      </div>
+      <div class="lc-item" data-checked="false">
+        <button class="lc-btn" type="button" aria-label="toggle">✓</button>
+        <div style="flex:1">
+          <div class="lc-title">Incident runbook written <span class="lc-cat cat-ops">Ops</span></div>
+          <div class="lc-sub">What to do when: empty responses, tool failures, rate limits, hallucination report from user. Runbook lives in the team wiki, not in your head.</div>
+        </div>
+      </div>
+      <div class="lc-item" data-checked="false">
+        <button class="lc-btn" type="button" aria-label="toggle">✓</button>
+        <div style="flex:1">
+          <div class="lc-title">A/B test designed (if metric-driven launch) <span class="lc-cat cat-eval">Eval</span></div>
+          <div class="lc-sub">OEC defined, sample size pre-computed, stopping rule fixed, guardrail metrics named. See the <a href="experimentation_ab_testing.html" style="color:var(--teal-light)">Experimentation deep dive</a>.</div>
+        </div>
+      </div>
+      <div class="lc-item" data-checked="false">
+        <button class="lc-btn" type="button" aria-label="toggle">✓</button>
+        <div style="flex:1">
+          <div class="lc-title">Stakeholder sign-off on quality bar <span class="lc-cat cat-eval">Eval</span></div>
+          <div class="lc-sub">The quality rubric was reviewed and accepted by someone from legal, product, and the team that owns the metric. Not just engineering.</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="lc-progress-wrap" style="margin-top:16px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 18px">
+      <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">
+        <span>Launch readiness</span><span id="lc-pct-label">0 / 12</span>
+      </div>
+      <div style="height:6px;background:var(--border);border-radius:99px;overflow:hidden">
+        <div id="lc-progress-bar" style="height:100%;border-radius:99px;background:linear-gradient(90deg,var(--teal),var(--purple));transition:width .45s ease;width:0%"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PREREQUISITES + EXERCISES ───────────────────────────── -->
+  <section class="section reveal">
+    <div class="section-header">
+      <div class="section-num">Prerequisites</div>
+      <h2>Which days to complete first</h2>
+    </div>
+    <div class="prereq-grid">
+      <div class="prereq-chip"><span class="prereq-day">Day 6</span> Production engineering</div>
+      <div class="prereq-chip"><span class="prereq-day">Day 9</span> Provider landscape &amp; cost</div>
+      <div class="prereq-chip"><span class="prereq-day">Day 20</span> Observability</div>
+      <div class="prereq-chip"><span class="prereq-day">Day 25</span> Auth &amp; tenancy</div>
+      <div class="prereq-chip"><span class="prereq-day">Day 29</span> Copilot architecture</div>
+    </div>
+    <p style="margin-top:14px;font-size:13px;color:var(--muted)">Exercise: <code style="font-family:var(--mono);font-size:12px">exercises/pillar_unit_economics_sketch.py</code> &nbsp;·&nbsp; <a href="evals.html" style="color:var(--teal-light)">Agent Evaluation at Scale</a></p>
+  </section>
+
+  <section class="section reveal">
+    <div class="section-header">
+      <div class="section-num">Exercises</div>
+      <h2>Practice</h2>
+    </div>
+    <div class="ex-list">
+      <div class="ex-item reveal">
+        <div class="ex-num">1</div>
+        <div class="ex-body">
+          <div class="ex-title">Write a one-page problem brief</div>
+          <div class="ex-desc">Pick one AI feature idea. Fill in: user + job-to-be-done + current workaround + cost of wrong answer + success metric. No architecture diagrams allowed until this is done.</div>
+          <span class="ex-difficulty diff-easy">Discovery exercise</span>
+        </div>
+      </div>
+      <div class="ex-item reveal">
+        <div class="ex-num">2</div>
+        <div class="ex-body">
+          <div class="ex-title">Run the unit economics script</div>
+          <div class="ex-desc">Execute <code style="font-family:var(--mono);font-size:11px">pillar_unit_economics_sketch.py</code>. Estimate at 10× and 100× adoption. At what usage does the feature break even vs a human process? At what point does model routing pay off?</div>
+          <span class="ex-difficulty diff-med">Medium</span>
+        </div>
+      </div>
+      <div class="ex-item reveal">
+        <div class="ex-num">3</div>
+        <div class="ex-body">
+          <div class="ex-title">Full AI PRD for one feature</div>
+          <div class="ex-desc">Write a complete PRD for a real AI feature using the five sections above. Include at least 10 golden eval examples, a cost estimate from the calculator, and a filled-in launch checklist. Share it for review with someone outside engineering.</div>
+          <span class="ex-difficulty diff-hard">Hard</span>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<footer class="pillar-footer">
+  <div class="container pillar-footer-inner">
+    <div>Agentic AI Mastery</div>
+    <a href="learning_pillars.html">&#8592; Learning pillars</a>
+  </div>
+</footer>
+
+<script src="../bg-animation.js"></script>
+<script src="pillar-interactive.js"></script>
+<script>
+(function(){
+  // Discovery funnel
+  document.querySelectorAll('.funnel-step').forEach(function(step){
+    step.addEventListener('click', function(){
+      var detailId = step.getAttribute('data-detail');
+      var detail = document.getElementById(detailId);
+      var isOpen = detail && detail.style.display !== 'none';
+      // Close all
+      document.querySelectorAll('.funnel-detail').forEach(function(d){ d.style.display='none'; });
+      document.querySelectorAll('.funnel-step').forEach(function(s){ s.classList.remove('active'); });
+      if(!isOpen && detail){ detail.style.display='block'; step.classList.add('active'); }
+    });
+  });
+
+  // PRD accordion
+  document.querySelectorAll('.prd-toggle').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var body = btn.nextElementSibling;
+      var open = body.classList.contains('open');
+      document.querySelectorAll('.prd-body').forEach(function(b){ b.classList.remove('open'); });
+      document.querySelectorAll('.prd-chevron').forEach(function(c){ c.style.transform=''; });
+      document.querySelectorAll('.prd-toggle').forEach(function(b){ b.setAttribute('aria-expanded','false'); });
+      if(!open){
+        body.classList.add('open');
+        btn.querySelector('.prd-chevron').style.transform='rotate(180deg)';
+        btn.setAttribute('aria-expanded','true');
+      }
+    });
+  });
+
+  // Architecture decision tree
+  var archInfo = document.getElementById('arch-info');
+  var archData = {
+    q1:        '<strong>Latency question:</strong> User-facing chat or copilot features usually need &lt;1s to first token — use streaming. Background analysis, batch scoring, or async pipelines can tolerate 5–60s and benefit from larger, cheaper-per-quality models.',
+    streaming: '<strong>Streaming + small model:</strong> Stream tokens as they arrive with <code style="font-family:var(--mono);font-size:11px">stream=True</code>. Use Claude Haiku or a similarly fast model. UX: the user sees output immediately, reducing perceived latency. Cost: shorter conversations, faster inference. Watch out: streaming is harder to cache and post-process.',
+    q2:        '<strong>Real-time vs batch:</strong> Real-time means the user is waiting. Batch means the result is stored and retrieved later. Batch jobs can use the largest models cost-effectively since latency is unconstrained — the per-request cost is the same but the quality delta can be worth it.',
+    batch:     '<strong>Batch + largest model:</strong> Run overnight or async. Use the most capable model since wall-clock time doesn\'t matter. Benefits from serverless pricing (pay per token, not per server-hour). Great for: nightly reports, lead scoring, document processing, summarisation at scale.',
+    routing:   '<strong>Model routing:</strong> Use a cheap model (Haiku) to classify each query as simple/complex, then route to the appropriate tier. Target: 70–85% of traffic to the cheap model. This alone cuts costs 60–80% for mixed-complexity workloads.',
+    cache:     '<strong>Prompt caching:</strong> Long, repeated system prompts (RAG context, policy docs) can be cached server-side. Cache hit = 90% cheaper on input tokens. Works especially well for products where many users share the same 2k+ token system prompt.',
+  };
+  document.querySelectorAll('.arch-node').forEach(function(node){
+    node.addEventListener('click', function(){
+      if(archInfo) archInfo.innerHTML = archData[node.getAttribute('data-arch')] || '';
+    });
+    node.addEventListener('keydown', function(e){ if(e.key==='Enter'||e.key===' ') node.click(); });
+  });
+
+  // Unit economics
+  var inputs = {
+    users:  document.getElementById('e-users'),
+    calls:  document.getElementById('e-calls'),
+    tokens: document.getElementById('e-tokens'),
+    price:  document.getElementById('e-price'),
+    arpu:   document.getElementById('e-arpu'),
+  };
+  var labels = {
+    users:  document.getElementById('e-users-lbl'),
+    calls:  document.getElementById('e-calls-lbl'),
+    tokens: document.getElementById('e-tokens-lbl'),
+    price:  document.getElementById('e-price-lbl'),
+    arpu:   document.getElementById('e-arpu-lbl'),
+  };
+  function fmt(n){ return n >= 1000000 ? '$'+( n/1000000).toFixed(1)+'M' : n >= 1000 ? '$'+(n/1000).toFixed(1)+'K' : '$'+n.toFixed(2); }
+  function calcEcon(){
+    if(!inputs.users) return;
+    var u = +inputs.users.value, c = +inputs.calls.value, t = +inputs.tokens.value, p = +inputs.price.value, arpu = +inputs.arpu.value;
+    labels.users.textContent  = u.toLocaleString();
+    labels.calls.textContent  = c;
+    labels.tokens.textContent = t.toLocaleString();
+    labels.price.textContent  = '$' + p.toFixed(4);
+    labels.arpu.textContent   = '$' + arpu;
+    var costReq   = (t / 1000) * p;
+    var costUser  = costReq * c;
+    var costTotal = costUser * u;
+    var revenue   = arpu * u;
+    var pct       = costTotal / revenue * 100;
+    document.getElementById('e-cost-req').textContent   = '$' + costReq.toFixed(4);
+    document.getElementById('e-cost-user').textContent  = fmt(costUser);
+    document.getElementById('e-cost-total').textContent = fmt(costTotal);
+    document.getElementById('e-revenue').textContent    = fmt(revenue);
+    var marginEl = document.getElementById('e-margin');
+    marginEl.textContent = pct.toFixed(1) + '%';
+    marginEl.className = 'econ-num ' + (pct < 10 ? 'econ-positive' : pct < 20 ? 'econ-neutral' : 'econ-negative');
+    document.getElementById('e-target').textContent = fmt(costTotal / 10);
+  }
+  Object.values(inputs).forEach(function(el){ if(el) el.addEventListener('input', calcEcon); });
+  calcEcon();
+
+  // Launch checklist
+  var lcItems = document.querySelectorAll('#launch-checklist .lc-item');
+  var lcBar = document.getElementById('lc-progress-bar');
+  var lcLabel = document.getElementById('lc-pct-label');
+  lcItems.forEach(function(item){
+    item.addEventListener('click', function(){
+      var on = item.getAttribute('data-checked')==='true';
+      item.setAttribute('data-checked', on ? 'false' : 'true');
+      item.classList.toggle('done', !on);
+      var done = document.querySelectorAll('#launch-checklist .lc-item[data-checked="true"]').length;
+      var total = lcItems.length;
+      if(lcBar) lcBar.style.width = Math.round(done/total*100)+'%';
+      if(lcLabel) lcLabel.textContent = done + ' / ' + total;
+    });
+  });
+
+  // Code tabs
+  document.querySelectorAll('.code-tab').forEach(function(tab){
+    tab.addEventListener('click', function(){
+      var pane = tab.getAttribute('data-pane');
+      tab.closest('.code-tabs').querySelectorAll('.code-tab').forEach(function(t){ t.classList.remove('active'); });
+      document.querySelectorAll('.code-pane').forEach(function(p){ p.classList.remove('active'); });
+      tab.classList.add('active');
+      var el = document.getElementById(pane);
+      if(el) el.classList.add('active');
+    });
+  });
+})();
+</script>
+</body>
+</html>
